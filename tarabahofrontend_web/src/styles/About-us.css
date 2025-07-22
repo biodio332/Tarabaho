@@ -1,0 +1,270 @@
+.about-us-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: linear-gradient(to bottom, #003366, #001a40);
+    color: white;
+    width: 100vw; /* Changed from 100vw to prevent horizontal scrolling */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+  }
+  
+  .about-us-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%; /* Changed from 100vw to prevent horizontal scrolling */
+  }
+  
+  .about-us-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    color: white;
+    position: relative;
+    display: inline-block;
+  }
+  
+  /* Add underline effect to title */
+  .about-us-title::after {
+    content: "";
+    position: absolute;
+    width: 60%;
+    height: 3px;
+    bottom: -10px;
+    left: 0;
+    background-color: #0078ff;
+    border-radius: 2px;
+  }
+  
+  .about-us-banner-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+    transition: transform 0.3s ease;
+  }
+  
+  .about-us-banner-container:hover {
+    transform: scale(1.01); /* Subtle zoom effect on hover */
+  }
+  
+  .about-us-banner {
+    max-width: 100%;
+    height: auto;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); /* Enhanced shadow */
+    border: 5px solid rgba(255, 255, 255, 0.1); /* Subtle border */
+    border-radius: 8px; /* Rounded corners */
+  }
+  
+  .about-us-description {
+    margin-bottom: 3rem;
+    line-height: 1.7; /* Increased line height for better readability */
+  }
+  
+  .about-us-description p {
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+  }
+  
+  /* Highlight first paragraph */
+  .about-us-description p:first-child {
+    font-size: 1.15rem;
+    font-weight: 500;
+  }
+  
+  .about-us-tagline {
+    margin-top: 2rem;
+    font-weight: bold;
+    padding: 1.5rem;
+    background-color: rgba(0, 120, 255, 0.1);
+    border-left: 4px solid #0078ff;
+    border-radius: 0 8px 8px 0;
+  }
+  
+  .about-us-tagline p {
+    margin-bottom: 0.3rem;
+    font-size: 1.1rem;
+  }
+  
+  .meet-devs-title {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: white;
+    position: relative;
+    padding-bottom: 1rem;
+  }
+  
+  /* Add decorative elements to the title */
+  .meet-devs-title::after {
+    content: "";
+    position: absolute;
+    width: 80px;
+    height: 3px;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #0078ff;
+    border-radius: 2px;
+  }
+  
+  .dev-team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    justify-items: center;
+    margin-bottom: 3rem;
+  }
+  
+  .dev-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.3s ease;
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  .dev-profile:hover {
+    transform: translateY(-10px); /* Lift effect on hover */
+  }
+  
+  .dev-image-container {
+    width: 150px;
+    height: 150px;
+    border-radius: 8px; /* Rounded corners */
+    overflow: hidden;
+    margin-bottom: 1rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .dev-profile:hover .dev-image-container {
+    border-color: #00a0ff;
+    box-shadow: 0 8px 25px rgba(0, 120, 255, 0.4);
+  }
+  
+  .dev-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+  
+  .dev-profile:hover .dev-image {
+    transform: scale(1.05); /* Subtle zoom on hover */
+  }
+  
+  .dev-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 0.2rem;
+    color: white;
+  }
+  
+  .dev-surname {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #0078ff; /* Blue color for surname */
+  }
+  
+  /* Back to top button */
+  .back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background-color: #0078ff;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 100;
+  }
+  
+  .back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .back-to-top:hover {
+    background-color: #0066cc;
+    transform: translateY(-3px);
+  }
+  
+  @media (max-width: 768px) {
+    .about-us-title {
+      font-size: 2rem;
+      text-align: center;
+    }
+  
+    .about-us-title::after {
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+    }
+  
+    .meet-devs-title {
+      font-size: 1.5rem;
+    }
+  
+    .dev-team-grid {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1.5rem;
+    }
+  
+    .dev-image-container {
+      width: 120px;
+      height: 120px;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .about-us-content {
+      padding: 1.5rem;
+    }
+  
+    .about-us-title {
+      font-size: 1.8rem;
+    }
+  
+    .about-us-description p {
+      font-size: 1rem;
+    }
+  
+    .meet-devs-title {
+      font-size: 1.3rem;
+    }
+  
+    .dev-team-grid {
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 1rem;
+    }
+  
+    .dev-image-container {
+      width: 100px;
+      height: 100px;
+    }
+  
+    .dev-name,
+    .dev-surname {
+      font-size: 1rem;
+    }
+  
+    .back-to-top {
+      bottom: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+    }
+  }
+  

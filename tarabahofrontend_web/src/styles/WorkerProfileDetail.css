@@ -1,0 +1,350 @@
+/* WorkerProfileDetail.css */
+.worker-profile-detail-page {
+    min-height: 100vh;
+    background-color: #f5f5f5;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .worker-profile-hero {
+    background-color: #0a1929;
+    color: white;
+    padding: 30px 0;
+  }
+  
+  .worker-profile-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  .worker-profile-header {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  
+  .worker-image-container {
+    width: 200px;
+    height: 200px;
+    flex-shrink: 0;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  
+  .worker-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .worker-info {
+    flex: 1;
+  }
+  
+  .worker-name-bookmark {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  
+  .worker-name-bookmark h1 {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin: 0;
+  }
+  
+  .bookmark-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.3s;
+  }
+  
+  .bookmark-button.bookmarked {
+    color: #ffc107;
+  }
+  
+  .worker-description {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 15px;
+  }
+  
+  .worker-rating {
+    display: flex;
+    margin-bottom: 10px;
+  }
+  
+  .star-filled,
+  .star-empty {
+    color: #ffc107;
+    font-size: 1.5rem;
+    margin-right: 5px;
+  }
+  
+  .worker-rate {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+  }
+  
+  .worker-services {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .service-tag {
+    background-color: #333;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  
+  .view-profile-btn {
+    background-color: #0066cc;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .view-profile-btn:hover {
+    background-color: #0055aa;
+  }
+  
+  /* Content Section */
+  .worker-profile-content {
+    flex: 1;
+    padding: 30px 0;
+    color: #333; /* Ensure text is dark */
+  }
+  
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    color: #333; /* Explicitly set to dark color */
+  }
+  
+  .icon {
+    margin-right: 10px;
+  }
+  
+  /* Reviews Section */
+  .reviews-section {
+    margin-bottom: 40px;
+    color: #333; /* Ensure text is dark */
+  }
+  
+  .reviews-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  
+  .review-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .reviewer-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .reviewer-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+  }
+  
+  .reviewer-name {
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+  
+  .reviewer-rating {
+    display: flex;
+  }
+  
+  .reviewer-rating .star-filled,
+  .reviewer-rating .star-empty {
+    font-size: 1rem;
+    margin-right: 2px;
+  }
+  
+  .review-comment {
+    font-size: 0.9rem;
+    color: #555;
+  }
+  
+  /* Similar Workers Section */
+  .similar-workers-section {
+    color: #333; /* Ensure text is dark */
+  }
+  
+  .similar-workers-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  
+  .similar-worker-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    color: #333; /* Ensure text is dark */
+  }
+  
+  .similar-worker-image-container {
+    width: 100%;
+    height: 150px;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  
+  .similar-worker-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .similar-worker-rating {
+    display: flex;
+    margin-bottom: 10px;
+  }
+  
+  .similar-worker-description {
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  
+  .similar-worker-rate {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  .select-worker-btn {
+    background-color: #0066cc;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 100%;
+  }
+  
+  .select-worker-btn:hover {
+    background-color: #0055aa;
+  }
+  
+  /* Loading and Error States */
+  .loading,
+  .error-message {
+    text-align: center;
+    padding: 50px;
+    font-size: 1.2rem;
+  }
+  
+  .error-message {
+    color: #dc3545;
+  }
+  
+  /* Responsive Adjustments */
+  @media (max-width: 992px) {
+    .reviews-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .worker-profile-header {
+      flex-direction: column;
+    }
+  
+    .worker-image-container {
+      width: 100%;
+      height: auto;
+      max-width: 300px;
+      margin: 0 auto 20px;
+    }
+  
+    .reviews-grid,
+    .similar-workers-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  /* Personal Info Box */
+  .personal-info-box {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+    width: 250px;
+    flex-shrink: 0;
+  }
+  
+  .personal-info-box h3 {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    color: white;
+    font-weight: 600;
+  }
+  
+  .info-item {
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .info-label {
+    font-weight: 600;
+    margin-bottom: 3px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+  }
+  
+  .info-value {
+    color: white;
+    font-size: 0.9rem;
+  }
+  
+  /* Update responsive styles for the personal info box */
+  @media (max-width: 992px) {
+    .worker-profile-header {
+      flex-wrap: wrap;
+    }
+  
+    .personal-info-box {
+      order: 3;
+      width: 100%;
+      margin-top: 20px;
+    }
+  }
+  

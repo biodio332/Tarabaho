@@ -1,0 +1,601 @@
+.profile-page {
+  width: 100vw;
+  min-height: 100vh;
+  background-color: #f5f5f5; /* Light background for contrast */
+  overflow-y: auto;
+  font-family: "Arial", sans-serif;
+}
+
+.profile-content {
+  padding: 30px;
+  position: relative;
+}
+
+.profile-title {
+  color: #0066cc;
+  font-size: 2.8rem;
+  font-weight: bold;
+  margin-bottom: 30px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.error-message {
+  background-color: #ffe6e6;
+  color: #d32f2f;
+  padding: 10px 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.profile-container {
+  display: flex;
+  background: linear-gradient(135deg, #6b7280, #4b5563); /* Gradient background */
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  min-height: 600px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Sidebar Styles */
+.profile-sidebar {
+  width: 220px;
+  padding: 30px 0;
+  background-color: transparent;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  padding: 15px 25px;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  margin-bottom: 10px;
+}
+
+.sidebar-item:hover,
+.sidebar-item.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateX(5px);
+}
+
+.sidebar-icon {
+  margin-right: 12px;
+  font-size: 1.3rem;
+}
+
+.sidebar-item.logout {
+  margin-top: auto;
+  color: #ff4d4d;
+}
+
+.sidebar-item.logout:hover {
+  background-color: rgba(255, 77, 77, 0.2);
+}
+
+/* Main Profile Content */
+.profile-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 30px;
+}
+
+/* Profile Info Section */
+.profile-info-section {
+  display: flex;
+  background-color: white;
+  border-radius: 10px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.profile-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 40px;
+}
+
+.profile-image {
+  width: 150px; /* Fixed size */
+  height: 150px; /* Fixed size */
+  border-radius: 50%; /* Circular shape */
+  object-fit: cover; /* Crop image to fit */
+  border: 2px solid #0066cc;
+  transition: transform 0.3s;
+  flex-shrink: 0; /* Prevent stretching */
+  cursor: pointer; /* Indicate clickability */
+}
+
+.profile-image:hover {
+  transform: scale(1.05);
+}
+
+.edit-profile-btn {
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.3s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 15px;
+}
+
+.edit-profile-btn:hover {
+  background-color: #0055aa;
+  transform: translateY(-2px);
+}
+
+.profile-details {
+  flex: 1;
+}
+
+.profile-detail-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-label {
+  font-weight: bold;
+  margin-right: 15px;
+  color: #333;
+  display: flex;
+  align-items: center;
+}
+
+.detail-icon {
+  margin-right: 8px;
+  color: #0066cc;
+}
+
+.detail-value {
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.verified-status {
+  display: inline-flex;
+  align-items: center;
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.not-verified-status {
+  display: inline-flex;
+  align-items: center;
+  background-color: #f5f5f5;
+  color: #616161;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.verified-icon {
+  margin-right: 4px;
+  font-size: 0.9rem;
+  color: #0066cc;
+}
+
+/* Edit Form Styles */
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-group label {
+  width: 150px;
+  font-weight: bold;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #e5e5e5;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  background-color: #f9f9f9;
+  transition: border-color 0.3s;
+}
+
+.form-input:focus {
+  border-color: #0066cc;
+  outline: none;
+  background-color: white;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.save-btn {
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.save-btn:hover {
+  background-color: #0055aa;
+  transform: translateY(-2px);
+}
+
+.cancel-btn {
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.cancel-btn:hover {
+  background-color: #e63939;
+  transform: translateY(-2px);
+}
+
+/* Account Info Section */
+.account-info-section {
+  background-color: white;
+  border-radius: 10px;
+  padding: 25px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.account-credentials {
+  margin-bottom: 25px;
+}
+
+.credential-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.credential-label {
+  font-weight: bold;
+  margin-right: 15px;
+  color: #333;
+}
+
+.credential-value {
+  color: #555;
+}
+
+.connected-accounts {
+  margin-top: 25px;
+}
+
+.connected-accounts-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.account-divider {
+  height: 1px;
+  background-color: #e5e5e5;
+  margin-bottom: 20px;
+}
+
+.social-account-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.social-icon {
+  font-size: 1.8rem;
+  margin-right: 20px;
+}
+
+.social-icon.facebook {
+  color: #1877f2;
+}
+
+.social-icon.instagram {
+  color: #e1306c;
+}
+
+.social-icon.tiktok {
+  color: #000000;
+}
+
+.connect-btn {
+  background-color: transparent;
+  color: #0066cc;
+  border: 1px solid #0066cc;
+  border-radius: 5px;
+  padding: 8px 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.connect-btn.connected {
+  background-color: #ff4d4d;
+  color: white;
+  border-color: #ff4d4d;
+}
+
+.connect-btn:hover {
+  background-color: #0066cc;
+  color: white;
+}
+
+.connect-btn.connected:hover {
+  background-color: #e63939;
+}
+
+/* Tarabaho Watermark */
+.tarabaho-watermark {
+  position: absolute;
+  bottom: 30px;
+  right: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #0066cc;
+  opacity: 0.4;
+  transform: rotate(-10deg);
+  pointer-events: none;
+}
+
+.watermark-text {
+  font-size: 2.5rem;
+  font-weight: bold;
+  letter-spacing: 3px;
+}
+
+.watermark-subtext {
+  font-size: 0.9rem;
+  letter-spacing: 1.5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .profile-container {
+    flex-direction: column;
+  }
+
+  .profile-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 15px 0;
+    display: flex;
+    justify-content: space-around;
+  }
+
+  .sidebar-item {
+    padding: 10px 15px;
+  }
+
+  .profile-info-section {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .profile-image-container {
+    margin-right: 0;
+    margin-bottom: 30px;
+  }
+
+  .profile-image {
+    width: 120px; /* Smaller fixed size for tablets */
+    height: 120px;
+  }
+
+  .verified-status,
+  .not-verified-status {
+    font-size: 0.8rem;
+    padding: 3px 8px;
+  }
+
+  .verified-icon {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-title {
+    font-size: 2.2rem;
+  }
+
+  .profile-content {
+    padding: 20px;
+  }
+
+  .profile-container {
+    min-height: 400px;
+  }
+
+  .profile-main {
+    padding: 20px;
+  }
+
+  .profile-info-section {
+    padding: 15px;
+  }
+
+  .profile-image {
+    width: 100px; /* Smaller fixed size for mobile */
+    height: 100px;
+  }
+
+  .edit-profile-btn {
+    padding: 8px 15px;
+    font-size: 0.8rem;
+  }
+
+  .profile-detail-item {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+  }
+
+  .detail-label {
+    font-size: 0.9rem;
+  }
+
+  .detail-value {
+    font-size: 0.9rem;
+  }
+
+  .verified-status,
+  .not-verified-status {
+    font-size: 0.75rem;
+    padding: 3px 6px;
+  }
+
+  .verified-icon {
+    font-size: 0.75rem;
+  }
+
+  .form-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .form-group label {
+    width: 100%;
+    margin-bottom: 5px;
+  }
+
+  .form-input {
+    width: 100%;
+  }
+
+  .form-actions {
+    justify-content: center;
+  }
+
+  .account-info-section {
+    padding: 15px;
+  }
+
+  .tarabaho-watermark {
+    bottom: 20px;
+    right: 20px;
+  }
+
+  .watermark-text {
+    font-size: 1.8rem;
+  }
+
+  .watermark-subtext {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-title {
+    font-size: 1.8rem;
+  }
+
+  .sidebar-item {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
+
+  .sidebar-icon {
+    font-size: 1rem;
+  }
+
+  .profile-image {
+    width: 80px; /* Smallest fixed size for small screens */
+    height: 80px;
+  }
+
+  .edit-profile-btn {
+    padding: 6px 12px;
+    font-size: 0.7rem;
+  }
+
+  .detail-label,
+  .detail-value {
+    font-size: 0.8rem;
+  }
+
+  .verified-status,
+  .not-verified-status {
+    font-size: 0.7rem;
+    padding: 2px 5px;
+  }
+
+  .verified-icon {
+    font-size: 0.7rem;
+  }
+
+  .credential-label,
+  .credential-value {
+    font-size: 0.8rem;
+  }
+
+  .connected-accounts-title {
+    font-size: 1rem;
+  }
+
+  .social-icon {
+    font-size: 1.3rem;
+  }
+
+  .connect-btn {
+    padding: 6px 15px;
+    font-size: 0.8rem;
+  }
+
+  .form-input {
+    font-size: 0.8rem;
+  }
+
+  .save-btn,
+  .cancel-btn {
+    padding: 8px 15px;
+    font-size: 0.8rem;
+  }
+}

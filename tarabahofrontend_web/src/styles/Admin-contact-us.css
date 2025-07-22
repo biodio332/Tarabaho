@@ -1,0 +1,253 @@
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.admin-contact-page-container {
+  min-height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(to right, #001233, #023e8a);
+  overflow-x: hidden;
+}
+
+/* Contact Content */
+.admin-contact-content {
+  flex: 1;
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-contact-left {
+  flex: 1;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.admin-contact-heading {
+  color: white;
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.admin-contact-description {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 3rem;
+  max-width: 500px;
+}
+
+.admin-contact-info {
+  margin-top: 2rem;
+}
+
+.admin-contact-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  color: white;
+  font-size: 1.1rem;
+}
+
+.admin-contact-item svg {
+  margin-right: 1rem;
+  min-width: 24px;
+}
+
+.admin-contact-right {
+  flex: 1.2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.admin-contact-form-container {
+  background-color: rgba(0, 60, 130, 0.7);
+  border-radius: 10px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 550px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.admin-form-heading {
+  color: white;
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.admin-contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.admin-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.admin-form-row .admin-form-group {
+  flex: 1;
+}
+
+.admin-form-group label {
+  color: white;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.admin-form-group input,
+.admin-form-group textarea {
+  padding: 0.85rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: white;
+  color: #333;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.admin-form-group input:focus,
+.admin-form-group textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 120, 255, 0.5), 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.admin-form-group textarea {
+  resize: vertical;
+  min-height: 150px;
+}
+
+.required {
+  color: #ff6b6b;
+  margin-left: 2px;
+}
+
+.admin-send-button {
+  background-color: #0078ff;
+  color: white;
+  border: none;
+  padding: 0.85rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+  align-self: center;
+  margin-top: 1rem;
+  width: 100%;
+  max-width: 200px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-send-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.admin-send-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .admin-contact-left {
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .admin-contact-content {
+    flex-direction: column;
+  }
+
+  .admin-contact-left {
+    padding: 2rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  .admin-contact-description {
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .admin-contact-heading {
+    font-size: 2.2rem;
+  }
+
+  .admin-contact-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .admin-contact-form-container {
+    max-width: 600px;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-contact-form-container {
+    padding: 1.5rem;
+  }
+
+  .admin-form-heading {
+    font-size: 1.5rem;
+  }
+
+  .admin-form-row {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-contact-heading {
+    font-size: 1.8rem;
+  }
+
+  .admin-contact-description {
+    font-size: 1rem;
+  }
+
+  .admin-contact-item {
+    font-size: 1rem;
+  }
+
+  .admin-form-group label {
+    font-size: 0.9rem;
+  }
+
+  .admin-form-group input,
+  .admin-form-group textarea {
+    padding: 0.75rem;
+  }
+}

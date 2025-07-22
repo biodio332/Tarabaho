@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <path
+        android:fillColor="#FFCDD2"
+        android:pathData="M0,0h200v200h-200z"/>
+    <!-- This is a placeholder. In a real app, you would use an actual image resource -->
+</vector>

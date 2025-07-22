@@ -1,0 +1,9 @@
+spring.datasource.url=
+spring.datasource.username=
+spring.datasource.password=
+supabase.url=
+supabase.service_role_key=
+spring.security.oauth2.client.registration.google.client-id=
+spring.security.oauth2.client.registration.google.client-secret=
+paymongo.secret.key=
+jwt.secret=
