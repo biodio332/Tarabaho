@@ -1,6 +1,6 @@
 package tarabaho.tarabaho.dto;
 
-public class WorkerDuplicateCheckDTO {
+public class GraduateDuplicateCheckDTO {
     private String username;
     private String email;
     private String phoneNumber;

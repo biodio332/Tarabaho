@@ -9,19 +9,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
+import tarabaho.tarabaho.dto.GraduateUpdateDTO;
 import tarabaho.tarabaho.dto.UserUpdateDTO;
-import tarabaho.tarabaho.dto.WorkerUpdateDTO;
 import tarabaho.tarabaho.entity.Admin;
 import tarabaho.tarabaho.entity.Category;
 import tarabaho.tarabaho.entity.CategoryRequest;
 import tarabaho.tarabaho.entity.Certificate;
+import tarabaho.tarabaho.entity.Graduate;
 import tarabaho.tarabaho.entity.User;
-import tarabaho.tarabaho.entity.Worker;
 import tarabaho.tarabaho.repository.AdminRepository;
 import tarabaho.tarabaho.repository.CategoryRepository;
 import tarabaho.tarabaho.repository.CategoryRequestRepository;
+import tarabaho.tarabaho.repository.GraduateRepository;
 import tarabaho.tarabaho.repository.UserRepository;
-import tarabaho.tarabaho.repository.WorkerRepository;
 
 @Service
 public class AdminService {
@@ -30,7 +30,7 @@ public class AdminService {
     private AdminRepository adminRepository;
 
     @Autowired
-    private WorkerRepository workerRepository;
+    private GraduateRepository graduateRepository;
 
     @Autowired
     private CategoryRepository categoryRepository;
@@ -128,108 +128,108 @@ public class AdminService {
         return adminRepository.save(admin);
     }
 
-    public Worker editWorker(Long id, WorkerUpdateDTO workerDTO) throws Exception {
-        Worker existingWorker = workerRepository.findById(id)
-            .orElseThrow(() -> new Exception("Worker not found with id: " + id));
+    public Graduate editGraduate(Long id, GraduateUpdateDTO graduateDTO) throws Exception {
+        Graduate existingGraduate = graduateRepository.findById(id)
+            .orElseThrow(() -> new Exception("Graduate not found with id: " + id));
 
-        System.out.println("AdminService: Editing worker ID: " + id);
+        System.out.println("AdminService: Editing graduate ID: " + id);
 
         // Update only the fields provided in the DTO
-        if (workerDTO.getEmail() != null && !workerDTO.getEmail().equals(existingWorker.getEmail())) {
-            if (workerRepository.findAllByEmail(workerDTO.getEmail()).size() > 0) {
+        if (graduateDTO.getEmail() != null && !graduateDTO.getEmail().equals(existingGraduate.getEmail())) {
+            if (graduateRepository.findAllByEmail(graduateDTO.getEmail()).size() > 0) {
                 throw new IllegalArgumentException("Email already exists.");
             }
-            existingWorker.setEmail(workerDTO.getEmail());
-            System.out.println("AdminService: Updated email to: " + workerDTO.getEmail());
+            existingGraduate.setEmail(graduateDTO.getEmail());
+            System.out.println("AdminService: Updated email to: " + graduateDTO.getEmail());
         }
 
-        if (workerDTO.getPhoneNumber() != null && !workerDTO.getPhoneNumber().equals(existingWorker.getPhoneNumber())) {
-            if (!workerDTO.getPhoneNumber().isEmpty() && workerRepository.findAllByPhoneNumber(workerDTO.getPhoneNumber()).size() > 0) {
+        if (graduateDTO.getPhoneNumber() != null && !graduateDTO.getPhoneNumber().equals(existingGraduate.getPhoneNumber())) {
+            if (!graduateDTO.getPhoneNumber().isEmpty() && graduateRepository.findAllByPhoneNumber(graduateDTO.getPhoneNumber()).size() > 0) {
                 throw new IllegalArgumentException("Phone number already exists.");
             }
-            existingWorker.setPhoneNumber(workerDTO.getPhoneNumber());
-            System.out.println("AdminService: Updated phone number to: " + workerDTO.getPhoneNumber());
+            existingGraduate.setPhoneNumber(graduateDTO.getPhoneNumber());
+            System.out.println("AdminService: Updated phone number to: " + graduateDTO.getPhoneNumber());
         }
 
-        if (workerDTO.getAddress() != null) {
-            existingWorker.setAddress(workerDTO.getAddress());
-            System.out.println("AdminService: Updated address to: " + workerDTO.getAddress());
+        if (graduateDTO.getAddress() != null) {
+            existingGraduate.setAddress(graduateDTO.getAddress());
+            System.out.println("AdminService: Updated address to: " + graduateDTO.getAddress());
         }
 
-        if (workerDTO.getBiography() != null) {
-            existingWorker.setBiography(workerDTO.getBiography());
-            System.out.println("AdminService: Updated biography to: " + workerDTO.getBiography());
+        if (graduateDTO.getBiography() != null) {
+            existingGraduate.setBiography(graduateDTO.getBiography());
+            System.out.println("AdminService: Updated biography to: " + graduateDTO.getBiography());
         }
 
-        if (workerDTO.getFirstName() != null) {
-            existingWorker.setFirstName(workerDTO.getFirstName());
-            System.out.println("AdminService: Updated first name to: " + workerDTO.getFirstName());
+        if (graduateDTO.getFirstName() != null) {
+            existingGraduate.setFirstName(graduateDTO.getFirstName());
+            System.out.println("AdminService: Updated first name to: " + graduateDTO.getFirstName());
         }
 
-        if (workerDTO.getLastName() != null) {
-            existingWorker.setLastName(workerDTO.getLastName());
-            System.out.println("AdminService: Updated last name to: " + workerDTO.getLastName());
+        if (graduateDTO.getLastName() != null) {
+            existingGraduate.setLastName(graduateDTO.getLastName());
+            System.out.println("AdminService: Updated last name to: " + graduateDTO.getLastName());
         }
 
-        if (workerDTO.getHourly() != null) {
-            if (workerDTO.getHourly() <= 0) {
+        if (graduateDTO.getHourly() != null) {
+            if (graduateDTO.getHourly() <= 0) {
                 throw new IllegalArgumentException("Hourly rate must be greater than 0.");
             }
-            existingWorker.setHourly(workerDTO.getHourly());
-            System.out.println("AdminService: Updated hourly rate to: " + workerDTO.getHourly());
+            existingGraduate.setHourly(graduateDTO.getHourly());
+            System.out.println("AdminService: Updated hourly rate to: " + graduateDTO.getHourly());
         }
 
-        if (workerDTO.getBirthday() != null && !workerDTO.getBirthday().isEmpty()) {
+        if (graduateDTO.getBirthday() != null && !graduateDTO.getBirthday().isEmpty()) {
             try {
-                existingWorker.setBirthday(LocalDate.parse(workerDTO.getBirthday()));
-                System.out.println("AdminService: Updated birthday to: " + workerDTO.getBirthday());
+                existingGraduate.setBirthday(LocalDate.parse(graduateDTO.getBirthday()));
+                System.out.println("AdminService: Updated birthday to: " + graduateDTO.getBirthday());
             } catch (Exception e) {
                 throw new IllegalArgumentException("Invalid birthday format. Use YYYY-MM-DD.");
             }
         }
 
         // Only update password if explicitly provided and non-empty
-        if (workerDTO.getPassword() != null && !workerDTO.getPassword().trim().isEmpty()) {
-            String newHashedPassword = passwordEncoderService.encodePassword(workerDTO.getPassword());
-            existingWorker.setPassword(newHashedPassword);
-            System.out.println("AdminService: Updated password for worker ID: " + id + " to new hash: " + newHashedPassword);
+        if (graduateDTO.getPassword() != null && !graduateDTO.getPassword().trim().isEmpty()) {
+            String newHashedPassword = passwordEncoderService.encodePassword(graduateDTO.getPassword());
+            existingGraduate.setPassword(newHashedPassword);
+            System.out.println("AdminService: Updated password for graduate ID: " + id + " to new hash: " + newHashedPassword);
         } else {
-            System.out.println("AdminService: Password not updated for worker ID: " + id);
+            System.out.println("AdminService: Password not updated for graduate ID: " + id);
         }
 
-        if (workerDTO.getIsAvailable() != null) {
-            existingWorker.setIsAvailable(workerDTO.getIsAvailable());
-            System.out.println("AdminService: Updated isAvailable to: " + workerDTO.getIsAvailable());
+        if (graduateDTO.getIsAvailable() != null) {
+            existingGraduate.setIsAvailable(graduateDTO.getIsAvailable());
+            System.out.println("AdminService: Updated isAvailable to: " + graduateDTO.getIsAvailable());
         }
 
-        if (workerDTO.getIsVerified() != null) {
-            existingWorker.setIsVerified(workerDTO.getIsVerified());
-            System.out.println("AdminService: Updated isVerified to: " + workerDTO.getIsVerified());
+        if (graduateDTO.getIsVerified() != null) {
+            existingGraduate.setIsVerified(graduateDTO.getIsVerified());
+            System.out.println("AdminService: Updated isVerified to: " + graduateDTO.getIsVerified());
         }
 
-        if (workerDTO.getLatitude() != null) {
-            existingWorker.setLatitude(workerDTO.getLatitude());
-            System.out.println("AdminService: Updated latitude to: " + workerDTO.getLatitude());
+        if (graduateDTO.getLatitude() != null) {
+            existingGraduate.setLatitude(graduateDTO.getLatitude());
+            System.out.println("AdminService: Updated latitude to: " + graduateDTO.getLatitude());
         }
 
-        if (workerDTO.getLongitude() != null) {
-            existingWorker.setLongitude(workerDTO.getLongitude());
-            System.out.println("AdminService: Updated longitude to: " + workerDTO.getLongitude());
+        if (graduateDTO.getLongitude() != null) {
+            existingGraduate.setLongitude(graduateDTO.getLongitude());
+            System.out.println("AdminService: Updated longitude to: " + graduateDTO.getLongitude());
         }
 
-        if (workerDTO.getAverageResponseTime() != null) {
-            existingWorker.setAverageResponseTime(workerDTO.getAverageResponseTime());
-            System.out.println("AdminService: Updated averageResponseTime to: " + workerDTO.getAverageResponseTime());
+        if (graduateDTO.getAverageResponseTime() != null) {
+            existingGraduate.setAverageResponseTime(graduateDTO.getAverageResponseTime());
+            System.out.println("AdminService: Updated averageResponseTime to: " + graduateDTO.getAverageResponseTime());
         }
 
-        Worker updatedWorker = workerRepository.save(existingWorker);
-        System.out.println("AdminService: Worker ID: " + id + " saved successfully");
-        return updatedWorker;
+        Graduate updatedGraduate = graduateRepository.save(existingGraduate);
+        System.out.println("AdminService: Graduate ID: " + id + " saved successfully");
+        return updatedGraduate;
     }
 
-    public Worker addCategoriesToWorker(Long workerId, List<Long> categoryIds) throws Exception {
-        Worker worker = workerRepository.findById(workerId)
-            .orElseThrow(() -> new Exception("Worker not found with id: " + workerId));
+    public Graduate addCategoriesToGraduate(Long graduateId, List<Long> categoryIds) throws Exception {
+        Graduate graduate = graduateRepository.findById(graduateId)
+            .orElseThrow(() -> new Exception("Graduate not found with id: " + graduateId));
 
         List<Category> categories = categoryRepository.findAllById(categoryIds);
         if (categories.size() != categoryIds.size()) {
@@ -237,33 +237,33 @@ public class AdminService {
         }
 
         // Add new categories, avoiding duplicates
-        List<Category> currentCategories = worker.getCategories();
+        List<Category> currentCategories = graduate.getCategories();
         for (Category category : categories) {
             if (!currentCategories.contains(category)) {
                 currentCategories.add(category);
             }
         }
-        worker.setCategories(currentCategories);
+        graduate.setCategories(currentCategories);
 
-        return workerRepository.save(worker);
+        return graduateRepository.save(graduate);
     }
 
-    public List<Certificate> getCertificatesByWorkerId(Long workerId) {
-        return certificateService.getCertificatesByWorkerId(workerId);
+    public List<Certificate> getCertificatesByGraduateId(Long graduateId) {
+        return certificateService.getCertificatesByGraduateId(graduateId);
     }
 
-    public void deleteWorker(Long id) throws Exception {
-        if (!workerRepository.existsById(id)) {
-            throw new Exception("Worker not found with id: " + id);
+    public void deleteGraduate(Long id) throws Exception {
+        if (!graduateRepository.existsById(id)) {
+            throw new Exception("Graduate not found with id: " + id);
         }
-        workerRepository.deleteById(id);
+        graduateRepository.deleteById(id);
     }
     // NEW: Method to retrieve all pending category requests
     public List<CategoryRequest> getPendingCategoryRequests() {
         return categoryRequestRepository.findByStatus("PENDING");
     }
 
-    // NEW: Method to approve a category request, adding the category to the worker's profile
+    // NEW: Method to approve a category request, adding the category to the graduate's profile
     @Transactional
     public void approveCategoryRequest(Long requestId) {
         CategoryRequest request = categoryRequestRepository.findById(requestId)
@@ -271,13 +271,13 @@ public class AdminService {
         if (!request.getStatus().equals("PENDING")) {
             throw new IllegalArgumentException("Request is not in PENDING status.");
         }
-        Worker worker = request.getWorker();
+        Graduate graduate = request.getGraduate();
         Category category = request.getCategory();
-        if (worker.getCategories() == null) {
-            worker.setCategories(new ArrayList<>());
+        if (graduate.getCategories() == null) {
+            graduate.setCategories(new ArrayList<>());
         }
-        worker.getCategories().add(category);
-        workerRepository.save(worker);
+        graduate.getCategories().add(category);
+        graduateRepository.save(graduate);
         request.setStatus("APPROVED");
         categoryRequestRepository.save(request);
     }

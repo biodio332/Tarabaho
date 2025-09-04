@@ -1,6 +1,7 @@
 package tarabaho.tarabaho.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -13,6 +14,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "certificates")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Certificate {
 
     @Id
@@ -22,12 +24,13 @@ public class Certificate {
     private String courseName;
     private String certificateNumber;
     private String issueDate;
+    private Long portfolioId; // New field to link to Portfolio
     private String certificateFilePath; // New field for storing the file path
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "worker_id")
-    @JsonBackReference("worker-certificates")
-    private Worker worker;
+    @JoinColumn(name = "graduate_id")
+    @JsonBackReference("graduate-certificates")
+    private Graduate graduate;
 
     // Getters and Setters
     public Long getId() {
@@ -70,11 +73,17 @@ public class Certificate {
         this.certificateFilePath = certificateFilePath;
     }
 
-    public Worker getWorker() {
-        return worker;
+    public Graduate getGraduate() {
+        return graduate;
     }
 
-    public void setWorker(Worker worker) {
-        this.worker = worker;
+    public void setGraduate(Graduate graduate) {
+        this.graduate = graduate;
     }
+    public void setPortfolioId(Long portfolioId){
+        this.portfolioId = portfolioId;
+    }
+    public Long getPortfolioId(){
+        return portfolioId;
+    } 
 }

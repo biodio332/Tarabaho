@@ -27,25 +27,25 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import tarabaho.tarabaho.dto.AuthResponse;
+import tarabaho.tarabaho.dto.GraduateUpdateDTO;
 import tarabaho.tarabaho.dto.UserUpdateDTO;
-import tarabaho.tarabaho.dto.WorkerUpdateDTO;
 import tarabaho.tarabaho.entity.Admin;
 import tarabaho.tarabaho.entity.CategoryRequest;
 import tarabaho.tarabaho.entity.Certificate;
+import tarabaho.tarabaho.entity.Graduate;
 import tarabaho.tarabaho.entity.User;
-import tarabaho.tarabaho.entity.Worker;
 import tarabaho.tarabaho.jwt.JwtUtil;
 import tarabaho.tarabaho.payload.LoginRequest;
 import tarabaho.tarabaho.repository.CategoryRequestRepository;
 import tarabaho.tarabaho.service.AdminService;
+import tarabaho.tarabaho.service.GraduateService;
 import tarabaho.tarabaho.service.SupabaseRestStorageService;
 import tarabaho.tarabaho.service.UserService;
-import tarabaho.tarabaho.service.WorkerService;
 
 @RestController
 @RequestMapping("/api/admin")
 @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
-@Tag(name = "Admin Management", description = "Endpoints for managing admin accounts, workers, users, and certificates")
+@Tag(name = "Admin Management", description = "Endpoints for managing admin accounts, graduates, users, and certificates")
 public class AdminController {
 
     @Autowired
@@ -55,7 +55,7 @@ public class AdminController {
     private UserService userService;
 
     @Autowired
-    private WorkerService workerService;
+    private GraduateService graduateService;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -94,10 +94,10 @@ public class AdminController {
                    .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
     }
 
-    @Operation(summary = "Get all workers", description = "Retrieve a list of all worker accounts")
-    @GetMapping("/workers")
-    public ResponseEntity<List<Worker>> getAllWorkers() {
-        return ResponseEntity.ok(workerService.getAllWorkers());
+    @Operation(summary = "Get all graduates", description = "Retrieve a list of all graduate accounts")
+    @GetMapping("/graduates")
+    public ResponseEntity<List<Graduate>> getAllGraduates() {
+        return ResponseEntity.ok(graduateService.getAllGraduates());
     }
 
     @Operation(summary = "Register a new admin", description = "Create a new admin account")
@@ -122,11 +122,11 @@ public class AdminController {
         }
     }
 
-    @Operation(summary = "Register a new worker", description = "Create a new worker account")
-    @PostMapping("/workers/register")
-    public ResponseEntity<?> registerWorker(@RequestBody Worker worker) {
+    @Operation(summary = "Register a new graduate", description = "Create a new graduate account")
+    @PostMapping("/graduates/register")
+    public ResponseEntity<?> registerGraduate(@RequestBody Graduate graduate) {
         try {
-            Worker registered = workerService.registerWorker(worker);
+            Graduate registered = graduateService.registerGraduate(graduate);
             return ResponseEntity.ok(registered);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -255,52 +255,52 @@ public class AdminController {
         }
     }
 
-    @Operation(summary = "Delete a worker", description = "Delete a worker account by ID")
-    @DeleteMapping("/workers/delete/{id}")
-    public ResponseEntity<?> deleteWorker(@PathVariable Long id, Authentication authentication) {
+    @Operation(summary = "Delete a graduate", description = "Delete a graduate account by ID")
+    @DeleteMapping("/graduates/delete/{id}")
+    public ResponseEntity<?> deleteGraduate(@PathVariable Long id, Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated.");
             }
-            workerService.deleteWorker(id);
-            return ResponseEntity.ok("Worker deleted successfully");
+            graduateService.deleteGraduate(id);
+            return ResponseEntity.ok("Graduate deleted successfully");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Worker not found or cannot be deleted: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Graduate not found or cannot be deleted: " + e.getMessage());
         }
     }
 
-    @Operation(summary = "Edit a worker", description = "Update a worker account by ID")
+    @Operation(summary = "Edit a graduate", description = "Update a graduate account by ID")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Worker updated successfully"),
+        @ApiResponse(responseCode = "200", description = "Graduate updated successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid input"),
         @ApiResponse(responseCode = "401", description = "Admin not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Worker not found")
+        @ApiResponse(responseCode = "404", description = "Graduate not found")
     })
-    @PutMapping("/workers/edit/{id}")
-    public ResponseEntity<?> editWorker(
+    @PutMapping("/graduates/edit/{id}")
+    public ResponseEntity<?> editGraduate(
             @PathVariable Long id,
-            @RequestBody WorkerUpdateDTO workerDTO,
+            @RequestBody GraduateUpdateDTO graduateDTO,
             Authentication authentication
     ) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated.");
             }
-            Worker worker = adminService.editWorker(id, workerDTO);
-            return ResponseEntity.ok(worker);
+            Graduate graduate = adminService.editGraduate(id, graduateDTO);
+            return ResponseEntity.ok(graduate);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to update worker: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Failed to update graduate: " + e.getMessage());
         }
     }
 
-    @Operation(summary = "Add categories to a worker", description = "Add one or more categories to a worker by ID")
+    @Operation(summary = "Add categories to a graduate", description = "Add one or more categories to a graduate by ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Categories added successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid category IDs or worker not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid category IDs or graduate not found"),
         @ApiResponse(responseCode = "401", description = "Admin not authenticated")
     })
-    @PostMapping("/workers/{id}/categories")
-    public ResponseEntity<?> addCategoriesToWorker(
+    @PostMapping("/graduates/{id}/categories")
+    public ResponseEntity<?> addCategoriesToGraduate(
             @PathVariable Long id,
             @RequestBody List<Long> categoryIds,
             Authentication authentication
@@ -309,29 +309,29 @@ public class AdminController {
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated.");
             }
-            Worker worker = adminService.addCategoriesToWorker(id, categoryIds);
-            return ResponseEntity.ok(worker);
+            Graduate graduate = adminService.addCategoriesToGraduate(id, categoryIds);
+            return ResponseEntity.ok(graduate);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Failed to add categories: " + e.getMessage());
         }
     }
 
-    @Operation(summary = "Get certificates for a worker", description = "Retrieve all certificates associated with a worker")
+    @Operation(summary = "Get certificates for a graduate", description = "Retrieve all certificates associated with a graduate")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "List of certificates returned successfully"),
         @ApiResponse(responseCode = "401", description = "Admin not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Worker not found")
+        @ApiResponse(responseCode = "404", description = "Graduate not found")
     })
-    @GetMapping("/certificates/worker/{workerId}")
-    public ResponseEntity<?> getCertificatesByWorkerId(
-            @PathVariable Long workerId,
+    @GetMapping("/certificates/graduate/{graduateId}")
+    public ResponseEntity<?> getCertificatesByGraduateId(
+            @PathVariable Long graduateId,
             Authentication authentication
     ) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated.");
             }
-            List<Certificate> certificates = adminService.getCertificatesByWorkerId(workerId);
+            List<Certificate> certificates = adminService.getCertificatesByGraduateId(graduateId);
             return ResponseEntity.ok(certificates);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to fetch certificates: " + e.getMessage());
@@ -434,7 +434,7 @@ public class AdminController {
 
     @GetMapping("/category-requests/pending")
 public ResponseEntity<?> getPendingCategoryRequests(
-        @RequestParam(required = false) Long workerId,
+        @RequestParam(required = false) Long graduateId,
         Authentication authentication
 ) {
     try {
@@ -442,8 +442,8 @@ public ResponseEntity<?> getPendingCategoryRequests(
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated.");
         }
         List<CategoryRequest> pendingRequests;
-        if (workerId != null) {
-            pendingRequests = categoryRequestRepository.findByWorkerIdAndStatus(workerId, "PENDING");
+        if (graduateId != null) {
+            pendingRequests = categoryRequestRepository.findByGraduateIdAndStatus(graduateId, "PENDING");
         } else {
             pendingRequests = categoryRequestRepository.findByStatus("PENDING");
         }
@@ -454,7 +454,7 @@ public ResponseEntity<?> getPendingCategoryRequests(
     }
 }
 
-@Operation(summary = "Approve a category request", description = "Approve a pending category request and add the category to the worker")
+@Operation(summary = "Approve a category request", description = "Approve a pending category request and add the category to the graduate")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Category request approved successfully"),
         @ApiResponse(responseCode = "401", description = "Admin not authenticated"),

@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -24,9 +23,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import tarabaho.tarabaho.dto.MessageDTO;
 import tarabaho.tarabaho.entity.Message;
+import tarabaho.tarabaho.service.GraduateService;
 import tarabaho.tarabaho.service.MessageService;
 import tarabaho.tarabaho.service.UserService;
-import tarabaho.tarabaho.service.WorkerService;
 
 @RestController
 @RequestMapping("/api/message")
@@ -41,13 +40,13 @@ public class MessageController {
     private UserService userService;
 
     @Autowired
-    private WorkerService workerService;
+    private GraduateService graduateService;
 
     @Operation(summary = "Send message", description = "Sends a message in a booking chat")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Message sent successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid input"),
-        @ApiResponse(responseCode = "401", description = "User or worker not authenticated"),
+        @ApiResponse(responseCode = "401", description = "User or graduate not authenticated"),
         @ApiResponse(responseCode = "404", description = "Booking or sender not found")
     })
     @PostMapping("/send")
@@ -73,8 +72,8 @@ public class MessageController {
                     .getId();
                 senderName = username;
             } else {
-                senderId = workerService.findByUsername(username)
-                    .orElseThrow(() -> new Exception("Worker not found for username: " + username))
+                senderId = graduateService.findByUsername(username)
+                    .orElseThrow(() -> new Exception("Graduate not found for username: " + username))
                     .getId();
                 senderName = username;
             }
@@ -90,7 +89,7 @@ public class MessageController {
                 message.getId(),
                 message.getBooking().getId(),
                 message.getSenderUser() != null ? message.getSenderUser().getId() : null,
-                message.getSenderWorker() != null ? message.getSenderWorker().getId() : null,
+                message.getSenderGraduate() != null ? message.getSenderGraduate().getId() : null,
                 senderName,
                 message.getContent(),
                 message.getSentAt()
@@ -106,7 +105,7 @@ public class MessageController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "List of messages"),
         @ApiResponse(responseCode = "400", description = "Invalid input"),
-        @ApiResponse(responseCode = "401", description = "User or worker not authenticated"),
+        @ApiResponse(responseCode = "401", description = "User or graduate not authenticated"),
         @ApiResponse(responseCode = "404", description = "Booking not found")
     })
     @GetMapping("/booking/{bookingId}")
@@ -124,8 +123,8 @@ public class MessageController {
             Long requesterId = isUser ? userService.findByUsername(username)
                     .orElseThrow(() -> new Exception("User not found for username: " + username))
                     .getId() :
-                workerService.findByUsername(username)
-                    .orElseThrow(() -> new Exception("Worker not found for username: " + username))
+                graduateService.findByUsername(username)
+                    .orElseThrow(() -> new Exception("Graduate not found for username: " + username))
                     .getId();
 
             List<MessageDTO> messages = messageService.getBookingMessages(bookingId, requesterId, isUser);
@@ -154,7 +153,7 @@ public void sendWebSocketMessage(
     boolean isUser = userService.findByUsername(username).isPresent();
     Long senderId = isUser
         ? userService.findByUsername(username).orElseThrow(() -> new Exception("User not found")).getId()
-        : workerService.findByUsername(username).orElseThrow(() -> new Exception("Worker not found")).getId();
+        : graduateService.findByUsername(username).orElseThrow(() -> new Exception("Graduate not found")).getId();
 
     Message message = messageService.sendMessage(bookingId, senderId, isUser, request.getContent());
 
@@ -162,7 +161,7 @@ public void sendWebSocketMessage(
         message.getId(),
         message.getBooking().getId(),
         message.getSenderUser() != null ? message.getSenderUser().getId() : null,
-        message.getSenderWorker() != null ? message.getSenderWorker().getId() : null,
+        message.getSenderGraduate() != null ? message.getSenderGraduate().getId() : null,
         username,
         message.getContent(),
         message.getSentAt()

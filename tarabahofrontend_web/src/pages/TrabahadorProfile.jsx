@@ -11,7 +11,7 @@ import { FaStar, FaCertificate, FaPlus, FaTrash, FaPen, FaCheck, FaTimes } from 
 
 const TrabahadorProfile = () => {
   const navigate = useNavigate();
-  const [worker, setWorker] = useState(null);
+  const [graduate, setWorker] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [profileImage, setProfileImage] = useState("/placeholder.svg");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -51,25 +51,25 @@ const TrabahadorProfile = () => {
           navigate("/signin");
           return;
         }
-        const response = await axios.get(`${BACKEND_URL}/api/worker/all`, {
+        const response = await axios.get(`${BACKEND_URL}/api/graduate/all`, {
           withCredentials: true,
         });
-        const workerData = response.data.find((w) => w.username === username);
-        if (workerData) {
-          setWorker(workerData);
+        const graduateData = response.data.find((w) => w.username === username);
+        if (graduateData) {
+          setWorker(graduateData);
           setEditValues({
-            email: workerData.email || "",
-            address: workerData.address || "",
-            birthday: workerData.birthday || "",
-            biography: workerData.biography || "",
+            email: graduateData.email || "",
+            address: graduateData.address || "",
+            birthday: graduateData.birthday || "",
+            biography: graduateData.biography || "",
             password: "",
           });
-          setProfileImage(workerData.profilePicture || "/placeholder.svg");
+          setProfileImage(graduateData.profilePicture || "/placeholder.svg");
 
-          // Fetch pending category requests for this worker
+          // Fetch pending category requests for this graduate
           try {
             const pendingRequestsResponse = await axios.get(
-              `${BACKEND_URL}/api/worker/${workerData.id}/category-requests`,
+              `${BACKEND_URL}/api/graduate/${graduateData.id}/category-requests`,
               { withCredentials: true }
             );
             setPendingRequests(pendingRequestsResponse.data);
@@ -90,7 +90,7 @@ const TrabahadorProfile = () => {
           setError("Worker not found.");
         }
       } catch (err) {
-        console.error("Failed to fetch worker:", err);
+        console.error("Failed to fetch graduate:", err);
         setError("Failed to load profile. Please try again.");
       }
     };
@@ -110,7 +110,7 @@ const TrabahadorProfile = () => {
 
     try {
       const response = await axios.post(
-        `${BACKEND_URL}/api/worker/${worker.id}/upload-picture`,
+        `${BACKEND_URL}/api/graduate/${graduate.id}/upload-picture`,
         uploadData,
         {
           withCredentials: true,
@@ -158,12 +158,12 @@ const TrabahadorProfile = () => {
 
   const handleCancelEdit = () => {
     setEditingField(null);
-    if (worker) {
+    if (graduate) {
       setEditValues({
-        email: worker.email || "",
-        address: worker.address || "",
-        birthday: worker.birthday || "",
-        biography: worker.biography || "",
+        email: graduate.email || "",
+        address: graduate.address || "",
+        birthday: graduate.birthday || "",
+        biography: graduate.biography || "",
         password: "",
       });
     }
@@ -172,7 +172,7 @@ const TrabahadorProfile = () => {
   const handleSaveField = async (field) => {
     try {
       const updatedWorker = {
-        ...worker,
+        ...graduate,
         [field]: editValues[field],
       };
 
@@ -181,7 +181,7 @@ const TrabahadorProfile = () => {
       }
 
       const response = await axios.put(
-        `${BACKEND_URL}/api/worker/${worker.id}`,
+        `${BACKEND_URL}/api/graduate/${graduate.id}`,
         updatedWorker,
         {
           withCredentials: true,
@@ -199,7 +199,7 @@ const TrabahadorProfile = () => {
 
   const handleAddCertificate = async () => {
     try {
-      console.log("Adding certificate for worker ID:", worker.id);
+      console.log("Adding certificate for graduate ID:", graduate.id);
       const certificateData = new FormData();
       certificateData.append("courseName", newCertificate.courseName);
       certificateData.append("certificateNumber", newCertificate.certificateNumber);
@@ -209,7 +209,7 @@ const TrabahadorProfile = () => {
       }
 
       const response = await axios.post(
-        `${BACKEND_URL}/api/certificate/worker/${worker.id}`,
+        `${BACKEND_URL}/api/certificate/graduate/${graduate.id}`,
         certificateData,
         {
           withCredentials: true,
@@ -251,7 +251,7 @@ const TrabahadorProfile = () => {
       certificateData.append("courseName", newCertificate.courseName);
       certificateData.append("certificateNumber", newCertificate.certificateNumber);
       certificateData.append("issueDate", newCertificate.issueDate);
-      certificateData.append("workerId", worker.id);
+      certificateData.append("graduateId", graduate.id);
       if (newCertificate.certificateFile) {
         certificateData.append("certificateFile", newCertificate.certificateFile);
       }
@@ -368,13 +368,13 @@ const TrabahadorProfile = () => {
       }
       const requestData = { categoryName: category.name };
       const response = await axios.post(
-        `${BACKEND_URL}/api/worker/${worker.id}/request-category`,
+        `${BACKEND_URL}/api/graduate/${graduate.id}/request-category`,
         requestData,
         { withCredentials: true, headers: { "Content-Type": "application/json" } }
       );
       // Refresh pending requests
       const pendingRequestsResponse = await axios.get(
-        `${BACKEND_URL}/api/worker/${worker.id}/category-requests`,
+        `${BACKEND_URL}/api/graduate/${graduate.id}/category-requests`,
         { withCredentials: true }
       );
       setPendingRequests(pendingRequestsResponse.data);
@@ -395,7 +395,7 @@ const TrabahadorProfile = () => {
 
   // Determine verification status
   const getVerificationStatus = () => {
-    if (worker?.isVerified) {
+    if (graduate?.isVerified) {
       return { text: "Verified", className: "verified-status" };
     } else if (pendingRequests.length > 0) {
       return { text: "Semi Verified", className: "semi-verified-status" };
@@ -411,7 +411,7 @@ const TrabahadorProfile = () => {
 
       <div className="trabahador-profile-content">
         <div className="trabahador-profile-header">
-          <h1 className="trabahador-profile-heading">TRABAHADOR PROFILE</h1>
+          <h1 className="trabahador-profile-heading">GRADUATE PROFILE</h1>
           <button className="logout-button" onClick={handleLogout}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
@@ -464,7 +464,7 @@ const TrabahadorProfile = () => {
 
               <div className="profile-credentials-section">
                 <h3>
-                  {worker ? `${worker.firstName} ${worker.lastName}` : "Loading..."}
+                  {graduate ? `${graduate.firstName} ${graduate.lastName}` : "Loading..."}
                   <span
                     className={verificationStatus.className}
                     title={`Worker is ${verificationStatus.text.toLowerCase()}`}
@@ -472,19 +472,19 @@ const TrabahadorProfile = () => {
                     ({verificationStatus.text})
                   </span>
                 </h3>
-                <p className="worker-bio">{worker?.biography || "No biography available"}</p>
-                <div className="worker-rating">
+                <p className="graduate-bio">{graduate?.biography || "No biography available"}</p>
+                <div className="graduate-rating">
                   {[...Array(5)].map((_, i) => (
                     <FaStar
                       key={i}
-                      className={`star-icon ${i < Math.floor(worker?.stars || 0) ? "filled" : ""}`}
+                      className={`star-icon ${i < Math.floor(graduate?.stars || 0) ? "filled" : ""}`}
                     />
                   ))}
                 </div>
-                <div className="worker-rate">₱{worker?.hourly || "63.00"}/hour</div>
-                <div className="worker-skills">
-                  {worker?.categories?.length > 0 ? (
-                    worker.categories.map((category, index) => (
+                <div className="graduate-rate">₱{graduate?.hourly || "63.00"}/hour</div>
+                <div className="graduate-skills">
+                  {graduate?.categories?.length > 0 ? (
+                    graduate.categories.map((category, index) => (
                       <span key={index} className="skill-tag">
                         {category.name}
                       </span>
@@ -492,7 +492,7 @@ const TrabahadorProfile = () => {
                   ) : (
                     <span className="skill-tag">No categories assigned</span>
                   )}
-                  {worker?.isVerified && (
+                  {graduate?.isVerified && (
                     <button className="add-skill-btn" onClick={handleRequestCategoryClick}>
                       <FaPlus /> Request Category
                     </button>
@@ -506,7 +506,7 @@ const TrabahadorProfile = () => {
                 <div className="detail-label">Full Name:</div>
                 <div className="detail-value">
                   <div className="detail-text">
-                    {worker ? `${worker.firstName} ${worker.lastName}` : "Loading..."}
+                    {graduate ? `${graduate.firstName} ${graduate.lastName}` : "Loading..."}
                     
                   </div>
                 </div>
@@ -536,7 +536,7 @@ const TrabahadorProfile = () => {
                     </>
                   ) : (
                     <>
-                      <div className="detail-text">{worker?.email || "N/A"}</div>
+                      <div className="detail-text">{graduate?.email || "N/A"}</div>
                       <button className="edit-button" onClick={() => handleEditField("email")}>
                         <FaPen />
                       </button>
@@ -548,7 +548,7 @@ const TrabahadorProfile = () => {
               <div className="detail-row">
                 <div className="detail-label">Contact no.:</div>
                 <div className="detail-value">
-                  <div className="detail-text">{worker?.phoneNumber || "N/A"}</div>
+                  <div className="detail-text">{graduate?.phoneNumber || "N/A"}</div>
                 </div>
               </div>
 
@@ -576,7 +576,7 @@ const TrabahadorProfile = () => {
                     </>
                   ) : (
                     <>
-                      <div className="detail-text">{worker?.address || "N/A"}</div>
+                      <div className="detail-text">{graduate?.address || "N/A"}</div>
                       <button className="edit-button" onClick={() => handleEditField("address")}>
                         <FaPen />
                       </button>
@@ -609,7 +609,7 @@ const TrabahadorProfile = () => {
                     </>
                   ) : (
                     <>
-                      <div className="detail-text">{worker?.birthday || "N/A"}</div>
+                      <div className="detail-text">{graduate?.birthday || "N/A"}</div>
                       <button className="edit-button" onClick={() => handleEditField("birthday")}>
                         <FaPen />
                       </button>
@@ -641,7 +641,7 @@ const TrabahadorProfile = () => {
                     </>
                   ) : (
                     <>
-                      <div className="detail-text">{worker?.biography || "N/A"}</div>
+                      <div className="detail-text">{graduate?.biography || "N/A"}</div>
                       <button className="edit-button" onClick={() => handleEditField("biography")}>
                         <FaPen />
                       </button>
@@ -762,8 +762,8 @@ const TrabahadorProfile = () => {
                 </div>
               )}
 
-              {worker?.certificates?.length > 0 ? (
-                worker.certificates.map((certificate) => (
+              {graduate?.certificates?.length > 0 ? (
+                graduate.certificates.map((certificate) => (
                   <div key={certificate.id} className="certificate-item">
                     {editingCertificateId === certificate.id ? (
                       <div className="certificate-form">
@@ -910,7 +910,7 @@ const TrabahadorProfile = () => {
                 {categories
                   .filter(
                     (category) =>
-                      !worker.categories?.some((cat) => cat.name === category.name) &&
+                      !graduate.categories?.some((cat) => cat.name === category.name) &&
                       !pendingRequests.some((req) => req.category.name === category.name)
                   )
                   .map((category) => (

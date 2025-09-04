@@ -30,7 +30,7 @@ public class Category {
 
     @ManyToMany(mappedBy = "categories")
     @JsonIgnore
-    private List<Worker> workers = new ArrayList<>();
+    private List<Graduate> graduates = new ArrayList<>();
 
     // Getters and setters
     public Long getId() { return id; }
@@ -43,6 +43,6 @@ public class Category {
     public void setBannerUrl(String bannerUrl) { this.bannerUrl = bannerUrl; }
     public String getTagline() { return tagline; }
     public void setTagline(String tagline) { this.tagline = tagline; }
-    public List<Worker> getWorkers() { return workers; }
-    public void setWorkers(List<Worker> workers) { this.workers = workers; }
+    public List<Graduate> getGraduates() { return graduates; }
+    public void setGraduates(List<Graduate> graduates) { this.graduates = graduates; }
 }

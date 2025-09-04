@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import { useState, Component } from "react"
-import { useNavigate, Link } from "react-router-dom"
-import axios from "axios"
-import logo from "../assets/images/logowhite.png"
-import styles from "../styles/signin.module.css"
+import { useState, Component } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
+import logo from "../assets/images/logowhite.png";
+import styles from "../styles/signin.module.css";
 
 // Error Boundary Component
 class ErrorBoundary extends Component {
-  state = { hasError: false }
+  state = { hasError: false };
 
   static getDerivedStateFromError(error) {
-    return { hasError: true }
+    return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("ErrorBoundary caught an error:", error, errorInfo)
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
   }
 
   render() {
@@ -26,123 +26,138 @@ class ErrorBoundary extends Component {
             <div className={styles.errorContainer}>
               <h2>Something went wrong</h2>
               <p>Please try refreshing the page or contact support.</p>
-              <button onClick={() => window.location.reload()} className={styles.primaryButton}>
+              <button
+                onClick={() => window.location.reload()}
+                className={styles.primaryButton}
+              >
                 Refresh
               </button>
             </div>
           </div>
         </div>
-      )
+      );
     }
-    return this.props.children
+    return this.props.children;
   }
 }
 
 const SignIn = () => {
-  const [loginType, setLoginType] = useState("user") // Default to user login
-  const [userCredentials, setUserCredentials] = useState({ username: "", password: "" })
-  const [trabahadorCredentials, setTrabahadorCredentials] = useState({ username: "", password: "" })
-  const [error, setError] = useState("") // Ensure error is always a string
-  const [isLoading, setIsLoading] = useState(false) // Added loading state
-  const [showUserPassword, setShowUserPassword] = useState(false)
-  const [showTrabahadorPassword, setShowTrabahadorPassword] = useState(false)
+  const [loginType, setLoginType] = useState("user");
+  const [userCredentials, setUserCredentials] = useState({
+    username: "",
+    password: "",
+  });
+  const [graduateCredentials, setGraduateCredentials] = useState({
+    username: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showUserPassword, setShowUserPassword] = useState(false);
+  const [showGraduatePassword, setShowGraduatePassword] = useState(false);
 
-  const navigate = useNavigate()
-  const backendUrl = import.meta.env.VITE_BACKEND_URL 
+  const navigate = useNavigate();
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
   const handleUserLogin = async (e) => {
-    e.preventDefault()
-    setError("")
-    setIsLoading(true)
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
-    const payload = userCredentials
-    console.log("User Login Payload:", payload)
+    const payload = userCredentials;
+    console.log("User Login Payload:", payload);
 
     try {
       const res = await axios.post(`${backendUrl}/api/user/token`, payload, {
         withCredentials: true,
-      })
+      });
+      console.log("User login successful, token set in cookie:", res.data);
 
-      console.log("User login successful, token set in cookie")
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userType", "user");
+      localStorage.setItem("username", userCredentials.username);
+      console.log("Stored in localStorage:", {
+        isLoggedIn: "true",
+        userType: "user",
+        username: userCredentials.username,
+      });
 
-      // Store user info in localStorage
-      localStorage.setItem("isLoggedIn", "true")
-      localStorage.setItem("userType", "user")
-      localStorage.setItem("username", userCredentials.username)
-
-      // Simulate a delay to show loading state (e.g., 1.5 seconds)
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // Redirect to user dashboard
-      navigate("/user-browse")
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      navigate("/user-browse");
     } catch (err) {
-      // Ensure error is a string
-      const errorMessage = err.response?.data?.message || err.response?.data?.error || "Invalid username or password"
-      setError(errorMessage)
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Invalid username or password";
+      console.error("User login failed:", errorMessage);
+      setError(errorMessage);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const handleTrabahadorLogin = async (e) => {
-    e.preventDefault()
-    setError("")
-    setIsLoading(true)
+  const handleGraduateLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
-    const payload = trabahadorCredentials
-    console.log("Trabahador Login Payload:", payload)
+    const payload = graduateCredentials;
+    console.log("Graduate Login Payload:", payload);
 
     try {
-      const res = await axios.post(`${backendUrl}/api/worker/token`, payload, {
+      const res = await axios.post(`${backendUrl}/api/graduate/token`, payload, {
         withCredentials: true,
-      })
+      });
+      console.log("Graduate login successful, token set in cookie:", res.data);
 
-      console.log("Trabahador login successful, token set in cookie")
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userType", "graduate");
+      localStorage.setItem("username", graduateCredentials.username);
+      console.log("Stored in localStorage:", {
+        isLoggedIn: "true",
+        userType: "graduate",
+        username: graduateCredentials.username,
+      });
 
-      // Store trabahador info in localStorage
-      localStorage.setItem("isLoggedIn", "true")
-      localStorage.setItem("userType", "trabahador")
-      localStorage.setItem("username", trabahadorCredentials.username)
-
-      // Simulate a delay to show loading state (e.g., 1.5 seconds)
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // Redirect to trabahador dashboard
-      navigate("/trabahador-homepage")
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      navigate("/graduate-homepage");
     } catch (err) {
-      // Ensure error is a string
-      const errorMessage = err.response?.data?.message || err.response?.data?.error || "Invalid username or password"
-      setError(errorMessage)
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Invalid username or password";
+      console.error("Graduate login failed:", errorMessage);
+      setError(errorMessage);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${backendUrl}/oauth2/authorization/google`
-  }
+    console.log("Initiating Google OAuth login");
+    window.location.href = `${backendUrl}/oauth2/authorization/google`;
+  };
 
   const handleBack = () => {
-    navigate("/")
-  }
-
+    console.log("Navigating back to home");
+    navigate("/");
+  };
 
   const handleUserInputChange = (e) => {
-    const { name, value } = e.target
-    setUserCredentials((prev) => ({ ...prev, [name]: value }))
-    setError("") // Clear error on input change
-  }
+    const { name, value } = e.target;
+    setUserCredentials((prev) => ({ ...prev, [name]: value }));
+    setError("");
+  };
 
-  const handleTrabahadorInputChange = (e) => {
-    const { name, value } = e.target
-    setTrabahadorCredentials((prev) => ({ ...prev, [name]: value }))
-    setError("") // Clear error on input change
-  }
+  const handleGraduateInputChange = (e) => {
+    const { name, value } = e.target;
+    setGraduateCredentials((prev) => ({ ...prev, [name]: value }));
+    setError("");
+  };
 
   return (
     <ErrorBoundary>
       <div className={styles.signinPage}>
-        {/* Full-screen loading overlay */}
         {isLoading && (
           <div className={`${styles.loadingOverlay} ${isLoading ? styles.active : ""}`}>
             <span className={styles.loadingSpinner}></span>
@@ -150,26 +165,54 @@ const SignIn = () => {
         )}
         <div className={styles.signinOverlay}></div>
 
-        <button className={styles.backButton} onClick={handleBack} aria-label="Go back">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15 19L8 12L15 5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <button
+          className={styles.backButton}
+          onClick={handleBack}
+          aria-label="Go back"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M15 19L8 12L15 5"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
 
         <div className={styles.signinContainer}>
           <div className={styles.signinContent}>
-            {/* Left side - Branding and information */}
             <div className={styles.signinLeft}>
               <div className={styles.brandContainer}>
-                <img src={logo || "/placeholder.svg"} alt="Tarabaho Logo" className={styles.brandLogo} />
+                <img
+                  src={logo || "/placeholder.svg"}
+                  alt="Tarabaho Logo"
+                  className={styles.brandLogo}
+                />
               </div>
               <div className={styles.brandMessage}>
                 <h2>Find Work. Hire Talent.</h2>
-                <p>Connect with skilled workers or find opportunities that match your skills.</p>
+                <p>
+                  Connect with skilled graduates or find opportunities that match
+                  your skills.
+                </p>
                 <div className={styles.featureList}>
                   <div className={styles.featureItem}>
                     <div className={styles.featureIcon}>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
                         <path
                           d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.709 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.7649 14.1003 1.98232 16.07 2.85999"
                           stroke="white"
@@ -186,11 +229,17 @@ const SignIn = () => {
                         />
                       </svg>
                     </div>
-                    <span>Verified workers</span>
+                    <span>Verified graduates</span>
                   </div>
                   <div className={styles.featureItem}>
                     <div className={styles.featureIcon}>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
                         <path
                           d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
                           stroke="white"
@@ -211,7 +260,13 @@ const SignIn = () => {
                   </div>
                   <div className={styles.featureItem}>
                     <div className={styles.featureIcon}>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
                         <path
                           d="M20 6L9 17L4 12"
                           stroke="white"
@@ -227,23 +282,26 @@ const SignIn = () => {
               </div>
             </div>
 
-            {/* Right side - Login form */}
             <div className={styles.signinRight}>
               <div className={styles.formContainer}>
                 <div className={styles.formHeader}>
                   <h2>Sign In</h2>
                   <div className={styles.loginTypeTabs}>
                     <button
-                      className={`${styles.tabButton} ${loginType === "user" ? styles.active : ""}`}
+                      className={`${styles.tabButton} ${
+                        loginType === "user" ? styles.active : ""
+                      }`}
                       onClick={() => setLoginType("user")}
                     >
                       Client
                     </button>
                     <button
-                      className={`${styles.tabButton} ${loginType === "trabahador" ? styles.active : ""}`}
-                      onClick={() => setLoginType("trabahador")}
+                      className={`${styles.tabButton} ${
+                        loginType === "graduate" ? styles.active : ""
+                      }`}
+                      onClick={() => setLoginType("graduate")}
                     >
-                      Trabahador
+                      Graduate
                     </button>
                   </div>
                 </div>
@@ -321,8 +379,16 @@ const SignIn = () => {
                       </Link>
                     </div>
 
-                    <button type="submit" className={styles.submitButton} disabled={isLoading}>
-                      {isLoading ? <span className={styles.loadingSpinner}></span> : "Sign In"}
+                    <button
+                      type="submit"
+                      className={styles.submitButton}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <span className={styles.loadingSpinner}></span>
+                      ) : (
+                        "Sign In"
+                      )}
                     </button>
 
                     <div className={styles.divider}>
@@ -335,7 +401,11 @@ const SignIn = () => {
                       className={styles.googleButton}
                       disabled={isLoading}
                     >
-                      <svg className={styles.googleIcon} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <svg
+                        className={styles.googleIcon}
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
                         <path
                           d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                           fill="#4285F4"
@@ -358,24 +428,30 @@ const SignIn = () => {
 
                     <div className={styles.registerPrompt}>
                       <span>Don't have an account?</span>
-                      <Link to="/register-user" className={styles.registerLink}>
+                      <Link
+                        to="/register-user"
+                        className={styles.registerLink}
+                      >
                         Register as Client
                       </Link>
                     </div>
                   </form>
                 ) : (
-                  <form onSubmit={handleTrabahadorLogin} className={styles.loginForm}>
+                  <form
+                    onSubmit={handleGraduateLogin}
+                    className={styles.loginForm}
+                  >
                     <div className={styles.formGroup}>
-                      <label htmlFor="trabahador-username">Username</label>
+                      <label htmlFor="graduate-username">Username</label>
                       <div className={styles.inputWrapper}>
                         <div className={styles.inputIconWrapper}></div>
                         <input
-                          id="trabahador-username"
+                          id="graduate-username"
                           type="text"
                           name="username"
                           placeholder="Enter your username"
-                          value={trabahadorCredentials.username}
-                          onChange={handleTrabahadorInputChange}
+                          value={graduateCredentials.username}
+                          onChange={handleGraduateInputChange}
                           required
                           disabled={isLoading}
                           className={styles.formInput}
@@ -384,16 +460,16 @@ const SignIn = () => {
                     </div>
 
                     <div className={styles.formGroup}>
-                      <label htmlFor="trabahador-password">Password</label>
+                      <label htmlFor="graduate-password">Password</label>
                       <div className={styles.inputWrapper}>
                         <div className={styles.inputIconWrapper}></div>
                         <input
-                          id="trabahador-password"
-                          type={showTrabahadorPassword ? "text" : "password"}
+                          id="graduate-password"
+                          type={showGraduatePassword ? "text" : "password"}
                           name="password"
                           placeholder="Enter your password"
-                          value={trabahadorCredentials.password}
-                          onChange={handleTrabahadorInputChange}
+                          value={graduateCredentials.password}
+                          onChange={handleGraduateInputChange}
                           required
                           disabled={isLoading}
                           className={styles.formInput}
@@ -401,10 +477,12 @@ const SignIn = () => {
                         <button
                           type="button"
                           className={styles.togglePassword}
-                          onClick={() => setShowTrabahadorPassword((prev) => !prev)}
+                          onClick={() =>
+                            setShowGraduatePassword((prev) => !prev)
+                          }
                           tabIndex={-1}
                         >
-                          {showTrabahadorPassword ? "Hide" : "Show"}
+                          {showGraduatePassword ? "Hide" : "Show"}
                         </button>
                       </div>
                     </div>
@@ -417,29 +495,34 @@ const SignIn = () => {
 
                     <button
                       type="submit"
-                      className={`${styles.submitButton} ${styles.trabahadorButton}`}
+                      className={`${styles.submitButton} ${styles.graduateButton}`}
                       disabled={isLoading}
                     >
-                      {isLoading ? <span className={styles.loadingSpinner}></span> : "Sign In"}
+                      {isLoading ? (
+                        <span className={styles.loadingSpinner}></span>
+                      ) : (
+                        "Sign In"
+                      )}
                     </button>
 
                     <div className={styles.registerPrompt}>
                       <span>Don't have an account?</span>
-                      <Link to="/register-worker" className={styles.registerLink}>
-                        Register as Trabahador
+                      <Link
+                        to="/register-graduate"
+                        className={styles.registerLink}
+                      >
+                        Register as Graduate
                       </Link>
                     </div>
                   </form>
                 )}
-
-          
               </div>
             </div>
           </div>
         </div>
       </div>
     </ErrorBoundary>
-  )
-}
+  );
+};
 
-export default SignIn
+export default SignIn;

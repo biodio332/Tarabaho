@@ -26,7 +26,7 @@ import tarabaho.tarabaho.service.UserService;
 @RestController
 @RequestMapping("/api/rating")
 @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
-@Tag(name = "Rating Controller", description = "Handles rating submissions and retrieval for workers")
+@Tag(name = "Rating Controller", description = "Handles rating submissions and retrieval for graduates")
 public class RatingController {
 
     @Autowired
@@ -35,19 +35,19 @@ public class RatingController {
     @Autowired
     private UserService userService;
 
-    @Operation(summary = "Get ratings by worker ID", description = "Retrieve all ratings for a specific worker")
+    @Operation(summary = "Get ratings by graduate ID", description = "Retrieve all ratings for a specific graduate")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Ratings retrieved successfully"),
         @ApiResponse(responseCode = "401", description = "User not authenticated"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    @GetMapping("/worker/{workerId}")
-    public ResponseEntity<?> getRatingsByWorkerId(@PathVariable Long workerId, Authentication authentication) {
+    @GetMapping("/graduate/{graduateId}")
+    public ResponseEntity<?> getRatingsByGraduateId(@PathVariable Long graduateId, Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated.");
             }
-            List<Rating> ratings = ratingService.getRatingsByWorkerId(workerId);
+            List<Rating> ratings = ratingService.getRatingsByGraduateId(graduateId);
             return ResponseEntity.ok(ratings);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

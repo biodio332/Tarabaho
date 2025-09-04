@@ -12,11 +12,11 @@ import tarabaho.tarabaho.entity.Booking;
 import tarabaho.tarabaho.entity.BookingStatus;
 import tarabaho.tarabaho.entity.Message;
 import tarabaho.tarabaho.entity.User;
-import tarabaho.tarabaho.entity.Worker;
+import tarabaho.tarabaho.entity.Graduate;
 import tarabaho.tarabaho.repository.BookingRepository;
 import tarabaho.tarabaho.repository.MessageRepository;
 import tarabaho.tarabaho.repository.UserRepository;
-import tarabaho.tarabaho.repository.WorkerRepository;
+import tarabaho.tarabaho.repository.GraduateRepository;
 
 @Service
 public class MessageService {
@@ -31,7 +31,7 @@ public class MessageService {
     private UserRepository userRepository;
 
     @Autowired
-    private WorkerRepository workerRepository;
+    private GraduateRepository graduateRepository;
 
     public Message sendMessage(Long bookingId, Long senderId, boolean isUser, String content) throws Exception {
         System.out.println("MessageService.sendMessage: bookingId=" + bookingId + ", senderId=" + senderId + ", isUser=" + isUser + ", content=" + content);
@@ -43,7 +43,7 @@ public class MessageService {
             });
         System.out.println("MessageService.sendMessage: Booking found, status=" + booking.getStatus() + 
             ", user_id=" + (booking.getUser() != null ? booking.getUser().getId() : "null") + 
-            ", worker_id=" + (booking.getWorker() != null ? booking.getWorker().getId() : "null"));
+            ", graduate_id=" + (booking.getGraduate() != null ? booking.getGraduate().getId() : "null"));
 
         if (booking.getStatus() != BookingStatus.ACCEPTED && booking.getStatus() != BookingStatus.IN_PROGRESS) {
             System.err.println("MessageService.sendMessage: Invalid booking status: " + booking.getStatus());
@@ -69,18 +69,18 @@ public class MessageService {
             message.setSenderUser(sender);
             System.out.println("MessageService.sendMessage: Set sender user: " + senderId);
         } else {
-            Worker sender = workerRepository.findById(senderId)
+            Graduate sender = graduateRepository.findById(senderId)
                 .orElseThrow(() -> {
-                    System.err.println("MessageService.sendMessage: Worker not found: " + senderId);
-                    return new Exception("Worker not found");
+                    System.err.println("MessageService.sendMessage: Graduate not found: " + senderId);
+                    return new Exception("Graduate not found");
                 });
-            if (!sender.equals(booking.getWorker())) {
-                System.err.println("MessageService.sendMessage: Worker " + senderId + " not authorized for booking " + bookingId + 
-                    ", booking worker_id=" + (booking.getWorker() != null ? booking.getWorker().getId() : "null"));
-                throw new Exception("Worker not authorized for this booking");
+            if (!sender.equals(booking.getGraduate())) {
+                System.err.println("MessageService.sendMessage: Graduate " + senderId + " not authorized for booking " + bookingId + 
+                    ", booking graduate_id=" + (booking.getGraduate() != null ? booking.getGraduate().getId() : "null"));
+                throw new Exception("Graduate not authorized for this booking");
             }
-            message.setSenderWorker(sender);
-            System.out.println("MessageService.sendMessage: Set sender worker: " + senderId);
+            message.setSenderGraduate(sender);
+            System.out.println("MessageService.sendMessage: Set sender graduate: " + senderId);
         }
 
         Message savedMessage = messageRepository.save(message);
@@ -101,9 +101,9 @@ public class MessageService {
             System.err.println("MessageService.getBookingMessages: User " + requesterId + " not authorized for booking " + bookingId);
             throw new Exception("User not authorized for this booking");
         }
-        if (!isUser && (booking.getWorker() == null || !booking.getWorker().getId().equals(requesterId))) {
-            System.err.println("MessageService.getBookingMessages: Worker " + requesterId + " not authorized for booking " + bookingId);
-            throw new Exception("Worker not authorized for this booking");
+        if (!isUser && (booking.getGraduate() == null || !booking.getGraduate().getId().equals(requesterId))) {
+            System.err.println("MessageService.getBookingMessages: Graduate " + requesterId + " not authorized for booking " + bookingId);
+            throw new Exception("Graduate not authorized for this booking");
         }
 
         List<Message> messages = messageRepository.findByBookingOrderBySentAtAsc(booking);
@@ -111,12 +111,12 @@ public class MessageService {
             .map(message -> {
                 String senderName = message.getSenderUser() != null ? 
                     message.getSenderUser().getUsername() : 
-                    (message.getSenderWorker() != null ? message.getSenderWorker().getUsername() : "Unknown");
+                    (message.getSenderGraduate() != null ? message.getSenderGraduate().getUsername() : "Unknown");
                 return new MessageDTO(
                     message.getId(),
                     message.getBooking().getId(),
                     message.getSenderUser() != null ? message.getSenderUser().getId() : null,
-                    message.getSenderWorker() != null ? message.getSenderWorker().getId() : null,
+                    message.getSenderGraduate() != null ? message.getSenderGraduate().getId() : null,
                     senderName,
                     message.getContent(),
                     message.getSentAt()

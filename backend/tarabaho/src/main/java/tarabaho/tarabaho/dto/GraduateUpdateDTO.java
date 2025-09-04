@@ -1,6 +1,6 @@
 package tarabaho.tarabaho.dto;
 
-public class WorkerUpdateDTO {
+public class GraduateUpdateDTO {
     private String email;
     private String phoneNumber;
     private String address;

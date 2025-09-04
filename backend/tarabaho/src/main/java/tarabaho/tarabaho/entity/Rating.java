@@ -22,8 +22,8 @@ public class Rating {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "worker_id", nullable = false)
-    private Worker worker;
+    @JoinColumn(name = "graduate_id", nullable = false)
+    private Graduate graduate;
 
     @ManyToOne
     @JoinColumn(name = "booking_id", nullable = false)
@@ -40,8 +40,8 @@ public class Rating {
     public void setId(Long id) { this.id = id; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
-    public Worker getWorker() { return worker; }
-    public void setWorker(Worker worker) { this.worker = worker; }
+    public Graduate getGraduate() { return graduate; }
+    public void setGraduate(Graduate graduate) { this.graduate = graduate; }
     public Booking getBooking() { return booking; }
     public void setBooking(Booking booking) { this.booking = booking; }
     public Integer getRating() { return rating; }

@@ -11,7 +11,7 @@ import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "bookmarks", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"user_id", "worker_id"})
+    @UniqueConstraint(columnNames = {"user_id", "graduate_id"})
 })
 public class Bookmark {
 
@@ -24,14 +24,14 @@ public class Bookmark {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "worker_id", nullable = false)
-    private Worker worker;
+    @JoinColumn(name = "graduate_id", nullable = false)
+    private Graduate graduate;
 
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
-    public Worker getWorker() { return worker; }
-    public void setWorker(Worker worker) { this.worker = worker; }
+    public Graduate getGraduate() { return graduate; }
+    public void setGraduate(Graduate graduate) { this.graduate = graduate; }
 }

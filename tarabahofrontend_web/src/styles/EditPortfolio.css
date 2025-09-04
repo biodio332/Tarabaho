@@ -1,0 +1,114 @@
+.edit-portfolio-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.edit-portfolio-container {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.edit-portfolio-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group label {
+  font-weight: bold;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.array-item {
+  border: 1px solid #eee;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+
+.add-button,
+.remove-button,
+.save-button,
+.cancel-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.add-button {
+  background-color: #4caf50;
+  color: white;
+}
+
+.remove-button {
+  background-color: #f44336;
+  color: white;
+}
+
+.save-button {
+  background-color: #2196f3;
+  color: white;
+}
+
+.cancel-button {
+  background-color: #ccc;
+  color: black;
+  text-decoration: none;
+  text-align: center;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-portfolio-loading,
+.edit-portfolio-error,
+.edit-portfolio-no-data,
+.edit-portfolio-success {
+  text-align: center;
+  padding: 20px;
+  border-radius: 4px;
+}
+
+.edit-portfolio-loading {
+  background: #e0f7fa;
+}
+
+.edit-portfolio-error {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.edit-portfolio-no-data {
+  background: #fff3e0;
+}
+
+.edit-portfolio-success {
+  background: #e8f5e9;
+  color: #2e7d32;
+}

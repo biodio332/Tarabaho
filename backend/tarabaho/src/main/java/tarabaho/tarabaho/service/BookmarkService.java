@@ -8,10 +8,10 @@ import org.springframework.stereotype.Service;
 
 import tarabaho.tarabaho.entity.Bookmark;
 import tarabaho.tarabaho.entity.User;
-import tarabaho.tarabaho.entity.Worker;
+import tarabaho.tarabaho.entity.Graduate;
 import tarabaho.tarabaho.repository.BookmarkRepository;
 import tarabaho.tarabaho.repository.UserRepository;
-import tarabaho.tarabaho.repository.WorkerRepository;
+import tarabaho.tarabaho.repository.GraduateRepository;
 
 @Service
 public class BookmarkService {
@@ -23,39 +23,39 @@ public class BookmarkService {
     private UserRepository userRepository;
 
     @Autowired
-    private WorkerRepository workerRepository;
+    private GraduateRepository graduateRepository;
 
-    public boolean toggleBookmark(Long userId, Long workerId) throws Exception {
+    public boolean toggleBookmark(Long userId, Long graduateId) throws Exception {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new Exception("User not found"));
-        Worker worker = workerRepository.findById(workerId)
-            .orElseThrow(() -> new Exception("Worker not found"));
+        Graduate graduate = graduateRepository.findById(graduateId)
+            .orElseThrow(() -> new Exception("Graduate not found"));
 
-        Optional<Bookmark> existingBookmark = bookmarkRepository.findByUserAndWorker(user, worker);
+        Optional<Bookmark> existingBookmark = bookmarkRepository.findByUserAndGraduate(user, graduate);
         if (existingBookmark.isPresent()) {
             bookmarkRepository.delete(existingBookmark.get());
             return false; // Bookmark removed
         } else {
             Bookmark bookmark = new Bookmark();
             bookmark.setUser(user);
-            bookmark.setWorker(worker);
+            bookmark.setGraduate(graduate);
             bookmarkRepository.save(bookmark);
             return true; // Bookmark added
         }
     }
 
-    public boolean isBookmarked(Long userId, Long workerId) throws Exception {
+    public boolean isBookmarked(Long userId, Long graduateId) throws Exception {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new Exception("User not found"));
-        Worker worker = workerRepository.findById(workerId)
-            .orElseThrow(() -> new Exception("Worker not found"));
-        return bookmarkRepository.findByUserAndWorker(user, worker).isPresent();
+        Graduate graduate = graduateRepository.findById(graduateId)
+            .orElseThrow(() -> new Exception("Graduate not found"));
+        return bookmarkRepository.findByUserAndGraduate(user, graduate).isPresent();
     }
 
-    public List<Worker> getBookmarkedWorkers(Long userId) throws Exception {
+    public List<Graduate> getBookmarkedGraduates(Long userId) throws Exception {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new Exception("User not found"));
         List<Bookmark> bookmarks = bookmarkRepository.findByUser(user);
-        return bookmarks.stream().map(Bookmark::getWorker).toList();
+        return bookmarks.stream().map(Bookmark::getGraduate).toList();
     }
 }

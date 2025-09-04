@@ -14,11 +14,11 @@ import tarabaho.tarabaho.entity.Category;
 import tarabaho.tarabaho.entity.PaymentConfirmationStatus;
 import tarabaho.tarabaho.entity.PaymentMethod;
 import tarabaho.tarabaho.entity.User;
-import tarabaho.tarabaho.entity.Worker;
+import tarabaho.tarabaho.entity.Graduate;
 import tarabaho.tarabaho.repository.BookingRepository;
 import tarabaho.tarabaho.repository.CategoryRepository;
 import tarabaho.tarabaho.repository.UserRepository;
-import tarabaho.tarabaho.repository.WorkerRepository;
+import tarabaho.tarabaho.repository.GraduateRepository;
 
 @Service
 public class BookingService {
@@ -30,7 +30,7 @@ public class BookingService {
     private UserRepository userRepository;
 
     @Autowired
-    private WorkerRepository workerRepository;
+    private GraduateRepository graduateRepository;
 
     @Autowired
     private CategoryRepository categoryRepository;
@@ -68,7 +68,7 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
-    public Booking createCategoryBooking(Long userId, Long workerId, String categoryName, String paymentMethod, String jobDetails) throws Exception {
+    public Booking createCategoryBooking(Long userId, Long graduateId, String categoryName, String paymentMethod, String jobDetails) throws Exception {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new Exception("User not found"));
         if (!user.getIsVerified()) {
@@ -80,10 +80,10 @@ public class BookingService {
             throw new Exception("User already has an active or pending booking");
         }
 
-        Worker worker = workerRepository.findById(workerId)
-            .orElseThrow(() -> new Exception("Worker not found"));
-        if (!worker.getIsAvailable() || !isWorkerAvailable(worker)) {
-            throw new Exception("Worker is not available");
+        Graduate graduate = graduateRepository.findById(graduateId)
+            .orElseThrow(() -> new Exception("Graduate not found"));
+        if (!graduate.getIsAvailable() || !isGraduateAvailable(graduate)) {
+            throw new Exception("Graduate is not available");
         }
 
         Category category = categoryRepository.findByName(categoryName);
@@ -93,7 +93,7 @@ public class BookingService {
 
         Booking booking = new Booking();
         booking.setUser(user);
-        booking.setWorker(worker);
+        booking.setGraduate(graduate);
         booking.setCategory(category);
         booking.setType(BookingType.CATEGORY);
         booking.setStatus(BookingStatus.PENDING);
@@ -105,39 +105,39 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
-    public Booking acceptBooking(Long bookingId, Long workerId) throws Exception {
+    public Booking acceptBooking(Long bookingId, Long graduateId) throws Exception {
         Booking booking = bookingRepository.findById(bookingId)
             .orElseThrow(() -> new Exception("Booking not found"));
-        Worker worker = workerRepository.findById(workerId)
-            .orElseThrow(() -> new Exception("Worker not found"));
+        Graduate graduate = graduateRepository.findById(graduateId)
+            .orElseThrow(() -> new Exception("Graduate not found"));
 
-        if (booking.getType() == BookingType.URGENT && booking.getWorker() != null) {
+        if (booking.getType() == BookingType.URGENT && booking.getGraduate() != null) {
             throw new Exception("Urgent booking already assigned");
         }
-        if (booking.getType() == BookingType.CATEGORY && !worker.equals(booking.getWorker())) {
-            throw new Exception("Worker not assigned to this booking");
+        if (booking.getType() == BookingType.CATEGORY && !graduate.equals(booking.getGraduate())) {
+            throw new Exception("Graduate not assigned to this booking");
         }
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new Exception("Booking is not pending");
         }
-        if (!worker.getIsAvailable() || !isWorkerAvailable(worker)) {
-            throw new Exception("Worker is not available");
+        if (!graduate.getIsAvailable() || !isGraduateAvailable(graduate)) {
+            throw new Exception("Graduate is not available");
         }
 
-        booking.setWorker(worker);
+        booking.setGraduate(graduate);
         booking.setStatus(BookingStatus.ACCEPTED);
         booking.setUpdatedAt(LocalDateTime.now());
         return bookingRepository.save(booking);
     }
 
-    public Booking rejectBooking(Long bookingId, Long workerId) throws Exception {
+    public Booking rejectBooking(Long bookingId, Long graduateId) throws Exception {
         Booking booking = bookingRepository.findById(bookingId)
             .orElseThrow(() -> new Exception("Booking not found"));
-        Worker worker = workerRepository.findById(workerId)
-            .orElseThrow(() -> new Exception("Worker not found"));
+        Graduate graduate = graduateRepository.findById(graduateId)
+            .orElseThrow(() -> new Exception("Graduate not found"));
 
-        if (booking.getType() == BookingType.CATEGORY && !worker.equals(booking.getWorker())) {
-            throw new Exception("Worker not assigned to this booking");
+        if (booking.getType() == BookingType.CATEGORY && !graduate.equals(booking.getGraduate())) {
+            throw new Exception("Graduate not assigned to this booking");
         }
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new Exception("Booking is not pending");
@@ -184,14 +184,14 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
-    public Booking completeBooking(Long bookingId, Long workerId, Double amount) throws Exception {
+    public Booking completeBooking(Long bookingId, Long graduateId, Double amount) throws Exception {
         Booking booking = bookingRepository.findById(bookingId)
             .orElseThrow(() -> new Exception("Booking not found"));
-        Worker worker = workerRepository.findById(workerId)
-            .orElseThrow(() -> new Exception("Worker not found"));
+        Graduate graduate = graduateRepository.findById(graduateId)
+            .orElseThrow(() -> new Exception("Graduate not found"));
 
-        if (!booking.getWorker().equals(worker)) {
-            throw new Exception("Worker not assigned to this booking");
+        if (!booking.getGraduate().equals(graduate)) {
+            throw new Exception("Graduate not assigned to this booking");
         }
         if (booking.getStatus() != BookingStatus.IN_PROGRESS) {
             throw new Exception("Booking must be in progress to mark as completed");
@@ -208,14 +208,14 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
-    public Booking confirmPayment(Long bookingId, Long workerId, Double amount) throws Exception {
+    public Booking confirmPayment(Long bookingId, Long graduateId, Double amount) throws Exception {
         Booking booking = bookingRepository.findById(bookingId)
             .orElseThrow(() -> new Exception("Booking not found"));
-        Worker worker = workerRepository.findById(workerId)
-            .orElseThrow(() -> new Exception("Worker not found"));
+        Graduate graduate = graduateRepository.findById(graduateId)
+            .orElseThrow(() -> new Exception("Graduate not found"));
 
-        if (!booking.getWorker().equals(worker)) {
-            throw new Exception("Worker not assigned to this booking");
+        if (!booking.getGraduate().equals(graduate)) {
+            throw new Exception("Graduate not assigned to this booking");
         }
         if (booking.getStatus() != BookingStatus.COMPLETED) {
             throw new Exception("Booking must be marked as completed by client");
@@ -243,11 +243,11 @@ public class BookingService {
             throw new Exception("User not authorized to accept completion");
         }
         if (booking.getStatus() != BookingStatus.WORKER_COMPLETED) {
-            throw new Exception("Booking must be marked as completed by worker");
+            throw new Exception("Booking must be marked as completed by graduate");
         }
         // Removed the payment confirmation check
         // if (booking.getPaymentConfirmationStatus() != PaymentConfirmationStatus.CONFIRMED) {
-        //     throw new Exception("Payment must be confirmed by worker before accepting completion");
+        //     throw new Exception("Payment must be confirmed by graduate before accepting completion");
         // }
 
         booking.setStatus(BookingStatus.COMPLETED);
@@ -261,18 +261,18 @@ public class BookingService {
         return bookingRepository.findByUser(user);
     }
 
-    public List<Booking> getWorkerBookings(Long workerId) throws Exception {
-        Worker worker = workerRepository.findById(workerId)
-            .orElseThrow(() -> new Exception("Worker not found"));
-        return bookingRepository.findByWorker(worker);
+    public List<Booking> getGraduateBookings(Long graduateId) throws Exception {
+        Graduate graduate = graduateRepository.findById(graduateId)
+            .orElseThrow(() -> new Exception("Graduate not found"));
+        return bookingRepository.findByGraduate(graduate);
     }
 
     public List<Booking> getPendingUrgentBookings() {
         return bookingRepository.findByStatuses(Arrays.asList(BookingStatus.PENDING));
     }
 
-    private boolean isWorkerAvailable(Worker worker) {
-        List<Booking> activeBookings = bookingRepository.findActiveBookingsByWorker(worker);
+    private boolean isGraduateAvailable(Graduate graduate) {
+        List<Booking> activeBookings = bookingRepository.findActiveBookingsByGraduate(graduate);
         return activeBookings.isEmpty();
     }
 

@@ -1,6 +1,6 @@
 package tarabaho.tarabaho.dto;
 
-public class WorkerRegisterDTO {
+public class GraduateRegisterDTO {
     private String username;
     private String password;
     private String firstName;

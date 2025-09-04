@@ -22,62 +22,59 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import tarabaho.tarabaho.entity.Certificate;
-import tarabaho.tarabaho.entity.Worker;
+import tarabaho.tarabaho.entity.Graduate;
 import tarabaho.tarabaho.service.CertificateService;
-import tarabaho.tarabaho.service.WorkerService;
+import tarabaho.tarabaho.service.GraduateService;
 
 @RestController
 @RequestMapping("/api/certificate")
 @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
-@Tag(name = "Certificate Controller", description = "Handles management of TESDA certificates for workers")
+@Tag(name = "Certificate Controller", description = "Handles management of TESDA certificates for graduates")
 public class CertificateController {
 
     @Autowired
     private CertificateService certificateService;
 
     @Autowired
-    private WorkerService workerService;
+    private GraduateService graduateService;
 
-    @Operation(summary = "Add a certificate for a worker", description = "Associates a new TESDA certificate with a worker, including an optional file upload. Requires authentication for logged-in users.")
+    @Operation(summary = "Add a certificate for a graduate", description = "Associates a new TESDA certificate with a graduate, including an optional file upload. Requires JWT authentication.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Certificate added successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid input or unauthorized"),
-        @ApiResponse(responseCode = "401", description = "Worker not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Worker not found")
+        @ApiResponse(responseCode = "400", description = "Invalid input"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing token"),
+        @ApiResponse(responseCode = "404", description = "Graduate not found")
     })
-    @PostMapping("/worker/{workerId}")
+    @PostMapping("/graduate/{graduateId}")
     public ResponseEntity<?> addCertificate(
-            @PathVariable Long workerId,
+            @PathVariable Long graduateId,
             @RequestPart("courseName") String courseName,
             @RequestPart("certificateNumber") String certificateNumber,
             @RequestPart("issueDate") String issueDate,
+            @RequestPart(value = "portfolioId", required = false) Long portfolioId, // Make optional
             @RequestPart(value = "certificateFile", required = false) MultipartFile certificateFile,
             Authentication authentication
     ) {
         try {
-            System.out.println("CertificateController: Adding certificate for worker ID: " + workerId);
-
-            // Validate worker existence
-            Worker worker = workerService.findById(workerId);
-            if (worker == null) {
-                System.out.println("CertificateController: Worker not found for ID: " + workerId);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Worker not found.");
+            System.out.println("CertificateController: Adding certificate for graduate ID: " + graduateId + ", portfolioId: " + portfolioId);
+            if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("CertificateController: Invalid or missing authentication");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: Invalid or missing token.");
             }
 
-            // Enforce authentication for logged-in users
-            if (authentication != null && authentication.isAuthenticated()) {
-                String username = authentication.getName();
-                Worker authenticatedWorker = workerService.findByUsername(username)
-                        .orElseThrow(() -> new Exception("Worker not found for username: " + username));
-                if (!authenticatedWorker.getId().equals(workerId)) {
-                    System.out.println("CertificateController: Unauthorized attempt to add certificate for another worker");
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                            .body("Unauthorized: Cannot add certificate for another worker.");
-                }
+            String username = authentication.getName();
+            Graduate graduate = graduateService.findById(graduateId);
+            if (graduate == null) {
+                System.out.println("CertificateController: Graduate not found for ID: " + graduateId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found.");
+            }
+            if (!graduate.getUsername().equals(username)) {
+                System.out.println("CertificateController: Unauthorized - username mismatch: " + username);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: User does not match graduate.");
             }
 
             Certificate certificate = certificateService.addCertificate(
-                workerId, courseName, certificateNumber, issueDate, certificateFile
+                graduateId, courseName, certificateNumber, issueDate, certificateFile, portfolioId
             );
             System.out.println("CertificateController: Certificate added, ID: " + certificate.getId());
             return ResponseEntity.ok(certificate);
@@ -87,12 +84,12 @@ public class CertificateController {
         }
     }
 
-    @Operation(summary = "Update a certificate", description = "Updates an existing TESDA certificate for the authenticated worker, including an optional file upload")
+    @Operation(summary = "Update a certificate", description = "Updates an existing TESDA certificate for the authenticated graduate, including an optional file upload")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Certificate updated successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid input or unauthorized"),
-        @ApiResponse(responseCode = "401", description = "Worker not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Certificate or worker not found")
+        @ApiResponse(responseCode = "401", description = "Graduate not authenticated"),
+        @ApiResponse(responseCode = "404", description = "Certificate or graduate not found")
     })
     @PutMapping("/{certificateId}")
     public ResponseEntity<?> updateCertificate(
@@ -100,32 +97,33 @@ public class CertificateController {
             @RequestPart("courseName") String courseName,
             @RequestPart("certificateNumber") String certificateNumber,
             @RequestPart("issueDate") String issueDate,
-            @RequestPart("workerId") String workerIdStr,
+            @RequestPart("graduateId") String graduateIdStr,
+            @RequestPart(value = "portfolioId", required = false) Long portfolioId, // Make optional
             @RequestPart(value = "certificateFile", required = false) MultipartFile certificateFile,
             Authentication authentication
     ) {
         try {
             System.out.println("CertificateController: Updating certificate ID: " + certificateId);
             if (authentication == null || !authentication.isAuthenticated()) {
-                System.out.println("CertificateController: Worker not authenticated");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Worker not authenticated.");
+                System.out.println("CertificateController: Graduate not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
             }
 
             String username = authentication.getName();
-            Long workerId = Long.parseLong(workerIdStr);
-            Worker worker = workerService.findById(workerId);
-            if (worker == null) {
-                System.out.println("CertificateController: Worker not found for ID: " + workerId);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Worker not found.");
+            Long graduateId = Long.parseLong(graduateIdStr);
+            Graduate graduate = graduateService.findById(graduateId);
+            if (graduate == null) {
+                System.out.println("CertificateController: Graduate not found for ID: " + graduateId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found.");
             }
-            if (!worker.getUsername().equals(username)) {
-                System.out.println("CertificateController: Unauthorized attempt to update certificate for another worker");
+            if (!graduate.getUsername().equals(username)) {
+                System.out.println("CertificateController: Unauthorized attempt to update certificate for another graduate");
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Unauthorized: Cannot update certificate for another worker.");
+                        .body("Unauthorized: Cannot update certificate for another graduate.");
             }
 
             Certificate updatedCertificate = certificateService.updateCertificate(
-                certificateId, workerId, courseName, certificateNumber, issueDate, certificateFile
+                certificateId, graduateId, courseName, certificateNumber, issueDate, certificateFile, portfolioId
             );
             System.out.println("CertificateController: Certificate updated, ID: " + updatedCertificate.getId());
             return ResponseEntity.ok(updatedCertificate);
@@ -135,12 +133,12 @@ public class CertificateController {
         }
     }
 
-    @Operation(summary = "Delete a certificate", description = "Deletes a TESDA certificate for the authenticated worker")
+    @Operation(summary = "Delete a certificate", description = "Deletes a TESDA certificate for the authenticated graduate")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Certificate deleted successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid input or unauthorized"),
-        @ApiResponse(responseCode = "401", description = "Worker not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Certificate or worker not found")
+        @ApiResponse(responseCode = "401", description = "Graduate not authenticated"),
+        @ApiResponse(responseCode = "404", description = "Certificate or graduate not found")
     })
     @DeleteMapping("/{certificateId}")
     public ResponseEntity<?> deleteCertificate(
@@ -150,21 +148,21 @@ public class CertificateController {
         try {
             System.out.println("CertificateController: Deleting certificate ID: " + certificateId);
             if (authentication == null || !authentication.isAuthenticated()) {
-                System.out.println("CertificateController: Worker not authenticated");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Worker not authenticated.");
+                System.out.println("CertificateController: Graduate not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
             }
 
             String username = authentication.getName();
-            Worker worker = workerService.findByUsername(username)
-                    .orElseThrow(() -> new Exception("Worker not found for username: " + username));
+            Graduate graduate = graduateService.findByUsername(username)
+                    .orElseThrow(() -> new Exception("Graduate not found for username: " + username));
 
             Certificate certificate = certificateService.getCertificateById(certificateId)
                     .orElseThrow(() -> new Exception("Certificate not found with ID: " + certificateId));
 
-            if (!certificate.getWorker().getId().equals(worker.getId())) {
-                System.out.println("CertificateController: Unauthorized attempt to delete certificate for another worker");
+            if (!certificate.getGraduate().getId().equals(graduate.getId())) {
+                System.out.println("CertificateController: Unauthorized attempt to delete certificate for another graduate");
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Unauthorized: Cannot delete certificate for another worker.");
+                        .body("Unauthorized: Cannot delete certificate for another graduate.");
             }
 
             certificateService.deleteCertificate(certificateId);
@@ -176,32 +174,32 @@ public class CertificateController {
         }
     }
 
-    @Operation(summary = "Get certificates for a worker", description = "Retrieves all certificates associated with a worker")
+    @Operation(summary = "Get certificates for a graduate", description = "Retrieves all certificates associated with a graduate")
     @ApiResponse(responseCode = "200", description = "List of certificates returned successfully")
-    @GetMapping("/worker/{workerId}")
-    public ResponseEntity<List<Certificate>> getCertificatesByWorkerId(
-            @PathVariable Long workerId,
+    @GetMapping("/graduate/{graduateId}")
+    public ResponseEntity<List<Certificate>> getCertificatesByGraduateId(
+            @PathVariable Long graduateId,
             Authentication authentication
     ) {
         try {
-            System.out.println("CertificateController: Fetching certificates for worker ID: " + workerId);
+            System.out.println("CertificateController: Fetching certificates for graduate ID: " + graduateId);
             if (authentication == null || !authentication.isAuthenticated()) {
-                System.out.println("CertificateController: Worker not authenticated");
+                System.out.println("CertificateController: Graduate not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
 
             String username = authentication.getName();
-            Worker worker = workerService.findByUsername(username)
-                    .orElseThrow(() -> new Exception("Worker not found for username: " + username));
+            Graduate graduate = graduateService.findByUsername(username)
+                    .orElseThrow(() -> new Exception("Graduate not found for username: " + username));
 
-            if (!worker.getId().equals(workerId)) {
-                System.out.println("CertificateController: Unauthorized attempt to fetch certificates for another worker");
+            if (!graduate.getId().equals(graduateId)) {
+                System.out.println("CertificateController: Unauthorized attempt to fetch certificates for another graduate");
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(null);
             }
 
-            List<Certificate> certificates = certificateService.getCertificatesByWorkerId(workerId);
-            System.out.println("CertificateController: Retrieved " + certificates.size() + " certificates for worker ID: " + workerId);
+            List<Certificate> certificates = certificateService.getCertificatesByGraduateId(graduateId);
+            System.out.println("CertificateController: Retrieved " + certificates.size() + " certificates for graduate ID: " + graduateId);
             return ResponseEntity.ok(certificates);
         } catch (Exception e) {
             System.out.println("CertificateController: Failed to fetch certificates: " + e.getMessage());
@@ -212,7 +210,7 @@ public class CertificateController {
     @Operation(summary = "Get a certificate by ID", description = "Retrieves a specific certificate by its ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Certificate returned successfully"),
-        @ApiResponse(responseCode = "401", description = "Worker not authenticated"),
+        @ApiResponse(responseCode = "401", description = "Graduate not authenticated"),
         @ApiResponse(responseCode = "404", description = "Certificate not found")
     })
     @GetMapping("/{certificateId}")
@@ -223,28 +221,16 @@ public class CertificateController {
         try {
             System.out.println("CertificateController: Fetching certificate ID: " + certificateId);
             if (authentication == null || !authentication.isAuthenticated()) {
-                System.out.println("CertificateController: Worker not authenticated");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Worker not authenticated.");
+                System.out.println("CertificateController: Graduate not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
             }
-
-            String username = authentication.getName();
-            Worker worker = workerService.findByUsername(username)
-                    .orElseThrow(() -> new Exception("Worker not found for username: " + username));
 
             Certificate certificate = certificateService.getCertificateById(certificateId)
                     .orElseThrow(() -> new Exception("Certificate not found with ID: " + certificateId));
-
-            if (!certificate.getWorker().getId().equals(worker.getId())) {
-                System.out.println("CertificateController: Unauthorized attempt to fetch certificate for another worker");
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Unauthorized: Cannot fetch certificate for another worker.");
-            }
-
-            System.out.println("CertificateController: Certificate retrieved, ID: " + certificateId);
             return ResponseEntity.ok(certificate);
         } catch (Exception e) {
             System.out.println("CertificateController: Failed to fetch certificate: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to fetch certificate: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Certificate not found: " + e.getMessage());
         }
     }
 }

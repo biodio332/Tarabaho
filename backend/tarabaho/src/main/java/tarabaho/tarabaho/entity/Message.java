@@ -28,8 +28,8 @@ public class Message {
     private User senderUser;
 
     @ManyToOne
-    @JoinColumn(name = "sender_worker_id")
-    private Worker senderWorker;
+    @JoinColumn(name = "sender_graduate_id")
+    private Graduate senderGraduate;
 
     @Column(nullable = false)
     private String content;
@@ -43,8 +43,8 @@ public class Message {
     public void setBooking(Booking booking) { this.booking = booking; }
     public User getSenderUser() { return senderUser; }
     public void setSenderUser(User senderUser) { this.senderUser = senderUser; }
-    public Worker getSenderWorker() { return senderWorker; }
-    public void setSenderWorker(Worker senderWorker) { this.senderWorker = senderWorker; }
+    public Graduate getSenderGraduate() { return senderGraduate; }
+    public void setSenderGraduate(Graduate senderGraduate) { this.senderGraduate = senderGraduate; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
     public LocalDateTime getSentAt() { return sentAt; }

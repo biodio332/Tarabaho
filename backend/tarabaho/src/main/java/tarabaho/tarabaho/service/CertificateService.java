@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import tarabaho.tarabaho.entity.Certificate;
-import tarabaho.tarabaho.entity.Worker;
+import tarabaho.tarabaho.entity.Graduate;
 import tarabaho.tarabaho.repository.CertificateRepository;
-import tarabaho.tarabaho.repository.WorkerRepository;
+import tarabaho.tarabaho.repository.GraduateRepository;
 
 @Service
 public class CertificateService {
@@ -19,27 +19,29 @@ public class CertificateService {
     private CertificateRepository certificateRepository;
 
     @Autowired
-    private WorkerRepository workerRepository;
+    private GraduateRepository graduateRepository;
 
     @Autowired
     private SupabaseRestStorageService storageService;
 
     public Certificate addCertificate(
-            Long workerId,
+            Long graduateId,
             String courseName,
             String certificateNumber,
             String issueDate,
-            MultipartFile certificateFile
+            MultipartFile certificateFile,
+            Long portfolioId // Nullable
     ) throws Exception {
-        System.out.println("CertificateService: Adding certificate for worker ID: " + workerId);
-        Worker worker = workerRepository.findById(workerId)
-                .orElseThrow(() -> new Exception("Worker not found with id: " + workerId));
+        System.out.println("CertificateService: Adding certificate for graduate ID: " + graduateId + ", portfolioId: " + portfolioId);
+        Graduate graduate = graduateRepository.findById(graduateId)
+                .orElseThrow(() -> new Exception("Graduate not found with id: " + graduateId));
 
         Certificate certificate = new Certificate();
         certificate.setCourseName(courseName);
         certificate.setCertificateNumber(certificateNumber);
         certificate.setIssueDate(issueDate);
-        certificate.setWorker(worker);
+        certificate.setGraduate(graduate);
+        certificate.setPortfolioId(portfolioId); // Can be null
 
         if (certificateFile != null && !certificateFile.isEmpty()) {
             String publicUrl = storageService.uploadFile(certificateFile, "certificates");
@@ -53,23 +55,25 @@ public class CertificateService {
 
     public Certificate updateCertificate(
             Long certificateId,
-            Long workerId,
+            Long graduateId,
             String courseName,
             String certificateNumber,
             String issueDate,
-            MultipartFile certificateFile
+            MultipartFile certificateFile,
+            Long portfolioId // Nullable
     ) throws Exception {
         System.out.println("CertificateService: Updating certificate ID: " + certificateId);
         Certificate certificate = certificateRepository.findById(certificateId)
                 .orElseThrow(() -> new Exception("Certificate not found with id: " + certificateId));
 
-        Worker worker = workerRepository.findById(workerId)
-                .orElseThrow(() -> new Exception("Worker not found with id: " + workerId));
+        Graduate graduate = graduateRepository.findById(graduateId)
+                .orElseThrow(() -> new Exception("Graduate not found with id: " + graduateId));
 
         certificate.setCourseName(courseName);
         certificate.setCertificateNumber(certificateNumber);
         certificate.setIssueDate(issueDate);
-        certificate.setWorker(worker);
+        certificate.setGraduate(graduate);
+        certificate.setPortfolioId(portfolioId); // Can be null
 
         if (certificateFile != null && !certificateFile.isEmpty()) {
             // Delete old file from Supabase if exists
@@ -102,14 +106,7 @@ public class CertificateService {
         certificateRepository.deleteById(certificateId);
         System.out.println("CertificateService: Certificate deleted, ID: " + certificateId);
     }
-
-    public List<Certificate> getCertificatesByWorkerId(Long workerId) {
-        System.out.println("CertificateService: Fetching certificates for worker ID: " + workerId);
-        List<Certificate> certificates = certificateRepository.findByWorkerId(workerId);
-        System.out.println("CertificateService: Retrieved " + certificates.size() + " certificates");
-        return certificates;
-    }
-
+    
     public Optional<Certificate> getCertificateById(Long certificateId) {
         System.out.println("CertificateService: Fetching certificate ID: " + certificateId);
         Optional<Certificate> certificate = certificateRepository.findById(certificateId);
@@ -119,5 +116,26 @@ public class CertificateService {
             System.out.println("CertificateService: Certificate not found, ID: " + certificateId);
         }
         return certificate;
+    }
+
+    public void deleteCertificatesByPortfolioId(Long portfolioId) throws Exception {
+        System.out.println("CertificateService: Deleting certificates for portfolio ID: " + portfolioId);
+        List<Certificate> certificates = certificateRepository.findByPortfolioId(portfolioId);
+        for (Certificate certificate : certificates) {
+            if (certificate.getCertificateFilePath() != null) {
+                String fileName = certificate.getCertificateFilePath()
+                        .substring(certificate.getCertificateFilePath().lastIndexOf("/") + 1);
+                storageService.deleteFile("certificates", fileName);
+            }
+            certificateRepository.deleteById(certificate.getId());
+            System.out.println("CertificateService: Deleted certificate ID: " + certificate.getId());
+        }
+    }
+
+    public List<Certificate> getCertificatesByGraduateId(Long graduateId) {
+        System.out.println("CertificateService: Fetching certificates for graduate ID: " + graduateId);
+        List<Certificate> certificates = certificateRepository.findByGraduateId(graduateId);
+        System.out.println("CertificateService: Retrieved " + certificates.size() + " certificates");
+        return certificates;
     }
 }

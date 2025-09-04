@@ -22,8 +22,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import tarabaho.tarabaho.repository.AdminRepository;
+import tarabaho.tarabaho.repository.GraduateRepository;
 import tarabaho.tarabaho.repository.UserRepository;
-import tarabaho.tarabaho.repository.WorkerRepository;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -38,7 +38,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private AdminRepository adminRepository;
 
     @Autowired
-    private WorkerRepository workerRepository;
+    private GraduateRepository graduateRepository;
 
     private static final List<String> SKIP_FILTER_PATHS = Arrays.asList(
          "/chat",  //  <--- Skip the WebSocket endpoint
@@ -48,19 +48,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             "/api/user/login",
             "/api/user/register",
             "/api/user/token",
-            "/api/worker/register",
-            "/api/worker/check-duplicates",
-            "/api/worker/token",
-            "/api/worker/login",
-            "/api/worker/*/upload-initial-picture",
-            "/api/certificate/worker/**",
+            "/api/graduate/register",
+            "/api/graduate/check-duplicates",
+            "/api/graduate/token",
+            "/api/graduate/login",
+            "/api/graduate/*/upload-initial-picture",
+          
             "/oauth2/**",
             "/login/**",
             "/oauth2-success",
             "/profiles/**",
             "/swagger-ui/**",  // Added for Swagger UI
             "/v3/api-docs/**" , // Added for OpenAPI docs
-            "/api/worker/test-worker"
+            "/api/graduate/test-graduate"
     );
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
@@ -135,14 +135,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                             UserDetails userDetails = new User(userOptional.get().getUsername(), userOptional.get().getPassword(), Collections.emptyList());
                             setAuthentication(request, userDetails);
                         } else {
-                            // Check Worker
-                            Optional<tarabaho.tarabaho.entity.Worker> workerOptional = Optional.ofNullable(workerRepository.findByUsername(username));
-                            if (workerOptional.isPresent()) {
-                                System.out.println("JwtAuthFilter: Authenticated as Worker: " + username);
-                                UserDetails userDetails = new User(workerOptional.get().getUsername(), workerOptional.get().getPassword(), Collections.emptyList());
+                            // Check Graduate
+                            Optional<tarabaho.tarabaho.entity.Graduate> graduateOptional = Optional.ofNullable(graduateRepository.findByUsername(username));
+                            if (graduateOptional.isPresent()) {
+                                System.out.println("JwtAuthFilter: Authenticated as Graduate: " + username);
+                                UserDetails userDetails = new User(graduateOptional.get().getUsername(), graduateOptional.get().getPassword(), Collections.emptyList());
                                 setAuthentication(request, userDetails);
                             } else {
-                                System.out.println("JwtAuthFilter: No Admin, User, or Worker found for username: " + username);
+                                System.out.println("JwtAuthFilter: No Admin, User, or Graduate found for username: " + username);
                             }
                         }
                     }

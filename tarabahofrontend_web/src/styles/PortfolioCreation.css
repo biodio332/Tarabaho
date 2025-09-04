@@ -1,0 +1,539 @@
+/* PortfolioCreation.css */
+.portfolio-creation-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f4f4f9;
+  padding: 20px;
+}
+
+.portfolio-creation-container {
+  max-width: 800px;
+  width: 100%;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  margin: 20px auto;
+}
+
+.portfolio-creation-container h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.portfolio-error {
+  background-color: #ffe6e6;
+  color: #d32f2f;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.portfolio-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-group h3 {
+  font-size: 18px;
+  color: #333;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 5px;
+}
+
+.form-group label {
+  font-size: 14px;
+  color: #555;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+  background-color: #fafafa;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-group input:disabled,
+.form-group textarea:disabled,
+.form-group select:disabled {
+  background-color: #e0e0e0;
+  cursor: not-allowed;
+}
+
+/* Avatar Upload */
+.avatar-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ddd;
+}
+
+.avatar-help-text {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+.avatar-upload-button {
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.avatar-upload-button:hover {
+  background-color: #0056b3;
+}
+
+.avatar-upload-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Certificate Form and List */
+.certificate-form,
+.skill-form,
+.experience-form,
+.award-form,
+.education-form,
+.membership-form,
+.reference-form,
+.project-form {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  margin-top: 10px;
+}
+
+.certificate-upload,
+.project-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.certificate-preview,
+.project-preview {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.certificate-file-name,
+.project-file-name {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+.certificate-upload-button,
+.project-upload-button {
+  padding: 8px 16px;
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.certificate-upload-button:hover,
+.project-upload-button:hover {
+  background-color: #218838;
+}
+
+.certificate-upload-button:disabled,
+.project-upload-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.certificate-form-actions,
+.skill-form-actions,
+.experience-form-actions,
+.award-form-actions,
+.education-form-actions,
+.membership-form-actions,
+.reference-form-actions,
+.project-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.certificate-save-button,
+.skill-save-button,
+.experience-save-button,
+.award-save-button,
+.education-save-button,
+.membership-save-button,
+.reference-save-button,
+.project-save-button {
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.certificate-save-button:hover,
+.skill-save-button:hover,
+.experience-save-button:hover,
+.award-save-button:hover,
+.education-save-button:hover,
+.membership-save-button:hover,
+.reference-save-button:hover,
+.project-save-button:hover {
+  background-color: #0056b3;
+}
+
+.certificate-cancel-button,
+.skill-cancel-button,
+.experience-cancel-button,
+.award-cancel-button,
+.education-cancel-button,
+.membership-cancel-button,
+.reference-cancel-button,
+.project-cancel-button {
+  padding: 8px 16px;
+  background-color: #6c757d;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.certificate-cancel-button:hover,
+.skill-cancel-button:hover,
+.experience-cancel-button:hover,
+.award-cancel-button:hover,
+.education-cancel-button:hover,
+.membership-cancel-button:hover,
+.reference-cancel-button:hover,
+.project-cancel-button:hover {
+  background-color: #5a6268;
+}
+
+.certificate-save-button:disabled,
+.skill-save-button:disabled,
+.experience-save-button:disabled,
+.award-save-button:disabled,
+.education-save-button:disabled,
+.membership-save-button:disabled,
+.reference-save-button:disabled,
+.project-save-button:disabled,
+.certificate-cancel-button:disabled,
+.skill-cancel-button:disabled,
+.experience-cancel-button:disabled,
+.award-cancel-button:disabled,
+.education-cancel-button:disabled,
+.membership-cancel-button:disabled,
+.reference-cancel-button:disabled,
+.project-cancel-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.certificate-list,
+.skill-list,
+.experience-list,
+.award-list,
+.education-list,
+.membership-list,
+.reference-list,
+.project-list {
+  margin-top: 20px;
+}
+
+.certificate-list h4,
+.skill-list h4,
+.experience-list h4,
+.award-list h4,
+.education-list h4,
+.membership-list h4,
+.reference-list h4,
+.project-list h4 {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.certificate-item,
+.skill-item,
+.experience-item,
+.award-item,
+.education-item,
+.membership-item,
+.reference-item,
+.project-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  margin-bottom: 10px;
+}
+
+.certificate-details,
+.skill-details,
+.experience-details,
+.award-details,
+.education-details,
+.membership-details,
+.reference-details,
+.project-details {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.certificate-details img,
+.project-details img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.certificate-details div,
+.skill-details div,
+.experience-details div,
+.award-details div,
+.education-details div,
+.membership-details div,
+.reference-details div,
+.project-details div {
+  flex: 1;
+}
+
+.certificate-details h5,
+.skill-details h5,
+.experience-details h5,
+.award-details h5,
+.education-details h5,
+.membership-details h5,
+.reference-details h5,
+.project-details h5 {
+  font-size: 14px;
+  color: #333;
+  margin: 0;
+}
+
+.certificate-details p,
+.skill-details p,
+.experience-details p,
+.award-details p,
+.education-details p,
+.membership-details p,
+.reference-details p,
+.project-details p {
+  font-size: 12px;
+  color: #666;
+  margin: 5px 0 0;
+}
+
+.certificate-remove-button,
+.skill-remove-button,
+.experience-remove-button,
+.award-remove-button,
+.education-remove-button,
+.membership-remove-button,
+.reference-remove-button,
+.project-remove-button {
+  padding: 8px;
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s;
+}
+
+.certificate-remove-button:hover,
+.skill-remove-button:hover,
+.experience-remove-button:hover,
+.award-remove-button:hover,
+.education-remove-button:hover,
+.membership-remove-button:hover,
+.reference-remove-button:hover,
+.project-remove-button:hover {
+  background-color: #c82333;
+}
+
+.certificate-remove-button:disabled,
+.skill-remove-button:disabled,
+.experience-remove-button:disabled,
+.award-remove-button:disabled,
+.education-remove-button:disabled,
+.membership-remove-button:disabled,
+.reference-remove-button:disabled,
+.project-remove-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.add-certificate-button,
+.add-skill-button,
+.add-experience-button,
+.add-award-button,
+.add-education-button,
+.add-membership-button,
+.add-reference-button,
+.add-project-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 16px;
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.add-certificate-button:hover,
+.add-skill-button:hover,
+.add-experience-button:hover,
+.add-award-button:hover,
+.add-education-button:hover,
+.add-membership-button:hover,
+.add-reference-button:hover,
+.add-project-button:hover {
+  background-color: #218838;
+}
+
+.add-certificate-button:disabled,
+.add-skill-button:disabled,
+.add-experience-button:disabled,
+.add-award-button:disabled,
+.add-education-button:disabled,
+.add-membership-button:disabled,
+.add-reference-button:disabled,
+.add-project-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.portfolio-submit-button {
+  padding: 12px 24px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 20px;
+  align-self: center;
+  transition: background-color 0.3s;
+}
+
+.portfolio-submit-button:hover {
+  background-color: #0056b3;
+}
+
+.portfolio-submit-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .portfolio-creation-container {
+    padding: 20px;
+  }
+
+  .portfolio-creation-container h1 {
+    font-size: 20px;
+  }
+
+  .form-group h3 {
+    font-size: 16px;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    font-size: 13px;
+  }
+
+  .avatar-preview {
+    width: 80px;
+    height: 80px;
+  }
+
+  .certificate-preview,
+  .project-preview {
+    width: 60px;
+    height: 60px;
+  }
+
+  .certificate-details img,
+  .project-details img {
+    width: 50px;
+    height: 50px;
+  }
+}

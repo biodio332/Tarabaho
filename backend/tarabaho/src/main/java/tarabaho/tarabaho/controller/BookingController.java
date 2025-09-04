@@ -19,12 +19,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import tarabaho.tarabaho.entity.Booking;
+import tarabaho.tarabaho.entity.Graduate;
 import tarabaho.tarabaho.entity.User;
-import tarabaho.tarabaho.entity.Worker;
 import tarabaho.tarabaho.service.BookingService;
+import tarabaho.tarabaho.service.GraduateService;
 import tarabaho.tarabaho.service.RatingService;
 import tarabaho.tarabaho.service.UserService;
-import tarabaho.tarabaho.service.WorkerService;
 
 @RestController
 @RequestMapping("/api/booking")
@@ -39,7 +39,7 @@ public class BookingController {
     private UserService userService;
 
     @Autowired
-    private WorkerService workerService;
+    private GraduateService graduateService;
 
     @Autowired
     private RatingService ratingService;
@@ -77,12 +77,12 @@ public class BookingController {
         }
     }
 
-    @Operation(summary = "Create category-based booking", description = "Creates a booking for a specific worker")
+    @Operation(summary = "Create category-based booking", description = "Creates a booking for a specific graduate")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Booking created successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid input"),
         @ApiResponse(responseCode = "401", description = "User not authenticated or not verified"),
-        @ApiResponse(responseCode = "404", description = "User, worker, or category not found")
+        @ApiResponse(responseCode = "404", description = "User, graduate, or category not found")
     })
     @PostMapping("/category")
     public ResponseEntity<?> createCategoryBooking(
@@ -97,7 +97,7 @@ public class BookingController {
                 .orElseThrow(() -> new Exception("User not found"));
             Booking booking = bookingService.createCategoryBooking(
                 user.getId(),
-                request.getWorkerId(),
+                request.getGraduateId(),
                 request.getCategoryName(),
                 request.getPaymentMethod(),
                 request.getJobDetails()
@@ -108,12 +108,12 @@ public class BookingController {
         }
     }
 
-    @Operation(summary = "Accept booking", description = "Worker accepts a booking")
+    @Operation(summary = "Accept booking", description = "Graduate accepts a booking")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Booking accepted"),
         @ApiResponse(responseCode = "400", description = "Invalid input"),
-        @ApiResponse(responseCode = "401", description = "Worker not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Booking or worker not found")
+        @ApiResponse(responseCode = "401", description = "Graduate not authenticated"),
+        @ApiResponse(responseCode = "404", description = "Booking or graduate not found")
     })
     @PostMapping("/{bookingId}/accept")
     public ResponseEntity<?> acceptBooking(
@@ -122,23 +122,23 @@ public class BookingController {
     ) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Worker not authenticated.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
             }
-            Worker worker = workerService.findByUsername(authentication.getName())
-                .orElseThrow(() -> new Exception("Worker not found"));
-            Booking booking = bookingService.acceptBooking(bookingId, worker.getId());
+            Graduate graduate = graduateService.findByUsername(authentication.getName())
+                .orElseThrow(() -> new Exception("Graduate not found"));
+            Booking booking = bookingService.acceptBooking(bookingId, graduate.getId());
             return ResponseEntity.ok(booking);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
         }
     }
 
-    @Operation(summary = "Reject booking", description = "Worker rejects a booking")
+    @Operation(summary = "Reject booking", description = "Graduate rejects a booking")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Booking rejected"),
         @ApiResponse(responseCode = "400", description = "Invalid input"),
-        @ApiResponse(responseCode = "401", description = "Worker not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Booking or worker not found")
+        @ApiResponse(responseCode = "401", description = "Graduate not authenticated"),
+        @ApiResponse(responseCode = "404", description = "Booking or graduate not found")
     })
     @PostMapping("/{bookingId}/reject")
     public ResponseEntity<?> rejectBooking(
@@ -147,11 +147,11 @@ public class BookingController {
     ) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Worker not authenticated.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
             }
-            Worker worker = workerService.findByUsername(authentication.getName())
-                .orElseThrow(() -> new Exception("Worker not found"));
-            Booking booking = bookingService.rejectBooking(bookingId, worker.getId());
+            Graduate graduate = graduateService.findByUsername(authentication.getName())
+                .orElseThrow(() -> new Exception("Graduate not found"));
+            Booking booking = bookingService.rejectBooking(bookingId, graduate.getId());
             return ResponseEntity.ok(booking);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
@@ -208,12 +208,12 @@ public class BookingController {
         }
     }
 
-    @Operation(summary = "Complete booking", description = "Worker marks a booking as completed and sets the amount")
+    @Operation(summary = "Complete booking", description = "Graduate marks a booking as completed and sets the amount")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Booking marked as completed"),
         @ApiResponse(responseCode = "400", description = "Invalid input or booking not in progress"),
-        @ApiResponse(responseCode = "401", description = "Worker not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Booking or worker not found")
+        @ApiResponse(responseCode = "401", description = "Graduate not authenticated"),
+        @ApiResponse(responseCode = "404", description = "Booking or graduate not found")
     })
     @PostMapping("/{bookingId}/complete")
     public ResponseEntity<?> completeBooking(
@@ -223,23 +223,23 @@ public class BookingController {
     ) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Worker not authenticated.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
             }
-            Worker worker = workerService.findByUsername(authentication.getName())
-                .orElseThrow(() -> new Exception("Worker not found"));
-            Booking booking = bookingService.completeBooking(bookingId, worker.getId(), request.getAmount());
+            Graduate graduate = graduateService.findByUsername(authentication.getName())
+                .orElseThrow(() -> new Exception("Graduate not found"));
+            Booking booking = bookingService.completeBooking(bookingId, graduate.getId(), request.getAmount());
             return ResponseEntity.ok("Booking marked as completed successfully.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
         }
     }
 
-    @Operation(summary = "Confirm payment", description = "Worker confirms payment for a completed booking")
+    @Operation(summary = "Confirm payment", description = "Graduate confirms payment for a completed booking")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Payment confirmed successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid input or payment not pending"),
-        @ApiResponse(responseCode = "401", description = "Worker not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Booking or worker not found")
+        @ApiResponse(responseCode = "401", description = "Graduate not authenticated"),
+        @ApiResponse(responseCode = "404", description = "Booking or graduate not found")
     })
     @PostMapping("/{bookingId}/payment/confirm")
     public ResponseEntity<?> confirmPayment(
@@ -249,11 +249,11 @@ public class BookingController {
     ) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Worker not authenticated.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
             }
-            Worker worker = workerService.findByUsername(authentication.getName())
-                .orElseThrow(() -> new Exception("Worker not found"));
-            Booking booking = bookingService.confirmPayment(bookingId, worker.getId(), request.getAmount());
+            Graduate graduate = graduateService.findByUsername(authentication.getName())
+                .orElseThrow(() -> new Exception("Graduate not found"));
+            Booking booking = bookingService.confirmPayment(bookingId, graduate.getId(), request.getAmount());
             return ResponseEntity.ok(booking); // Return the Booking object as JSON
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
@@ -263,7 +263,7 @@ public class BookingController {
     @Operation(summary = "Accept completion", description = "User accepts the completion of a booking")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Completion accepted"),
-        @ApiResponse(responseCode = "400", description = "Invalid input or booking not marked as completed by worker"),
+        @ApiResponse(responseCode = "400", description = "Invalid input or booking not marked as completed by graduate"),
         @ApiResponse(responseCode = "401", description = "User not authenticated"),
         @ApiResponse(responseCode = "404", description = "Booking or user not found")
     })
@@ -332,24 +332,24 @@ public class BookingController {
         }
     }
 
-    @Operation(summary = "Get worker bookings", description = "Retrieve all bookings for a worker")
+    @Operation(summary = "Get graduate bookings", description = "Retrieve all bookings for a graduate")
     @ApiResponse(responseCode = "200", description = "List of bookings")
-    @GetMapping("/worker")
-    public ResponseEntity<?> getWorkerBookings(Authentication authentication) {
+    @GetMapping("/graduate")
+    public ResponseEntity<?> getGraduateBookings(Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Worker not authenticated.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
             }
-            Worker worker = workerService.findByUsername(authentication.getName())
-                .orElseThrow(() -> new Exception("Worker not found"));
-            List<Booking> bookings = bookingService.getWorkerBookings(worker.getId());
+            Graduate graduate = graduateService.findByUsername(authentication.getName())
+                .orElseThrow(() -> new Exception("Graduate not found"));
+            List<Booking> bookings = bookingService.getGraduateBookings(graduate.getId());
             return ResponseEntity.ok(bookings);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
         }
     }
 
-    @Operation(summary = "Get pending urgent bookings", description = "Retrieve all pending urgent bookings for workers")
+    @Operation(summary = "Get pending urgent bookings", description = "Retrieve all pending urgent bookings for graduates")
     @ApiResponse(responseCode = "200", description = "List of pending urgent bookings")
     @GetMapping("/urgent/pending")
     public ResponseEntity<List<Booking>> getPendingUrgentBookings() {
@@ -461,13 +461,13 @@ public class BookingController {
     }
 
     static class CategoryBookingRequest {
-        private Long workerId;
+        private Long graduateId;
         private String categoryName;
         private String paymentMethod;
         private String jobDetails;
 
-        public Long getWorkerId() { return workerId; }
-        public void setWorkerId(Long workerId) { this.workerId = workerId; }
+        public Long getGraduateId() { return graduateId; }
+        public void setGraduateId(Long graduateId) { this.graduateId = graduateId; }
         public String getCategoryName() { return categoryName; }
         public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
         public String getPaymentMethod() { return paymentMethod; }

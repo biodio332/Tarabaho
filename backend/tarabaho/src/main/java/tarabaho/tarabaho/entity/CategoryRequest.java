@@ -17,8 +17,8 @@ public class CategoryRequest {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "worker_id", nullable = false)
-    private Worker worker;
+    @JoinColumn(name = "graduate_id", nullable = false)
+    private Graduate graduate;
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
@@ -30,8 +30,8 @@ public class CategoryRequest {
     public CategoryRequest() {
     }
 
-    public CategoryRequest(Worker worker, Category category, String status) {
-        this.worker = worker;
+    public CategoryRequest(Graduate graduate, Category category, String status) {
+        this.graduate = graduate;
         this.category = category;
         this.status = status;
     }
@@ -45,12 +45,12 @@ public class CategoryRequest {
         this.id = id;
     }
 
-    public Worker getWorker() {
-        return worker;
+    public Graduate getGraduate() {
+        return graduate;
     }
 
-    public void setWorker(Worker worker) {
-        this.worker = worker;
+    public void setGraduate(Graduate graduate) {
+        this.graduate = graduate;
     }
 
     public Category getCategory() {

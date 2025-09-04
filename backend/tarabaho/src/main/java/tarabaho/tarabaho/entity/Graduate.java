@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
@@ -22,8 +23,9 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "workers")
-public class Worker {
+@Table(name = "graduates")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+public class Graduate{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -78,15 +80,15 @@ public class Worker {
 
     @ManyToMany
     @JoinTable(
-        name = "worker_categories",
-        joinColumns = @JoinColumn(name = "worker_id"),
+        name = "graduate_categories",
+        joinColumns = @JoinColumn(name = "graduate_id"),
         inverseJoinColumns = @JoinColumn(name = "category_id")
     )
     
     private List<Category> categories = new ArrayList<>();
 
-    @OneToMany(mappedBy = "worker", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("worker-certificates")
+    @OneToMany(mappedBy = "graduate", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("graduate-certificates")
     private List<Certificate> certificates = new ArrayList<>();
 
     // Ensure default values before persisting or updating
@@ -115,8 +117,8 @@ public class Worker {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Worker worker = (Worker) o;
-        return Objects.equals(id, worker.id);
+        Graduate graduate = (Graduate) o;
+        return Objects.equals(id, graduate.id);
     }
 
     @Override

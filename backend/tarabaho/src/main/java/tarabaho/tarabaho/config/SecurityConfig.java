@@ -50,16 +50,16 @@ public class SecurityConfig {
 					.requestMatchers("/api/admin/register", "/api/admin/login", "/api/admin/logout").permitAll()
 					.requestMatchers("/api/user/login", "/api/user/register", "/api/user/token").permitAll()
 					.requestMatchers(
-						"/api/worker/register",
-						"/api/worker/check-duplicates",
-						"/api/worker/token",
-						"/api/worker/login",
-						"/api/worker/{workerId}/upload-initial-picture",
+						"/api/graduate/register",
+						"/api/graduate/check-duplicates",
+						"/api/graduate/token",
+						"/api/graduate/login",
+						"/api/graduate/{graduateId}/upload-initial-picture",
 						"/swagger-ui/**", 
 						"/v3/api-docs/**",
-						"/api/worker/test-worker"
+						"/api/graduate/test-graduate"
 					).permitAll()
-					.requestMatchers("/api/certificate/worker/**").permitAll()
+					.requestMatchers("/api/certificate/graduate/**").authenticated()
 					.requestMatchers("/oauth2/**", "/login/**", "/oauth2-success").permitAll()
 					.requestMatchers("/profiles/**").permitAll()
 					.requestMatchers("/chat").permitAll() 
@@ -67,8 +67,9 @@ public class SecurityConfig {
 					.requestMatchers("/api/admin/**").authenticated()
 					.requestMatchers("/api/user/me", "/api/user/update-phone").authenticated()
 					.requestMatchers("/api/user/**").authenticated()
-					.requestMatchers("/api/worker/**").authenticated()
+					.requestMatchers("/api/graduate/**").authenticated()
 					.requestMatchers("/api/certificate/**").authenticated()
+					.requestMatchers("/api/portfolio").authenticated()
 					// All other requests require authentication
 					.anyRequest().authenticated();
 				System.out.println("Authorization rules configured.");

@@ -38,6 +38,8 @@ import Terms from "./pages/Terms"
 import Privacy from "./pages/Privacy"
 import SuccessPage from "./pages/SuccessPage"
 import FailedPage from "./pages/FailedPage"
+import PortfolioCreation from "./pages/PortfolioCreation"
+import ViewPortfolio from "./pages/ViewPortfolio";
 
 function App() {
   return (
@@ -47,7 +49,7 @@ function App() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/register" element={<Register />} />
         <Route path="/register-user" element={<RegisterUser />} />
-        <Route path="/register-worker" element={<RegisterTrabahador />} />
+        <Route path="/register-graduate" element={<RegisterTrabahador />} />
         <Route path="/register-admin" element={<RegisterAdmin />} />
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/about" element={<AboutUs />} />
@@ -60,10 +62,10 @@ function App() {
         <Route path="/admin/profile" element={<AdminProfile />} />
         <Route path="/admin/manage-users" element={<AdminManageUsers />} />
         <Route path="/admin/manage-trabahador" element={<AdminManageTrabahador />} />
-        <Route path="/admin/trabahador/:id" element={<TrabahadorDetails />} />
+        <Route path="/admin/graduate/:id" element={<TrabahadorDetails />} />
         <Route path="/admin/client/:id" element={<ClientDetails />} />
         <Route path="/admin/about" element={<AdminAboutUs />} />
-        <Route path="/admin/manage-trabahador/register-worker" element={<RegisterTrabahador/>}/>
+        <Route path="/admin/manage-trabahador/register-graduate" element={<RegisterTrabahador/>}/>
         <Route path="/admin/manage-users/register-user"element={<RegisterUser/>}/>
         {/* User-specific routes */}
         <Route path="/user-home" element={<UserHomepage />} />
@@ -78,25 +80,28 @@ function App() {
         <Route path="/user-browse/:categoryName" element={<UserBrowseCategory />} />
 
         {/* Trabahador-specific routes */}
-        <Route path="/trabahador-homepage" element={<TrabahadorHomepage />} />
-        <Route path="/trabahador-contact" element={<TrabahadorContactUs />} />
-        <Route path="/trabahador-history" element={<TrabahadorHistory />} />
-        <Route path="/trabahador-profile" element={<TrabahadorProfile />} />
-        <Route path="/trabahador-about" element={<TrabahadorAboutUs />} />
-        <Route path="/worker-profile-detail/:workerId" element={<WorkerProfileDetail />} />
+        <Route path="/graduate-homepage" element={<TrabahadorHomepage />} />
+        <Route path="/graduate-contact" element={<TrabahadorContactUs />} />
+        <Route path="/graduate-history" element={<TrabahadorHistory />} />
+        <Route path="/graduate-profile" element={<TrabahadorProfile />} />
+        <Route path="/graduate-about" element={<TrabahadorAboutUs />} />
+        <Route path="/graduate-profile-detail/:graduateId" element={<WorkerProfileDetail />} />
+        <Route path="/create-portfolio" element={<PortfolioCreation />} /> {/* New route */}
+        <Route path="/portfolio/:graduateId" element={<ViewPortfolio />} />
+
 
         {/* General routes */}
         <Route path="/contact" element={<ContactUs />} />
 
         <Route path="/category/:categoryName" element={<UserBrowseCategory />} />
-        <Route path="/worker/:workerId" element={<WorkerProfile />} />
-        <Route path="/booking/:workerId/payment" element={<PaymentPage />} />
-        <Route path="/booking/:workerId/request" element={<BookingRequest />} />
+        <Route path="/graduate/:graduateId" element={<WorkerProfile />} />
+        <Route path="/booking/:graduateId/payment" element={<PaymentPage />} />
+        <Route path="/booking/:graduateId/request" element={<BookingRequest />} />
         <Route path="/chat/:bookingId" element={<ChatPage />} />
 
         {/* PAYMONGO ROUTES */}
-        <Route path="/booking/:workerId/success" element={<SuccessPage />} />
-        <Route path="/booking/:workerId/failed" element={<FailedPage />} /> 
+        <Route path="/booking/:graduateId/success" element={<SuccessPage />} />
+        <Route path="/booking/:graduateId/failed" element={<FailedPage />} /> 
       </Routes>
     </Router>
   )

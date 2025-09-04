@@ -7,13 +7,13 @@ import org.springframework.stereotype.Service;
 
 import tarabaho.tarabaho.entity.Booking;
 import tarabaho.tarabaho.entity.BookingStatus;
+import tarabaho.tarabaho.entity.Graduate;
 import tarabaho.tarabaho.entity.Rating;
 import tarabaho.tarabaho.entity.User;
-import tarabaho.tarabaho.entity.Worker;
 import tarabaho.tarabaho.repository.BookingRepository;
+import tarabaho.tarabaho.repository.GraduateRepository;
 import tarabaho.tarabaho.repository.RatingRepository;
 import tarabaho.tarabaho.repository.UserRepository;
-import tarabaho.tarabaho.repository.WorkerRepository;
 
 @Service
 public class RatingService {
@@ -28,10 +28,10 @@ public class RatingService {
     private UserRepository userRepository;
 
     @Autowired
-    private WorkerRepository workerRepository;
+    private GraduateRepository graduateRepository;
 
-    public List<Rating> getRatingsByWorkerId(Long workerId) {
-        return ratingRepository.findByWorkerId(workerId);
+    public List<Rating> getRatingsByGraduateId(Long graduateId) {
+        return ratingRepository.findByGraduateId(graduateId);
     }
 
     public Rating submitRating(Long userId, Long bookingId, Integer rating, String comment) throws Exception {
@@ -43,9 +43,9 @@ public class RatingService {
             .orElseThrow(() -> new Exception("User not found"));
         Booking booking = bookingRepository.findById(bookingId)
             .orElseThrow(() -> new Exception("Booking not found"));
-        Worker worker = booking.getWorker();
-        if (worker == null) {
-            throw new Exception("No worker assigned to this booking");
+        Graduate graduate = booking.getGraduate();
+        if (graduate == null) {
+            throw new Exception("No graduate assigned to this booking");
         }
         if (!booking.getUser().equals(user)) {
             throw new Exception("User not authorized to rate this booking");
@@ -56,23 +56,23 @@ public class RatingService {
 
         Rating ratingEntity = new Rating();
         ratingEntity.setUser(user);
-        ratingEntity.setWorker(worker);
+        ratingEntity.setGraduate(graduate);
         ratingEntity.setBooking(booking);
         ratingEntity.setRating(rating);
         ratingEntity.setComment(comment);
 
         Rating savedRating = ratingRepository.save(ratingEntity);
 
-        // Update worker's average rating
-        updateWorkerRating(worker);
+        // Update graduate's average rating
+        updateGraduateRating(graduate);
 
         return savedRating;
     }
 
     @SuppressWarnings("unchecked")
-    private void updateWorkerRating(Worker worker) {
+    private void updateGraduateRating(Graduate graduate) {
         // Temporarily cast to List<Rating> to suppress the IDE warning
-        List<?> rawRatings = ratingRepository.findByWorker(worker);
+        List<?> rawRatings = ratingRepository.findByGraduate(graduate);
         List<Rating> ratings = (List<Rating>) rawRatings;
 
         if (ratings != null && !ratings.isEmpty()) {
@@ -80,14 +80,14 @@ public class RatingService {
                 .mapToInt(Rating::getRating)
                 .average()
                 .orElse(0.0);
-            worker.setStars(average);
-            worker.setRatingCount(ratings.size());
-            workerRepository.save(worker);
+            graduate.setStars(average);
+            graduate.setRatingCount(ratings.size());
+            graduateRepository.save(graduate);
         } else {
-            // If no ratings exist, reset worker's stars and rating count
-            worker.setStars(0.0);
-            worker.setRatingCount(0);
-            workerRepository.save(worker);
+            // If no ratings exist, reset graduate's stars and rating count
+            graduate.setStars(0.0);
+            graduate.setRatingCount(0);
+            graduateRepository.save(graduate);
         }
     }
 }

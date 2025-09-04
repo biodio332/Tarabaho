@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
-import Cookies from "js-cookie"
-import logo from "../assets/images/logowhite.png"
-import styles from "../styles/register-trabahador.module.css"
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import Cookies from "js-cookie";
+import logo from "../assets/images/logowhite.png";
+import styles from "../styles/register-trabahador.module.css";
 
 const RegisterTrabahador = () => {
-  const navigate = useNavigate()
-  const location = useLocation()
+  const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -18,15 +18,15 @@ const RegisterTrabahador = () => {
     birthday: "",
     address: "",
     hourly: "",
-  })
+  });
 
-  const [errors, setErrors] = useState({})
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [passwordStrength, setPasswordStrength] = useState(0)
-  const [showPassword, setShowPassword] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080"
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -34,146 +34,146 @@ const RegisterTrabahador = () => {
         const response = await fetch(`${BACKEND_URL}/api/admin/me`, {
           method: "GET",
           credentials: "include",
-        })
+        });
 
         if (response.ok) {
-          setIsAdmin(true)
-          console.log("Valid admin token found")
+          setIsAdmin(true);
+          console.log("Valid admin token found");
         } else {
-          setIsAdmin(false)
-          console.log("No valid admin token")
+          setIsAdmin(false);
+          console.log("No valid admin token");
         }
       } catch (error) {
-        setIsAdmin(false)
-        console.error("Error checking admin status:", error)
+        setIsAdmin(false);
+        console.error("Error checking admin status:", error);
       }
-    }
+    };
 
-    checkAdminStatus()
-  }, [])
+    checkAdminStatus();
+  }, []);
 
   const validateEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return re.test(email)
-  }
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
 
   const validatePassword = (password) => {
-    let strength = 0
-    if (password.length >= 8) strength += 1
-    if (/[A-Z]/.test(password)) strength += 1
-    if (/[0-9]/.test(password)) strength += 1
-    if (/[^A-Za-z0-9]/.test(password)) strength += 1
+    let strength = 0;
+    if (password.length >= 8) strength += 1;
+    if (/[A-Z]/.test(password)) strength += 1;
+    if (/[0-9]/.test(password)) strength += 1;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
 
-    setPasswordStrength(strength)
-    return strength >= 3
-  }
+    setPasswordStrength(strength);
+    return strength >= 3;
+  };
 
   const handleBack = () => {
-    navigate(isAdmin ? "/admin/manage-trabahador" : "/register")
-  }
+    navigate(isAdmin ? "/admin/manage-trabahador" : "/register");
+  };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: value,
-    })
+    });
 
     if (errors[name]) {
       setErrors({
         ...errors,
         [name]: "",
-      })
+      });
     }
 
     if (name === "password") {
-      validatePassword(value)
+      validatePassword(value);
     }
-  }
+  };
 
   const checkDuplicates = async () => {
     try {
-      const workerData = {
+      const graduateData = {
         username: formData.username,
         email: formData.email,
         phoneNumber: formData.contactNo,
-      }
+      };
 
-      const response = await fetch(`${BACKEND_URL}/api/worker/check-duplicates`, {
+      const response = await fetch(`${BACKEND_URL}/api/graduate/check-duplicates`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(workerData),
+        body: JSON.stringify(graduateData),
         credentials: "include",
-      })
+      });
 
       if (!response.ok) {
-        const errorText = await response.text()
+        const errorText = await response.text();
         if (errorText.includes("Username already exists")) {
-          return { isValid: false, field: "username", message: "Username already exists" }
+          return { isValid: false, field: "username", message: "Username already exists" };
         } else if (errorText.includes("Email already exists")) {
-          return { isValid: false, field: "email", message: "Email already exists" }
+          return { isValid: false, field: "email", message: "Email already exists" };
         } else if (errorText.includes("Phone number already exists")) {
-          return { isValid: false, field: "contactNo", message: "Phone number already exists" }
+          return { isValid: false, field: "contactNo", message: "Phone number already exists" };
         }
-        return { isValid: false, field: "general", message: errorText || "Failed to validate details" }
+        return { isValid: false, field: "general", message: errorText || "Failed to validate details" };
       }
 
-      return { isValid: true, field: null, message: null }
+      return { isValid: true, field: null, message: null };
     } catch (error) {
-      return { isValid: false, field: "general", message: "Failed to connect to server: " + error.message }
+      return { isValid: false, field: "general", message: "Failed to connect to server: " + error.message };
     }
-  }
+  };
 
   const validateForm = async () => {
-    const newErrors = {}
+    const newErrors = {};
 
-    if (!formData.username.trim()) newErrors.username = "Username is required"
-    if (!formData.password) newErrors.password = "Password is required"
-    else if (formData.password.length < 6) newErrors.password = "Password must be at least 6 characters"
-    
+    if (!formData.username.trim()) newErrors.username = "Username is required";
+    if (!formData.password) newErrors.password = "Password is required";
+    else if (formData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
+
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match"
+      newErrors.confirmPassword = "Passwords do not match";
     }
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      newErrors.name = "Full name is required"
+      newErrors.name = "Full name is required";
     }
-    if (!formData.email.trim()) newErrors.email = "Email is required"
-    else if (!validateEmail(formData.email)) newErrors.email = "Invalid email format"
-    if (!formData.contactNo.trim()) newErrors.contactNo = "Contact number is required"
-    if (!formData.address.trim()) newErrors.address = "Address is required"
-    if (!formData.hourly || formData.hourly <= 0) newErrors.hourly = "Hourly rate must be greater than 0"
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    else if (!validateEmail(formData.email)) newErrors.email = "Invalid email format";
+    if (!formData.contactNo.trim()) newErrors.contactNo = "Contact number is required";
+    if (!formData.address.trim()) newErrors.address = "Address is required";
+    if (!formData.hourly || formData.hourly <= 0) newErrors.hourly = "Hourly rate must be greater than 0";
 
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return false
+      setErrors(newErrors);
+      return false;
     }
 
-    setIsLoading(true)
-    const duplicateCheck = await checkDuplicates()
-    setIsLoading(false)
+    setIsLoading(true);
+    const duplicateCheck = await checkDuplicates();
+    setIsLoading(false);
 
     if (!duplicateCheck.isValid) {
-      setErrors({ [duplicateCheck.field]: duplicateCheck.message })
-      return false
+      setErrors({ [duplicateCheck.field]: duplicateCheck.message });
+      return false;
     }
 
-    return true
-  }
+    return true;
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!(await validateForm())) {
-      return
+      return;
     }
 
-    setIsSubmitting(true)
-    setErrors({})
+    setIsSubmitting(true);
+    setErrors({});
 
     try {
-      const workerData = {
+      const graduateData = {
         username: formData.username,
         password: formData.password,
         firstName: formData.firstName,
@@ -183,86 +183,86 @@ const RegisterTrabahador = () => {
         birthday: formData.birthday,
         address: formData.address,
         hourly: Number.parseFloat(formData.hourly),
-      }
+      };
 
-      console.log("Sending registration request with data:", workerData)
+      console.log("Sending registration request with data:", graduateData);
 
-      const workerResponse = await fetch(`${BACKEND_URL}/api/worker/register`, {
+      const graduateResponse = await fetch(`${BACKEND_URL}/api/graduate/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(workerData),
+        body: JSON.stringify(graduateData),
         credentials: "include",
-      })
+      });
 
-      if (!workerResponse.ok) {
-        let errorText = await workerResponse.text().catch(() => "No error message available")
+      if (!graduateResponse.ok) {
+        let errorText = await graduateResponse.text().catch(() => "No error message available");
         try {
-          const jsonError = JSON.parse(errorText)
-          errorText = jsonError.message || jsonError || errorText
+          const jsonError = JSON.parse(errorText);
+          errorText = jsonError.message || jsonError || errorText;
         } catch (e) {
           // Not JSON, use raw text
         }
-        console.error(`Registration failed with status: ${workerResponse.status}, response: ${errorText}`)
-        throw new Error(`Failed to register worker: ${errorText}`)
+        console.error(`Registration failed with status: ${graduateResponse.status}, response: ${errorText}`);
+        throw new Error(`Failed to register graduate: ${errorText}`);
       }
 
-      const worker = await workerResponse.json()
-      console.log("Worker registered successfully, ID:", worker.id)
+      const graduate = await graduateResponse.json();
+      console.log("Graduate registered successfully, ID:", graduate.id);
 
-      const successMessage = document.querySelector(`.${styles.successMessage}`)
+      const successMessage = document.querySelector(`.${styles.successMessage}`);
       if (successMessage) {
-        successMessage.classList.add(styles.show)
+        successMessage.classList.add(styles.show);
       }
 
       setTimeout(() => {
         if (location.pathname === "/admin/manage-trabahador/register-worker") {
-          navigate("/admin/manage-trabahador")
+          navigate("/admin/manage-trabahador");
         } else {
-          navigate(isAdmin ? "/admin/manage-trabahador" : "/signin")
+          navigate(isAdmin ? "/admin/manage-trabahador" : "/signin");
         }
-      }, 2000)
+      }, 2000);
     } catch (error) {
-      console.error("Registration failed:", error)
-      setErrors({ general: error.message || "Registration failed. Please try again." })
-      setIsSubmitting(false)
+      console.error("Registration failed:", error);
+      setErrors({ general: error.message || "Registration failed. Please try again." });
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const getPasswordStrengthText = () => {
     switch (passwordStrength) {
       case 0:
-        return "Very weak"
+        return "Very weak";
       case 1:
-        return "Weak"
+        return "Weak";
       case 2:
-        return "Medium"
+        return "Medium";
       case 3:
-        return "Strong"
+        return "Strong";
       case 4:
-        return "Very strong"
+        return "Very strong";
       default:
-        return ""
+        return "";
     }
-  }
+  };
 
   const getPasswordStrengthColor = () => {
     switch (passwordStrength) {
       case 0:
-        return "#ff4d4d"
+        return "#ff4d4d";
       case 1:
-        return "#ff9933"
+        return "#ff9933";
       case 2:
-        return "#ffcc00"
+        return "#ffcc00";
       case 3:
-        return "#99cc33"
+        return "#99cc33";
       case 4:
-        return "#00cc66"
+        return "#00cc66";
       default:
-        return "#ccc"
+        return "#ccc";
     }
-  }
+  };
 
   return (
     <div className={styles.registerTrabahadorContainer}>
@@ -285,7 +285,7 @@ const RegisterTrabahador = () => {
           </div>
 
           <div className={styles.leftContent}>
-            <h2 className={styles.formTitle}>Create Worker Account</h2>
+            <h2 className={styles.formTitle}>Create Graduate Account</h2>
             <p className={styles.formDescription}>
               Join Tarabaho today and connect with opportunities that match your skills and schedule.
             </p>
@@ -406,7 +406,7 @@ const RegisterTrabahador = () => {
                   <input
                     type="text"
                     name="lastName"
-                    Placeholder="Last"
+                    placeholder="Last"
                     value={formData.lastName}
                     onChange={handleInputChange}
                     className={errors.lastName ? styles.error : ""}
@@ -516,7 +516,7 @@ const RegisterTrabahador = () => {
         </div>
       </form>
     </div>
-  )
-}
+  );
+};
 
-export default RegisterTrabahador 
+export default RegisterTrabahador;
