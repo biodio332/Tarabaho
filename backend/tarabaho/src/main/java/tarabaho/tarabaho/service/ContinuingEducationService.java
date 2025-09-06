@@ -72,4 +72,20 @@ public class ContinuingEducationService {
         }
         continuingEducationRepository.delete(education);
     }
+    @Transactional
+    public List<ContinuingEducation> replaceContinuingEducations(Long portfolioId, List<ContinuingEducation> educations, String username) {
+        System.out.println("ContinuingEducationService: Replacing continuing educations for portfolio ID: " + portfolioId);
+        Portfolio portfolio = portfolioRepository.findById(portfolioId)
+            .orElseThrow(() -> new IllegalArgumentException("Portfolio not found with id: " + portfolioId));
+        Graduate graduate = graduateRepository.findByUsername(username);
+        if (graduate == null || !portfolio.getGraduate().getId().equals(graduate.getId())) {
+            System.out.println("ContinuingEducationService: Access denied: User does not own this portfolio");
+            throw new IllegalArgumentException("Access denied: User does not own this portfolio.");
+        }
+        // Delete existing continuing educations
+        continuingEducationRepository.deleteByPortfolioId(portfolioId);
+        // Save new continuing educations
+        educations.forEach(education -> education.setPortfolio(portfolio));
+        return continuingEducationRepository.saveAll(educations);
+    }
 }

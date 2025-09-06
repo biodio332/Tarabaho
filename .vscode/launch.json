@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-TarabahoApplication<tarabaho>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "tarabaho.tarabaho.TarabahoApplication",
+            "projectName": "tarabaho",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

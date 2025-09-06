@@ -39,7 +39,9 @@ import Privacy from "./pages/Privacy"
 import SuccessPage from "./pages/SuccessPage"
 import FailedPage from "./pages/FailedPage"
 import PortfolioCreation from "./pages/PortfolioCreation"
-import ViewPortfolio from "./pages/ViewPortfolio";
+import ViewPortfolio from "./pages/ViewPortfolio"
+import EditPortfolio from "./pages/EditPortfolio";
+
 
 function App() {
   return (
@@ -88,6 +90,7 @@ function App() {
         <Route path="/graduate-profile-detail/:graduateId" element={<WorkerProfileDetail />} />
         <Route path="/create-portfolio" element={<PortfolioCreation />} /> {/* New route */}
         <Route path="/portfolio/:graduateId" element={<ViewPortfolio />} />
+        <Route path="/portfolio/edit/:graduateId" element={<EditPortfolio />} />
 
 
         {/* General routes */}

@@ -21,4 +21,5 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
 
     @Query("SELECT p FROM Portfolio p WHERE p.graduate.id = :graduateId")
     Optional<Portfolio> findByGraduateId(@Param("graduateId") Long graduateId);
+    
 }

@@ -99,4 +99,30 @@ public class ContinuingEducationController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
         }
     }
+    @PutMapping
+    public ResponseEntity<?> replaceContinuingEducations(@PathVariable Long portfolioId, @RequestBody List<ContinuingEducation> educations, Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("ContinuingEducationController: Not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
+            }
+            // Validate continuing educations
+            for (ContinuingEducation education : educations) {
+                if (education.getCourseName() == null || education.getCourseName().trim().isEmpty()) {
+                    System.out.println("ContinuingEducationController: Continuing education course name is required");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Continuing education course name is required.");
+                }
+            }
+            List<ContinuingEducation> updatedEducations = continuingEducationService.replaceContinuingEducations(portfolioId, educations, authentication.getName());
+            System.out.println("ContinuingEducationController: Continuing educations replaced for portfolio ID: " + portfolioId);
+            return ResponseEntity.ok(updatedEducations);
+        } catch (IllegalArgumentException e) {
+            System.out.println("ContinuingEducationController: Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("ContinuingEducationController: Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("⚠️ Unexpected error: " + e.getMessage());
+        }
+    }
 }

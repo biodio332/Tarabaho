@@ -99,4 +99,38 @@ public class ProfessionalMembershipController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
         }
     }
+    @Operation(summary = "Replace all professional memberships for a portfolio", description = "Replaces all professional memberships for the specified portfolio")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Memberships replaced successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid input"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated"),
+        @ApiResponse(responseCode = "403", description = "Access denied"),
+        @ApiResponse(responseCode = "404", description = "Portfolio not found")
+    })
+    @PutMapping
+    public ResponseEntity<?> replaceProfessionalMemberships(@PathVariable Long portfolioId, @RequestBody List<ProfessionalMembership> memberships, Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("ProfessionalMembershipController: Not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
+            }
+            // Validate professional memberships
+            for (ProfessionalMembership membership : memberships) {
+                if (membership.getOrganization() == null || membership.getOrganization().trim().isEmpty()) {
+                    System.out.println("ProfessionalMembershipController: Professional membership organization is required");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Professional membership organization is required.");
+                }
+            }
+            List<ProfessionalMembership> updatedMemberships = professionalMembershipService.replaceProfessionalMemberships(portfolioId, memberships, authentication.getName());
+            System.out.println("ProfessionalMembershipController: Professional memberships replaced for portfolio ID: " + portfolioId);
+            return ResponseEntity.ok(updatedMemberships);
+        } catch (IllegalArgumentException e) {
+            System.out.println("ProfessionalMembershipController: Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("ProfessionalMembershipController: Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("⚠️ Unexpected error: " + e.getMessage());
+        }
+    }
 }

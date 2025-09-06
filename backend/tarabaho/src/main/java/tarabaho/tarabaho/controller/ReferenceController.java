@@ -99,4 +99,42 @@ public class ReferenceController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
         }
     }
+    @Operation(summary = "Replace all references for a portfolio", description = "Replaces all references for the specified portfolio")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "References replaced successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid input"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated"),
+        @ApiResponse(responseCode = "403", description = "Access denied"),
+        @ApiResponse(responseCode = "404", description = "Portfolio not found")
+    })
+    @PutMapping
+    public ResponseEntity<?> replaceReferences(@PathVariable Long portfolioId, @RequestBody List<Reference> references, Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("ReferenceController: Not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
+            }
+            // Validate references
+            for (Reference reference : references) {
+                if (reference.getName() == null || reference.getName().trim().isEmpty()) {
+                    System.out.println("ReferenceController: Reference name is required");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Reference name is required.");
+                }
+                if (reference.getEmail() != null && !reference.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                    System.out.println("ReferenceController: Invalid reference email format");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Invalid reference email format.");
+                }
+            }
+            List<Reference> updatedReferences = referenceService.replaceReferences(portfolioId, references, authentication.getName());
+            System.out.println("ReferenceController: References replaced for portfolio ID: " + portfolioId);
+            return ResponseEntity.ok(updatedReferences);
+        } catch (IllegalArgumentException e) {
+            System.out.println("ReferenceController: Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("ReferenceController: Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("⚠️ Unexpected error: " + e.getMessage());
+        }
+    }
 }

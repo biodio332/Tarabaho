@@ -71,4 +71,20 @@ public class ProfessionalMembershipService {
         }
         professionalMembershipRepository.delete(membership);
     }
+    @Transactional
+    public List<ProfessionalMembership> replaceProfessionalMemberships(Long portfolioId, List<ProfessionalMembership> memberships, String username) {
+        System.out.println("ProfessionalMembershipService: Replacing professional memberships for portfolio ID: " + portfolioId);
+        Portfolio portfolio = portfolioRepository.findById(portfolioId)
+            .orElseThrow(() -> new IllegalArgumentException("Portfolio not found with id: " + portfolioId));
+        Graduate graduate = graduateRepository.findByUsername(username);
+        if (graduate == null || !portfolio.getGraduate().getId().equals(graduate.getId())) {
+            System.out.println("ProfessionalMembershipService: Access denied: User does not own this portfolio");
+            throw new IllegalArgumentException("Access denied: User does not own this portfolio.");
+        }
+        // Delete existing professional memberships
+        professionalMembershipRepository.deleteByPortfolioId(portfolioId);
+        // Save new professional memberships
+        memberships.forEach(membership -> membership.setPortfolio(portfolio));
+        return professionalMembershipRepository.saveAll(memberships);
+    }
 }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -122,6 +123,83 @@ public class ExperienceController {
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("⚠️ " + e.getMessage());
+        }
+    }
+    @Operation(summary = "Update an experience", description = "Updates an experience in the specified portfolio")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Experience updated successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid input"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated"),
+        @ApiResponse(responseCode = "403", description = "Access denied"),
+        @ApiResponse(responseCode = "404", description = "Experience or portfolio not found")
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateExperience(@PathVariable Long id, @RequestBody Experience experience, Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("ExperienceController: Not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
+            }
+            String username = authentication.getName();
+            Graduate graduate = graduateService.findByUsername(username)
+                .orElseThrow(() -> new Exception("Graduate not found."));
+            Experience existingExperience = experienceService.getExperienceById(id);
+            portfolioService.getPortfolio(existingExperience.getPortfolio().getId(), username); // Verify portfolio access
+            if (!existingExperience.getPortfolio().getGraduate().getUsername().equals(username)) {
+                System.out.println("ExperienceController: Access denied to update experience");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied to update experience.");
+            }
+            experience.setId(id);
+            experience.setPortfolio(existingExperience.getPortfolio());
+            Experience updatedExperience = experienceService.saveExperience(experience);
+            System.out.println("ExperienceController: Experience updated, ID: " + id);
+            return ResponseEntity.ok(updatedExperience);
+        } catch (IllegalArgumentException e) {
+            System.out.println("ExperienceController: Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("ExperienceController: Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("⚠️ Unexpected error: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Replace all experiences for a portfolio", description = "Replaces all experiences for the specified portfolio")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Experiences replaced successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid input"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated"),
+        @ApiResponse(responseCode = "403", description = "Access denied"),
+        @ApiResponse(responseCode = "404", description = "Portfolio not found")
+    })
+    @PutMapping("/portfolio/{portfolioId}")
+    public ResponseEntity<?> replaceExperiences(@PathVariable Long portfolioId, @RequestBody List<Experience> experiences, Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("ExperienceController: Not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
+            }
+            String username = authentication.getName();
+            Graduate graduate = graduateService.findByUsername(username)
+                .orElseThrow(() -> new Exception("Graduate not found."));
+            portfolioService.getPortfolio(portfolioId, username); // Verify portfolio access
+            // Validate experiences
+            for (Experience experience : experiences) {
+                if (experience.getJobTitle() == null || experience.getJobTitle().trim().isEmpty()) {
+                    System.out.println("ExperienceController: Experience job title is required");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Experience job title is required.");
+                }
+            }
+            List<Experience> updatedExperiences = experienceService.replaceExperiences(portfolioId, experiences, username);
+            System.out.println("ExperienceController: Experiences replaced for portfolio ID: " + portfolioId);
+            return ResponseEntity.ok(updatedExperiences);
+        } catch (IllegalArgumentException e) {
+            System.out.println("ExperienceController: Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("ExperienceController: Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("⚠️ Unexpected error: " + e.getMessage());
         }
     }
 }

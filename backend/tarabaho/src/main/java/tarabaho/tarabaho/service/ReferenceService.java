@@ -80,4 +80,20 @@ public class ReferenceService {
         }
         referenceRepository.delete(reference);
     }
+    @Transactional
+    public List<Reference> replaceReferences(Long portfolioId, List<Reference> references, String username) {
+        System.out.println("ReferenceService: Replacing references for portfolio ID: " + portfolioId);
+        Portfolio portfolio = portfolioRepository.findById(portfolioId)
+            .orElseThrow(() -> new IllegalArgumentException("Portfolio not found with id: " + portfolioId));
+        Graduate graduate = graduateRepository.findByUsername(username);
+        if (graduate == null || !portfolio.getGraduate().getId().equals(graduate.getId())) {
+            System.out.println("ReferenceService: Access denied: User does not own this portfolio");
+            throw new IllegalArgumentException("Access denied: User does not own this portfolio.");
+        }
+        // Delete existing references
+        referenceRepository.deleteByPortfolioId(portfolioId);
+        // Save new references
+        references.forEach(reference -> reference.setPortfolio(portfolio));
+        return referenceRepository.saveAll(references);
+    }
 }

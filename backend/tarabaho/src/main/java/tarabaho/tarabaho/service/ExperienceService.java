@@ -7,13 +7,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import tarabaho.tarabaho.entity.Experience;
+import tarabaho.tarabaho.entity.Graduate;
+import tarabaho.tarabaho.entity.Portfolio;
 import tarabaho.tarabaho.repository.ExperienceRepository;
+import tarabaho.tarabaho.repository.GraduateRepository;
+import tarabaho.tarabaho.repository.PortfolioRepository;
 
 @Service
 public class ExperienceService {
 
     @Autowired
     private ExperienceRepository experienceRepository;
+
+    @Autowired
+    private PortfolioRepository portfolioRepository;
+
+    @Autowired
+    private GraduateRepository graduateRepository;
 
     /**
      * Retrieves all experiences for a portfolio.
@@ -89,5 +99,40 @@ public class ExperienceService {
             throw new IllegalArgumentException("Experience not found with id: " + id);
         }
         experienceRepository.deleteById(id);
+    }
+
+    @Transactional
+    public List<Experience> replaceExperiences(Long portfolioId, List<Experience> experiences, String username) {
+        System.out.println("ExperienceService: Replacing experiences for portfolio ID: " + portfolioId);
+        Portfolio portfolio = portfolioRepository.findById(portfolioId)
+            .orElseThrow(() -> new IllegalArgumentException("Portfolio not found with id: " + portfolioId));
+        Graduate graduate = graduateRepository.findByUsername(username);
+        if (graduate == null || !portfolio.getGraduate().getId().equals(graduate.getId())) {
+            System.out.println("ExperienceService: Access denied: User does not own this portfolio");
+            throw new IllegalArgumentException("Access denied: User does not own this portfolio.");
+        }
+        // Validate experiences
+        for (Experience experience : experiences) {
+            if (experience.getJobTitle() == null || experience.getJobTitle().trim().isEmpty()) {
+                throw new IllegalArgumentException("Experience job title is required.");
+            }
+            if (experience.getStartDate() == null) {
+                throw new IllegalArgumentException("Experience start date is required.");
+            }
+            if (experience.getEndDate() != null && experience.getEndDate().isBefore(experience.getStartDate())) {
+                throw new IllegalArgumentException("End date must be after start date.");
+            }
+            if (experience.getEmployer() != null && experience.getEmployer().length() > 200) {
+                throw new IllegalArgumentException("Employer must not exceed 200 characters.");
+            }
+            if (experience.getDescription() != null && experience.getDescription().length() > 1000) {
+                throw new IllegalArgumentException("Description must not exceed 1000 characters.");
+            }
+        }
+        // Delete existing experiences
+        experienceRepository.deleteByPortfolioId(portfolioId);
+        // Save new experiences
+        experiences.forEach(experience -> experience.setPortfolio(portfolio));
+        return experienceRepository.saveAll(experiences);
     }
 }

@@ -99,4 +99,39 @@ public class AwardRecognitionController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
         }
     }
+    @Operation(summary = "Replace all awards for a portfolio", description = "Replaces all awards for the specified portfolio")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Awards replaced successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid input"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated"),
+        @ApiResponse(responseCode = "403", description = "Access denied"),
+        @ApiResponse(responseCode = "404", description = "Portfolio not found")
+    })
+    @PutMapping
+    public ResponseEntity<?> replaceAwardRecognitions(@PathVariable Long portfolioId, @RequestBody List<AwardRecognition> awards, Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("AwardRecognitionController: Not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
+            }
+            // Validate awards
+            for (AwardRecognition award : awards) {
+                if (award.getTitle() == null || award.getTitle().trim().isEmpty()) {
+                    System.out.println("AwardRecognitionController: Award title is required");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Award title is required.");
+                }
+            }
+            List<AwardRecognition> updatedAwards = awardRecognitionService.replaceAwardRecognitions(portfolioId, awards, authentication.getName());
+            System.out.println("AwardRecognitionController: Awards replaced for portfolio ID: " + portfolioId);
+            return ResponseEntity.ok(updatedAwards);
+        } catch (IllegalArgumentException e) {
+            System.out.println("AwardRecognitionController: Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("AwardRecognitionController: Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("⚠️ Unexpected error: " + e.getMessage());
+        }
+    }
+    
 }

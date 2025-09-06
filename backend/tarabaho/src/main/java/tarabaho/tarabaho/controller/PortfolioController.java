@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -423,5 +424,120 @@ public class PortfolioController {
         // Example: Save to uploads/projects/portfolioId/filename
         // Return the file path or URL
         throw new UnsupportedOperationException("File saving logic not implemented");
+    }
+    
+    @Operation(summary = "Update a portfolio", description = "Updates the portfolio for the authenticated graduate")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Portfolio updated successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid input"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated"),
+        @ApiResponse(responseCode = "403", description = "Access denied"),
+        @ApiResponse(responseCode = "404", description = "Portfolio not found")
+    })
+    @PutMapping("/{portfolioId}")
+    public ResponseEntity<?> updatePortfolio(@PathVariable Long portfolioId, @RequestBody PortfolioRequest portfolioRequest, Authentication authentication) {
+        try {
+            System.out.println("PortfolioController: Updating portfolio ID: " + portfolioId);
+            if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("PortfolioController: Not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
+            }
+            String username = authentication.getName();
+            Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
+            if (!graduateOpt.isPresent()) {
+                System.out.println("PortfolioController: Graduate not found for username: " + username);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Graduate not found.");
+            }
+            Graduate graduate = graduateOpt.get();
+            if (portfolioRequest.getGraduateId() == null || !graduate.getId().equals(portfolioRequest.getGraduateId())) {
+                System.out.println("PortfolioController: Access denied for graduate ID: " + portfolioRequest.getGraduateId());
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("⚠️ Access denied to update portfolio.");
+            }
+            // Validate PortfolioRequest
+            if (portfolioRequest.getFullName() == null || portfolioRequest.getFullName().trim().isEmpty()) {
+                System.out.println("PortfolioController: Full name is required");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Full name is required.");
+            }
+            if (portfolioRequest.getEmail() != null && !portfolioRequest.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                System.out.println("PortfolioController: Invalid email format");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Invalid email format.");
+            }
+            // Validate related entities
+            if (portfolioRequest.getSkills() != null) {
+                for (Skill skill : portfolioRequest.getSkills()) {
+                    if (skill.getName() == null || skill.getName().trim().isEmpty()) {
+                        System.out.println("PortfolioController: Skill name is required");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Skill name is required.");
+                    }
+                    if (skill.getType() == null) {
+                        System.out.println("PortfolioController: Skill type is required");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Skill type is required.");
+                    }
+                }
+            }
+            if (portfolioRequest.getExperiences() != null) {
+                for (Experience experience : portfolioRequest.getExperiences()) {
+                    if (experience.getJobTitle() == null || experience.getJobTitle().trim().isEmpty()) {
+                        System.out.println("PortfolioController: Experience job title is required");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Experience job title is required.");
+                    }
+                }
+            }
+            if (portfolioRequest.getProjectIds() != null) {
+                for (Long projectId : portfolioRequest.getProjectIds()) {
+                    Optional<Project> projectOpt = Optional.ofNullable(projectService.getProjectById(projectId));
+                    if (!projectOpt.isPresent()) {
+                        System.out.println("PortfolioController: Project not found with ID: " + projectId);
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Project not found with ID: " + projectId);
+                    }
+                }
+            }
+            if (portfolioRequest.getAwardsRecognitions() != null) {
+                for (AwardRecognition award : portfolioRequest.getAwardsRecognitions()) {
+                    if (award.getTitle() == null || award.getTitle().trim().isEmpty()) {
+                        System.out.println("PortfolioController: Award title is required");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Award title is required.");
+                    }
+                }
+            }
+            if (portfolioRequest.getContinuingEducations() != null) {
+                for (ContinuingEducation education : portfolioRequest.getContinuingEducations()) {
+                    if (education.getCourseName() == null || education.getCourseName().trim().isEmpty()) {
+                        System.out.println("PortfolioController: Continuing education course name is required");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Continuing education course name is required.");
+                    }
+                }
+            }
+            if (portfolioRequest.getProfessionalMemberships() != null) {
+                for (ProfessionalMembership membership : portfolioRequest.getProfessionalMemberships()) {
+                    if (membership.getOrganization() == null || membership.getOrganization().trim().isEmpty()) {
+                        System.out.println("PortfolioController: Professional membership organization is required");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Professional membership organization is required.");
+                    }
+                }
+            }
+            if (portfolioRequest.getReferences() != null) {
+                for (Reference reference : portfolioRequest.getReferences()) {
+                    if (reference.getName() == null || reference.getName().trim().isEmpty()) {
+                        System.out.println("PortfolioController: Reference name is required");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Reference name is required.");
+                    }
+                    if (reference.getEmail() != null && !reference.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                        System.out.println("PortfolioController: Invalid reference email format");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Invalid reference email format.");
+                    }
+                }
+            }
+            PortfolioRequest updatedPortfolio = portfolioService.updatePortfolio(portfolioId, portfolioRequest, username);
+            System.out.println("PortfolioController: Portfolio updated, ID: " + updatedPortfolio.getId());
+            return ResponseEntity.ok(updatedPortfolio);
+        } catch (IllegalArgumentException e) {
+            System.out.println("PortfolioController: Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("PortfolioController: Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("⚠️ Unexpected error: " + e.getMessage());
+        }
     }
 }

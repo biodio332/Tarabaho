@@ -72,4 +72,20 @@ public class AwardRecognitionService {
         }
         awardRecognitionRepository.delete(award);
     }
+    @Transactional
+    public List<AwardRecognition> replaceAwardRecognitions(Long portfolioId, List<AwardRecognition> awards, String username) {
+        System.out.println("AwardRecognitionService: Replacing awards for portfolio ID: " + portfolioId);
+        Portfolio portfolio = portfolioRepository.findById(portfolioId)
+            .orElseThrow(() -> new IllegalArgumentException("Portfolio not found with id: " + portfolioId));
+        Graduate graduate = graduateRepository.findByUsername(username);
+        if (graduate == null || !portfolio.getGraduate().getId().equals(graduate.getId())) {
+            System.out.println("AwardRecognitionService: Access denied: User does not own this portfolio");
+            throw new IllegalArgumentException("Access denied: User does not own this portfolio.");
+        }
+        // Delete existing awards
+        awardRecognitionRepository.deleteByPortfolioId(portfolioId);
+        // Save new awards
+        awards.forEach(award -> award.setPortfolio(portfolio));
+        return awardRecognitionRepository.saveAll(awards);
+    }
 }

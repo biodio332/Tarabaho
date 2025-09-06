@@ -99,4 +99,43 @@ public class SkillController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
         }
     }
+
+    @Operation(summary = "Replace all skills for a portfolio", description = "Replaces all skills for the specified portfolio")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Skills replaced successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid input"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated"),
+        @ApiResponse(responseCode = "403", description = "Access denied"),
+        @ApiResponse(responseCode = "404", description = "Portfolio not found")
+    })
+    @PutMapping
+    public ResponseEntity<?> replaceSkills(@PathVariable Long portfolioId, @RequestBody List<Skill> skills, Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("SkillController: Not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
+            }
+            // Validate skills
+            for (Skill skill : skills) {
+                if (skill.getName() == null || skill.getName().trim().isEmpty()) {
+                    System.out.println("SkillController: Skill name is required");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Skill name is required.");
+                }
+                if (skill.getType() == null) {
+                    System.out.println("SkillController: Skill type is required");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Skill type is required.");
+                }
+            }
+            List<Skill> updatedSkills = skillService.replaceSkills(portfolioId, skills, authentication.getName());
+            System.out.println("SkillController: Skills replaced for portfolio ID: " + portfolioId);
+            return ResponseEntity.ok(updatedSkills);
+        } catch (IllegalArgumentException e) {
+            System.out.println("SkillController: Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("SkillController: Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("⚠️ Unexpected error: " + e.getMessage());
+        }
+    }
 }

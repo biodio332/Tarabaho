@@ -1,6 +1,7 @@
 // Experience.java
 package tarabaho.tarabaho.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -42,10 +43,10 @@ public class Experience {
     private String description;
 
     @Column
-    private LocalDateTime startDate;
+    private LocalDate startDate;
 
     @Column
-    private LocalDateTime endDate;
+    private LocalDate endDate;
 
     @Column
     private LocalDateTime createdAt;
@@ -89,10 +90,10 @@ public class Experience {
     public void setEmployer(String employer) { this.employer = employer; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public LocalDateTime getStartDate() { return startDate; }
-    public void setStartDate(LocalDateTime startDate) { this.startDate = startDate; }
-    public LocalDateTime getEndDate() { return endDate; }
-    public void setEndDate(LocalDateTime endDate) { this.endDate = endDate; }
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
