@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import { FaPlus, FaTrash } from "react-icons/fa";
+import { FaPlus, FaTrash, FaPen } from "react-icons/fa";
 import "../styles/EditPortfolio.css";
 
 const EditPortfolio = () => {
@@ -11,23 +11,32 @@ const EditPortfolio = () => {
   const [portfolio, setPortfolio] = useState(null);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const [previewAvatar, setPreviewAvatar] = useState("/placeholder.svg");
-  const [token, setToken] = useState(null);
+  const [certificates, setCertificates] = useState([]);
+  const [modifiedCertificates, setModifiedCertificates] = useState(new Set());
+  const [isAddingCertificate, setIsAddingCertificate] = useState(false);
+  const [editingCertificateId, setEditingCertificateId] = useState(null);
+  const [newCertificate, setNewCertificate] = useState({
+    courseName: "",
+    certificateNumber: "",
+    issueDate: "",
+    certificateFile: null,
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
   const navigate = useNavigate();
   const avatarFileInputRef = useRef(null);
+  const certificateFileInputRef = useRef(null);
 
-  // Initialize portfolio state
   const initialPortfolioState = {
     fullName: "",
-    professionalSummary: "", // For textarea
+    professionalSummary: "",
     professionalTitle: "",
     primaryCourseType: "",
     scholarScheme: "",
     designTemplate: "",
-    customSectionJson: "", // For textarea
+    customSectionJson: "",
     visibility: "PRIVATE",
     avatar: "",
     ncLevel: "",
@@ -43,118 +52,120 @@ const EditPortfolio = () => {
     workScheduleAvailability: "",
     salaryExpectations: "",
     skills: [],
-    experiences: [], // Will handle description below
+    experiences: [],
     awardsRecognitions: [],
     continuingEducations: [],
     professionalMemberships: [],
     references: [],
     projectIds: [],
-};
+  };
 
-  // Fetch portfolio data
-    useEffect(() => {
-      const fetchPortfolio = async () => {
-          setIsLoading(true);
-          try {
-              console.log("Fetching JWT token for graduate ID:", graduateId);
-              const tokenResponse = await axios.get(`${BACKEND_URL}/api/graduate/get-token`, {
-                  withCredentials: true,
-              });
-              const fetchedToken = tokenResponse.data.token;
-              console.log("Token response:", tokenResponse.data);
-              if (!fetchedToken) {
-                  throw new Error("No token returned from /api/graduate/get-token");
-              }
-              setToken(fetchedToken);
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      setIsLoading(true);
+      try {
+        console.log("Fetching portfolio for graduate ID:", graduateId);
+        const portfolioResponse = await axios.get(
+          `${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio`,
+          { withCredentials: true }
+        );
+        console.log("Portfolio response:", portfolioResponse.data);
+        const fetchedPortfolio = portfolioResponse.data;
+        setPortfolio({
+          ...initialPortfolioState,
+          ...fetchedPortfolio,
+          professionalSummary: fetchedPortfolio.professionalSummary || "",
+          customSectionJson: fetchedPortfolio.customSectionJson || "",
+          email: fetchedPortfolio.email || "",
+          phone: fetchedPortfolio.phone || "",
+          website: fetchedPortfolio.website || "",
+          avatar: fetchedPortfolio.avatar || "",
+          skills: fetchedPortfolio.skills?.map((skill) => ({
+            ...skill,
+            name: skill.name || "",
+            type: skill.type || "TECHNICAL",
+            proficiencyLevel: skill.proficiencyLevel || "",
+          })) || [],
+          experiences: fetchedPortfolio.experiences?.map((exp) => ({
+            ...exp,
+            jobTitle: exp.jobTitle || "",
+            employer: exp.employer || "",
+            description: exp.description || "",
+            startDate: exp.startDate || "",
+            endDate: exp.endDate || "",
+          })) || [],
+          awardsRecognitions: fetchedPortfolio.awardsRecognitions?.map((award) => ({
+            ...award,
+            title: award.title || "",
+            issuer: award.issuer || "",
+            dateReceived: award.dateReceived || "",
+          })) || [],
+          continuingEducations: fetchedPortfolio.continuingEducations?.map((edu) => ({
+            ...edu,
+            courseName: edu.courseName || "",
+            institution: edu.institution || "",
+            completionDate: edu.completionDate || "",
+          })) || [],
+          professionalMemberships: fetchedPortfolio.professionalMemberships?.map((mem) => ({
+            ...mem,
+            organization: mem.organization || "",
+            membershipType: mem.membershipType || "",
+            startDate: mem.startDate || "",
+          })) || [],
+          references: fetchedPortfolio.references?.map((ref) => ({
+            ...ref,
+            name: ref.name || "",
+            relationship: ref.relationship || "",
+            email: ref.email || "",
+            phone: ref.phone || "",
+          })) || [],
+          projectIds: fetchedPortfolio.projectIds || [],
+        });
+        setPreviewAvatar(fetchedPortfolio.avatar || "/placeholder.svg");
 
-              console.log("Fetching portfolio for graduate ID:", graduateId);
-              const portfolioResponse = await axios.get(
-                  `${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio`,
-                  {
-                      withCredentials: true,
-                      headers: { Authorization: `Bearer ${fetchedToken}` },
-                  }
-              );
-              console.log("Portfolio response:", portfolioResponse.data);
-              const fetchedPortfolio = portfolioResponse.data;
-              setPortfolio({
-                  ...initialPortfolioState,
-                  ...fetchedPortfolio,
-                  professionalSummary: fetchedPortfolio.professionalSummary || "",
-                  customSectionJson: fetchedPortfolio.customSectionJson || "",
-                  email: fetchedPortfolio.email || "",
-                  phone: fetchedPortfolio.phone || "",
-                  website: fetchedPortfolio.website || "",
-                  avatar: fetchedPortfolio.avatar || "",
-                  skills: fetchedPortfolio.skills?.map(skill => ({
-                      ...skill,
-                      name: skill.name || "",
-                      type: skill.type || "TECHNICAL",
-                      proficiencyLevel: skill.proficiencyLevel || "",
-                  })) || [],
-                  experiences: fetchedPortfolio.experiences?.map(exp => ({
-                      ...exp,
-                      jobTitle: exp.jobTitle || "",
-                      employer: exp.employer || "",
-                      description: exp.description || "", // For textarea
-                      startDate: exp.startDate || "",
-                      endDate: exp.endDate || "",
-                  })) || [],
-                  awardsRecognitions: fetchedPortfolio.awardsRecognitions?.map(award => ({
-                      ...award,
-                      title: award.title || "",
-                      issuer: award.issuer || "",
-                      dateReceived: award.dateReceived || "",
-                  })) || [],
-                  continuingEducations: fetchedPortfolio.continuingEducations?.map(edu => ({
-                      ...edu,
-                      courseName: edu.courseName || "",
-                      institution: edu.institution || "",
-                      completionDate: edu.completionDate || "",
-                  })) || [],
-                  professionalMemberships: fetchedPortfolio.professionalMemberships?.map(mem => ({
-                      ...mem,
-                      organization: mem.organization || "",
-                      membershipType: mem.membershipType || "",
-                      startDate: mem.startDate || "",
-                  })) || [],
-                  references: fetchedPortfolio.references?.map(ref => ({
-                      ...ref,
-                      name: ref.name || "",
-                      relationship: ref.relationship || "",
-                      email: ref.email || "",
-                      phone: ref.phone || "",
-                  })) || [],
-                  projectIds: fetchedPortfolio.projectIds || [],
-              });
-              setPreviewAvatar(fetchedPortfolio.avatar || "/placeholder.svg");
-          } catch (err) {
-              console.error("Failed to fetch portfolio:", err);
-              let errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || "Failed to load portfolio";
-              if (err.response?.status === 401) {
-                  errorMessage = "Unauthorized: Please sign in again.";
-                  console.error("Unauthorized: Redirecting to /signin");
-                  navigate("/signin");
-              } else if (err.response?.status === 404) {
-                  errorMessage = "Portfolio not found for this graduate.";
-              }
-              setError(errorMessage);
-          } finally {
-              setIsLoading(false);
-          }
-      };
+        console.log("Fetching certificates for graduate ID:", graduateId);
+        const certificateResponse = await axios.get(
+          `${BACKEND_URL}/api/certificate/graduate/${graduateId}`,
+          { withCredentials: true }
+        );
+        console.log("Certificates response:", certificateResponse.data);
+        setCertificates(
+          certificateResponse.data.map((cert) => ({
+            id: cert.id,
+            courseName: cert.courseName || "",
+            certificateNumber: cert.certificateNumber || "",
+            issueDate: cert.issueDate || "",
+            certificateFilePath: cert.certificateFilePath || null,
+            preview: cert.certificateFilePath || "/placeholder.svg",
+            portfolioId: cert.portfolioId || fetchedPortfolio.id,
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to fetch portfolio or certificates:", err);
+        let errorMessage =
+          err.response?.data?.message || err.response?.data?.error || err.message || "Failed to load portfolio";
+        if (err.response?.status === 401) {
+          errorMessage = "Session expired. Please sign in again.";
+          console.error("Unauthorized: Redirecting to /signin");
+          navigate("/signin");
+        } else if (err.response?.status === 404) {
+          errorMessage = "Portfolio or certificates not found for this graduate.";
+        }
+        setError(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-      fetchPortfolio();
+    fetchPortfolio();
   }, [graduateId, navigate]);
 
-  // Handle input changes for portfolio fields
   const handlePortfolioChange = (e) => {
     const { name, value } = e.target;
     setPortfolio((prev) => ({ ...prev, [name]: value }));
     setError("");
   };
 
-  // Handle avatar file change
   const handleAvatarFileChange = (e) => {
     const file = e.target.files[0];
     if (file && !file.type.startsWith("image/")) {
@@ -166,7 +177,98 @@ const EditPortfolio = () => {
     setError("");
   };
 
-  // Handle array changes
+  const handleCertificateFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && !file.type.startsWith("image/")) {
+      setError("Please select an image file for the certificate.");
+      return;
+    }
+    setNewCertificate((prev) => ({ ...prev, certificateFile: file }));
+    setError("");
+  };
+
+  const handleCertificateInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewCertificate((prev) => ({ ...prev, [name]: value }));
+    setError("");
+  };
+
+  const handleAddCertificate = () => {
+    if (!newCertificate.courseName || !newCertificate.certificateNumber || !newCertificate.issueDate) {
+      setError("Please fill in all required certificate fields.");
+      return;
+    }
+    const newCert = {
+      id: `new-${Date.now()}`,
+      courseName: newCertificate.courseName,
+      certificateNumber: newCertificate.certificateNumber,
+      issueDate: newCertificate.issueDate,
+      certificateFile: newCertificate.certificateFile,
+      preview: newCertificate.certificateFile ? URL.createObjectURL(newCertificate.certificateFile) : null,
+      portfolioId: portfolio.id,
+    };
+    setCertificates((prev) => [...prev, newCert]);
+    setModifiedCertificates((prev) => new Set(prev).add(newCert.id));
+    setNewCertificate({
+      courseName: "",
+      certificateNumber: "",
+      issueDate: "",
+      certificateFile: null,
+    });
+    setIsAddingCertificate(false);
+    setEditingCertificateId(null);
+    setError("");
+  };
+
+  const handleEditCertificate = (certificate) => {
+    setEditingCertificateId(certificate.id);
+    setNewCertificate({
+      courseName: certificate.courseName,
+      certificateNumber: certificate.certificateNumber,
+      issueDate: certificate.issueDate,
+      certificateFile: null,
+    });
+    setIsAddingCertificate(true);
+  };
+
+  const handleUpdateCertificate = () => {
+    if (!newCertificate.courseName || !newCertificate.certificateNumber || !newCertificate.issueDate) {
+      setError("Please fill in all required certificate fields.");
+      return;
+    }
+    setCertificates((prev) =>
+      prev.map((cert) =>
+        cert.id === editingCertificateId
+          ? {
+              ...cert,
+              courseName: newCertificate.courseName,
+              certificateNumber: newCertificate.certificateNumber,
+              issueDate: newCertificate.issueDate,
+              certificateFile: newCertificate.certificateFile || cert.certificateFile,
+              preview: newCertificate.certificateFile
+                ? URL.createObjectURL(newCertificate.certificateFile)
+                : cert.preview,
+            }
+          : cert
+      )
+    );
+    setModifiedCertificates((prev) => new Set(prev).add(editingCertificateId));
+    setNewCertificate({
+      courseName: "",
+      certificateNumber: "",
+      issueDate: "",
+      certificateFile: null,
+    });
+    setEditingCertificateId(null);
+    setIsAddingCertificate(false);
+    setError("");
+  };
+
+  const handleRemoveCertificate = (id) => {
+    setCertificates((prev) => prev.filter((cert) => cert.id !== id));
+    setModifiedCertificates((prev) => new Set(prev).add(id));
+  };
+
   const handleArrayChange = (arrayName, index, field, value) => {
     setPortfolio((prev) => {
       const updatedArray = [...prev[arrayName]];
@@ -175,7 +277,6 @@ const EditPortfolio = () => {
     });
   };
 
-  // Add new item to array
   const addArrayItem = (arrayName, newItem) => {
     setPortfolio((prev) => ({
       ...prev,
@@ -183,7 +284,6 @@ const EditPortfolio = () => {
     }));
   };
 
-  // Remove item from array
   const removeArrayItem = (arrayName, index) => {
     setPortfolio((prev) => ({
       ...prev,
@@ -191,10 +291,9 @@ const EditPortfolio = () => {
     }));
   };
 
-  // Handle image click
   const handleImageClick = () => avatarFileInputRef.current.click();
+  const handleCertificateImageClick = () => certificateFileInputRef.current.click();
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -206,29 +305,140 @@ const EditPortfolio = () => {
       if (selectedAvatarFile) {
         const formDataAvatar = new FormData();
         formDataAvatar.append("file", selectedAvatarFile);
+        console.log("Uploading avatar with FormData:");
+        for (const [key, value] of formDataAvatar.entries()) {
+          console.log(`${key}: ${value instanceof File ? value.name : value}`);
+        }
         const uploadResponse = await axios.post(
           `${BACKEND_URL}/api/graduate/${graduateId}/upload-picture`,
           formDataAvatar,
-          {
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
-          }
+          { withCredentials: true }
         );
         avatarUrl = uploadResponse.data.profilePicture;
+        console.log("Avatar uploaded:", avatarUrl);
       }
+
+      // Handle certificates
+      const certificateIds = [];
+      const existingCertificateIds = new Set(
+        (
+          await axios.get(`${BACKEND_URL}/api/certificate/graduate/${graduateId}`, {
+            withCredentials: true,
+          })
+        ).data.map((cert) => cert.id)
+      );
+
+      for (const cert of certificates) {
+        if (!modifiedCertificates.has(cert.id)) {
+          if (typeof cert.id === "string" && cert.id.includes("new-")) {
+            // New certificate, include it
+          } else if (existingCertificateIds.has(cert.id)) {
+            certificateIds.push(cert.id);
+            continue;
+          }
+        }
+
+        const certificateData = new FormData();
+        certificateData.append("courseName", cert.courseName || "");
+        certificateData.append("certificateNumber", cert.certificateNumber || "");
+        certificateData.append("issueDate", cert.issueDate || "");
+        // Only append portfolioId if it exists, as a string
+        if (cert.portfolioId) {
+          certificateData.append("portfolioId", cert.portfolioId.toString());
+        }
+        // Only append graduateId for PUT requests
+        if (typeof cert.id !== "string" || !cert.id.includes("new-")) {
+          certificateData.append("graduateId", graduateId.toString());
+        }
+        if (cert.certificateFile instanceof File) {
+          certificateData.append("certificateFile", cert.certificateFile);
+        }
+
+        console.log("Certificate FormData entries for ID:", cert.id);
+        for (const [key, value] of certificateData.entries()) {
+          console.log(`${key}: ${value instanceof File ? value.name : value}`);
+        }
+
+        if (typeof cert.id === "string" && cert.id.includes("new-")) {
+          console.log("Creating new certificate for graduate ID:", graduateId);
+          try {
+            const certResponse = await axios.post(
+              `${BACKEND_URL}/api/certificate/graduate/${graduateId}`,
+              certificateData,
+              { withCredentials: true }
+            );
+            console.log("Certificate created:", certResponse.data);
+            certificateIds.push(certResponse.data.id);
+          } catch (err) {
+            console.error("Failed to create certificate:", err);
+            if (err.response?.status === 401) {
+              setError("Session expired. Please sign in again.");
+              navigate("/signin");
+              return;
+            } else if (err.response?.status === 415) {
+              setError("Unsupported media type. Please check certificate data format.");
+              return;
+            } else if (err.response?.status === 400) {
+              setError(`Failed to create certificate: ${err.response?.data?.message || "Invalid data"}`);
+              return;
+            }
+            throw err;
+          }
+        } else {
+          console.log("Updating certificate with ID:", cert.id);
+          try {
+            const certResponse = await axios.put(
+              `${BACKEND_URL}/api/certificate/${cert.id}`,
+              certificateData,
+              { withCredentials: true }
+            );
+            console.log("Certificate updated:", certResponse.data);
+            certificateIds.push(cert.id);
+          } catch (err) {
+            console.error("Failed to update certificate ID:", cert.id, err);
+            if (err.response?.status === 401) {
+              setError("Session expired. Please sign in again.");
+              navigate("/signin");
+              return;
+            } else if (err.response?.status === 415) {
+              setError("Unsupported media type. Please check certificate data format.");
+              return;
+            } else if (err.response?.status === 400) {
+              setError(`Failed to update certificate: ${err.response?.data?.message || "Invalid data"}`);
+              return;
+            }
+            throw err;
+          }
+        }
+      }
+
+      // Delete certificates that were removed
+      const certificatesToDelete = Array.from(existingCertificateIds).filter(
+        (id) => !certificates.some((cert) => cert.id === id) && modifiedCertificates.has(id)
+      );
+      for (const certId of certificatesToDelete) {
+        console.log("Deleting certificate ID:", certId);
+        await axios.delete(`${BACKEND_URL}/api/certificate/${certId}`, {
+          withCredentials: true,
+        });
+      }
+
+      // Clear modifiedCertificates after processing
+      setModifiedCertificates(new Set());
 
       const payload = {
         graduateId,
         ...portfolio,
         avatar: avatarUrl || null,
+        certificateIds,
         skills: portfolio.skills.map((skill) => ({
-          id: typeof skill.id === 'string' && skill.id.includes("new-") ? null : skill.id,
+          id: typeof skill.id === "string" && skill.id.includes("new-") ? null : skill.id,
           name: skill.name,
           type: skill.type,
           proficiencyLevel: skill.proficiencyLevel || null,
         })),
         experiences: portfolio.experiences.map((exp) => ({
-          id: typeof exp.id === 'string' && exp.id.includes("new-") ? null : exp.id,
+          id: typeof exp.id === "string" && exp.id.includes("new-") ? null : exp.id,
           jobTitle: exp.jobTitle,
           employer: exp.employer,
           description: exp.description || null,
@@ -236,25 +446,25 @@ const EditPortfolio = () => {
           endDate: exp.endDate ? exp.endDate : null,
         })),
         awardsRecognitions: portfolio.awardsRecognitions.map((award) => ({
-          id: typeof award.id === 'string' && award.id.includes("new-") ? null : award.id,
+          id: typeof award.id === "string" && award.id.includes("new-") ? null : award.id,
           title: award.title,
           issuer: award.issuer || null,
           dateReceived: award.dateReceived ? award.dateReceived : null,
         })),
         continuingEducations: portfolio.continuingEducations.map((edu) => ({
-          id: typeof edu.id === 'string' && edu.id.includes("new-") ? null : edu.id,
+          id: typeof edu.id === "string" && edu.id.includes("new-") ? null : edu.id,
           courseName: edu.courseName,
           institution: edu.institution || null,
           completionDate: edu.completionDate ? edu.completionDate : null,
         })),
         professionalMemberships: portfolio.professionalMemberships.map((mem) => ({
-          id: typeof mem.id === 'string' && mem.id.includes("new-") ? null : mem.id,
+          id: typeof mem.id === "string" && mem.id.includes("new-") ? null : mem.id,
           organization: mem.organization,
           membershipType: mem.membershipType || null,
           startDate: mem.startDate ? mem.startDate : null,
         })),
         references: portfolio.references.map((ref) => ({
-          id: typeof ref.id === 'string' && ref.id.includes("new-") ? null : ref.id,
+          id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
           name: ref.name,
           relationship: ref.relationship || null,
           email: ref.email || null,
@@ -262,28 +472,28 @@ const EditPortfolio = () => {
         })),
       };
 
-      // Use PUT instead of POST and correct endpoint
+      console.log("Updating portfolio with payload:", payload);
       await axios.put(
         `${BACKEND_URL}/api/portfolio/${portfolio.id}`,
         payload,
-        {
-          withCredentials: true,
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { withCredentials: true }
       );
       console.log("Portfolio updated successfully");
       setSuccess("Portfolio updated successfully!");
       setTimeout(() => navigate(`/portfolio/${graduateId}`), 2000);
     } catch (err) {
       console.error("Failed to update portfolio:", err);
-      let errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || "Failed to update portfolio";
+      let errorMessage =
+        err.response?.data?.message || err.response?.data?.error || err.message || "Failed to update portfolio";
       if (err.response?.status === 401) {
-        errorMessage = "Unauthorized: Please sign in again.";
+        errorMessage = "Session expired. Please sign in again.";
         navigate("/signin");
       } else if (err.response?.status === 404) {
-        errorMessage = "Portfolio not found or update failed.";
-      } else if (err.response?.status === 405) {
-        errorMessage = "Method not allowed. Please contact support.";
+        errorMessage = "Portfolio or certificates not found or update failed.";
+      } else if (err.response?.status === 400) {
+        errorMessage = `Bad Request: ${err.response?.data?.message || "Invalid data provided."}`;
+      } else if (err.response?.status === 415) {
+        errorMessage = "Unsupported media type. Please check data format.";
       }
       setError(errorMessage);
     }
@@ -524,6 +734,154 @@ const EditPortfolio = () => {
               onChange={handlePortfolioChange}
             />
           </div>
+
+          <h2>Certificates</h2>
+          <button
+            type="button"
+            className="add-certificate-button"
+            onClick={() => {
+              setIsAddingCertificate(true);
+              setEditingCertificateId(null);
+              setNewCertificate({
+                courseName: "",
+                certificateNumber: "",
+                issueDate: "",
+                certificateFile: null,
+              });
+            }}
+          >
+            <FaPlus /> Add Certificate
+          </button>
+          {isAddingCertificate && (
+            <div className="certificate-form">
+              <div className="form-group">
+                <label htmlFor="courseName">Course Name</label>
+                <input
+                  type="text"
+                  id="courseName"
+                  name="courseName"
+                  value={newCertificate.courseName}
+                  onChange={handleCertificateInputChange}
+                  placeholder="Enter course name"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="certificateNumber">Certificate Number</label>
+                <input
+                  type="text"
+                  id="certificateNumber"
+                  name="certificateNumber"
+                  value={newCertificate.certificateNumber}
+                  onChange={handleCertificateInputChange}
+                  placeholder="Enter certificate number"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="issueDate">Issue Date</label>
+                <input
+                  type="date"
+                  id="issueDate"
+                  name="issueDate"
+                  value={newCertificate.issueDate}
+                  onChange={handleCertificateInputChange}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="certificateFile">Certificate File</label>
+                <div className="certificate-upload">
+                  <img
+                    src={
+                      newCertificate.certificateFile
+                        ? URL.createObjectURL(newCertificate.certificateFile)
+                        : "/placeholder.svg"
+                    }
+                    alt="Certificate Preview"
+                    className="certificate-preview"
+                    onClick={handleCertificateImageClick}
+                    style={{ cursor: "pointer", width: "100px", height: "100px" }}
+                  />
+                  <button
+                    type="button"
+                    className="certificate-upload-button"
+                    onClick={handleCertificateImageClick}
+                  >
+                    Choose File
+                  </button>
+                  <input
+                    type="file"
+                    id="certificateFile"
+                    accept="image/*"
+                    onChange={handleCertificateFileChange}
+                    ref={certificateFileInputRef}
+                    style={{ display: "none" }}
+                  />
+                </div>
+              </div>
+              <div className="certificate-form-actions">
+                <button
+                  type="button"
+                  className="certificate-save-button"
+                  onClick={editingCertificateId ? handleUpdateCertificate : handleAddCertificate}
+                >
+                  {editingCertificateId ? "Update" : "Add"}
+                </button>
+                <button
+                  type="button"
+                  className="certificate-cancel-button"
+                  onClick={() => {
+                    setIsAddingCertificate(false);
+                    setEditingCertificateId(null);
+                    setNewCertificate({
+                      courseName: "",
+                      certificateNumber: "",
+                      issueDate: "",
+                      certificateFile: null,
+                    });
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          {certificates.length > 0 && (
+            <div className="certificate-list">
+              <h4>Added Certificates</h4>
+              {certificates.map((cert) => (
+                <div key={cert.id} className="certificate-item">
+                  <div className="certificate-details">
+                    <h5>{cert.courseName}</h5>
+                    <p>Certificate Number: {cert.certificateNumber}</p>
+                    <p>Issue Date: {cert.issueDate}</p>
+                    {cert.preview && (
+                      <img
+                        src={cert.preview}
+                        alt="Certificate Preview"
+                        className="certificate-preview"
+                        style={{ width: "50px", height: "50px" }}
+                      />
+                    )}
+                  </div>
+                  <div className="certificate-actions">
+                    <button
+                      type="button"
+                      className="certificate-edit-button"
+                      onClick={() => handleEditCertificate(cert)}
+                    >
+                      <FaPen />
+                    </button>
+                    <button
+                      type="button"
+                      className="certificate-remove-button"
+                      onClick={() => handleRemoveCertificate(cert.id)}
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <h2>Skills</h2>
           {portfolio.skills.map((skill, index) => (
@@ -818,6 +1176,7 @@ const EditPortfolio = () => {
           >
             <FaPlus /> Add Membership
           </button>
+
           <h2>References</h2>
           {portfolio.references.map((ref, index) => (
             <div key={ref.id || `ref-${index}`} className="array-item">

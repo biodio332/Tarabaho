@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FaPlus, FaTrash } from "react-icons/fa";
+import { FaPlus, FaTrash, FaPen } from "react-icons/fa";
 import "../styles/PortfolioCreation.css";
 
 const PortfolioCreation = () => {
@@ -47,6 +47,8 @@ const PortfolioCreation = () => {
   const [isAddingEducation, setIsAddingEducation] = useState(false);
   const [isAddingMembership, setIsAddingMembership] = useState(false);
   const [isAddingReference, setIsAddingReference] = useState(false);
+  const [isAddingCertificate, setIsAddingCertificate] = useState(false);
+  const [editingCertificateId, setEditingCertificateId] = useState(null);
   const [newProject, setNewProject] = useState({
     title: "",
     description: "",
@@ -85,6 +87,12 @@ const PortfolioCreation = () => {
     contact: "",
     email: "",
   });
+  const [newCertificate, setNewCertificate] = useState({
+    courseName: "",
+    certificateNumber: "",
+    issueDate: "",
+    certificateFile: null,
+  });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [token, setToken] = useState(null);
@@ -92,6 +100,7 @@ const PortfolioCreation = () => {
   const navigate = useNavigate();
   const avatarFileInputRef = useRef(null);
   const projectFileInputRef = useRef(null);
+  const certificateFileInputRef = useRef(null);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
   const validSkillTypes = ["TECHNICAL", "LANGUAGE", "DIGITAL", "SOFT", "INDUSTRY_SPECIFIC"];
@@ -126,17 +135,8 @@ const PortfolioCreation = () => {
           setPreviewAvatar(graduateResponse.data.profilePicture);
           setFormData((prev) => ({ ...prev, avatar: graduateResponse.data.profilePicture }));
         }
-
-        const certificateResponse = await axios.get(
-          `${BACKEND_URL}/api/certificate/graduate/${graduateResponse.data.id}`,
-          {
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${fetchedToken}` },
-          }
-        );
-        setCertificates(certificateResponse.data);
       } catch (err) {
-        setError("Failed to load profile or certificate data. Please try again.");
+        setError("Failed to load profile data. Please try again.");
         if (err.response?.status === 401) navigate("/signin");
       }
     };
@@ -167,6 +167,16 @@ const PortfolioCreation = () => {
       return;
     }
     setNewProject((prev) => ({ ...prev, projectFile: file }));
+    setError("");
+  };
+
+  const handleCertificateFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && !file.type.startsWith("image/")) {
+      setError("Please select an image file for the certificate.");
+      return;
+    }
+    setNewCertificate((prev) => ({ ...prev, certificateFile: file }));
     setError("");
   };
 
@@ -209,6 +219,12 @@ const PortfolioCreation = () => {
   const handleProjectInputChange = (e) => {
     const { name, value } = e.target;
     setNewProject((prev) => ({ ...prev, [name]: value }));
+    setError("");
+  };
+
+  const handleCertificateInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewCertificate((prev) => ({ ...prev, [name]: value }));
     setError("");
   };
 
@@ -303,6 +319,77 @@ const PortfolioCreation = () => {
     setError("");
   };
 
+  const handleAddCertificate = () => {
+    if (!newCertificate.courseName || !newCertificate.certificateNumber || !newCertificate.issueDate) {
+      setError("Please fill in all required certificate fields.");
+      return;
+    }
+    setCertificates((prev) => [
+      ...prev,
+      {
+        id: Date.now(), // Temporary ID for frontend
+        courseName: newCertificate.courseName,
+        certificateNumber: newCertificate.certificateNumber,
+        issueDate: newCertificate.issueDate,
+        certificateFile: newCertificate.certificateFile,
+        preview: newCertificate.certificateFile ? URL.createObjectURL(newCertificate.certificateFile) : null,
+      },
+    ]);
+    setNewCertificate({
+      courseName: "",
+      certificateNumber: "",
+      issueDate: "",
+      certificateFile: null,
+    });
+    setIsAddingCertificate(false);
+    setError("");
+  };
+
+  const handleEditCertificate = (certificate) => {
+    setEditingCertificateId(certificate.id);
+    setNewCertificate({
+      courseName: certificate.courseName,
+      certificateNumber: certificate.certificateNumber,
+      issueDate: certificate.issueDate,
+      certificateFile: certificate.certificateFile,
+    });
+    setIsAddingCertificate(true);
+  };
+
+  const handleUpdateCertificate = () => {
+    if (!newCertificate.courseName || !newCertificate.certificateNumber || !newCertificate.issueDate) {
+      setError("Please fill in all required certificate fields.");
+      return;
+    }
+    setCertificates((prev) =>
+      prev.map((cert) =>
+        cert.id === editingCertificateId
+          ? {
+              ...cert,
+              courseName: newCertificate.courseName,
+              certificateNumber: newCertificate.certificateNumber,
+              issueDate: newCertificate.issueDate,
+              certificateFile: newCertificate.certificateFile,
+              preview: newCertificate.certificateFile ? URL.createObjectURL(newCertificate.certificateFile) : cert.preview,
+            }
+          : cert
+      )
+    );
+    setNewCertificate({
+      courseName: "",
+      certificateNumber: "",
+      issueDate: "",
+      certificateFile: null,
+    });
+    setEditingCertificateId(null);
+    setIsAddingCertificate(false);
+    setError("");
+  };
+
+  const handleRemoveCertificate = (id) => {
+    setCertificates((prev) => prev.filter((cert) => cert.id !== id));
+  };
+
   const handleRemoveSkill = (index) => {
     setSkills((prev) => prev.filter((_, i) => i !== index));
   };
@@ -333,13 +420,13 @@ const PortfolioCreation = () => {
 
   const handleImageClick = () => avatarFileInputRef.current.click();
   const handleProjectImageClick = () => projectFileInputRef.current.click();
+  const handleCertificateImageClick = () => certificateFileInputRef.current.click();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    // Validate skills
     const validatedSkills = skills.map((skill) => {
       if (!skill.name || skill.name.trim() === "") {
         throw new Error("Skill name is required.");
@@ -378,8 +465,28 @@ const PortfolioCreation = () => {
         avatarUrl = uploadResponse.data.profilePicture;
       }
 
+      const certificateIds = [];
+      for (const cert of certificates) {
+        const certificateData = new FormData();
+        certificateData.append("courseName", cert.courseName);
+        certificateData.append("certificateNumber", cert.certificateNumber);
+        certificateData.append("issueDate", cert.issueDate);
+        if (cert.certificateFile) {
+          certificateData.append("certificateFile", cert.certificateFile);
+        }
+        const certResponse = await axios.post(
+          `${BACKEND_URL}/api/certificate/graduate/${graduateId}`,
+          certificateData,
+          {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+          }
+        );
+        certificateIds.push(certResponse.data.id);
+      }
+
       const payload = {
-        graduateId: graduateId, // Add graduateId to the payload
+        graduateId: graduateId,
         professionalSummary: formData.professionalSummary,
         primaryCourseType: formData.primaryCourseType,
         scholarScheme: formData.scholarScheme || "None",
@@ -431,12 +538,11 @@ const PortfolioCreation = () => {
           contact: ref.contact || null,
           email: ref.email || null,
         })),
-        certificateIds: certificates.map((cert) => cert.id),
+        certificateIds: certificateIds,
       };
 
       console.log("Sending portfolio payload:", JSON.stringify(payload, null, 2));
 
-      // Create portfolio
       const portfolioResponse = await axios.post(
         `${BACKEND_URL}/api/portfolio`,
         payload,
@@ -448,15 +554,13 @@ const PortfolioCreation = () => {
       const portfolioId = portfolioResponse.data.id;
       localStorage.setItem("portfolioId", portfolioId);
 
-      // Upload projects
-      const projectIds = [];
       for (const proj of projects) {
         const formDataProject = new FormData();
         formDataProject.append("portfolioId", portfolioId);
         formDataProject.append("title", proj.title);
         formDataProject.append("description", proj.description || "");
         formDataProject.append("file", proj.projectFile);
-        const uploadResponse = await axios.post(
+        await axios.post(
           `${BACKEND_URL}/api/project`,
           formDataProject,
           {
@@ -464,7 +568,6 @@ const PortfolioCreation = () => {
             headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
           }
         );
-        projectIds.push(uploadResponse.data.id);
       }
 
       console.log("Portfolio created with ID:", portfolioId);
@@ -493,7 +596,6 @@ const PortfolioCreation = () => {
       setIsLoading(false);
     }
   };
-  
 
   return (
     <div className="portfolio-creation-page" style={{ color: "#333" }}>
@@ -630,21 +732,160 @@ const PortfolioCreation = () => {
           {/* Certificates */}
           <div className="form-group">
             <h3>Certificates</h3>
-            {certificates.length > 0 ? (
+            <button
+              type="button"
+              className="add-certificate-button"
+              onClick={() => {
+                setIsAddingCertificate(true);
+                setEditingCertificateId(null);
+                setNewCertificate({
+                  courseName: "",
+                  certificateNumber: "",
+                  issueDate: "",
+                  certificateFile: null,
+                });
+              }}
+              disabled={isLoading}
+            >
+              <FaPlus /> Add Certificate
+            </button>
+            {isAddingCertificate && (
+              <div className="certificate-form">
+                <div className="form-group">
+                  <label htmlFor="courseName">Course Name</label>
+                  <input
+                    type="text"
+                    id="courseName"
+                    name="courseName"
+                    value={newCertificate.courseName}
+                    onChange={handleCertificateInputChange}
+                    placeholder="Enter course name"
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="certificateNumber">Certificate Number</label>
+                  <input
+                    type="text"
+                    id="certificateNumber"
+                    name="certificateNumber"
+                    value={newCertificate.certificateNumber}
+                    onChange={handleCertificateInputChange}
+                    placeholder="Enter certificate number"
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="issueDate">Issue Date</label>
+                  <input
+                    type="date"
+                    id="issueDate"
+                    name="issueDate"
+                    value={newCertificate.issueDate}
+                    onChange={handleCertificateInputChange}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="certificateFile">Certificate File</label>
+                  <div className="certificate-upload">
+                    <img
+                      src={
+                        newCertificate.certificateFile
+                          ? URL.createObjectURL(newCertificate.certificateFile)
+                          : "/placeholder.svg"
+                      }
+                      alt="Certificate Preview"
+                      className="certificate-preview"
+                      onClick={handleCertificateImageClick}
+                      style={{ cursor: "pointer", width: "100px", height: "100px" }}
+                    />
+                    <button
+                      type="button"
+                      className="certificate-upload-button"
+                      onClick={handleCertificateImageClick}
+                      disabled={isLoading}
+                    >
+                      Choose File
+                    </button>
+                    <input
+                      type="file"
+                      id="certificateFile"
+                      accept="image/*"
+                      onChange={handleCertificateFileChange}
+                      ref={certificateFileInputRef}
+                      style={{ display: "none" }}
+                    />
+                  </div>
+                </div>
+                <div className="certificate-form-actions">
+                  <button
+                    type="button"
+                    className="certificate-save-button"
+                    onClick={editingCertificateId ? handleUpdateCertificate : handleAddCertificate}
+                    disabled={isLoading}
+                  >
+                    {editingCertificateId ? "Update" : "Add"}
+                  </button>
+                  <button
+                    type="button"
+                    className="certificate-cancel-button"
+                    onClick={() => {
+                      setIsAddingCertificate(false);
+                      setEditingCertificateId(null);
+                      setNewCertificate({
+                        courseName: "",
+                        certificateNumber: "",
+                        issueDate: "",
+                        certificateFile: null,
+                      });
+                    }}
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+            {certificates.length > 0 && (
               <div className="certificate-list">
-                <h4>Available Certificates</h4>
+                <h4>Added Certificates</h4>
                 {certificates.map((cert, index) => (
-                  <div key={index} className="certificate-item">
+                  <div key={cert.id} className="certificate-item">
                     <div className="certificate-details">
-                      <h5>{cert.title}</h5>
-                      <p>Issuer: {cert.issuer}</p>
+                      <h5>{cert.courseName}</h5>
+                      <p>Certificate Number: {cert.certificateNumber}</p>
                       <p>Issue Date: {cert.issueDate}</p>
+                      {cert.preview && (
+                        <img
+                          src={cert.preview}
+                          alt="Certificate Preview"
+                          className="certificate-preview"
+                          style={{ width: "50px", height: "50px" }}
+                        />
+                      )}
+                    </div>
+                    <div className="certificate-actions">
+                      <button
+                        type="button"
+                        className="certificate-edit-button"
+                        onClick={() => handleEditCertificate(cert)}
+                        disabled={isLoading}
+                      >
+                        <FaPen />
+                      </button>
+                      <button
+                        type="button"
+                        className="certificate-remove-button"
+                        onClick={() => handleRemoveCertificate(cert.id)}
+                        disabled={isLoading}
+                      >
+                        <FaTrash />
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
-            ) : (
-              <p>No certificates available. Please upload a certificate first.</p>
             )}
           </div>
 
@@ -1411,8 +1652,8 @@ const PortfolioCreation = () => {
               <option value="PRIVATE">Private</option>
             </select>
           </div>
-          <button type="submit" className="portfolio-submit-button" disabled={isLoading || certificates.length === 0}>
-            {isLoading ? "Creating..." : certificates.length === 0 ? "Add Certificate First" : "Create Portfolio"}
+          <button type="submit" className="portfolio-submit-button" disabled={isLoading}>
+            {isLoading ? "Creating..." : "Create Portfolio"}
           </button>
         </form>
       </div>
