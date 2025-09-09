@@ -16,6 +16,7 @@ const TrabahadorHomepage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [showCertificateModal, setShowCertificateModal] = useState(false);
+  const [showVerificationPendingModal, setShowVerificationPendingModal] = useState(false);
   const [newCertificate, setNewCertificate] = useState({
     courseName: "",
     certificateNumber: "",
@@ -247,13 +248,23 @@ const TrabahadorHomepage = () => {
     setError("");
   };
 
+  const handleVerificationPendingModalClose = () => {
+    setShowVerificationPendingModal(false);
+    setError("");
+  };
+
   const handleCreatePortfolioClick = () => {
-    console.log("handleCreatePortfolioClick: certificates length:", certificates.length);
-    if (certificates.length === 0) {
-      console.log("No certificates, opening certificate modal");
-      setShowCertificateModal(true);
+    console.log("handleCreatePortfolioClick: isVerified=", graduateData?.isVerified, "certificates length=", certificates.length);
+    if (!graduateData?.isVerified) {
+      if (certificates.length === 0) {
+        console.log("Not verified and no certificates, opening certificate modal");
+        setShowCertificateModal(true);
+      } else {
+        console.log("Not verified but certificates exist, showing verification pending modal");
+        setShowVerificationPendingModal(true);
+      }
     } else {
-      console.log("Certificates exist, redirecting to /create-portfolio");
+      console.log("Graduate is verified, redirecting to /create-portfolio");
       navigate("/create-portfolio");
     }
   };
@@ -311,11 +322,6 @@ const TrabahadorHomepage = () => {
                       >
                         CREATE PORTFOLIO
                       </button>
-                      {certificates.length > 0 && (
-                        <Link to="/create-portfolio" className="trabahador-action-button secondary">
-                          Proceed to Create Portfolio
-                        </Link>
-                      )}
                     </>
                   )}
                 </div>
@@ -329,6 +335,7 @@ const TrabahadorHomepage = () => {
         <div className="modal-overlay">
           <div className="certificate-modal">
             <h2 className="certificate-modal-title">Upload TESDA Certificate</h2>
+            <p>Please upload a valid TESDA certificate to verify your graduate status.</p>
             {error && <div className="error-message">{error}</div>}
             <div className="certificate-form">
               <div className="form-group">
@@ -407,6 +414,25 @@ const TrabahadorHomepage = () => {
                   Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showVerificationPendingModal && (
+        <div className="modal-overlay">
+          <div className="certificate-modal">
+            <h2 className="certificate-modal-title">Verification Pending</h2>
+            <p>You've already submitted a certificate. Please wait 1-2 days for verification.</p>
+            {error && <div className="error-message">{error}</div>}
+            <div className="form-actions">
+              <button
+                className="cancel-btn"
+                onClick={handleVerificationPendingModalClose}
+                disabled={isLoading}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

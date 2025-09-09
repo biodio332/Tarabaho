@@ -22,8 +22,8 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "portfolios")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // Remove "graduate" to include it if needed
-@JsonInclude(JsonInclude.Include.NON_NULL) // Include non-null fields in JSON
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Portfolio {
 
     @Id
@@ -122,7 +122,7 @@ public class Portfolio {
     @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<PortfolioView> portfolioViews = new ArrayList<>();
 
-    // Getters and setters remain unchanged
+    // Getters and setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Graduate getGraduate() { return graduate; }
@@ -170,19 +170,27 @@ public class Portfolio {
     public String getSalaryExpectations() { return salaryExpectations; }
     public void setSalaryExpectations(String salaryExpectations) { this.salaryExpectations = salaryExpectations; }
     public List<Skill> getSkills() { return skills; }
-    public void setSkills(List<Skill> skills) { this.skills = skills; }
+    public void setSkills(List<Skill> skills) { this.skills = (skills != null) ? skills : new ArrayList<>(); }
     public List<Experience> getExperiences() { return experiences; }
-    public void setExperiences(List<Experience> experiences) { this.experiences = experiences; }
+    public void setExperiences(List<Experience> experiences) { this.experiences = (experiences != null) ? experiences : new ArrayList<>(); }
     public List<Project> getProjects() { return projects; }
-    public void setProjects(List<Project> projects) { this.projects = projects; }
+    public void setProjects(List<Project> projects) { this.projects = (projects != null) ? projects : new ArrayList<>(); }
     public List<AwardRecognition> getAwardsRecognitions() { return awardsRecognitions; }
-    public void setAwardsRecognitions(List<AwardRecognition> awardsRecognitions) { this.awardsRecognitions = awardsRecognitions; }
+    public void setAwardsRecognitions(List<AwardRecognition> awardsRecognitions) { 
+        this.awardsRecognitions = (awardsRecognitions != null) ? awardsRecognitions : new ArrayList<>(); 
+    }
     public List<ContinuingEducation> getContinuingEducations() { return continuingEducations; }
-    public void setContinuingEducations(List<ContinuingEducation> continuingEducations) { this.continuingEducations = continuingEducations; }
+    public void setContinuingEducations(List<ContinuingEducation> continuingEducations) { 
+        this.continuingEducations = (continuingEducations != null) ? continuingEducations : new ArrayList<>(); 
+    }
     public List<ProfessionalMembership> getProfessionalMemberships() { return professionalMemberships; }
-    public void setProfessionalMemberships(List<ProfessionalMembership> professionalMemberships) { this.professionalMemberships = professionalMemberships; }
+    public void setProfessionalMemberships(List<ProfessionalMembership> professionalMemberships) { 
+        this.professionalMemberships = (professionalMemberships != null) ? professionalMemberships : new ArrayList<>(); 
+    }
     public List<Reference> getReferences() { return references; }
-    public void setReferences(List<Reference> references) { this.references = references; }
+    public void setReferences(List<Reference> references) { this.references = (references != null) ? references : new ArrayList<>(); }
     public List<PortfolioView> getPortfolioViews() { return portfolioViews; }
-    public void setPortfolioViews(List<PortfolioView> portfolioViews) { this.portfolioViews = portfolioViews; }
+    public void setPortfolioViews(List<PortfolioView> portfolioViews) { 
+        this.portfolioViews = (portfolioViews != null) ? portfolioViews : new ArrayList<>(); 
+    }
 }
