@@ -1,89 +1,197 @@
+/* Enhanced Portfolio Edit Page Styles */
+
 .edit-portfolio-page {
-  max-width: 800px;
+width: 100vw;
+  max-width: none;
   margin: 0 auto;
-  padding: 20px;
+  padding: 40px 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  line-height: 1.6;
+  color: #2c3e50;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  
+  
 }
 
 .edit-portfolio-container {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  left: auto;
+  
+}
+
+.edit-portfolio-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
 }
 
 .edit-portfolio-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 32px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
+  position: relative;
 }
 
 .form-group label {
-  font-weight: bold;
+  font-weight: 600;
+  font-size: 14px;
+  color: #34495e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
 }
 
 .form-group input,
 .form-group textarea,
 .form-group select {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 16px 20px;
+  border: 2px solid #e1e8ed;
+  border-radius: 12px;
   font-size: 16px;
+  font-family: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #fafbfc;
+  color: #2c3e50;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #667eea;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  transform: translateY(-2px);
+}
+
+.form-group input:hover,
+.form-group textarea:hover,
+.form-group select:hover {
+  border-color: #bdc3c7;
+  background: #ffffff;
 }
 
 .form-group textarea {
-  min-height: 100px;
+  min-height: 120px;
   resize: vertical;
+  font-family: inherit;
 }
 
 .array-item {
-  border: 1px solid #eee;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 4px;
+  border: 2px solid #ecf0f1;
+  padding: 24px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: #f8f9fa;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.array-item:hover {
+  border-color: #d5dbdb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .add-button,
 .remove-button,
 .save-button,
 .cancel-button {
-  padding: 10px 20px;
+  padding: 14px 28px;
   border: none;
-  border-radius: 4px;
+  border-radius: 10px;
   cursor: pointer;
   font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  font-family: inherit;
 }
 
 .add-button {
-  background-color: #4caf50;
+  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+
+.add-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
+}
+
+.add-button:active {
+  transform: translateY(0);
 }
 
 .remove-button {
-  background-color: #f44336;
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+.remove-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(231, 76, 60, 0.4);
 }
 
 .save-button {
-  background-color: #2196f3;
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+}
+
+.save-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
 }
 
 .cancel-button {
-  background-color: #ccc;
-  color: black;
+  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+  color: white;
   text-decoration: none;
   text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);
+}
+
+.cancel-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(149, 165, 166, 0.4);
+  text-decoration: none;
 }
 
 .form-actions {
   display: flex;
-  gap: 10px;
+  gap: 16px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #ecf0f1;
 }
 
 .edit-portfolio-loading,
@@ -91,24 +199,100 @@
 .edit-portfolio-no-data,
 .edit-portfolio-success {
   text-align: center;
-  padding: 20px;
-  border-radius: 4px;
+  padding: 32px;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 16px;
+  margin: 20px 0;
 }
 
 .edit-portfolio-loading {
-  background: #e0f7fa;
+  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+  color: #00695c;
+  border: 2px solid #4dd0e1;
 }
 
 .edit-portfolio-error {
-  background: #ffebee;
-  color: #d32f2f;
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+  color: #c62828;
+  border: 2px solid #ef5350;
 }
 
 .edit-portfolio-no-data {
-  background: #fff3e0;
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  color: #e65100;
+  border: 2px solid #ffb74d;
 }
 
 .edit-portfolio-success {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #1b5e20;
+  border: 2px solid #66bb6a;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .edit-portfolio-page {
+    padding: 20px 16px;
+  }
+
+  .edit-portfolio-container {
+    padding: 24px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .add-button,
+  .remove-button,
+  .save-button,
+  .cancel-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Loading Animation */
+.edit-portfolio-loading::after {
+  content: "";
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #00695c;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Focus indicators for accessibility */
+.add-button:focus,
+.remove-button:focus,
+.save-button:focus,
+.cancel-button:focus {
+  outline: 3px solid rgba(102, 126, 234, 0.5);
+  outline-offset: 2px;
+}
+
+/* Subtle animations */
+.array-item {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

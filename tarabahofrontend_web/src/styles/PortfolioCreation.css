@@ -1,539 +1,785 @@
-/* PortfolioCreation.css */
+/* Portfolio Creation - Enhanced, fully scoped to avoid global index.css conflicts */
+/* Scope everything under .portfolio-creation-page to prevent overlap */
 .portfolio-creation-page {
+  --pc-primary: #2563eb;
+  --pc-primary-hover: #1d4ed8;
+  --pc-secondary: #64748b;
+  --pc-success: #059669;
+  --pc-success-hover: #047857;
+  --pc-danger: #dc2626;
+  --pc-danger-hover: #b91c1c;
+  --pc-warning: #d97706;
+  --pc-bg: #ffffff;
+  --pc-surface: #f8fafc;
+  --pc-surface-elevated: #ffffff;
+  --pc-border: #e2e8f0;
+  --pc-border-strong: #d1d5db;
+  --pc-focus: #3b82f6;
+  --pc-text: #0f172a;
+  --pc-text-secondary: #475569;
+  --pc-text-muted: #64748b;
+  --pc-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --pc-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --pc-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --pc-radius-sm: 0.375rem;
+  --pc-radius-md: 0.5rem;
+  --pc-radius-lg: 0.75rem;
+  --pc-radius-xl: 1rem;
+
+  color: var(--pc-text);
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  min-height: 100vh;
+  width: 100vw;
+  max-width: none;
+  margin: 0 auto;
+  padding: 2rem 1rem;
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: #f4f4f9;
-  padding: 20px;
+  align-items: center; /* vertically center the page content */
 }
 
-.portfolio-creation-container {
-  max-width: 800px;
+/* Container */
+.portfolio-creation-page .portfolio-creation-container {
+  background: var(--pc-surface-elevated);
+  border-radius: var(--pc-radius-xl);
+  box-shadow: var(--pc-shadow-lg);
+  padding: 2.25rem;
+  max-width: 1280px;
   width: 100%;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 30px;
-  margin: 20px auto;
+  border: 1px solid var(--pc-border);
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
+  left: auto;
+  transform: none;
+  flex: 0 1 1280px;
+  align-self: center;
 }
 
-.portfolio-creation-container h1 {
-  text-align: center;
-  color: #333;
-  margin-bottom: 20px;
-  font-size: 24px;
-  font-weight: 600;
-}
-
-.portfolio-error {
-  background-color: #ffe6e6;
-  color: #d32f2f;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.portfolio-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.form-group h3 {
-  font-size: 18px;
-  color: #333;
-  margin-bottom: 10px;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 5px;
-}
-
-.form-group label {
-  font-size: 14px;
-  color: #555;
-  font-weight: 500;
-}
-
-.form-group input,
-.form-group textarea,
-.form-group select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  color: #333;
-  background-color: #fafafa;
-  transition: border-color 0.3s;
-}
-
-.form-group input:focus,
-.form-group textarea:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #007bff;
-}
-
-.form-group textarea {
-  min-height: 100px;
-  resize: vertical;
-}
-
-.form-group input:disabled,
-.form-group textarea:disabled,
-.form-group select:disabled {
-  background-color: #e0e0e0;
-  cursor: not-allowed;
-}
-
-/* Avatar Upload */
-.avatar-upload {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.avatar-preview {
+/* Decorative top accent */
+.portfolio-creation-page .portfolio-creation-container::before,
+.portfolio-creation-page .portfolio-creation-container::after {
+  content: "";
+  position: absolute;
   width: 100px;
   height: 100px;
+  background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+  opacity: 0.1;
+}
+
+.portfolio-creation-page .portfolio-creation-container::before {
+  top: -50px;
+  left: -50px;
+  border-radius: 0 0 100% 0;
+}
+
+.portfolio-creation-page .portfolio-creation-container::after {
+  bottom: -50px;
+  right: -50px;
+  border-radius: 100% 0 0 0;
+}
+
+/* Title */
+.portfolio-creation-page .portfolio-creation-container h1 {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #2563eb 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+  margin: 2rem 0 3rem;
+  padding: 0 2rem;
+  position: relative;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.portfolio-creation-page .portfolio-creation-container h1::after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  border-radius: 2px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scaleX(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateX(-50%) scaleX(1.1);
+  }
+}
+
+/* Error message */
+.portfolio-creation-page .portfolio-error {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  color: #dc2626;
+  padding: 1rem 1.25rem;
+  border-radius: 16px;
+  margin-bottom: 1.25rem;
+  text-align: center;
+  border: 1px solid #fecaca;
+  font-weight: 600;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* Form layout */
+.portfolio-creation-page .portfolio-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+/* Section card */
+.portfolio-creation-page .form-group {
+  display: grid;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.portfolio-creation-page .form-group:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(59, 130, 246, 0.15), 0 0 0 1px rgba(59, 130, 246, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.portfolio-creation-page .form-group::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  transform: scaleX(0);
+  transition: transform 0.4s ease;
+}
+
+.portfolio-creation-page .form-group:hover::before {
+  transform: scaleX(1);
+}
+
+/* Section heading */
+.portfolio-creation-page .form-group h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 1.5rem 0;
+  position: relative;
+  text-align: center;
+  padding: 0 2rem;
+  letter-spacing: -0.01em;
+}
+
+.portfolio-creation-page .form-group h3::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  border-radius: 2px;
+}
+
+/* Labels */
+.portfolio-creation-page .form-group label {
+  font-size: 1rem;
+  color: #475569;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+/* Inputs */
+.portfolio-creation-page .form-group input,
+.portfolio-creation-page .form-group textarea,
+.portfolio-creation-page .form-group select {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  font-size: 1rem;
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.portfolio-creation-page .form-group input::placeholder,
+.portfolio-creation-page .form-group textarea::placeholder {
+  color: #94a3b8;
+}
+
+.portfolio-creation-page .form-group input:focus,
+.portfolio-creation-page .form-group textarea:focus,
+.portfolio-creation-page .form-group select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12), 0 8px 24px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 1);
+}
+
+.portfolio-creation-page .form-group textarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.portfolio-creation-page .form-group input:disabled,
+.portfolio-creation-page .form-group textarea:disabled,
+.portfolio-creation-page .form-group select:disabled {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Avatar upload */
+.portfolio-creation-page .avatar-upload {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.05), rgba(29, 78, 216, 0.05));
+  border-radius: 20px;
+  border: 2px dashed rgba(59, 130, 246, 0.3);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.portfolio-creation-page .avatar-upload::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(96, 165, 250, 0.25), transparent 40%),
+    radial-gradient(circle at 70% 70%, rgba(37, 99, 235, 0.2), transparent 50%);
+  background-blend-mode: screen;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.portfolio-creation-page .avatar-upload:hover {
+  border-color: #3b82f6;
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.08), rgba(29, 78, 216, 0.08));
+  transform: translateY(-2px);
+}
+
+.portfolio-creation-page .avatar-preview {
+  width: 180px;
+  height: 180px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #ddd;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 0 0 8px rgba(255, 255, 255, 0.8), 0 0 0 12px rgba(59, 130, 246, 0.1);
+  border: 4px solid rgba(255, 255, 255, 0.9);
+  position: relative;
+  z-index: 2;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.avatar-help-text {
-  font-size: 12px;
-  color: #666;
-  margin: 0;
+.portfolio-creation-page .avatar-preview:hover {
+  transform: scale(1.05) rotate(5deg);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2), 0 0 0 8px rgba(255, 255, 255, 0.9), 0 0 0 16px rgba(59, 130, 246, 0.2);
 }
 
-.avatar-upload-button {
-  padding: 8px 16px;
-  background-color: #007bff;
-  color: #fff;
+/* Primary/Success buttons used inside the page (scoped classes only) */
+.portfolio-creation-page .avatar-upload-button,
+.portfolio-creation-page .certificate-upload-button,
+.portfolio-creation-page .project-upload-button {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
   border: none;
-  border-radius: 4px;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1rem;
   cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.3);
+  position: relative;
+  overflow: hidden;
 }
 
-.avatar-upload-button:hover {
-  background-color: #0056b3;
+.portfolio-creation-page .avatar-upload-button::before,
+.portfolio-creation-page .certificate-upload-button::before,
+.portfolio-creation-page .project-upload-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
 }
 
-.avatar-upload-button:disabled {
-  background-color: #cccccc;
+.portfolio-creation-page .avatar-upload-button:hover::before,
+.portfolio-creation-page .certificate-upload-button:hover::before,
+.portfolio-creation-page .project-upload-button:hover::before {
+  left: 100%;
+}
+
+.portfolio-creation-page .avatar-upload-button:hover,
+.portfolio-creation-page .certificate-upload-button:hover,
+.portfolio-creation-page .project-upload-button:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 8px 24px rgba(5, 150, 105, 0.4);
+}
+
+.portfolio-creation-page .avatar-upload-button:disabled,
+.portfolio-creation-page .certificate-upload-button:disabled,
+.portfolio-creation-page .project-upload-button:disabled {
+  background: var(--pc-secondary);
   cursor: not-allowed;
+  transform: none;
+  opacity: 0.7;
 }
 
-/* Certificate Form and List */
-.certificate-form,
-.skill-form,
-.experience-form,
-.award-form,
-.education-form,
-.membership-form,
-.reference-form,
-.project-form {
-  background-color: #f9f9f9;
-  padding: 15px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  margin-top: 10px;
+/* Nested section cards (certificates, skills, etc.) */
+.portfolio-creation-page .certificate-form,
+.portfolio-creation-page .skill-form,
+.portfolio-creation-page .experience-form,
+.portfolio-creation-page .award-form,
+.portfolio-creation-page .education-form,
+.portfolio-creation-page .membership-form,
+.portfolio-creation-page .reference-form,
+.portfolio-creation-page .project-form {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-top: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.certificate-upload,
-.project-upload {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
+.portfolio-creation-page .certificate-form:hover,
+.portfolio-creation-page .skill-form:hover,
+.portfolio-creation-page .experience-form:hover,
+.portfolio-creation-page .award-form:hover,
+.portfolio-creation-page .education-form:hover,
+.portfolio-creation-page .membership-form:hover,
+.portfolio-creation-page .reference-form:hover,
+.portfolio-creation-page .project-form:hover {
+  transform: scale(1.02);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
 }
 
-.certificate-preview,
-.project-preview {
-  width: 80px;
-  height: 80px;
+/* File upload boxes */
+.portfolio-creation-page .certificate-upload,
+.portfolio-creation-page .project-upload {
+  display: grid;
+  justify-items: center;
+  gap: 0.85rem;
+  padding: 1.25rem;
+  background: var(--pc-bg);
+  border-radius: var(--pc-radius-md);
+  border: 2px dashed var(--pc-border);
+}
+
+.portfolio-creation-page .certificate-preview,
+.portfolio-creation-page .project-preview {
+  width: 104px;
+  height: 104px;
   object-fit: cover;
-  border: 2px solid #ddd;
-  border-radius: 4px;
+  border: 2px solid var(--pc-border);
+  border-radius: var(--pc-radius-md);
   cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+  box-shadow: var(--pc-shadow-sm);
 }
 
-.certificate-file-name,
-.project-file-name {
-  font-size: 12px;
-  color: #666;
+.portfolio-creation-page .certificate-preview:hover,
+.portfolio-creation-page .project-preview:hover {
+  transform: scale(1.04);
+  box-shadow: var(--pc-shadow-md);
+}
+
+.portfolio-creation-page .certificate-file-name,
+.portfolio-creation-page .project-file-name {
+  font-size: 0.78rem;
+  color: var(--pc-text-muted);
   margin: 0;
+  text-align: center;
 }
 
-.certificate-upload-button,
-.project-upload-button {
-  padding: 8px 16px;
-  background-color: #28a745;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s;
-}
-
-.certificate-upload-button:hover,
-.project-upload-button:hover {
-  background-color: #218838;
-}
-
-.certificate-upload-button:disabled,
-.project-upload-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-.certificate-form-actions,
-.skill-form-actions,
-.experience-form-actions,
-.award-form-actions,
-.education-form-actions,
-.membership-form-actions,
-.reference-form-actions,
-.project-form-actions {
+/* Action groups */
+.portfolio-creation-page .certificate-form-actions,
+.portfolio-creation-page .skill-form-actions,
+.portfolio-creation-page .experience-form-actions,
+.portfolio-creation-page .award-form-actions,
+.portfolio-creation-page .education-form-actions,
+.portfolio-creation-page .membership-form-actions,
+.portfolio-creation-page .reference-form-actions,
+.portfolio-creation-page .project-form-actions {
   display: flex;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
 }
 
-.certificate-save-button,
-.skill-save-button,
-.experience-save-button,
-.award-save-button,
-.education-save-button,
-.membership-save-button,
-.reference-save-button,
-.project-save-button {
-  padding: 8px 16px;
-  background-color: #007bff;
+.portfolio-creation-page .certificate-save-button,
+.portfolio-creation-page .skill-save-button,
+.portfolio-creation-page .experience-save-button,
+.portfolio-creation-page .award-save-button,
+.portfolio-creation-page .education-save-button,
+.portfolio-creation-page .membership-save-button,
+.portfolio-creation-page .reference-save-button,
+.portfolio-creation-page .project-save-button {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.portfolio-creation-page .certificate-save-button:hover,
+.portfolio-creation-page .skill-save-button:hover,
+.portfolio-creation-page .experience-save-button:hover,
+.portfolio-creation-page .award-save-button:hover,
+.portfolio-creation-page .education-save-button:hover,
+.portfolio-creation-page .membership-save-button:hover,
+.portfolio-creation-page .reference-save-button:hover,
+.portfolio-creation-page .project-save-button:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+}
+
+.portfolio-creation-page .certificate-cancel-button,
+.portfolio-creation-page .skill-cancel-button,
+.portfolio-creation-page .experience-cancel-button,
+.portfolio-creation-page .award-cancel-button,
+.portfolio-creation-page .education-cancel-button,
+.portfolio-creation-page .membership-cancel-button,
+.portfolio-creation-page .reference-cancel-button,
+.portfolio-creation-page .project-cancel-button {
+  padding: 0.7rem 1rem;
+  background: var(--pc-secondary);
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--pc-radius-md);
   cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+  box-shadow: var(--pc-shadow-sm);
 }
 
-.certificate-save-button:hover,
-.skill-save-button:hover,
-.experience-save-button:hover,
-.award-save-button:hover,
-.education-save-button:hover,
-.membership-save-button:hover,
-.reference-save-button:hover,
-.project-save-button:hover {
-  background-color: #0056b3;
+.portfolio-creation-page .certificate-cancel-button:hover,
+.portfolio-creation-page .skill-cancel-button:hover,
+.portfolio-creation-page .experience-cancel-button:hover,
+.portfolio-creation-page .award-cancel-button:hover,
+.portfolio-creation-page .education-cancel-button:hover,
+.portfolio-creation-page .membership-cancel-button:hover,
+.portfolio-creation-page .reference-cancel-button:hover,
+.portfolio-creation-page .project-cancel-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--pc-shadow-md);
 }
 
-.certificate-cancel-button,
-.skill-cancel-button,
-.experience-cancel-button,
-.award-cancel-button,
-.education-cancel-button,
-.membership-cancel-button,
-.reference-cancel-button,
-.project-cancel-button {
-  padding: 8px 16px;
-  background-color: #6c757d;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s;
+/* Lists */
+.portfolio-creation-page .certificate-list,
+.portfolio-creation-page .skill-list,
+.portfolio-creation-page .experience-list,
+.portfolio-creation-page .award-list,
+.portfolio-creation-page .education-list,
+.portfolio-creation-page .membership-list,
+.portfolio-creation-page .reference-list,
+.portfolio-creation-page .project-list {
+  margin-top: 0.75rem;
 }
 
-.certificate-cancel-button:hover,
-.skill-cancel-button:hover,
-.experience-cancel-button:hover,
-.award-cancel-button:hover,
-.education-cancel-button:hover,
-.membership-cancel-button:hover,
-.reference-cancel-button:hover,
-.project-cancel-button:hover {
-  background-color: #5a6268;
+.portfolio-creation-page .certificate-list h4,
+.portfolio-creation-page .skill-list h4,
+.portfolio-creation-page .experience-list h4,
+.portfolio-creation-page .award-list h4,
+.portfolio-creation-page .education-list h4,
+.portfolio-creation-page .membership-list h4,
+.portfolio-creation-page .reference-list h4,
+.portfolio-creation-page .project-list h4 {
+  font-size: 1.025rem;
+  color: var(--pc-text);
+  margin: 0 0 0.7rem 0;
+  font-weight: 800;
 }
 
-.certificate-save-button:disabled,
-.skill-save-button:disabled,
-.experience-save-button:disabled,
-.award-save-button:disabled,
-.education-save-button:disabled,
-.membership-save-button:disabled,
-.reference-save-button:disabled,
-.project-save-button:disabled,
-.certificate-cancel-button:disabled,
-.skill-cancel-button:disabled,
-.experience-cancel-button:disabled,
-.award-cancel-button:disabled,
-.education-cancel-button:disabled,
-.membership-cancel-button:disabled,
-.reference-cancel-button:disabled,
-.project-cancel-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-.certificate-list,
-.skill-list,
-.experience-list,
-.award-list,
-.education-list,
-.membership-list,
-.reference-list,
-.project-list {
-  margin-top: 20px;
-}
-
-.certificate-list h4,
-.skill-list h4,
-.experience-list h4,
-.award-list h4,
-.education-list h4,
-.membership-list h4,
-.reference-list h4,
-.project-list h4 {
-  font-size: 16px;
-  color: #333;
-  margin-bottom: 10px;
-}
-
-.certificate-item,
-.skill-item,
-.experience-item,
-.award-item,
-.education-item,
-.membership-item,
-.reference-item,
-.project-item {
+/* List items */
+.portfolio-creation-page .certificate-item,
+.portfolio-creation-page .skill-item,
+.portfolio-creation-page .experience-item,
+.portfolio-creation-page .award-item,
+.portfolio-creation-page .education-item,
+.portfolio-creation-page .membership-item,
+.portfolio-creation-page .reference-item,
+.portfolio-creation-page .project-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #f9f9f9;
-  padding: 10px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 18px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.certificate-details,
-.skill-details,
-.experience-details,
-.award-details,
-.education-details,
-.membership-details,
-.reference-details,
-.project-details {
-  display: flex;
+.portfolio-creation-page .certificate-item:hover,
+.portfolio-creation-page .skill-item:hover,
+.portfolio-creation-page .experience-item:hover,
+.portfolio-creation-page .award-item:hover,
+.portfolio-creation-page .education-item:hover,
+.portfolio-creation-page .membership-item:hover,
+.portfolio-creation-page .reference-item:hover,
+.portfolio-creation-page .project-item:hover {
+  transform: translateY(-6px) rotate(0.5deg);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.portfolio-creation-page .certificate-details,
+.portfolio-creation-page .skill-details,
+.portfolio-creation-page .experience-details,
+.portfolio-creation-page .award-details,
+.portfolio-creation-page .education-details,
+.portfolio-creation-page .membership-details,
+.portfolio-creation-page .reference-details,
+.portfolio-creation-page .project-details {
+  display: grid;
+  grid-auto-flow: column;
   align-items: center;
-  gap: 15px;
-}
-
-.certificate-details img,
-.project-details img {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.certificate-details div,
-.skill-details div,
-.experience-details div,
-.award-details div,
-.education-details div,
-.membership-details div,
-.reference-details div,
-.project-details div {
+  gap: 0.9rem;
   flex: 1;
 }
 
-.certificate-details h5,
-.skill-details h5,
-.experience-details h5,
-.award-details h5,
-.education-details h5,
-.membership-details h5,
-.reference-details h5,
-.project-details h5 {
-  font-size: 14px;
-  color: #333;
+.portfolio-creation-page .certificate-details img,
+.portfolio-creation-page .project-details img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--pc-radius-md);
+  box-shadow: var(--pc-shadow-sm);
+}
+
+.portfolio-creation-page .certificate-details h5,
+.portfolio-creation-page .skill-details h5,
+.portfolio-creation-page .experience-details h5,
+.portfolio-creation-page .award-details h5,
+.portfolio-creation-page .education-details h5,
+.portfolio-creation-page .membership-details h5,
+.portfolio-creation-page .reference-details h5,
+.portfolio-creation-page .project-details h5 {
+  font-size: 1rem;
+  color: var(--pc-text);
+  margin: 0 0 0.15rem 0;
+  font-weight: 700;
+}
+
+.portfolio-creation-page .certificate-details p,
+.portfolio-creation-page .skill-details p,
+.portfolio-creation-page .experience-details p,
+.portfolio-creation-page .award-details p,
+.portfolio-creation-page .education-details p,
+.portfolio-creation-page .membership-details p,
+.portfolio-creation-page .reference-details p,
+.portfolio-creation-page .project-details p {
+  font-size: 0.9rem;
+  color: var(--pc-text-secondary);
   margin: 0;
+  line-height: 1.5;
 }
 
-.certificate-details p,
-.skill-details p,
-.experience-details p,
-.award-details p,
-.education-details p,
-.membership-details p,
-.reference-details p,
-.project-details p {
-  font-size: 12px;
-  color: #666;
-  margin: 5px 0 0;
-}
-
-.certificate-remove-button,
-.skill-remove-button,
-.experience-remove-button,
-.award-remove-button,
-.education-remove-button,
-.membership-remove-button,
-.reference-remove-button,
-.project-remove-button {
-  padding: 8px;
-  background-color: #dc3545;
-  color: #fff;
+/* Remove buttons (icon buttons) */
+.portfolio-creation-page .certificate-remove-button,
+.portfolio-creation-page .skill-remove-button,
+.portfolio-creation-page .experience-remove-button,
+.portfolio-creation-page .award-remove-button,
+.portfolio-creation-page .education-remove-button,
+.portfolio-creation-page .membership-remove-button,
+.portfolio-creation-page .reference-remove-button,
+.portfolio-creation-page .project-remove-button {
+  padding: 0.6rem;
+  background: linear-gradient(135deg, var(--pc-danger), var(--pc-danger-hover));
+  color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--pc-radius-md);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.3s;
+  display: inline-grid;
+  place-items: center;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+  box-shadow: var(--pc-shadow-sm);
+  min-width: 42px;
+  height: 42px;
 }
 
-.certificate-remove-button:hover,
-.skill-remove-button:hover,
-.experience-remove-button:hover,
-.award-remove-button:hover,
-.education-remove-button:hover,
-.membership-remove-button:hover,
-.reference-remove-button:hover,
-.project-remove-button:hover {
-  background-color: #c82333;
+.portfolio-creation-page .certificate-remove-button:hover,
+.portfolio-creation-page .skill-remove-button:hover,
+.portfolio-creation-page .experience-remove-button:hover,
+.portfolio-creation-page .award-remove-button:hover,
+.portfolio-creation-page .education-remove-button:hover,
+.portfolio-creation-page .membership-remove-button:hover,
+.portfolio-creation-page .reference-remove-button:hover,
+.portfolio-creation-page .project-remove-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--pc-shadow-md);
 }
 
-.certificate-remove-button:disabled,
-.skill-remove-button:disabled,
-.experience-remove-button:disabled,
-.award-remove-button:disabled,
-.education-remove-button:disabled,
-.membership-remove-button:disabled,
-.reference-remove-button:disabled,
-.project-remove-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-.add-certificate-button,
-.add-skill-button,
-.add-experience-button,
-.add-award-button,
-.add-education-button,
-.add-membership-button,
-.add-reference-button,
-.add-project-button {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 8px 16px;
-  background-color: #28a745;
-  color: #fff;
+/* Edit button */
+.portfolio-creation-page .certificate-edit-button {
+  padding: 0.6rem;
+  background: linear-gradient(135deg, var(--pc-warning), #b45309);
+  color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--pc-radius-md);
   cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s;
+  display: inline-grid;
+  place-items: center;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+  box-shadow: var(--pc-shadow-sm);
+  min-width: 42px;
+  height: 42px;
 }
 
-.add-certificate-button:hover,
-.add-skill-button:hover,
-.add-experience-button:hover,
-.add-award-button:hover,
-.add-education-button:hover,
-.add-membership-button:hover,
-.add-reference-button:hover,
-.add-project-button:hover {
-  background-color: #218838;
+.portfolio-creation-page .certificate-edit-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--pc-shadow-md);
 }
 
-.add-certificate-button:disabled,
-.add-skill-button:disabled,
-.add-experience-button:disabled,
-.add-award-button:disabled,
-.add-education-button:disabled,
-.add-membership-button:disabled,
-.add-reference-button:disabled,
-.add-project-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-.portfolio-submit-button {
-  padding: 12px 24px;
-  background-color: #007bff;
-  color: #fff;
+/* Submit button */
+.portfolio-creation-page .portfolio-submit-button {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
   border: none;
-  border-radius: 4px;
+  padding: 1.5rem 3rem;
+  border-radius: 50px;
   cursor: pointer;
-  font-size: 16px;
-  font-weight: 500;
-  margin-top: 20px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-top: 2rem;
   align-self: center;
-  transition: background-color 0.3s;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+  position: relative;
+  overflow: hidden;
+  min-width: 280px;
 }
 
-.portfolio-submit-button:hover {
-  background-color: #0056b3;
+.portfolio-creation-page .portfolio-submit-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
 }
 
-.portfolio-submit-button:disabled {
-  background-color: #cccccc;
+.portfolio-creation-page .portfolio-submit-button:hover::before {
+  left: 100%;
+}
+
+.portfolio-creation-page .portfolio-submit-button:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+}
+
+.portfolio-creation-page .portfolio-submit-button:disabled {
+  background: var(--pc-secondary);
   cursor: not-allowed;
+  transform: none;
+  opacity: 0.7;
 }
 
-/* Responsive Design */
-@media (max-width: 600px) {
-  .portfolio-creation-container {
-    padding: 20px;
+/* Responsive */
+@media (max-width: 1024px) {
+  .portfolio-creation-page .portfolio-creation-container {
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .portfolio-creation-page {
+    padding: 1rem 0.5rem;
   }
 
-  .portfolio-creation-container h1 {
-    font-size: 20px;
+  .portfolio-creation-page .portfolio-creation-container {
+    padding: 1.5rem;
   }
 
-  .form-group h3 {
-    font-size: 16px;
+  .portfolio-creation-page .portfolio-creation-container h1 {
+    font-size: clamp(2rem, 6vw, 3rem);
+    padding: 0 1rem;
   }
 
-  .form-group input,
-  .form-group textarea,
-  .form-group select {
-    font-size: 13px;
+  .portfolio-creation-page .form-group {
+    padding: 1.5rem;
   }
 
-  .avatar-preview {
-    width: 80px;
-    height: 80px;
+  .portfolio-creation-page .avatar-preview {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .portfolio-creation-page .portfolio-creation-container {
+    padding: 1rem;
   }
 
-  .certificate-preview,
-  .project-preview {
-    width: 60px;
-    height: 60px;
+  .portfolio-creation-page .portfolio-creation-container h1 {
+    font-size: clamp(1.75rem, 8vw, 2.5rem);
   }
 
-  .certificate-details img,
-  .project-details img {
-    width: 50px;
-    height: 50px;
+  .portfolio-creation-page .portfolio-submit-button {
+    width: 100%;
+    min-width: 0;
   }
+}
+
+/* Added focus styles for accessibility */
+*:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+button:focus,
+a:focus {
+  outline: 3px solid #3b82f6;
+  outline-offset: 3px;
 }

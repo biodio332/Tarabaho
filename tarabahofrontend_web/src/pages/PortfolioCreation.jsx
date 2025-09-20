@@ -603,6 +603,43 @@ const PortfolioCreation = () => {
         <h1>Create Your Portfolio</h1>
         {error && <div className="portfolio-error">{error}</div>}
         <form onSubmit={handleSubmit} className="portfolio-form">
+          {/* File Uploads */}
+          <div className="form-group">
+            <h3>File Uploads</h3>
+            <label htmlFor="avatar">Profile Photo</label>
+            <div className="avatar-upload">
+              <img
+                src={previewAvatar}
+                alt="Avatar Preview"
+                className="avatar-preview"
+                onClick={handleImageClick}
+                style={{ cursor: "pointer", width: "100px", height: "100px", borderRadius: "50%" }}
+              />
+              <p className="avatar-help-text">Click the image or button to upload a profile picture</p>
+              <button
+                type="button"
+                className="avatar-upload-button"
+                onClick={handleImageClick}
+                disabled={isLoading}
+              >
+                Choose Image
+              </button>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarFileChange}
+                ref={avatarFileInputRef}
+                style={{ display: "none" }}
+              />
+            </div>
+
+          </div>
+
+
+
+
+
+
           {/* Basic Information */}
           <div className="form-group">
             <h3>Basic Information</h3>
@@ -1464,37 +1501,8 @@ const PortfolioCreation = () => {
             )}
           </div>
 
-          {/* File Uploads */}
-          <div className="form-group">
-            <h3>File Uploads</h3>
-            <label htmlFor="avatar">Profile Photo</label>
-            <div className="avatar-upload">
-              <img
-                src={previewAvatar}
-                alt="Avatar Preview"
-                className="avatar-preview"
-                onClick={handleImageClick}
-                style={{ cursor: "pointer", width: "100px", height: "100px", borderRadius: "50%" }}
-              />
-              <p className="avatar-help-text">Click the image or button to upload a profile picture</p>
-              <button
-                type="button"
-                className="avatar-upload-button"
-                onClick={handleImageClick}
-                disabled={isLoading}
-              >
-                Choose Image
-              </button>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarFileChange}
-                ref={avatarFileInputRef}
-                style={{ display: "none" }}
-              />
-            </div>
-
-            <label>Project Samples</label>
+ <div className="form-group">
+<label>Project Samples</label>
             <button
               type="button"
               className="add-project-button"
@@ -1610,7 +1618,8 @@ const PortfolioCreation = () => {
                 ))}
               </div>
             )}
-          </div>
+
+ </div>
 
           <div className="form-group">
             <label htmlFor="primaryCourseType">Primary Course Type</label>

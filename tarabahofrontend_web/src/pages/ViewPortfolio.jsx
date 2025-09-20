@@ -343,7 +343,7 @@ const ViewPortfolio = () => {
           <h2>Skills</h2>
           {portfolio.skills && Array.isArray(portfolio.skills) && portfolio.skills.length > 0 ? (
             <div className="skill-list">
-              <h4>Skills</h4>
+          
               {portfolio.skills.map((skill, index) => (
                 <div key={index} className="skill-item">
                   <div className="skill-details">
@@ -361,7 +361,7 @@ const ViewPortfolio = () => {
           <h2>Experiences</h2>
           {portfolio.experiences && Array.isArray(portfolio.experiences) && portfolio.experiences.length > 0 ? (
             <div className="experience-list">
-              <h4>Experiences</h4>
+      
               {portfolio.experiences.map((exp, index) => (
                 <div key={index} className="experience-item">
                   <div className="experience-details">
@@ -379,7 +379,7 @@ const ViewPortfolio = () => {
           <h2>Awards & Recognitions</h2>
           {portfolio.awardsRecognitions && Array.isArray(portfolio.awardsRecognitions) && portfolio.awardsRecognitions.length > 0 ? (
             <div className="award-list">
-              <h4>Awards</h4>
+              
               {portfolio.awardsRecognitions.map((award, index) => (
                 <div key={index} className="award-item">
                   <div className="award-details">
@@ -397,7 +397,7 @@ const ViewPortfolio = () => {
           <h2>Continuing Education</h2>
           {portfolio.continuingEducations && Array.isArray(portfolio.continuingEducations) && portfolio.continuingEducations.length > 0 ? (
             <div className="education-list">
-              <h4>Education</h4>
+           
               {portfolio.continuingEducations.map((edu, index) => (
                 <div key={index} className="education-item">
                   <div className="education-details">
@@ -415,7 +415,7 @@ const ViewPortfolio = () => {
           <h2>Professional Memberships</h2>
           {portfolio.professionalMemberships && Array.isArray(portfolio.professionalMemberships) && portfolio.professionalMemberships.length > 0 ? (
             <div className="membership-list">
-              <h4>Memberships</h4>
+             
               {portfolio.professionalMemberships.map((mem, index) => (
                 <div key={index} className="membership-item">
                   <div className="membership-details">
@@ -433,7 +433,7 @@ const ViewPortfolio = () => {
           <h2>References</h2>
           {portfolio.references && Array.isArray(portfolio.references) && portfolio.references.length > 0 ? (
             <div className="reference-list">
-              <h4>References</h4>
+           
               {portfolio.references.map((ref, index) => (
                 <div key={index} className="reference-item">
                   <div className="reference-details">
@@ -453,7 +453,7 @@ const ViewPortfolio = () => {
           <h2>Certificates</h2>
           {certificates && Array.isArray(certificates) && certificates.length > 0 ? (
             <div className="certificate-list">
-              <h4>Certificates</h4>
+            
               {certificates.map((certificate) => (
                 <div key={certificate.id} className="certificate-item">
                   <div className="certificate-details">
