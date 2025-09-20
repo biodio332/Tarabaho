@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import { FaPlus, FaTrash, FaPen } from "react-icons/fa";
+import { FaPen, FaTrash } from "react-icons/fa";
 import "../styles/EditPortfolio.css";
 
 const EditPortfolio = () => {
@@ -46,9 +46,7 @@ const EditPortfolio = () => {
     professionalSummary: "",
     professionalTitle: "",
     primaryCourseType: "",
-    scholarScheme: "",
     designTemplate: "",
-    customSectionJson: "",
     visibility: "PRIVATE",
     avatar: "",
     ncLevel: "",
@@ -87,7 +85,6 @@ const EditPortfolio = () => {
           ...initialPortfolioState,
           ...fetchedPortfolio,
           professionalSummary: fetchedPortfolio.professionalSummary || "",
-          customSectionJson: fetchedPortfolio.customSectionJson || "",
           email: fetchedPortfolio.email || "",
           phone: fetchedPortfolio.phone || "",
           website: fetchedPortfolio.website || "",
@@ -243,8 +240,8 @@ const EditPortfolio = () => {
   };
 
   const handleAddCertificate = () => {
-    if (!newCertificate.courseName || !newCertificate.certificateNumber || !newCertificate.issueDate) {
-      setError("Please fill in all required certificate fields.");
+    if (!newCertificate.courseName || !newCertificate.certificateNumber || !newCertificate.issueDate || !newCertificate.certificateFile) {
+      setError("Please fill in all required certificate fields, including the certificate file.");
       return;
     }
     const newCert = {
@@ -253,7 +250,7 @@ const EditPortfolio = () => {
       certificateNumber: newCertificate.certificateNumber,
       issueDate: newCertificate.issueDate,
       certificateFile: newCertificate.certificateFile,
-      preview: newCertificate.certificateFile ? URL.createObjectURL(newCertificate.certificateFile) : null,
+      preview: URL.createObjectURL(newCertificate.certificateFile),
       portfolioId: portfolio.id,
     };
     setCertificates((prev) => [...prev, newCert]);
@@ -748,6 +745,30 @@ const EditPortfolio = () => {
         {success && <div className="edit-portfolio-success">{success}</div>}
         {error && <div className="edit-portfolio-error">{error}</div>}
         <form onSubmit={handleSubmit} className="edit-portfolio-form">
+          <div className="avatar-upload">
+            <img
+              src={previewAvatar}
+              alt="Avatar Preview"
+              className="avatar-preview"
+              onClick={handleImageClick}
+              style={{ cursor: "pointer", width: "150px", height: "150px", borderRadius: "50%" }}
+            />
+            <p className="avatar-help-text">Click the image or button to upload a profile picture</p>
+            <button
+              type="button"
+              className="avatar-upload-button"
+              onClick={handleImageClick}
+            >
+              Choose Image
+            </button>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarFileChange}
+              ref={avatarFileInputRef}
+              style={{ display: "none" }}
+            />
+          </div>
           <h2>Basic Information</h2>
           <div className="form-group">
             <label>Full Name</label>
@@ -786,15 +807,6 @@ const EditPortfolio = () => {
             />
           </div>
           <div className="form-group">
-            <label>Scholar Scheme</label>
-            <input
-              type="text"
-              name="scholarScheme"
-              value={portfolio.scholarScheme}
-              onChange={handlePortfolioChange}
-            />
-          </div>
-          <div className="form-group">
             <label>Design Template</label>
             <select
               name="designTemplate"
@@ -807,14 +819,6 @@ const EditPortfolio = () => {
             </select>
           </div>
           <div className="form-group">
-            <label>Custom Section (JSON)</label>
-            <textarea
-              name="customSectionJson"
-              value={portfolio.customSectionJson || ""}
-              onChange={handlePortfolioChange}
-            />
-          </div>
-          <div className="form-group">
             <label>Visibility</label>
             <select
               name="visibility"
@@ -824,33 +828,6 @@ const EditPortfolio = () => {
               <option value="PUBLIC">Public</option>
               <option value="PRIVATE">Private</option>
             </select>
-          </div>
-          <div className="form-group">
-            <label>Profile Photo</label>
-            <div className="avatar-upload">
-              <img
-                src={previewAvatar}
-                alt="Avatar Preview"
-                className="avatar-preview"
-                onClick={handleImageClick}
-                style={{ cursor: "pointer", width: "100px", height: "100px", borderRadius: "50%" }}
-              />
-              <p className="avatar-help-text">Click the image or button to upload a profile picture</p>
-              <button
-                type="button"
-                className="avatar-upload-button"
-                onClick={handleImageClick}
-              >
-                Choose Image
-              </button>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarFileChange}
-                ref={avatarFileInputRef}
-                style={{ display: "none" }}
-              />
-            </div>
           </div>
 
           <h2>TESDA Information</h2>
@@ -929,49 +906,11 @@ const EditPortfolio = () => {
             />
           </div>
 
-          <h2>Employment Readiness</h2>
-          <div className="form-group">
-            <label>Portfolio Category</label>
-            <input
-              type="text"
-              name="portfolioCategory"
-              value={portfolio.portfolioCategory}
-              onChange={handlePortfolioChange}
-            />
-          </div>
-          <div className="form-group">
-            <label>Preferred Work Location</label>
-            <input
-              type="text"
-              name="preferredWorkLocation"
-              value={portfolio.preferredWorkLocation}
-              onChange={handlePortfolioChange}
-            />
-          </div>
-          <div className="form-group">
-            <label>Work Schedule Availability</label>
-            <input
-              type="text"
-              name="workScheduleAvailability"
-              value={portfolio.workScheduleAvailability}
-              onChange={handlePortfolioChange}
-            />
-          </div>
-          <div className="form-group">
-            <label>Salary Expectations</label>
-            <input
-              type="text"
-              name="salaryExpectations"
-              value={portfolio.salaryExpectations}
-              onChange={handlePortfolioChange}
-            />
-          </div>
-
           {/* Certificates Section */}
           <h2>Certificates</h2>
           <button
             type="button"
-            className="add-certificate-button"
+            className="add-button"
             onClick={() => {
               setIsAddingCertificate(true);
               setEditingCertificateId(null);
@@ -983,7 +922,7 @@ const EditPortfolio = () => {
               });
             }}
           >
-            <FaPlus /> Add Certificate
+            Add Certificate
           </button>
           {isAddingCertificate && (
             <div className="certificate-form">
@@ -1022,17 +961,26 @@ const EditPortfolio = () => {
               <div className="form-group">
                 <label htmlFor="certificateFile">Certificate File</label>
                 <div className="certificate-upload">
-                  <img
-                    src={
-                      newCertificate.certificateFile
-                        ? URL.createObjectURL(newCertificate.certificateFile)
-                        : "/placeholder.svg"
-                    }
-                    alt="Certificate Preview"
-                    className="certificate-preview"
-                    onClick={handleCertificateImageClick}
-                    style={{ cursor: "pointer", width: "100px", height: "100px" }}
-                  />
+                  {newCertificate.certificateFile ? (
+                    <img
+                      src={URL.createObjectURL(newCertificate.certificateFile)}
+                      alt="Certificate Preview"
+                      className="certificate-preview"
+                      onClick={handleCertificateImageClick}
+                    />
+                  ) : (
+                    <div
+                      className="certificate-placeholder"
+                      onClick={handleCertificateImageClick}
+                    >
+                      📄
+                    </div>
+                  )}
+
+                  <p className="certificate-help-text">
+                    Click the icon or button to upload a certificate
+                  </p>
+
                   <button
                     type="button"
                     className="certificate-upload-button"
@@ -1040,6 +988,7 @@ const EditPortfolio = () => {
                   >
                     Choose File
                   </button>
+
                   <input
                     type="file"
                     id="certificateFile"
@@ -1120,7 +1069,7 @@ const EditPortfolio = () => {
           <h2>Projects</h2>
           <button
             type="button"
-            className="add-project-button"
+            className="add-button"
             onClick={() => {
               setIsAddingProject(true);
               setEditingProjectId(null);
@@ -1133,7 +1082,7 @@ const EditPortfolio = () => {
               });
             }}
           >
-            <FaPlus /> Add Project
+            Add Project
           </button>
           {isAddingProject && (
             <div className="project-form">
@@ -1180,34 +1129,44 @@ const EditPortfolio = () => {
               </div>
               <div className="form-group">
                 <label htmlFor="projectImageFile">Project Image</label>
-                <div className="project-upload">
-                  <img
-                    src={
-                      newProject.projectImageFile
-                        ? URL.createObjectURL(newProject.projectImageFile)
-                        : "/placeholder.svg"
-                    }
-                    alt="Project Preview"
-                    className="project-preview"
-                    onClick={handleProjectImageClick}
-                    style={{ cursor: "pointer", width: "100px", height: "100px" }}
-                  />
-                  <button
-                    type="button"
-                    className="project-upload-button"
-                    onClick={handleProjectImageClick}
-                  >
-                    Choose Image
-                  </button>
-                  <input
-                    type="file"
-                    id="projectImageFile"
-                    accept="image/*"
-                    onChange={handleProjectFileChange}
-                    ref={projectFileInputRef}
-                    style={{ display: "none" }}
-                  />
-                </div>
+                  <div className="project-upload">
+                    {newProject.projectImageFile ? (
+                      <img
+                        src={URL.createObjectURL(newProject.projectImageFile)}
+                        alt="Project Preview"
+                        className="project-preview"
+                        onClick={handleProjectImageClick}
+                      />
+                    ) : (
+                      <div
+                        className="project-placeholder"
+                        onClick={handleProjectImageClick}
+                      >
+                        📷
+                      </div>
+                    )}
+
+                    <p className="project-help-text">
+                      Click the icon or button to upload a project image
+                    </p>
+
+                    <button
+                      type="button"
+                      className="project-upload-button"
+                      onClick={handleProjectImageClick}
+                    >
+                      Choose Image
+                    </button>
+
+                    <input
+                      type="file"
+                      id="projectImageFile"
+                      accept="image/*"
+                      onChange={handleProjectFileChange}
+                      ref={projectFileInputRef}
+                      style={{ display: "none" }}
+                    />
+                  </div>
               </div>
               <div className="project-form-actions">
                 <button
@@ -1332,7 +1291,7 @@ const EditPortfolio = () => {
             }
             className="add-button"
           >
-            <FaPlus /> Add Skill
+            Add Skill
           </button>
 
           <h2>Experiences</h2>
@@ -1404,7 +1363,7 @@ const EditPortfolio = () => {
             }
             className="add-button"
           >
-            <FaPlus /> Add Experience
+            Add Experience
           </button>
 
           <h2>Awards & Recognitions</h2>
@@ -1457,7 +1416,7 @@ const EditPortfolio = () => {
             }
             className="add-button"
           >
-            <FaPlus /> Add Award
+            Add Award
           </button>
 
           <h2>Continuing Education</h2>
@@ -1514,7 +1473,7 @@ const EditPortfolio = () => {
             }
             className="add-button"
           >
-            <FaPlus /> Add Education
+            Add Education
           </button>
 
           <h2>Professional Memberships</h2>
@@ -1571,7 +1530,7 @@ const EditPortfolio = () => {
             }
             className="add-button"
           >
-            <FaPlus /> Add Membership
+            Add Membership
           </button>
 
           <h2>References</h2>
@@ -1628,7 +1587,7 @@ const EditPortfolio = () => {
             }
             className="add-button"
           >
-            <FaPlus /> Add Reference
+            Add Reference
           </button>
 
           <div className="form-actions">
