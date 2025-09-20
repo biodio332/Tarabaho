@@ -565,4 +565,29 @@ public class PortfolioService {
         response.setCertificates(certificateRepository.findByGraduateId(graduate.getId()));
         return response;
     }
+
+
+        public PortfolioRequest getPublicPortfolioByGraduateId(Long graduateId) {
+        System.out.println("PortfolioService: Fetching public portfolio for graduate ID: " + graduateId);
+        Optional<Portfolio> portfolioOpt = portfolioRepository.findByGraduateId(graduateId);
+        if (!portfolioOpt.isPresent()) {
+            System.out.println("PortfolioService: No portfolio found for graduate ID: " + graduateId);
+            return null;
+        }
+
+        Portfolio portfolio = portfolioOpt.get();
+        
+        // Only allow access if portfolio is PUBLIC
+        if (portfolio.getVisibility() != Visibility.PUBLIC) {
+            System.out.println("PortfolioService: Portfolio is not public for graduate ID: " + graduateId);
+            return null;
+        }
+
+        PortfolioRequest portfolioRequest = new PortfolioRequest(portfolio);
+        List<Certificate> certificates = certificateRepository.findByGraduateId(graduateId);
+        portfolioRequest.setCertificates(certificates);
+        System.out.println("PortfolioService: Retrieved public portfolio with " + certificates.size() + " certificates");
+
+        return portfolioRequest;
+    }
 }

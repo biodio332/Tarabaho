@@ -439,4 +439,31 @@ public class PortfolioController {
             }
         }
     }
+
+    @Operation(summary = "Get public portfolio by graduate ID", description = "Retrieves a public portfolio for viewing without authentication")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Public portfolio retrieved successfully"),
+        @ApiResponse(responseCode = "404", description = "Public portfolio not found or not accessible")
+    })
+    @GetMapping("/public/graduate/{graduateId}/portfolio")
+    @CrossOrigin(origins = {"https://tarabaho.vercel.app", "http://localhost:5173"}, allowCredentials = "false")
+    public ResponseEntity<?> getPublicPortfolioByGraduateId(@PathVariable Long graduateId) {
+        try {
+            logger.debug("Fetching public portfolio for graduate ID: {}", graduateId);
+            
+            PortfolioRequest portfolio = portfolioService.getPublicPortfolioByGraduateId(graduateId);
+            if (portfolio == null) {
+                logger.warn("No public portfolio found for graduate ID: {}", graduateId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("⚠️ Public portfolio not found or not accessible for graduate ID: " + graduateId);
+            }
+            
+            logger.info("Public portfolio retrieved successfully, ID: {}", portfolio.getId());
+            return ResponseEntity.ok(portfolio);
+        } catch (Exception e) {
+            logger.error("Unexpected error: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("⚠️ Unexpected error: " + e.getMessage());
+        }
+    }
 }

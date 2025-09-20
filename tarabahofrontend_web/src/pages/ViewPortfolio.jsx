@@ -15,18 +15,17 @@ const ViewPortfolio = () => {
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isPublicView, setIsPublicView] = useState(false);
+  const [isGraduateView, setIsGraduateView] = useState(false);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
   const navigate = useNavigate();
   const [selectedProjectImage, setSelectedProjectImage] = useState(null);
 
   // Helper function to get the shareable URL
   const getShareableUrl = () => {
-    // For production (Vercel), use the current origin
     if (import.meta.env.PROD) {
       return window.location.origin + window.location.pathname;
     }
-    
-    // For development, use localhost or your dev URL
     return `http://localhost:3000/portfolio/${graduateId}`;
   };
 
@@ -122,89 +121,148 @@ const ViewPortfolio = () => {
     return normalized;
   };
 
-  // Fetch token, portfolio, graduate, certificates, and projects
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        console.log("Fetching JWT token for graduate ID:", graduateId);
-        const tokenResponse = await axios.get(`${BACKEND_URL}/api/graduate/get-token`, {
-          withCredentials: true,
-        });
-        const fetchedToken = tokenResponse.data.token;
-        console.log("Token response:", tokenResponse.data);
-        if (!fetchedToken) {
-          throw new Error("No token returned from /api/graduate/get-token");
-        }
+  // Check if user is authenticated graduate
+  const checkAuthStatus = async () => {
+    try {
+      const tokenResponse = await axios.get(`${BACKEND_URL}/api/graduate/get-token`, {
+        withCredentials: true,
+      });
+      const fetchedToken = tokenResponse.data.token;
+      if (fetchedToken) {
         setToken(fetchedToken);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.log("User not authenticated");
+      return false;
+    }
+  };
 
-        // Fetch portfolio
-        console.log("Fetching portfolio for graduate ID:", graduateId);
-        const portfolioResponse = await axios.get(
-          `${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio`,
-          {
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${fetchedToken}` },
-          }
-        );
-        console.log("Portfolio response:", portfolioResponse.data);
-        // Normalize the portfolio data before setting state
-        const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data);
-        setPortfolio(normalizedPortfolio);
+  // Fetch token, portfolio, graduate, certificates, and projects for authenticated users
+  const fetchAuthenticatedData = async () => {
+    try {
+      console.log("Fetching JWT token for graduate ID:", graduateId);
+      const tokenResponse = await axios.get(`${BACKEND_URL}/api/graduate/get-token`, {
+        withCredentials: true,
+      });
+      const fetchedToken = tokenResponse.data.token;
+      console.log("Token response:", tokenResponse.data);
+      if (!fetchedToken) {
+        throw new Error("No token returned from /api/graduate/get-token");
+      }
+      setToken(fetchedToken);
 
-        // Fetch graduate data
-        console.log("Fetching graduate data for ID:", graduateId);
-        const graduateResponse = await axios.get(`${BACKEND_URL}/api/graduate/${graduateId}`, {
+      // Fetch portfolio
+      console.log("Fetching portfolio for graduate ID:", graduateId);
+      const portfolioResponse = await axios.get(
+        `${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio`,
+        {
           withCredentials: true,
           headers: { Authorization: `Bearer ${fetchedToken}` },
-          params: { includePortfolio: false },
-        });
-        console.log("Graduate response:", graduateResponse.data);
-        setGraduate(graduateResponse.data);
+        }
+      );
+      console.log("Portfolio response:", portfolioResponse.data);
+      const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data);
+      setPortfolio(normalizedPortfolio);
+      setIsGraduateView(true);
+      setIsPublicView(false);
 
-        // Fetch certificates
-        console.log("Fetching certificates for graduate ID:", graduateId);
-        const certificatesResponse = await axios.get(
-          `${BACKEND_URL}/api/certificate/graduate/${graduateId}`,
+      // Fetch graduate data
+      console.log("Fetching graduate data for ID:", graduateId);
+      const graduateResponse = await axios.get(`${BACKEND_URL}/api/graduate/${graduateId}`, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${fetchedToken}` },
+        params: { includePortfolio: false },
+      });
+      console.log("Graduate response:", graduateResponse.data);
+      setGraduate(graduateResponse.data);
+
+      // Fetch certificates
+      console.log("Fetching certificates for graduate ID:", graduateId);
+      const certificatesResponse = await axios.get(
+        `${BACKEND_URL}/api/certificate/graduate/${graduateId}`,
+        {
+          withCredentials: true,
+          headers: { Authorization: `Bearer ${fetchedToken}` },
+        }
+      );
+      console.log("Certificates response:", certificatesResponse.data);
+      setCertificates(certificatesResponse.data);
+
+      // Fetch projects
+      console.log("Fetching projects for portfolio ID:", normalizedPortfolio.id);
+      if (normalizedPortfolio.id) {
+        const projectsResponse = await axios.get(
+          `${BACKEND_URL}/api/project/portfolio/${normalizedPortfolio.id}`,
           {
             withCredentials: true,
             headers: { Authorization: `Bearer ${fetchedToken}` },
           }
         );
-        console.log("Certificates response:", certificatesResponse.data);
-        setCertificates(certificatesResponse.data);
-
-        // Fetch projects
-        console.log("Fetching projects for portfolio ID:", normalizedPortfolio.id);
-        if (normalizedPortfolio.id) {
-          const projectsResponse = await axios.get(
-            `${BACKEND_URL}/api/project/portfolio/${normalizedPortfolio.id}`,
-            {
-              withCredentials: true,
-              headers: { Authorization: `Bearer ${fetchedToken}` },
-            }
-          );
-          console.log("Projects response:", projectsResponse.data);
-          setProjects(projectsResponse.data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch data:", err);
+        console.log("Projects response:", projectsResponse.data);
+        setProjects(projectsResponse.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch authenticated data:", err);
+      // If unauthorized, try public view
+      if (err.response?.status === 401) {
+        console.log("Unauthorized, trying public view...");
+        fetchPublicData();
+      } else {
         setError(
           err.response?.data?.message ||
             err.response?.data?.error ||
             err.message ||
             "Failed to load portfolio"
         );
-        if (err.response?.status === 401) {
-          console.error("Unauthorized: Redirecting to /signin");
-          navigate("/signin");
-        }
-      } finally {
-        setIsLoading(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch public portfolio data
+  const fetchPublicData = async () => {
+    try {
+      console.log("Fetching public portfolio for graduate ID:", graduateId);
+      const portfolioResponse = await axios.get(
+        `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio`
+      );
+      console.log("Public portfolio response:", portfolioResponse.data);
+      const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data);
+      setPortfolio(normalizedPortfolio);
+      setIsPublicView(true);
+      setIsGraduateView(false);
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Failed to fetch public data:", err);
+      setError(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          err.message ||
+          "Public portfolio not found or not accessible"
+      );
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch initial data
+  useEffect(() => {
+    const initializeData = async () => {
+      setIsLoading(true);
+      const isAuthenticated = await checkAuthStatus();
+      
+      if (isAuthenticated) {
+        await fetchAuthenticatedData();
+      } else {
+        // Try public view first
+        await fetchPublicData();
       }
     };
 
-    fetchInitialData();
-  }, [graduateId, navigate]);
+    initializeData();
+  }, [graduateId]);
 
   // Debug portfolio state before rendering
   useEffect(() => {
@@ -216,7 +274,6 @@ const ViewPortfolio = () => {
         primaryCourseType: portfolio.primaryCourseType,
         scholarScheme: portfolio.scholarScheme,
         designTemplate: portfolio.designTemplate,
-   
         ncLevel: portfolio.ncLevel,
         trainingCenter: portfolio.trainingCenter,
         scholarshipType: portfolio.scholarshipType,
@@ -236,15 +293,17 @@ const ViewPortfolio = () => {
         continuingEducations: portfolio.continuingEducations,
         professionalMemberships: portfolio.professionalMemberships,
         references: portfolio.references,
+        isPublicView,
+        isGraduateView,
       });
     }
-  }, [portfolio]);
+  }, [portfolio, isPublicView, isGraduateView]);
 
   const handleCertificateClick = (certificate) => {
     setSelectedCertificate(selectedCertificate?.id === certificate.id ? null : certificate);
   };
 
-  // Updated share functions for production (Vercel)
+  // Share functions (only for graduate view)
   const copyToClipboard = () => {
     const shareableUrl = getShareableUrl();
     navigator.clipboard.writeText(shareableUrl).then(() => {
@@ -307,7 +366,7 @@ const ViewPortfolio = () => {
   }
   if (!portfolio) {
     console.log("Rendering: no portfolio");
-    return <div className="view-portfolio-no-data">No portfolio found or access denied.</div>;
+    return <div className="view-portfolio-no-data">Portfolio not found or not accessible.</div>;
   }
 
   console.log("Rendering: portfolio data", {
@@ -341,7 +400,8 @@ const ViewPortfolio = () => {
   return (
     <div className="view-portfolio-page">
       <div className="view-portfolio-container">
-        {graduate?.profilePicture && (
+        {/* Profile Picture - Only show for graduate view */}
+        {isGraduateView && graduate?.profilePicture && (
           <div className="profile-picture-container">
             <img
               src={graduate.profilePicture || "/placeholder.svg"}
@@ -350,7 +410,18 @@ const ViewPortfolio = () => {
             />
           </div>
         )}
+
         <h1>{portfolio.fullName || "Unnamed Portfolio"}</h1>
+        
+        {/* Public View Indicator */}
+        {isPublicView && (
+          <div className="public-view-indicator">
+            <p style={{ color: '#666', fontStyle: 'italic', textAlign: 'center', marginBottom: '20px' }}>
+              👁️ Public Portfolio View
+            </p>
+          </div>
+        )}
+
         <div className="portfolio-details">
           <h2>Basic Information</h2>
           <p><strong>Full Name:</strong> {portfolio.fullName ? portfolio.fullName : "Not provided"}</p>
@@ -526,7 +597,7 @@ const ViewPortfolio = () => {
             <p>No certificates available.</p>
           )}
 
-          {/* Projects Section - Added below Certificates */}
+          {/* Projects Section */}
           <h2>Projects</h2>
           {projects && Array.isArray(projects) && projects.length > 0 ? (
             <div className="project-list">
@@ -538,12 +609,11 @@ const ViewPortfolio = () => {
                         src={project.projectImageFilePath}
                         alt={project.title || "Project"}
                         className="project-preview"
-                         onClick={() => setSelectedProjectImage(project.projectImageFilePath)}
+                        onClick={() => setSelectedProjectImage(project.projectImageFilePath)}
                       />
                     )}
                     <div className="project-title">
                       <h5>{project.title || "Unnamed Project"}</h5>
-
                       {project.startDate && project.endDate && (
                         <p>
                           <strong>Timeline:</strong> {new Date(project.startDate).toLocaleDateString()} -{" "}
@@ -564,30 +634,43 @@ const ViewPortfolio = () => {
             <p>No projects available.</p>
           )}
         </div>
-        
-        {/* Updated Share Buttons Section */}
-        <div className="share-buttons">
-          <button onClick={copyToClipboard} className="share-button">
-            📋 Copy Link
-          </button>
-          <button onClick={shareToLinkedIn} className="share-button">
-            💼 Share to LinkedIn
-          </button>
-          <button onClick={shareToFacebook} className="share-button">
-            📘 Share to Facebook
-          </button>
-          <Link to={`/portfolio/edit/${graduateId}`} className="edit-portfolio-button">
-            ✏️ Edit Portfolio
-          </Link>
-        </div>
-        
-        <button onClick={handleDelete} className="delete-button">
-          🗑️ Delete Portfolio
-        </button>
-        
-        <Link to="/graduate-homepage" className="view-portfolio-back-button">
-          ← Back to Homepage
-        </Link>
+
+        {/* Action Buttons - Only show for graduate view */}
+        {isGraduateView && (
+          <>
+            <div className="share-buttons">
+              <button onClick={copyToClipboard} className="share-button">
+                📋 Copy Link
+              </button>
+              <button onClick={shareToLinkedIn} className="share-button">
+                💼 Share to LinkedIn
+              </button>
+              <button onClick={shareToFacebook} className="share-button">
+                📘 Share to Facebook
+              </button>
+              <Link to={`/portfolio/edit/${graduateId}`} className="edit-portfolio-button">
+                ✏️ Edit Portfolio
+              </Link>
+            </div>
+            
+            <button onClick={handleDelete} className="delete-button">
+              🗑️ Delete Portfolio
+            </button>
+            
+            <Link to="/graduate-homepage" className="view-portfolio-back-button">
+              ← Back to Homepage
+            </Link>
+          </>
+        )}
+
+        {/* Public View - Login Prompt */}
+        {isPublicView && (
+          <div className="public-view-footer">
+            <p style={{ textAlign: 'center', color: '#666', marginTop: '30px' }}>
+              👤 Want to edit this portfolio? <Link to="/signin" style={{ color: '#007bff', textDecoration: 'none' }}>Sign in here</Link>
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Project Image Modal */}
