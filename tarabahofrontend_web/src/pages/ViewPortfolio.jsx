@@ -18,6 +18,8 @@ const ViewPortfolio = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
   const currentUrl = window.location.href;
   const navigate = useNavigate();
+  const [selectedProjectImage, setSelectedProjectImage] = useState(null);
+
 
   // Function to normalize portfolio data to match PortfolioCreation fields
   const normalizePortfolioData = (data) => {
@@ -523,11 +525,12 @@ const ViewPortfolio = () => {
                         src={project.projectImageFilePath}
                         alt={project.title || "Project"}
                         className="project-preview"
+                         onClick={() => setSelectedProjectImage(project.projectImageFilePath)}
                       />
                     )}
-                    <div>
+                    <div className="project-title">
                       <h5>{project.title || "Unnamed Project"}</h5>
-                      {project.description && <p>{project.description}</p>}
+
                       {project.startDate && project.endDate && (
                         <p>
                           <strong>Timeline:</strong> {new Date(project.startDate).toLocaleDateString()} -{" "}
@@ -569,7 +572,17 @@ const ViewPortfolio = () => {
           Back to Homepage
         </Link>
       </div>
+      {selectedProjectImage && (
+  <div className="modal-overlay" onClick={() => setSelectedProjectImage(null)}>
+    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <img src={selectedProjectImage} alt="Enlarged Project" />
+      
     </div>
+  </div>
+)}
+
+    </div>
+    
   );
 };
 

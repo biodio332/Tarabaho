@@ -267,7 +267,7 @@ body::before {
 
 /* Enhanced paragraph styling with varied alignment */
 .portfolio-details p {
-  margin: 0.75rem 0; 
+  margin: 0.2rem 0; 
   color: #475569;
   line-height: 1.6; 
   font-size: 1.1rem;
@@ -982,4 +982,155 @@ a:focus {
   /* Changed focus color to blue */
   outline: 3px solid #3b82f6;
   outline-offset: 3px;
+}
+
+
+/* Pagination for printing */
+@media print {
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  .view-portfolio-container {
+    width: 8.5in;   /* Long bond paper width */
+    height: 13in;   /* Long bond paper height */
+    page-break-after: always;
+  }
+
+  /* Ensure sections break nicely between pages */
+  .portfolio-details,
+  .skill-list,
+  .experience-list,
+  .award-list,
+  .education-list,
+  .membership-list,
+  .reference-list,
+  .certificate-list {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+
+.project-list {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.project-item:first-child {
+  transform: translateX(-20px);
+}
+
+.project-preview {
+  width: 300px;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  background: #f9fafb;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.project-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+/* Hover animation */
+.project-preview:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+.project-preview:hover img {
+  transform: scale(1.1);
+}
+
+.project-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* centers children horizontally */
+  margin-top: 1rem;
+}
+
+.project-title h5 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 14px;
+  width: 800px;   /* bigger fixed width */
+  height: 600px;  /* bigger fixed height */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  animation: scaleUp 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.modal-content img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; 
+  border-radius: 14px;
+}
+
+.close-button {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: #ef4444;
+  border: none;
+  color: white;
+  font-size: 22px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.close-button:hover {
+  background: #dc2626;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
