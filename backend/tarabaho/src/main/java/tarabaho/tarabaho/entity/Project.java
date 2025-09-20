@@ -52,6 +52,10 @@ public class Project {
     @Column
     private LocalDateTime updatedAt;
 
+    // New field for storing the main project image file path
+    @Column(length = 500)
+    private String projectImageFilePath;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -76,6 +80,7 @@ public class Project {
         return Objects.hash(id);
     }
 
+    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Portfolio getPortfolio() { return portfolio; }
@@ -94,4 +99,6 @@ public class Project {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public String getProjectImageFilePath() { return projectImageFilePath; }
+    public void setProjectImageFilePath(String projectImageFilePath) { this.projectImageFilePath = projectImageFilePath; }
 }

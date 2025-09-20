@@ -69,6 +69,10 @@ public class PortfolioService {
     @Autowired
     private CertificateService certificateService;
 
+    // Added for project cleanup
+    @Autowired
+    private ProjectService projectService;
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -110,12 +114,7 @@ public class PortfolioService {
         Graduate graduate = graduateRepository.findById(graduateId)
                 .orElseThrow(() -> new Exception("Graduate not found with id: " + graduateId));
 
-        List<Certificate> certificates = certificateRepository.findByGraduateId(graduateId);
-        if (certificates.isEmpty()) {
-            System.out.println("PortfolioService: Graduate not verified (no certificates)");
-            throw new Exception("Graduate must be verified with at least one certificate before creating a portfolio.");
-        }
-
+     
         if (!graduate.getUsername().equals(username)) {
             System.out.println("PortfolioService: Unauthorized attempt to create portfolio");
             throw new Exception("Unauthorized: Cannot create portfolio for another graduate.");
@@ -230,6 +229,9 @@ public class PortfolioService {
 
         // Delete portfolio-related certificates (only those with matching portfolio_id)
         certificateService.deleteCertificatesByPortfolioId(portfolioId);
+        
+        // Added: Delete portfolio-related projects (only those with matching portfolio_id)
+        projectService.deleteProjectsByPortfolioId(portfolioId);
 
         // Clear collections to trigger orphan removal
         portfolio.getSkills().clear();
@@ -286,6 +288,7 @@ public class PortfolioService {
         System.out.println("PortfolioService: Visibility set to " + visibility + " for portfolio ID: " + portfolioId);
     }
 
+    // Added: Method for ProjectController to validate portfolio access
     public PortfolioRequest getPortfolio(Long portfolioId, String username) throws Exception {
         System.out.println("PortfolioService: Fetching portfolio ID: " + portfolioId);
         Portfolio portfolio = portfolioRepository.findById(portfolioId)

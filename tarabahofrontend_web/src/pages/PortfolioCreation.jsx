@@ -52,7 +52,9 @@ const PortfolioCreation = () => {
   const [newProject, setNewProject] = useState({
     title: "",
     description: "",
-    projectFile: null,
+    startDate: "",
+    endDate: "",
+    projectImageFile: null,
   });
   const [newSkill, setNewSkill] = useState({
     name: "",
@@ -162,18 +164,18 @@ const PortfolioCreation = () => {
 
   const handleProjectFileChange = (e) => {
     const file = e.target.files[0];
-    if (file && !file.type.startsWith("image/") && file.type !== "application/pdf") {
-      setError("Please select an image or PDF file for the project sample.");
+    if (file && !file.type.startsWith("image/")) {
+      setError("Please select an image file for the project.");
       return;
     }
-    setNewProject((prev) => ({ ...prev, projectFile: file }));
+    setNewProject((prev) => ({ ...prev, projectImageFile: file }));
     setError("");
   };
 
   const handleCertificateFileChange = (e) => {
     const file = e.target.files[0];
-    if (file && !file.type.startsWith("image/")) {
-      setError("Please select an image file for the certificate.");
+    if (file && !file.type.startsWith("image/") && file.type !== "application/pdf") {
+      setError("Please select an image or PDF file for the certificate.");
       return;
     }
     setNewCertificate((prev) => ({ ...prev, certificateFile: file }));
@@ -288,22 +290,33 @@ const PortfolioCreation = () => {
   };
 
   const handleAddProject = () => {
-    if (!newProject.title || !newProject.projectFile) {
-      setError("Please fill in the project title and select a file.");
+    if (!newProject.title) {
+      setError("Please fill in the project title.");
+      return;
+    }
+    if (!newProject.projectImageFile) {
+      setError("Please select a project image file.");
       return;
     }
     setProjects((prev) => [
       ...prev,
       {
+        id: Date.now(), // Temporary ID for frontend
         title: newProject.title,
         description: newProject.description,
-        projectFile: newProject.projectFile,
-        preview: newProject.projectFile.type.startsWith("image/")
-          ? URL.createObjectURL(newProject.projectFile)
-          : null,
+        startDate: newProject.startDate,
+        endDate: newProject.endDate,
+        projectImageFile: newProject.projectImageFile,
+        preview: URL.createObjectURL(newProject.projectImageFile),
       },
     ]);
-    setNewProject({ title: "", description: "", projectFile: null });
+    setNewProject({
+      title: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      projectImageFile: null,
+    });
     setIsAddingProject(false);
     setError("");
   };
@@ -351,7 +364,7 @@ const PortfolioCreation = () => {
       courseName: certificate.courseName,
       certificateNumber: certificate.certificateNumber,
       issueDate: certificate.issueDate,
-      certificateFile: certificate.certificateFile,
+      certificateFile: null, // Don't carry over the file for editing
     });
     setIsAddingCertificate(true);
   };
@@ -410,8 +423,8 @@ const PortfolioCreation = () => {
     setProfessionalMemberships((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleRemoveProject = (index) => {
-    setProjects((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveProject = (id) => {
+    setProjects((prev) => prev.filter((proj) => proj.id !== id));
   };
 
   const handleRemoveReference = (index) => {
@@ -554,12 +567,18 @@ const PortfolioCreation = () => {
       const portfolioId = portfolioResponse.data.id;
       localStorage.setItem("portfolioId", portfolioId);
 
+      // Create projects after portfolio is created
       for (const proj of projects) {
         const formDataProject = new FormData();
         formDataProject.append("portfolioId", portfolioId);
         formDataProject.append("title", proj.title);
         formDataProject.append("description", proj.description || "");
-        formDataProject.append("file", proj.projectFile);
+        if (proj.startDate) formDataProject.append("startDate", proj.startDate);
+        if (proj.endDate) formDataProject.append("endDate", proj.endDate);
+        if (proj.projectImageFile) {
+          formDataProject.append("projectImageFile", proj.projectImageFile);
+        }
+        
         await axios.post(
           `${BACKEND_URL}/api/project`,
           formDataProject,
@@ -632,13 +651,7 @@ const PortfolioCreation = () => {
                 style={{ display: "none" }}
               />
             </div>
-
           </div>
-
-
-
-
-
 
           {/* Basic Information */}
           <div className="form-group">
@@ -766,6 +779,175 @@ const PortfolioCreation = () => {
             />
           </div>
 
+          {/* Projects - New Section */}
+          <div className="form-group">
+            <h3>Projects</h3>
+            <button
+              type="button"
+              className="add-project-button"
+              onClick={() => {
+                setIsAddingProject(true);
+                setNewProject({
+                  title: "",
+                  description: "",
+                  startDate: "",
+                  endDate: "",
+                  projectImageFile: null,
+                });
+              }}
+              disabled={isLoading}
+            >
+              <FaPlus /> Add Project
+            </button>
+            {isAddingProject && (
+              <div className="project-form">
+                <div className="form-group">
+                  <label htmlFor="projectTitle">Project Title</label>
+                  <input
+                    type="text"
+                    id="projectTitle"
+                    name="title"
+                    value={newProject.title}
+                    onChange={handleProjectInputChange}
+                    placeholder="Enter project title"
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="projectDescription">Description</label>
+                  <textarea
+                    id="projectDescription"
+                    name="description"
+                    value={newProject.description}
+                    onChange={handleProjectInputChange}
+                    placeholder="Describe your project"
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="startDate">Start Date</label>
+                  <input
+                    type="date"
+                    id="startDate"
+                    name="startDate"
+                    value={newProject.startDate}
+                    onChange={handleProjectInputChange}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="endDate">End Date</label>
+                  <input
+                    type="date"
+                    id="endDate"
+                    name="endDate"
+                    value={newProject.endDate}
+                    onChange={handleProjectInputChange}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="projectImageFile">Project Image</label>
+                  <div className="project-upload">
+                    <img
+                      src={
+                        newProject.projectImageFile
+                          ? URL.createObjectURL(newProject.projectImageFile)
+                          : "/placeholder.svg"
+                      }
+                      alt="Project Preview"
+                      className="project-preview"
+                      onClick={handleProjectImageClick}
+                      style={{ cursor: "pointer", width: "100px", height: "100px" }}
+                    />
+                    <p className="project-help-text">
+                      {newProject.projectImageFile ? newProject.projectImageFile.name : "Click to upload project image"}
+                    </p>
+                    <button
+                      type="button"
+                      className="project-upload-button"
+                      onClick={handleProjectImageClick}
+                      disabled={isLoading}
+                    >
+                      Choose Image
+                    </button>
+                    <input
+                      type="file"
+                      id="projectImageFile"
+                      accept="image/*"
+                      onChange={handleProjectFileChange}
+                      ref={projectFileInputRef}
+                      style={{ display: "none" }}
+                    />
+                  </div>
+                </div>
+                <div className="project-form-actions">
+                  <button
+                    type="button"
+                    className="project-save-button"
+                    onClick={handleAddProject}
+                    disabled={isLoading}
+                  >
+                    Add Project
+                  </button>
+                  <button
+                    type="button"
+                    className="project-cancel-button"
+                    onClick={() => {
+                      setIsAddingProject(false);
+                      setNewProject({
+                        title: "",
+                        description: "",
+                        startDate: "",
+                        endDate: "",
+                        projectImageFile: null,
+                      });
+                    }}
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+            {projects.length > 0 && (
+              <div className="project-list">
+                <h4>Added Projects</h4>
+                {projects.map((proj) => (
+                  <div key={proj.id} className="project-item">
+                    <div className="project-details">
+                      <img
+                        src={proj.preview}
+                        alt="Project Preview"
+                        className="project-preview"
+                        style={{ width: "50px", height: "50px" }}
+                      />
+                      <div>
+                        <h5>{proj.title}</h5>
+                        {proj.description && <p>{proj.description}</p>}
+                        {proj.startDate && proj.endDate && (
+                          <p>
+                            {new Date(proj.startDate).toLocaleDateString()} - {new Date(proj.endDate).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="project-actions">
+                      <button
+                        type="button"
+                        className="project-remove-button"
+                        onClick={() => handleRemoveProject(proj.id)}
+                        disabled={isLoading}
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Certificates */}
           <div className="form-group">
             <h3>Certificates</h3>
@@ -837,6 +1019,9 @@ const PortfolioCreation = () => {
                       onClick={handleCertificateImageClick}
                       style={{ cursor: "pointer", width: "100px", height: "100px" }}
                     />
+                    <p className="certificate-help-text">
+                      {newCertificate.certificateFile ? newCertificate.certificateFile.name : "Click to upload certificate"}
+                    </p>
                     <button
                       type="button"
                       className="certificate-upload-button"
@@ -848,7 +1033,7 @@ const PortfolioCreation = () => {
                     <input
                       type="file"
                       id="certificateFile"
-                      accept="image/*"
+                      accept="image/*,application/pdf"
                       onChange={handleCertificateFileChange}
                       ref={certificateFileInputRef}
                       style={{ display: "none" }}
@@ -887,7 +1072,7 @@ const PortfolioCreation = () => {
             {certificates.length > 0 && (
               <div className="certificate-list">
                 <h4>Added Certificates</h4>
-                {certificates.map((cert, index) => (
+                {certificates.map((cert) => (
                   <div key={cert.id} className="certificate-item">
                     <div className="certificate-details">
                       <h5>{cert.courseName}</h5>
@@ -1501,126 +1686,7 @@ const PortfolioCreation = () => {
             )}
           </div>
 
- <div className="form-group">
-<label>Project Samples</label>
-            <button
-              type="button"
-              className="add-project-button"
-              onClick={() => setIsAddingProject(true)}
-              disabled={isLoading}
-            >
-              <FaPlus /> Add Project Sample
-            </button>
-            {isAddingProject && (
-              <div className="project-form">
-                <div className="form-group">
-                  <label htmlFor="title">Project Title</label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={newProject.title}
-                    onChange={handleProjectInputChange}
-                    placeholder="Enter project title"
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="description">Description</label>
-                  <textarea
-                    name="description"
-                    value={newProject.description}
-                    onChange={handleProjectInputChange}
-                    placeholder="Describe the project"
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="projectFile">Project File</label>
-                  <div className="project-upload">
-                    <img
-                      src={
-                        newProject.projectFile && newProject.projectFile.type.startsWith("image/")
-                          ? URL.createObjectURL(newProject.projectFile)
-                          : "/placeholder.svg"
-                      }
-                      alt="Project Preview"
-                      className="project-preview"
-                      onClick={handleProjectImageClick}
-                    />
-                    {newProject.projectFile && !newProject.projectFile.type.startsWith("image/") && (
-                      <p className="project-file-name">{newProject.projectFile.name}</p>
-                    )}
-                    <button
-                      type="button"
-                      className="project-upload-button"
-                      onClick={handleProjectImageClick}
-                      disabled={isLoading}
-                    >
-                      Choose File
-                    </button>
-                    <input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      onChange={handleProjectFileChange}
-                      ref={projectFileInputRef}
-                      style={{ display: "none" }}
-                    />
-                  </div>
-                </div>
-                <div className="project-form-actions">
-                  <button
-                    type="button"
-                    className="project-save-button"
-                    onClick={handleAddProject}
-                    disabled={isLoading}
-                  >
-                    Add
-                  </button>
-                  <button
-                    type="button"
-                    className="project-cancel-button"
-                    onClick={() => setIsAddingProject(false)}
-                    disabled={isLoading}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-            {projects.length > 0 && (
-              <div className="project-list">
-                <h4>Added Projects</h4>
-                {projects.map((proj, index) => (
-                  <div key={index} className="project-item">
-                    <div className="project-details">
-                      <img
-                        src={proj.preview || "/placeholder.svg"}
-                        alt="Project Preview"
-                        className="project-preview"
-                      />
-                      <div>
-                        <h5>{proj.title}</h5>
-                        {proj.description && <p>Description: {proj.description}</p>}
-                        {proj.projectFile && !proj.projectFile.type.startsWith("image/") && (
-                          <p>File: {proj.projectFile.name}</p>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="project-remove-button"
-                      onClick={() => handleRemoveProject(index)}
-                      disabled={isLoading}
-                    >
-                      <FaTrash />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
- </div>
-
+          {/* Additional Form Fields */}
           <div className="form-group">
             <label htmlFor="primaryCourseType">Primary Course Type</label>
             <input

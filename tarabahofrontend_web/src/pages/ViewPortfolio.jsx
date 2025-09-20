@@ -10,6 +10,7 @@ const ViewPortfolio = () => {
   const [portfolio, setPortfolio] = useState(null);
   const [graduate, setGraduate] = useState(null);
   const [certificates, setCertificates] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [selectedCertificate, setSelectedCertificate] = useState(null);
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,9 +30,7 @@ const ViewPortfolio = () => {
       professionalTitle: data.professionalTitle || "",
       primaryCourseType: data.primaryCourseType || "",
       scholarScheme: data.scholarScheme || "",
-      designTemplate: data.designTemplate || "default",
       customSectionJson: data.customSectionJson || "",
-      visibility: data.visibility || "PUBLIC",
       avatar: data.avatar || "",
       ncLevel: data.ncLevel || "",
       trainingCenter: data.trainingCenter || "",
@@ -60,6 +59,17 @@ const ViewPortfolio = () => {
             company: exp.employer || "",
             duration: exp.duration || "",
             responsibilities: exp.description || "",
+          }))
+        : [],
+      projects: data.projects
+        ? data.projects.map((project) => ({
+            id: project.id,
+            title: project.title || "Unnamed Project",
+            description: project.description || "",
+            imageUrls: project.imageUrls || "",
+            startDate: project.startDate || "",
+            endDate: project.endDate || "",
+            projectImageFilePath: project.projectImageFilePath || "",
           }))
         : [],
       awardsRecognitions: data.awardsRecognitions
@@ -101,7 +111,7 @@ const ViewPortfolio = () => {
     return normalized;
   };
 
-  // Fetch token, portfolio, graduate, and certificates
+  // Fetch token, portfolio, graduate, certificates, and projects
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -151,6 +161,20 @@ const ViewPortfolio = () => {
         );
         console.log("Certificates response:", certificatesResponse.data);
         setCertificates(certificatesResponse.data);
+
+        // Fetch projects
+        console.log("Fetching projects for portfolio ID:", normalizedPortfolio.id);
+        if (normalizedPortfolio.id) {
+          const projectsResponse = await axios.get(
+            `${BACKEND_URL}/api/project/portfolio/${normalizedPortfolio.id}`,
+            {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${fetchedToken}` },
+            }
+          );
+          console.log("Projects response:", projectsResponse.data);
+          setProjects(projectsResponse.data);
+        }
       } catch (err) {
         console.error("Failed to fetch data:", err);
         setError(
@@ -181,7 +205,7 @@ const ViewPortfolio = () => {
         primaryCourseType: portfolio.primaryCourseType,
         scholarScheme: portfolio.scholarScheme,
         designTemplate: portfolio.designTemplate,
-        visibility: portfolio.visibility,
+   
         ncLevel: portfolio.ncLevel,
         trainingCenter: portfolio.trainingCenter,
         scholarshipType: portfolio.scholarshipType,
@@ -196,6 +220,7 @@ const ViewPortfolio = () => {
         salaryExpectations: portfolio.salaryExpectations,
         skills: portfolio.skills,
         experiences: portfolio.experiences,
+        projects: portfolio.projects,
         awardsRecognitions: portfolio.awardsRecognitions,
         continuingEducations: portfolio.continuingEducations,
         professionalMemberships: portfolio.professionalMemberships,
@@ -277,7 +302,6 @@ const ViewPortfolio = () => {
     primaryCourseType: portfolio.primaryCourseType,
     scholarScheme: portfolio.scholarScheme,
     designTemplate: portfolio.designTemplate,
-    visibility: portfolio.visibility,
     ncLevel: portfolio.ncLevel,
     trainingCenter: portfolio.trainingCenter,
     scholarshipType: portfolio.scholarshipType,
@@ -292,6 +316,7 @@ const ViewPortfolio = () => {
     salaryExpectations: portfolio.salaryExpectations,
     skills: portfolio.skills,
     experiences: portfolio.experiences,
+    projects: portfolio.projects,
     awardsRecognitions: portfolio.awardsRecognitions,
     continuingEducations: portfolio.continuingEducations,
     professionalMemberships: portfolio.professionalMemberships,
@@ -317,10 +342,6 @@ const ViewPortfolio = () => {
           <p><strong>Professional Title:</strong> {portfolio.professionalTitle ? portfolio.professionalTitle : "Not provided"}</p>
           <p><strong>Professional Summary:</strong> {portfolio.professionalSummary ? portfolio.professionalSummary : "Not provided"}</p>
           <p><strong>Primary Course Type:</strong> {portfolio.primaryCourseType ? portfolio.primaryCourseType : "Not provided"}</p>
-          <p><strong>Scholar Scheme:</strong> {portfolio.scholarScheme ? portfolio.scholarScheme : "Not provided"}</p>
-          <p><strong>Design Template:</strong> {portfolio.designTemplate ? portfolio.designTemplate : "Not provided"}</p>
-          <p><strong>Custom Section:</strong> {portfolio.customSectionJson ? portfolio.customSectionJson : "Not provided"}</p>
-          <p><strong>Visibility:</strong> {portfolio.visibility ? portfolio.visibility : "Not provided"}</p>
 
           <h2>TESDA Information</h2>
           <p><strong>NC Level:</strong> {portfolio.ncLevel ? portfolio.ncLevel : "Not provided"}</p>
@@ -334,16 +355,9 @@ const ViewPortfolio = () => {
           <p><strong>Phone:</strong> {portfolio.phone ? portfolio.phone : "Not provided"}</p>
           <p><strong>Website:</strong> {portfolio.website ? portfolio.website : "Not provided"}</p>
 
-          <h2>Employment Readiness</h2>
-          <p><strong>Portfolio Category:</strong> {portfolio.portfolioCategory ? portfolio.portfolioCategory : "Not provided"}</p>
-          <p><strong>Preferred Work Location:</strong> {portfolio.preferredWorkLocation ? portfolio.preferredWorkLocation : "Not provided"}</p>
-          <p><strong>Work Schedule Availability:</strong> {portfolio.workScheduleAvailability ? portfolio.workScheduleAvailability : "Not provided"}</p>
-          <p><strong>Salary Expectations:</strong> {portfolio.salaryExpectations ? portfolio.salaryExpectations : "Not provided"}</p>
-
           <h2>Skills</h2>
           {portfolio.skills && Array.isArray(portfolio.skills) && portfolio.skills.length > 0 ? (
             <div className="skill-list">
-          
               {portfolio.skills.map((skill, index) => (
                 <div key={index} className="skill-item">
                   <div className="skill-details">
@@ -361,7 +375,6 @@ const ViewPortfolio = () => {
           <h2>Experiences</h2>
           {portfolio.experiences && Array.isArray(portfolio.experiences) && portfolio.experiences.length > 0 ? (
             <div className="experience-list">
-      
               {portfolio.experiences.map((exp, index) => (
                 <div key={index} className="experience-item">
                   <div className="experience-details">
@@ -379,7 +392,6 @@ const ViewPortfolio = () => {
           <h2>Awards & Recognitions</h2>
           {portfolio.awardsRecognitions && Array.isArray(portfolio.awardsRecognitions) && portfolio.awardsRecognitions.length > 0 ? (
             <div className="award-list">
-              
               {portfolio.awardsRecognitions.map((award, index) => (
                 <div key={index} className="award-item">
                   <div className="award-details">
@@ -397,7 +409,6 @@ const ViewPortfolio = () => {
           <h2>Continuing Education</h2>
           {portfolio.continuingEducations && Array.isArray(portfolio.continuingEducations) && portfolio.continuingEducations.length > 0 ? (
             <div className="education-list">
-           
               {portfolio.continuingEducations.map((edu, index) => (
                 <div key={index} className="education-item">
                   <div className="education-details">
@@ -415,7 +426,6 @@ const ViewPortfolio = () => {
           <h2>Professional Memberships</h2>
           {portfolio.professionalMemberships && Array.isArray(portfolio.professionalMemberships) && portfolio.professionalMemberships.length > 0 ? (
             <div className="membership-list">
-             
               {portfolio.professionalMemberships.map((mem, index) => (
                 <div key={index} className="membership-item">
                   <div className="membership-details">
@@ -433,7 +443,6 @@ const ViewPortfolio = () => {
           <h2>References</h2>
           {portfolio.references && Array.isArray(portfolio.references) && portfolio.references.length > 0 ? (
             <div className="reference-list">
-           
               {portfolio.references.map((ref, index) => (
                 <div key={index} className="reference-item">
                   <div className="reference-details">
@@ -453,7 +462,6 @@ const ViewPortfolio = () => {
           <h2>Certificates</h2>
           {certificates && Array.isArray(certificates) && certificates.length > 0 ? (
             <div className="certificate-list">
-            
               {certificates.map((certificate) => (
                 <div key={certificate.id} className="certificate-item">
                   <div className="certificate-details">
@@ -501,6 +509,43 @@ const ViewPortfolio = () => {
             </div>
           ) : (
             <p>No certificates available.</p>
+          )}
+
+          {/* Projects Section - Added below Certificates */}
+          <h2>Projects</h2>
+          {projects && Array.isArray(projects) && projects.length > 0 ? (
+            <div className="project-list">
+              {projects.map((project) => (
+                <div key={project.id} className="project-item">
+                  <div className="project-details">
+                    {project.projectImageFilePath && (
+                      <img
+                        src={project.projectImageFilePath}
+                        alt={project.title || "Project"}
+                        className="project-preview"
+                      />
+                    )}
+                    <div>
+                      <h5>{project.title || "Unnamed Project"}</h5>
+                      {project.description && <p>{project.description}</p>}
+                      {project.startDate && project.endDate && (
+                        <p>
+                          <strong>Timeline:</strong> {new Date(project.startDate).toLocaleDateString()} -{" "}
+                          {new Date(project.endDate).toLocaleDateString()}
+                        </p>
+                      )}
+                      {project.imageUrls && (
+                        <p>
+                          <strong>Additional Images:</strong> {project.imageUrls}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No projects available.</p>
           )}
         </div>
         <div className="share-buttons">

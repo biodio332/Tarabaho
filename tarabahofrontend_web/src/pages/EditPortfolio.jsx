@@ -9,17 +9,28 @@ import "../styles/EditPortfolio.css";
 const EditPortfolio = () => {
   const { graduateId } = useParams();
   const [portfolio, setPortfolio] = useState(null);
+  const [projects, setProjects] = useState([]);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const [previewAvatar, setPreviewAvatar] = useState("/placeholder.svg");
   const [certificates, setCertificates] = useState([]);
   const [modifiedCertificates, setModifiedCertificates] = useState(new Set());
+  const [modifiedProjects, setModifiedProjects] = useState(new Set());
   const [isAddingCertificate, setIsAddingCertificate] = useState(false);
+  const [isAddingProject, setIsAddingProject] = useState(false);
   const [editingCertificateId, setEditingCertificateId] = useState(null);
+  const [editingProjectId, setEditingProjectId] = useState(null);
   const [newCertificate, setNewCertificate] = useState({
     courseName: "",
     certificateNumber: "",
     issueDate: "",
     certificateFile: null,
+  });
+  const [newProject, setNewProject] = useState({
+    title: "",
+    description: "",
+    startDate: "",
+    endDate: "",
+    projectImageFile: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -28,6 +39,7 @@ const EditPortfolio = () => {
   const navigate = useNavigate();
   const avatarFileInputRef = useRef(null);
   const certificateFileInputRef = useRef(null);
+  const projectFileInputRef = useRef(null);
 
   const initialPortfolioState = {
     fullName: "",
@@ -140,6 +152,27 @@ const EditPortfolio = () => {
             portfolioId: cert.portfolioId || fetchedPortfolio.id,
           }))
         );
+
+        // Fetch projects separately
+        if (fetchedPortfolio.id) {
+          console.log("Fetching projects for portfolio ID:", fetchedPortfolio.id);
+          const projectsResponse = await axios.get(
+            `${BACKEND_URL}/api/project/portfolio/${fetchedPortfolio.id}`,
+            { withCredentials: true }
+          );
+          console.log("Projects response:", projectsResponse.data);
+          setProjects(
+            projectsResponse.data.map((proj) => ({
+              id: proj.id,
+              title: proj.title || "",
+              description: proj.description || "",
+              startDate: proj.startDate || "",
+              endDate: proj.endDate || "",
+              projectImageFilePath: proj.projectImageFilePath || null,
+              preview: proj.projectImageFilePath || "/placeholder.svg",
+            }))
+          );
+        }
       } catch (err) {
         console.error("Failed to fetch portfolio or certificates:", err);
         let errorMessage =
@@ -187,9 +220,25 @@ const EditPortfolio = () => {
     setError("");
   };
 
+  const handleProjectFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && !file.type.startsWith("image/")) {
+      setError("Please select an image file for the project.");
+      return;
+    }
+    setNewProject((prev) => ({ ...prev, projectImageFile: file }));
+    setError("");
+  };
+
   const handleCertificateInputChange = (e) => {
     const { name, value } = e.target;
     setNewCertificate((prev) => ({ ...prev, [name]: value }));
+    setError("");
+  };
+
+  const handleProjectInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewProject((prev) => ({ ...prev, [name]: value }));
     setError("");
   };
 
@@ -220,6 +269,35 @@ const EditPortfolio = () => {
     setError("");
   };
 
+  const handleAddProject = () => {
+    if (!newProject.title || !newProject.projectImageFile) {
+      setError("Please fill in the project title and select an image file.");
+      return;
+    }
+    const newProj = {
+      id: `new-${Date.now()}`,
+      title: newProject.title,
+      description: newProject.description,
+      startDate: newProject.startDate,
+      endDate: newProject.endDate,
+      projectImageFile: newProject.projectImageFile,
+      preview: URL.createObjectURL(newProject.projectImageFile),
+      portfolioId: portfolio.id,
+    };
+    setProjects((prev) => [...prev, newProj]);
+    setModifiedProjects((prev) => new Set(prev).add(newProj.id));
+    setNewProject({
+      title: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      projectImageFile: null,
+    });
+    setIsAddingProject(false);
+    setEditingProjectId(null);
+    setError("");
+  };
+
   const handleEditCertificate = (certificate) => {
     setEditingCertificateId(certificate.id);
     setNewCertificate({
@@ -229,6 +307,18 @@ const EditPortfolio = () => {
       certificateFile: null,
     });
     setIsAddingCertificate(true);
+  };
+
+  const handleEditProject = (project) => {
+    setEditingProjectId(project.id);
+    setNewProject({
+      title: project.title,
+      description: project.description,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      projectImageFile: null,
+    });
+    setIsAddingProject(true);
   };
 
   const handleUpdateCertificate = () => {
@@ -264,9 +354,49 @@ const EditPortfolio = () => {
     setError("");
   };
 
+  const handleUpdateProject = () => {
+    if (!newProject.title) {
+      setError("Please fill in the project title.");
+      return;
+    }
+    setProjects((prev) =>
+      prev.map((proj) =>
+        proj.id === editingProjectId
+          ? {
+              ...proj,
+              title: newProject.title,
+              description: newProject.description,
+              startDate: newProject.startDate,
+              endDate: newProject.endDate,
+              projectImageFile: newProject.projectImageFile || proj.projectImageFile,
+              preview: newProject.projectImageFile
+                ? URL.createObjectURL(newProject.projectImageFile)
+                : proj.preview,
+            }
+          : proj
+      )
+    );
+    setModifiedProjects((prev) => new Set(prev).add(editingProjectId));
+    setNewProject({
+      title: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      projectImageFile: null,
+    });
+    setEditingProjectId(null);
+    setIsAddingProject(false);
+    setError("");
+  };
+
   const handleRemoveCertificate = (id) => {
     setCertificates((prev) => prev.filter((cert) => cert.id !== id));
     setModifiedCertificates((prev) => new Set(prev).add(id));
+  };
+
+  const handleRemoveProject = (id) => {
+    setProjects((prev) => prev.filter((proj) => proj.id !== id));
+    setModifiedProjects((prev) => new Set(prev).add(id));
   };
 
   const handleArrayChange = (arrayName, index, field, value) => {
@@ -293,6 +423,7 @@ const EditPortfolio = () => {
 
   const handleImageClick = () => avatarFileInputRef.current.click();
   const handleCertificateImageClick = () => certificateFileInputRef.current.click();
+  const handleProjectImageClick = () => projectFileInputRef.current.click();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -423,14 +554,115 @@ const EditPortfolio = () => {
         });
       }
 
-      // Clear modifiedCertificates after processing
+      // Handle projects
+      const projectIds = [];
+      const existingProjectIds = new Set(
+        (
+          await axios.get(`${BACKEND_URL}/api/project/portfolio/${portfolio.id}`, {
+            withCredentials: true,
+          })
+        ).data.map((proj) => proj.id)
+      );
+
+      for (const proj of projects) {
+        if (!modifiedProjects.has(proj.id)) {
+          if (typeof proj.id === "string" && proj.id.includes("new-")) {
+            // New project, include it
+          } else if (existingProjectIds.has(proj.id)) {
+            projectIds.push(proj.id);
+            continue;
+          }
+        }
+
+        const projectData = new FormData();
+        projectData.append("portfolioId", portfolio.id.toString());
+        projectData.append("title", proj.title || "");
+        projectData.append("description", proj.description || "");
+        if (proj.startDate) projectData.append("startDate", proj.startDate);
+        if (proj.endDate) projectData.append("endDate", proj.endDate);
+        if (proj.projectImageFile instanceof File) {
+          projectData.append("projectImageFile", proj.projectImageFile);
+        }
+
+        console.log("Project FormData entries for ID:", proj.id);
+        for (const [key, value] of projectData.entries()) {
+          console.log(`${key}: ${value instanceof File ? value.name : value}`);
+        }
+
+        if (typeof proj.id === "string" && proj.id.includes("new-")) {
+          console.log("Creating new project for portfolio ID:", portfolio.id);
+          try {
+            const projResponse = await axios.post(
+              `${BACKEND_URL}/api/project`,
+              projectData,
+              { withCredentials: true }
+            );
+            console.log("Project created:", projResponse.data);
+            projectIds.push(projResponse.data.id);
+          } catch (err) {
+            console.error("Failed to create project:", err);
+            if (err.response?.status === 401) {
+              setError("Session expired. Please sign in again.");
+              navigate("/signin");
+              return;
+            } else if (err.response?.status === 415) {
+              setError("Unsupported media type. Please check project data format.");
+              return;
+            } else if (err.response?.status === 400) {
+              setError(`Failed to create project: ${err.response?.data?.message || "Invalid data"}`);
+              return;
+            }
+            throw err;
+          }
+        } else {
+          console.log("Updating project with ID:", proj.id);
+          try {
+            const projResponse = await axios.put(
+              `${BACKEND_URL}/api/project/${proj.id}`,
+              projectData,
+              { withCredentials: true }
+            );
+            console.log("Project updated:", projResponse.data);
+            projectIds.push(proj.id);
+          } catch (err) {
+            console.error("Failed to update project ID:", proj.id, err);
+            if (err.response?.status === 401) {
+              setError("Session expired. Please sign in again.");
+              navigate("/signin");
+              return;
+            } else if (err.response?.status === 415) {
+              setError("Unsupported media type. Please check project data format.");
+              return;
+            } else if (err.response?.status === 400) {
+              setError(`Failed to update project: ${err.response?.data?.message || "Invalid data"}`);
+              return;
+            }
+            throw err;
+          }
+        }
+      }
+
+      // Delete projects that were removed
+      const projectsToDelete = Array.from(existingProjectIds).filter(
+        (id) => !projects.some((proj) => proj.id === id) && modifiedProjects.has(id)
+      );
+      for (const projId of projectsToDelete) {
+        console.log("Deleting project ID:", projId);
+        await axios.delete(`${BACKEND_URL}/api/project/${projId}`, {
+          withCredentials: true,
+        });
+      }
+
+      // Clear modified sets after processing
       setModifiedCertificates(new Set());
+      setModifiedProjects(new Set());
 
       const payload = {
         graduateId,
         ...portfolio,
         avatar: avatarUrl || null,
         certificateIds,
+        projectIds,
         skills: portfolio.skills.map((skill) => ({
           id: typeof skill.id === "string" && skill.id.includes("new-") ? null : skill.id,
           name: skill.name,
@@ -735,6 +967,7 @@ const EditPortfolio = () => {
             />
           </div>
 
+          {/* Certificates Section */}
           <h2>Certificates</h2>
           <button
             type="button"
@@ -874,6 +1107,170 @@ const EditPortfolio = () => {
                       type="button"
                       className="certificate-remove-button"
                       onClick={() => handleRemoveCertificate(cert.id)}
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Projects Section */}
+          <h2>Projects</h2>
+          <button
+            type="button"
+            className="add-project-button"
+            onClick={() => {
+              setIsAddingProject(true);
+              setEditingProjectId(null);
+              setNewProject({
+                title: "",
+                description: "",
+                startDate: "",
+                endDate: "",
+                projectImageFile: null,
+              });
+            }}
+          >
+            <FaPlus /> Add Project
+          </button>
+          {isAddingProject && (
+            <div className="project-form">
+              <div className="form-group">
+                <label htmlFor="projectTitle">Project Title</label>
+                <input
+                  type="text"
+                  id="projectTitle"
+                  name="title"
+                  value={newProject.title}
+                  onChange={handleProjectInputChange}
+                  placeholder="Enter project title"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="projectDescription">Description</label>
+                <textarea
+                  id="projectDescription"
+                  name="description"
+                  value={newProject.description}
+                  onChange={handleProjectInputChange}
+                  placeholder="Describe your project"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="startDate">Start Date</label>
+                <input
+                  type="date"
+                  id="startDate"
+                  name="startDate"
+                  value={newProject.startDate}
+                  onChange={handleProjectInputChange}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="endDate">End Date</label>
+                <input
+                  type="date"
+                  id="endDate"
+                  name="endDate"
+                  value={newProject.endDate}
+                  onChange={handleProjectInputChange}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="projectImageFile">Project Image</label>
+                <div className="project-upload">
+                  <img
+                    src={
+                      newProject.projectImageFile
+                        ? URL.createObjectURL(newProject.projectImageFile)
+                        : "/placeholder.svg"
+                    }
+                    alt="Project Preview"
+                    className="project-preview"
+                    onClick={handleProjectImageClick}
+                    style={{ cursor: "pointer", width: "100px", height: "100px" }}
+                  />
+                  <button
+                    type="button"
+                    className="project-upload-button"
+                    onClick={handleProjectImageClick}
+                  >
+                    Choose Image
+                  </button>
+                  <input
+                    type="file"
+                    id="projectImageFile"
+                    accept="image/*"
+                    onChange={handleProjectFileChange}
+                    ref={projectFileInputRef}
+                    style={{ display: "none" }}
+                  />
+                </div>
+              </div>
+              <div className="project-form-actions">
+                <button
+                  type="button"
+                  className="project-save-button"
+                  onClick={editingProjectId ? handleUpdateProject : handleAddProject}
+                >
+                  {editingProjectId ? "Update" : "Add"}
+                </button>
+                <button
+                  type="button"
+                  className="project-cancel-button"
+                  onClick={() => {
+                    setIsAddingProject(false);
+                    setEditingProjectId(null);
+                    setNewProject({
+                      title: "",
+                      description: "",
+                      startDate: "",
+                      endDate: "",
+                      projectImageFile: null,
+                    });
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          {projects.length > 0 && (
+            <div className="project-list">
+              <h4>Added Projects</h4>
+              {projects.map((proj) => (
+                <div key={proj.id} className="project-item">
+                  <div className="project-details">
+                    <img
+                      src={proj.preview}
+                      alt="Project Preview"
+                      className="project-preview"
+                      style={{ width: "50px", height: "50px" }}
+                    />
+                    <div>
+                      <h5>{proj.title}</h5>
+                      {proj.description && <p>{proj.description}</p>}
+                      {proj.startDate && proj.endDate && (
+                        <p>
+                          {new Date(proj.startDate).toLocaleDateString()} - {new Date(proj.endDate).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="project-actions">
+                    <button
+                      type="button"
+                      className="project-edit-button"
+                      onClick={() => handleEditProject(proj)}
+                    >
+                      <FaPen />
+                    </button>
+                    <button
+                      type="button"
+                      className="project-remove-button"
+                      onClick={() => handleRemoveProject(proj.id)}
                     >
                       <FaTrash />
                     </button>
