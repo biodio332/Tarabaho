@@ -117,7 +117,7 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		System.out.println("Configuring CORS...");
 		CorsConfiguration config = new CorsConfiguration();
-		config.setAllowedOrigins(Arrays.asList("http://localhost:5173", "https://it-342-tarabaho-8q1h-89v462nt1-jilus-projects.vercel.app","https://it-342-tarabaho-8q1h-1mdxu5490-jilus-projects.vercel.app","https://it-342-tarabaho-8q1h.vercel.app")); // Update for production
+		config.setAllowedOrigins(Arrays.asList("http://localhost:5173", "https://tarabaho.vercel.app")); // Update for production
 		config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		config.setAllowCredentials(true);
 		config.setAllowedHeaders(List.of("*"));

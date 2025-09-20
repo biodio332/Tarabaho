@@ -16,10 +16,19 @@ const ViewPortfolio = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
-  const currentUrl = window.location.href;
   const navigate = useNavigate();
   const [selectedProjectImage, setSelectedProjectImage] = useState(null);
 
+  // Helper function to get the shareable URL
+  const getShareableUrl = () => {
+    // For production (Vercel), use the current origin
+    if (import.meta.env.PROD) {
+      return window.location.origin + window.location.pathname;
+    }
+    
+    // For development, use localhost or your dev URL
+    return `http://localhost:3000/portfolio/${graduateId}`;
+  };
 
   // Function to normalize portfolio data to match PortfolioCreation fields
   const normalizePortfolioData = (data) => {
@@ -235,8 +244,10 @@ const ViewPortfolio = () => {
     setSelectedCertificate(selectedCertificate?.id === certificate.id ? null : certificate);
   };
 
+  // Updated share functions for production (Vercel)
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(currentUrl).then(() => {
+    const shareableUrl = getShareableUrl();
+    navigator.clipboard.writeText(shareableUrl).then(() => {
       alert("Link copied to clipboard!");
     }).catch((err) => {
       console.error("Failed to copy:", err);
@@ -245,19 +256,21 @@ const ViewPortfolio = () => {
   };
 
   const shareToLinkedIn = () => {
-    const title = "My Portfolio";
-    const summary = portfolio?.professionalSummary || "Check out my professional portfolio!";
+    const title = `${portfolio?.fullName || "Portfolio"} - Professional Portfolio`;
+    const summary = portfolio?.professionalSummary || "Check out my professional portfolio showcasing my skills, experiences, and achievements!";
+    const shareableUrl = getShareableUrl();
     const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-      currentUrl
+      shareableUrl
     )}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(summary)}`;
     window.open(linkedInUrl, "_blank");
   };
 
   const shareToFacebook = () => {
-    const title = "My Portfolio";
-    const summary = portfolio?.professionalSummary || "Check out my professional portfolio!";
+    const title = `${portfolio?.fullName || "Portfolio"} - Professional Portfolio`;
+    const summary = portfolio?.professionalSummary || "Check out my professional portfolio showcasing my skills, experiences, and achievements!";
+    const shareableUrl = getShareableUrl();
     const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-      currentUrl
+      shareableUrl
     )}&quote=${encodeURIComponent(summary)}&title=${encodeURIComponent(title)}`;
     window.open(facebookUrl, "_blank");
   };
@@ -551,38 +564,110 @@ const ViewPortfolio = () => {
             <p>No projects available.</p>
           )}
         </div>
+        
+        {/* Updated Share Buttons Section */}
         <div className="share-buttons">
           <button onClick={copyToClipboard} className="share-button">
-            Copy Link
+            📋 Copy Link
           </button>
           <button onClick={shareToLinkedIn} className="share-button">
-            Share to LinkedIn
+            💼 Share to LinkedIn
           </button>
           <button onClick={shareToFacebook} className="share-button">
-            Share to Facebook
+            📘 Share to Facebook
           </button>
           <Link to={`/portfolio/edit/${graduateId}`} className="edit-portfolio-button">
-            Edit Portfolio
+            ✏️ Edit Portfolio
           </Link>
         </div>
+        
         <button onClick={handleDelete} className="delete-button">
-          Delete Portfolio
+          🗑️ Delete Portfolio
         </button>
+        
         <Link to="/graduate-homepage" className="view-portfolio-back-button">
-          Back to Homepage
+          ← Back to Homepage
         </Link>
       </div>
-      {selectedProjectImage && (
-  <div className="modal-overlay" onClick={() => setSelectedProjectImage(null)}>
-    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-      <img src={selectedProjectImage} alt="Enlarged Project" />
-      
-    </div>
-  </div>
-)}
 
+      {/* Project Image Modal */}
+      {selectedProjectImage && (
+        <div className="modal-overlay" onClick={() => setSelectedProjectImage(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="modal-close-button" 
+              onClick={() => setSelectedProjectImage(null)}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '15px',
+                background: 'rgba(0,0,0,0.5)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '30px',
+                height: '30px',
+                cursor: 'pointer',
+                fontSize: '18px'
+              }}
+            >
+              ×
+            </button>
+            <img 
+              src={selectedProjectImage} 
+              alt="Enlarged Project" 
+              style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Certificate Preview Modal */}
+      {selectedCertificate && (
+        <div className="modal-overlay" onClick={() => setSelectedCertificate(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="modal-close-button" 
+              onClick={() => setSelectedCertificate(null)}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '15px',
+                background: 'rgba(0,0,0,0.5)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '30px',
+                height: '30px',
+                cursor: 'pointer',
+                fontSize: '18px'
+              }}
+            >
+              ×
+            </button>
+            <div className="certificate-modal-content">
+              {selectedCertificate.certificateFilePath ? (
+                selectedCertificate.certificateFilePath.endsWith(".pdf") ? (
+                  <iframe
+                    src={`${selectedCertificate.certificateFilePath}#toolbar=0&navpanes=0&scrollbar=0`}
+                    title={selectedCertificate.courseName || "Certificate"}
+                    style={{ width: '100%', height: '80vh', border: 'none' }}
+                  />
+                ) : (
+                  <img
+                    src={selectedCertificate.certificateFilePath}
+                    alt={selectedCertificate.courseName || "Certificate"}
+                    style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }}
+                  />
+                )
+              ) : (
+                <p>No certificate file available.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-    
   );
 };
 
