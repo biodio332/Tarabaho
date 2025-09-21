@@ -55,6 +55,9 @@
         @Column
         private String customSectionJson;
 
+        @Column(length = 64)
+        private String shareToken;
+
         @Enumerated(EnumType.STRING)
         @Column
         private Visibility visibility;
@@ -193,4 +196,6 @@
         public void setPortfolioViews(List<PortfolioView> portfolioViews) { 
             this.portfolioViews = (portfolioViews != null) ? portfolioViews : new ArrayList<>(); 
         }
+        public String getShareToken() { return shareToken; }
+        public void setShareToken(String shareToken) { this.shareToken = shareToken; }
     }

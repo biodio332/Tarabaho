@@ -13,6 +13,7 @@ const ViewPortfolio = () => {
   const [projects, setProjects] = useState([]);
   const [selectedCertificate, setSelectedCertificate] = useState(null);
   const [token, setToken] = useState(null);
+  const [shareToken, setShareToken] = useState(null); // ← NEW: Store share token
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [isPublicView, setIsPublicView] = useState(false);
@@ -21,12 +22,43 @@ const ViewPortfolio = () => {
   const navigate = useNavigate();
   const [selectedProjectImage, setSelectedProjectImage] = useState(null);
 
+  // ← NEW: Get share token from URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlShareToken = urlParams.get('share');
+
   // Helper function to get the shareable URL
   const getShareableUrl = () => {
-    if (import.meta.env.PROD) {
-      return window.location.origin + window.location.pathname;
+    const baseUrl = import.meta.env.PROD ? window.location.origin : `http://localhost:3000`;
+    const currentToken = shareToken || localStorage.getItem(`portfolio_${graduateId}_shareToken`);
+    
+    if (currentToken) {
+      return `${baseUrl}/portfolio/${graduateId}?share=${currentToken}`;
     }
-    return `http://localhost:3000/portfolio/${graduateId}`;
+    return `${baseUrl}/portfolio/${graduateId}`;
+  };
+
+  // ← NEW: Get share token for this portfolio (authenticated users only)
+  const fetchShareToken = async (authToken) => {
+    try {
+      console.log("Fetching share token for graduate ID:", graduateId);
+      const response = await axios.get(
+        `${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio/share-token`,
+        {
+          withCredentials: true,
+          headers: { Authorization: `Bearer ${authToken}` },
+        }
+      );
+      
+      const tokenData = response.data;
+      setShareToken(tokenData.shareToken);
+      localStorage.setItem(`portfolio_${graduateId}_shareToken`, tokenData.shareToken);
+      console.log("Share token retrieved:", tokenData.shareToken.substring(0, 8) + "...");
+      
+      return tokenData;
+    } catch (err) {
+      console.error("Failed to fetch share token:", err);
+      return null;
+    }
   };
 
   // Function to normalize portfolio data to match PortfolioCreation fields
@@ -153,6 +185,9 @@ const ViewPortfolio = () => {
       }
       setToken(fetchedToken);
 
+      // ← NEW: Fetch share token first
+      await fetchShareToken(fetchedToken);
+
       // Fetch portfolio
       console.log("Fetching portfolio for graduate ID:", graduateId);
       const portfolioResponse = await axios.get(
@@ -205,10 +240,10 @@ const ViewPortfolio = () => {
       }
     } catch (err) {
       console.error("Failed to fetch authenticated data:", err);
-      // If unauthorized, try public view
-      if (err.response?.status === 401) {
-        console.log("Unauthorized, trying public view...");
-        fetchPublicData();
+      // If unauthorized, try public view with URL token
+      if (err.response?.status === 401 && urlShareToken) {
+        console.log("Unauthorized, trying public view with share token...");
+        fetchPublicDataWithToken();
       } else {
         setError(
           err.response?.data?.message ||
@@ -222,13 +257,55 @@ const ViewPortfolio = () => {
     }
   };
 
-  // Fetch public portfolio data
-  const fetchPublicData = async () => {
+  // ← NEW: Fetch public portfolio with share token from URL
+  const fetchPublicDataWithToken = async () => {
     try {
-      console.log("Fetching public portfolio for graduate ID:", graduateId);
+      if (!urlShareToken) {
+        throw new Error("Share token is required for public access");
+      }
+      
+      console.log("Fetching public portfolio with share token for graduate ID:", graduateId);
+      console.log("Share token:", urlShareToken.substring(0, 8) + "...");
+      
       const portfolioResponse = await axios.get(
-        `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio`
+        `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio?share=${urlShareToken}`,
+        { withCredentials: false }
       );
+      
+      console.log("Public portfolio response:", portfolioResponse.data);
+      const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data);
+      setPortfolio(normalizedPortfolio);
+      setIsPublicView(true);
+      setIsGraduateView(false);
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Failed to fetch public data with token:", err);
+      setError(
+        err.response?.status === 400 
+          ? "Invalid or expired share link. Please request a new link from the portfolio owner."
+          : err.response?.status === 404
+          ? "Portfolio not found or access denied. The share link may have expired."
+          : "Failed to load portfolio. Please check the share link."
+      );
+      setIsLoading(false);
+    }
+  };
+
+  // ← UPDATED: Simple public data fetch (no token - for backward compatibility)
+  const fetchPublicData = async () => {
+    // If we have a URL token, use the secure method
+    if (urlShareToken) {
+      return fetchPublicDataWithToken();
+    }
+    
+    // Fallback to old method (no token required - less secure)
+    try {
+      console.log("Fetching public portfolio for graduate ID:", graduateId, "(no token - legacy access)");
+      const portfolioResponse = await axios.get(
+        `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio`,
+        { withCredentials: false }
+      );
+      
       console.log("Public portfolio response:", portfolioResponse.data);
       const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data);
       setPortfolio(normalizedPortfolio);
@@ -256,13 +333,53 @@ const ViewPortfolio = () => {
       if (isAuthenticated) {
         await fetchAuthenticatedData();
       } else {
-        // Try public view first
+        // Try public view (with or without token)
         await fetchPublicData();
       }
     };
 
     initializeData();
   }, [graduateId]);
+
+  // ← NEW: Generate new share token (for graduate view only)
+  const generateNewShareToken = async () => {
+    if (!window.confirm(
+      "This will create a NEW share link and INVALIDATE ALL EXISTING LINKS!\n\n" +
+      "Anyone with old links will see 'Portfolio not found' errors.\n\n" +
+      "Are you sure you want to continue?"
+    )) {
+      return;
+    }
+
+    try {
+      console.log("Generating new share token for graduate ID:", graduateId);
+      const response = await axios.post(
+        `${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio/regenerate-token`,
+        {},
+        {
+          withCredentials: true,
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      const newTokenData = response.data;
+      setShareToken(newTokenData.shareToken);
+      localStorage.setItem(`portfolio_${graduateId}_shareToken`, newTokenData.shareToken);
+      
+      alert(
+        `✅ New share link created successfully!\n\n` +
+        `📋 ${newTokenData.shareUrl}\n\n` +
+        `⚠️ All previous share links are now invalid.`
+      );
+      
+    } catch (err) {
+      console.error("Failed to generate new share token:", err);
+      alert(
+        "❌ Failed to generate new share link.\n\n" +
+        "Please try again or contact support."
+      );
+    }
+  };
 
   // Debug portfolio state before rendering
   useEffect(() => {
@@ -295,44 +412,58 @@ const ViewPortfolio = () => {
         references: portfolio.references,
         isPublicView,
         isGraduateView,
+        hasShareToken: !!shareToken,
+        urlHasToken: !!urlShareToken,
       });
     }
-  }, [portfolio, isPublicView, isGraduateView]);
+  }, [portfolio, isPublicView, isGraduateView, shareToken, urlShareToken]);
 
   const handleCertificateClick = (certificate) => {
     setSelectedCertificate(selectedCertificate?.id === certificate.id ? null : certificate);
   };
 
-  // Share functions (only for graduate view)
+  // ← UPDATED: Copy secure share link
   const copyToClipboard = () => {
     const shareableUrl = getShareableUrl();
+    const displayUrl = shareableUrl.includes('?share=') 
+      ? `${window.location.origin}/portfolio/${graduateId}?share=${shareToken?.substring(0, 8)}...`
+      : shareableUrl;
+    
     navigator.clipboard.writeText(shareableUrl).then(() => {
-      alert("Link copied to clipboard!");
+      alert(
+        `✅ Secure share link copied!\n\n` +
+        `📋 ${displayUrl}\n\n` +
+        `🔒 Only people with this exact link can view your portfolio.\n` +
+        `💡 Links remain valid until you generate a new one.`
+      );
     }).catch((err) => {
       console.error("Failed to copy:", err);
-      alert("Failed to copy link.");
+      alert("Failed to copy link. Please try again.");
     });
   };
 
+  // ← UPDATED: Share to LinkedIn with secure token
   const shareToLinkedIn = () => {
     const title = `${portfolio?.fullName || "Portfolio"} - Professional Portfolio`;
     const summary = portfolio?.professionalSummary || "Check out my professional portfolio showcasing my skills, experiences, and achievements!";
     const shareableUrl = getShareableUrl();
-    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-      shareableUrl
-    )}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(summary)}`;
+    
+    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(summary)}`;
     window.open(linkedInUrl, "_blank");
   };
 
+  // ← UPDATED: Share to Facebook with secure token
   const shareToFacebook = () => {
     const title = `${portfolio?.fullName || "Portfolio"} - Professional Portfolio`;
     const summary = portfolio?.professionalSummary || "Check out my professional portfolio showcasing my skills, experiences, and achievements!";
     const shareableUrl = getShareableUrl();
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-      shareableUrl
-    )}&quote=${encodeURIComponent(summary)}&title=${encodeURIComponent(title)}`;
+    
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}&quote=${encodeURIComponent(summary)}&title=${encodeURIComponent(title)}`;
     window.open(facebookUrl, "_blank");
   };
+
+  // ← NEW: Manual token regeneration
+  const handleRegenerateToken = generateNewShareToken; // Already defined above
 
   const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this portfolio? This action cannot be undone.")) {
@@ -362,11 +493,45 @@ const ViewPortfolio = () => {
   }
   if (error) {
     console.log("Rendering: error", error);
-    return <div className="view-portfolio-error">{error}</div>;
+    return (
+      <div className="view-portfolio-error" style={{ 
+        textAlign: 'center', 
+        padding: '40px', 
+        background: '#f8d7da', 
+        borderRadius: '8px', 
+        margin: '20px',
+        color: '#721c24'
+      }}>
+        <h3>❌ Access Error</h3>
+        <p>{error}</p>
+        {error.includes('share link') && (
+          <p style={{ marginTop: '10px' }}>
+            <Link to="/signin" style={{ color: '#721c24', textDecoration: 'underline' }}>
+              🔐 Sign in to view your portfolio
+            </Link>
+          </p>
+        )}
+      </div>
+    );
   }
   if (!portfolio) {
     console.log("Rendering: no portfolio");
-    return <div className="view-portfolio-no-data">Portfolio not found or not accessible.</div>;
+    return (
+      <div className="view-portfolio-no-data" style={{ 
+        textAlign: 'center', 
+        padding: '40px', 
+        background: '#fff3cd', 
+        borderRadius: '8px', 
+        margin: '20px',
+        color: '#856404'
+      }}>
+        <h3>📂 Portfolio Not Found</h3>
+        <p>The portfolio you're looking for doesn't exist or isn't accessible.</p>
+        <Link to="/" style={{ color: '#856404', textDecoration: 'underline' }}>
+          ← Return to Homepage
+        </Link>
+      </div>
+    );
   }
 
   console.log("Rendering: portfolio data", {
@@ -413,14 +578,30 @@ const ViewPortfolio = () => {
 
         <h1>{portfolio.fullName || "Unnamed Portfolio"}</h1>
         
-        {/* Public View Indicator */}
-        {isPublicView && (
-          <div className="public-view-indicator">
-            <p style={{ color: '#666', fontStyle: 'italic', textAlign: 'center', marginBottom: '20px' }}>
-              👁️ Public Portfolio View
-            </p>
-          </div>
-        )}
+        {/* ← NEW: Access Type Indicator */}
+        <div className="access-indicator" style={{ 
+          textAlign: 'center', 
+          marginBottom: '20px',
+          padding: '8px 16px',
+          borderRadius: '20px',
+          fontSize: '14px',
+          fontWeight: '500'
+        }}>
+          {isGraduateView ? (
+            <span style={{ color: '#28a745', background: '#d4edda' }}>
+              👤 Owner View
+            </span>
+          ) : (
+            <span style={{ color: '#007bff', background: '#cce7ff' }}>
+              👁️ Secure Public View
+              {urlShareToken && (
+                <span style={{ marginLeft: '8px', fontSize: '12px', opacity: 0.7 }}>
+                  🔒 (Private Link)
+                </span>
+              )}
+            </span>
+          )}
+        </div>
 
         <div className="portfolio-details">
           <h2>Basic Information</h2>
@@ -635,40 +816,203 @@ const ViewPortfolio = () => {
           )}
         </div>
 
-        {/* Action Buttons - Only show for graduate view */}
+        {/* ← NEW: Enhanced Action Buttons for Graduate View */}
         {isGraduateView && (
-          <>
-            <div className="share-buttons">
-              <button onClick={copyToClipboard} className="share-button">
-                📋 Copy Link
-              </button>
-              <button onClick={shareToLinkedIn} className="share-button">
-                💼 Share to LinkedIn
-              </button>
-              <button onClick={shareToFacebook} className="share-button">
-                📘 Share to Facebook
-              </button>
-              <Link to={`/portfolio/edit/${graduateId}`} className="edit-portfolio-button">
+          <div className="graduate-actions">
+            {/* ← NEW: Share Section with Two Options */}
+            <div className="share-section" style={{ 
+              background: '#f8f9fa', 
+              padding: '20px', 
+              borderRadius: '8px', 
+              marginBottom: '20px',
+              borderLeft: '4px solid #007bff'
+            }}>
+              <h3 style={{ marginTop: 0, color: '#495057' }}>🔗 Share Your Portfolio</h3>
+              
+              <div className="share-buttons" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
+                <button 
+                  onClick={copyToClipboard} 
+                  className="share-button primary"
+                  style={{ 
+                    background: '#007bff', 
+                    color: 'white', 
+                    border: 'none', 
+                    padding: '10px 16px', 
+                    borderRadius: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  📋 Copy Secure Share Link
+                </button>
+                
+                <button 
+                  onClick={shareToLinkedIn} 
+                  className="share-button"
+                  style={{ 
+                    background: '#0077b5', 
+                    color: 'white', 
+                    border: 'none', 
+                    padding: '10px 16px', 
+                    borderRadius: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  💼 Share to LinkedIn
+                </button>
+                
+                <button 
+                  onClick={shareToFacebook} 
+                  className="share-button"
+                  style={{ 
+                    background: '#1877f2', 
+                    color: 'white', 
+                    border: 'none', 
+                    padding: '10px 16px', 
+                    borderRadius: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  📘 Share to Facebook
+                </button>
+              </div>
+
+              {/* ← NEW: Token Management */}
+              {shareToken && (
+                <div className="token-info" style={{ 
+                  background: '#e7f3ff', 
+                  padding: '12px', 
+                  borderRadius: '6px', 
+                  marginTop: '10px',
+                  fontSize: '14px'
+                }}>
+                  <p style={{ margin: 0, color: '#0c5460' }}>
+                    <strong>🔒 Your Secure Token:</strong> {shareToken.substring(0, 8)}...{shareToken.slice(-4)}
+                  </p>
+                  <p style={{ 
+                    margin: '5px 0 0 0', 
+                    fontSize: '12px', 
+                    color: '#6c757d',
+                    fontStyle: 'italic'
+                  }}>
+                    Links using this token will work until you generate a new one.
+                  </p>
+                </div>
+              )}
+
+              {/* ← NEW: Generate New Token Button */}
+              <div style={{ marginTop: '15px' }}>
+                <button 
+                  onClick={handleRegenerateToken}
+                  className="regenerate-button"
+                  style={{ 
+                    background: '#dc3545', 
+                    color: 'white', 
+                    border: 'none', 
+                    padding: '8px 16px', 
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}
+                >
+                  🔄 Generate New Share Link
+                </button>
+                <small style={{ 
+                  display: 'block', 
+                  marginTop: '5px', 
+                  color: '#dc3545', 
+                  fontSize: '12px' 
+                }}>
+                  ⚠️ This will invalidate ALL existing share links
+                </small>
+              </div>
+            </div>
+
+            {/* ← Existing Edit/Delete Buttons */}
+            <div className="edit-delete-buttons" style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '20px' }}>
+              <Link 
+                to={`/portfolio/edit/${graduateId}`} 
+                className="edit-portfolio-button"
+                style={{ 
+                  background: '#28a745', 
+                  color: 'white', 
+                  textDecoration: 'none', 
+                  padding: '10px 20px', 
+                  borderRadius: '6px',
+                  fontWeight: '500'
+                }}
+              >
                 ✏️ Edit Portfolio
               </Link>
+              
+              <button 
+                onClick={handleDelete} 
+                className="delete-button"
+                style={{ 
+                  background: '#dc3545', 
+                  color: 'white', 
+                  border: 'none', 
+                  padding: '10px 20px', 
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                🗑️ Delete Portfolio
+              </button>
             </div>
             
-            <button onClick={handleDelete} className="delete-button">
-              🗑️ Delete Portfolio
-            </button>
-            
-            <Link to="/graduate-homepage" className="view-portfolio-back-button">
+            <Link 
+              to="/graduate-homepage" 
+              className="view-portfolio-back-button"
+              style={{ 
+                display: 'inline-block', 
+                color: '#6c757d', 
+                textDecoration: 'none', 
+                padding: '8px 16px', 
+                border: '1px solid #dee2e6',
+                borderRadius: '6px',
+                marginBottom: '20px'
+              }}
+            >
               ← Back to Homepage
             </Link>
-          </>
+          </div>
         )}
 
-        {/* Public View - Login Prompt */}
+        {/* ← UPDATED: Enhanced Public View Footer */}
         {isPublicView && (
-          <div className="public-view-footer">
-            <p style={{ textAlign: 'center', color: '#666', marginTop: '30px' }}>
-              👤 Want to edit this portfolio? <Link to="/signin" style={{ color: '#007bff', textDecoration: 'none' }}>Sign in here</Link>
+          <div className="public-view-footer" style={{ 
+            background: '#f8f9fa', 
+            padding: '20px', 
+            borderRadius: '8px', 
+            marginTop: '30px',
+            textAlign: 'center',
+            borderLeft: '4px solid #007bff'
+          }}>
+            <h4 style={{ color: '#495057', marginTop: 0 }}>🔒 Secure Portfolio Access</h4>
+            <p style={{ color: '#6c757d', marginBottom: '10px' }}>
+              You've accessed this portfolio through a secure private link.
             </p>
+            <p style={{ color: '#6c757d', fontSize: '14px' }}>
+              👤 Want to edit this portfolio or view your own?{' '}
+              <Link to="/signin" style={{ color: '#007bff', fontWeight: '500' }}>
+                Sign in here
+              </Link>
+            </p>
+            {!urlShareToken && (
+              <p style={{ 
+                color: '#856404', 
+                background: '#fff3cd', 
+                padding: '8px', 
+                borderRadius: '4px', 
+                fontSize: '12px',
+                marginTop: '10px'
+              }}>
+                ⚠️ <strong>Legacy Access:</strong> This portfolio allows public access without a share token 
+                (less secure). Contact the owner to get a secure share link.
+              </p>
+            )}
           </div>
         )}
       </div>

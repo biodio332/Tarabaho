@@ -57,7 +57,9 @@ public class SecurityConfig {
 						"/api/graduate/{graduateId}/upload-initial-picture",
 						"/swagger-ui/**", 
 						"/v3/api-docs/**",
-						"/api/graduate/test-graduate"
+						"/api/graduate/test-graduate",
+						"/api/portfolio/public/graduate/*/portfolio",
+               			"/api/portfolio/graduate/*/portfolio/share-token"
 					).permitAll()
 					.requestMatchers("/api/certificate/graduate/**").authenticated()
 					.requestMatchers("/oauth2/**", "/login/**", "/oauth2-success").permitAll()

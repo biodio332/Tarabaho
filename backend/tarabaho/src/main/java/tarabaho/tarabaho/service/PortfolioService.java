@@ -11,6 +11,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import tarabaho.tarabaho.dto.PortfolioRequest;
+import tarabaho.tarabaho.dto.ShareInfo;
 import tarabaho.tarabaho.entity.AwardRecognition;
 import tarabaho.tarabaho.entity.Certificate;
 import tarabaho.tarabaho.entity.ContinuingEducation;
@@ -75,6 +76,10 @@ public class PortfolioService {
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    private String generateShareToken() {
+        return java.util.UUID.randomUUID().toString().replace("-", "");
+    }
 
     public PortfolioRequest getPortfolioByGraduateId(Long graduateId, String username) {
         System.out.println("PortfolioService: Fetching portfolio for graduate ID: " + graduateId);
@@ -148,6 +153,10 @@ public class PortfolioService {
         portfolio.setPreferredWorkLocation(portfolioRequest.getPreferredWorkLocation());
         portfolio.setWorkScheduleAvailability(portfolioRequest.getWorkScheduleAvailability());
         portfolio.setSalaryExpectations(portfolioRequest.getSalaryExpectations());
+
+        String shareToken = generateShareToken();
+        portfolio.setShareToken(shareToken);
+        System.out.println("PortfolioService: Generated share token: " + shareToken);
 
         // Initialize collections
         List<Skill> skills = portfolioRequest.getSkills() != null ? portfolioRequest.getSkills() : new ArrayList<>();
@@ -353,6 +362,8 @@ public class PortfolioService {
         portfolio.setPreferredWorkLocation(portfolioRequest.getPreferredWorkLocation() != null ? portfolioRequest.getPreferredWorkLocation() : "");
         portfolio.setWorkScheduleAvailability(portfolioRequest.getWorkScheduleAvailability() != null ? portfolioRequest.getWorkScheduleAvailability() : "");
         portfolio.setSalaryExpectations(portfolioRequest.getSalaryExpectations() != null ? portfolioRequest.getSalaryExpectations() : "");
+
+        
 
         // Update skills
         List<Skill> incomingSkills = portfolioRequest.getSkills() != null ? portfolioRequest.getSkills() : new ArrayList<>();
@@ -565,29 +576,96 @@ public class PortfolioService {
         response.setCertificates(certificateRepository.findByGraduateId(graduate.getId()));
         return response;
     }
-
-
-        public PortfolioRequest getPublicPortfolioByGraduateId(Long graduateId) {
-        System.out.println("PortfolioService: Fetching public portfolio for graduate ID: " + graduateId);
+    // ← NEW: Get share info for authenticated user
+    public ShareInfo getShareInfo(Long graduateId, String username) {
+        System.out.println("PortfolioService: Getting share info for graduate ID: " + graduateId);
+        
+        // Verify user owns this portfolio
         Optional<Portfolio> portfolioOpt = portfolioRepository.findByGraduateId(graduateId);
         if (!portfolioOpt.isPresent()) {
-            System.out.println("PortfolioService: No portfolio found for graduate ID: " + graduateId);
+            throw new IllegalArgumentException("Portfolio not found for graduate ID: " + graduateId);
+        }
+        
+        Portfolio portfolio = portfolioOpt.get();
+        Graduate graduate = portfolio.getGraduate();
+        if (!graduate.getUsername().equals(username)) {
+            throw new IllegalArgumentException("Unauthorized: Cannot access share token for another graduate.");
+        }
+        
+        // Generate share token if none exists
+        if (portfolio.getShareToken() == null || portfolio.getShareToken().trim().isEmpty()) {
+            String newToken = generateShareToken();
+            portfolio.setShareToken(newToken);
+            portfolioRepository.save(portfolio);
+            System.out.println("PortfolioService: Generated new share token: " + newToken);
+        }
+        
+        String shareToken = portfolio.getShareToken();
+        String shareUrl = String.format("https://tarabaho.vercel.app/portfolio/%d?share=%s", 
+            graduateId, shareToken);
+        
+        return new ShareInfo(shareToken, shareUrl);
+    }
+
+    // ← NEW: Get public portfolio by share token
+    public PortfolioRequest getPublicPortfolioByShareToken(Long graduateId, String shareToken) {
+        System.out.println("PortfolioService: Validating public access for graduate ID: " + graduateId);
+        
+        // Find portfolio by graduateId and shareToken
+        Optional<Portfolio> portfolioOpt = portfolioRepository.findByGraduateIdAndShareToken(graduateId, shareToken);
+        if (!portfolioOpt.isPresent()) {
+            System.out.println("PortfolioService: Invalid share token for graduate ID: " + graduateId);
             return null;
         }
-
+        
         Portfolio portfolio = portfolioOpt.get();
         
-        // Only allow access if portfolio is PUBLIC
+        // Double-check visibility
         if (portfolio.getVisibility() != Visibility.PUBLIC) {
-            System.out.println("PortfolioService: Portfolio is not public for graduate ID: " + graduateId);
+            System.out.println("PortfolioService: Portfolio is not public: " + graduateId);
             return null;
         }
-
+        
+        // Log successful access
+        logPortfolioView(portfolio.getId(), "share-token:" + shareToken.substring(0, 8));
+        
+        Long actualGraduateId = portfolio.getGraduate().getId();
         PortfolioRequest portfolioRequest = new PortfolioRequest(portfolio);
-        List<Certificate> certificates = certificateRepository.findByGraduateId(graduateId);
+        List<Certificate> certificates = certificateRepository.findByGraduateId(actualGraduateId);
         portfolioRequest.setCertificates(certificates);
-        System.out.println("PortfolioService: Retrieved public portfolio with " + certificates.size() + " certificates");
-
+        
+        System.out.println("PortfolioService: Public access granted for portfolio ID: " + portfolio.getId());
         return portfolioRequest;
+    }
+
+    // ← NEW: Log portfolio views (simple version)
+    private void logPortfolioView(Long portfolioId, String accessMethod) {
+        System.out.println("Portfolio view - ID: " + portfolioId + ", Method: " + accessMethod + 
+                          ", Time: " + java.time.LocalDateTime.now());
+        // TODO: Save to PortfolioView entity if you want analytics
+    }
+
+    public ShareInfo regenerateShareToken(Long graduateId, String username) {
+        System.out.println("PortfolioService: Regenerating share token for graduate ID: " + graduateId);
+        
+        Optional<Portfolio> portfolioOpt = portfolioRepository.findByGraduateId(graduateId);
+        if (!portfolioOpt.isPresent()) {
+            throw new IllegalArgumentException("Portfolio not found.");
+        }
+        
+        Portfolio portfolio = portfolioOpt.get();
+        Graduate graduate = portfolio.getGraduate();
+        if (!graduate.getUsername().equals(username)) {
+            throw new IllegalArgumentException("Unauthorized.");
+        }
+        
+        // Generate NEW token
+        String newToken = generateShareToken();
+        portfolio.setShareToken(newToken);
+        portfolioRepository.save(portfolio);
+        
+        String shareUrl = String.format("https://tarabaho.vercel.app/portfolio/%d?share=%s", graduateId, newToken);
+        
+        return new ShareInfo(newToken, shareUrl);
     }
 }
