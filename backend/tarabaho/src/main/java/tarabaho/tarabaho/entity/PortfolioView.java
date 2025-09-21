@@ -33,8 +33,19 @@ public class PortfolioView {
     @Column(name = "view_date")
     private LocalDateTime viewDate;
 
-    // Optional: Add anonymous viewer info if needed, but minimize for privacy
-    // private String viewerIpHash; // Commented out to avoid privacy issues
+    @Column(name = "session_id", length = 64)
+    private String sessionId;
+
+
+    public PortfolioView() {
+        // Default constructor - JPA needs this to create entities
+    }
+    
+    public PortfolioView(Portfolio portfolio, String sessionId) {
+        this.portfolio = portfolio;
+        this.sessionId = sessionId;
+        this.viewDate = LocalDateTime.now();
+    }
 
     @PrePersist
     protected void onCreate() {
@@ -62,4 +73,6 @@ public class PortfolioView {
     public void setPortfolio(Portfolio portfolio) { this.portfolio = portfolio; }
     public LocalDateTime getViewDate() { return viewDate; }
     public void setViewDate(LocalDateTime viewDate) { this.viewDate = viewDate; }
+    public String getSessionId() { return sessionId; }
+    public void setSessionId(String sessionId) { this.sessionId = sessionId; }
 }

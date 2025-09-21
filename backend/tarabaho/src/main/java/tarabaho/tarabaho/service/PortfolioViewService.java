@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import tarabaho.tarabaho.entity.Portfolio;
 import tarabaho.tarabaho.entity.PortfolioView;
 import tarabaho.tarabaho.repository.PortfolioViewRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class PortfolioViewService {
@@ -21,26 +23,33 @@ public class PortfolioViewService {
      * @param portfolio The portfolio being viewed
      * @return true if a new view was recorded, false if duplicate
      */
-    @Transactional
-    public boolean recordView(Portfolio portfolio) {
-        LocalDateTime cutoffTime = LocalDateTime.now().minusHours(24);
-        
-        // Check if already viewed in last 24 hours
-        boolean hasRecentView = portfolioViewRepository.hasRecentView(portfolio.getId(), cutoffTime);
-        if (hasRecentView) {
-            System.out.println("PortfolioViewService: Duplicate view ignored for portfolio ID: " + portfolio.getId());
-            return false; // Don't record duplicate
+    public boolean recordView(Portfolio portfolio, String viewId) {
+        if (viewId == null || viewId.isEmpty()) {
+            // Fallback: If no session ID, treat as anonymous and use non-session check (or throw error if strict).
+            // For now, we'll allow it but log for debugging.
+            System.out.println("PortfolioViewService: No session ID provided; falling back to portfolio-level check.");
+            return recordViewFallback(portfolio);
         }
-        
-        // Create new view
-        PortfolioView newView = new PortfolioView();
-        newView.setPortfolio(portfolio);
-        // viewTimestamp is set automatically via @PrePersist
-        
-        portfolioViewRepository.save(newView);
-        System.out.println("PortfolioViewService: New view recorded for portfolio ID: " + portfolio.getId() + 
-                          " at " + LocalDateTime.now());
-        
+
+        LocalDateTime cutoffTime = LocalDateTime.now().minusHours(24);
+        boolean hasRecent = portfolioViewRepository.hasRecentViewByViewId(portfolio.getId(), viewId, cutoffTime);
+        if (hasRecent) {
+            return false; // Duplicate for this session.
+        }
+
+        // Record the new view.
+        PortfolioView view = new PortfolioView(portfolio, viewId);
+        portfolioViewRepository.save(view);
+        return true;
+    }
+    private boolean recordViewFallback(Portfolio portfolio) {
+        LocalDateTime cutoffTime = LocalDateTime.now().minusHours(24);
+        boolean hasRecent = portfolioViewRepository.hasRecentView(portfolio.getId(), cutoffTime);
+        if (hasRecent) {
+            return false;
+        }
+        PortfolioView view = new PortfolioView(portfolio, "anonymous"); // Or null if preferred.
+        portfolioViewRepository.save(view);
         return true;
     }
 

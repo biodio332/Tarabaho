@@ -613,8 +613,13 @@ public class PortfolioService {
         return new ShareInfo(shareToken, shareUrl);
     }
 
-    public CompletePublicPortfolioResponse getPublicPortfolioByShareToken(Long graduateId, String shareToken) {
+    public CompletePublicPortfolioResponse getPublicPortfolioByShareToken(Long graduateId, String shareToken,String viewId) {
         System.out.println("PortfolioService: Validating public access for graduate ID: " + graduateId);
+        System.out.println("=== PORTFOLIO SERVICE DEBUG ===");
+        System.out.println("Graduate ID: " + graduateId);
+        System.out.println("Share Token: " + (shareToken != null ? shareToken.substring(0, Math.min(8, shareToken.length())) + "..." : "NULL"));
+        System.out.println("View ID received: " + (viewId != null ? viewId : "NULL"));
+        System.out.println("=== END DEBUG ===");
         
         Optional<Portfolio> portfolioOpt = portfolioRepository.findByGraduateIdAndShareToken(graduateId, shareToken);
         if (!portfolioOpt.isPresent()) {
@@ -628,8 +633,10 @@ public class PortfolioService {
             return null;
         }
         // ← NEW: Record the view!
-        boolean viewRecorded = portfolioViewService.recordView(portfolio);
-        System.out.println("PortfolioService: View recorded: " + (viewRecorded ? "NEW" : "DUPLICATE"));
+        boolean viewRecorded = portfolioViewService.recordView(portfolio, viewId);
+        String viewPreview = viewId != null ? viewId.substring(0, 8) + "..." : "no-view";
+        System.out.println("PortfolioService: View recorded: " + (viewRecorded ? "NEW" : "DUPLICATE") + 
+                        " (view: " + viewPreview + ")");
         // Create base portfolio request
         PortfolioRequest portfolioRequest = new PortfolioRequest(portfolio);
         

@@ -309,75 +309,75 @@ const ViewPortfolio = () => {
 
   // ← NEW: Fetch public portfolio with share token from URL
   const fetchPublicDataWithToken = async () => {
-    try {
-      if (!urlShareToken) {
-        throw new Error("Share token is required for public access");
-      }
-      
-      console.log("🔄 Fetching complete public portfolio for ID:", graduateId);
-      console.log("🔑 Share token:", urlShareToken.substring(0, 8) + "...");
-      
-      const portfolioResponse = await axios.get(
-        `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio?share=${urlShareToken}`,
-        { 
-          withCredentials: true,  // ← FIXED: Enable cookies for session tracking
-        }
-      );
-      
-      // ← FIXED: Log the ACTUAL response structure
-      console.log("📦 API Response Structure:", {
-        isCompleteResponse: portfolioResponse.data.portfolio !== undefined,
-        hasPortfolio: !!portfolioResponse.data.portfolio,
-        hasGraduate: !!portfolioResponse.data.graduate,
-        certificateCount: (portfolioResponse.data.certificates || []).length,
-        projectCount: (portfolioResponse.data.projects || []).length,
-        directPortfolioKeys: portfolioResponse.data.portfolio ? Object.keys(portfolioResponse.data.portfolio) : Object.keys(portfolioResponse.data)
-      });
-      
-      // ← FIXED: Pass the COMPLETE response to normalizer
-      const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data);
-      
-      // ← FIXED: Set ALL states from the response
-      setPortfolio(normalizedPortfolio);
-      
-      // Graduate (could be Map or object)
-      const graduateData = portfolioResponse.data.graduate || 
-                          (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.graduate : null) ||
-                          { 
-                            id: graduateId, 
-                            fullName: normalizedPortfolio.fullName,
-                            profilePicture: normalizedPortfolio.avatar 
-                          };
-      setGraduate(graduateData);
-      
-      // Certificates
-      const certs = portfolioResponse.data.certificates || 
-                  (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.certificates : []);
-      setCertificates(certs);
-      
-      // Projects  
-      const projs = portfolioResponse.data.projects || 
-                  (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.projects : []);
-      setProjects(projs);
-      
-      setIsPublicView(true);
-      setIsGraduateView(false);
-      setIsLoading(false);
-      
-      console.log("✅ Public portfolio loaded with:", {
-        graduate: !!graduateData,
-        certificates: certs.length,
-        projects: projs.length,
-        skills: normalizedPortfolio.skills?.length || 0,
-        experiences: normalizedPortfolio.experiences?.length || 0
-      });
-      
-    } catch (err) {
-      console.error("❌ Failed to fetch public data:", err.response?.status, err.message);
-      setError(getErrorMessage(err));
-      setIsLoading(false);
+  try {
+    if (!urlShareToken) {
+      throw new Error("Share token is required for public access");
     }
-  };
+    
+    console.log("🔄 Fetching complete public portfolio for ID:", graduateId);
+    console.log("🔑 Share token:", urlShareToken.substring(0, 8) + "...");
+    
+    const portfolioResponse = await axios.get(
+      `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio?share=${urlShareToken}`,
+      { 
+        withCredentials: true,  // ← FIXED: Enable cookies for session tracking
+      }
+    );
+    
+    // ← FIXED: Log the ACTUAL response structure
+    console.log("📦 API Response Structure:", {
+      isCompleteResponse: portfolioResponse.data.portfolio !== undefined,
+      hasPortfolio: !!portfolioResponse.data.portfolio,
+      hasGraduate: !!portfolioResponse.data.graduate,
+      certificateCount: (portfolioResponse.data.certificates || []).length,
+      projectCount: (portfolioResponse.data.projects || []).length,
+      directPortfolioKeys: portfolioResponse.data.portfolio ? Object.keys(portfolioResponse.data.portfolio) : Object.keys(portfolioResponse.data)
+    });
+    
+    // ← FIXED: Pass the COMPLETE response to normalizer
+    const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data);
+    
+    // ← FIXED: Set ALL states from the response
+    setPortfolio(normalizedPortfolio);
+    
+    // Graduate (could be Map or object)
+    const graduateData = portfolioResponse.data.graduate || 
+                        (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.graduate : null) ||
+                        { 
+                          id: graduateId, 
+                          fullName: normalizedPortfolio.fullName,
+                          profilePicture: normalizedPortfolio.avatar 
+                        };
+    setGraduate(graduateData);
+    
+    // Certificates
+    const certs = portfolioResponse.data.certificates || 
+                (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.certificates : []);
+    setCertificates(certs);
+    
+    // Projects  
+    const projs = portfolioResponse.data.projects || 
+                (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.projects : []);
+    setProjects(projs);
+    
+    setIsPublicView(true);
+    setIsGraduateView(false);
+    setIsLoading(false);
+    
+    console.log("✅ Public portfolio loaded with:", {
+      graduate: !!graduateData,
+      certificates: certs.length,
+      projects: projs.length,
+      skills: normalizedPortfolio.skills?.length || 0,
+      experiences: normalizedPortfolio.experiences?.length || 0
+    });
+    
+  } catch (err) {
+    console.error("❌ Failed to fetch public data:", err.response?.status, err.message);
+    setError(getErrorMessage(err));
+    setIsLoading(false);
+  }
+};
 
   // ← HELPER: Better error messages
   const getErrorMessage = (err) => {

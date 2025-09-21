@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +25,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import tarabaho.tarabaho.dto.CompletePublicPortfolioResponse;
 import tarabaho.tarabaho.dto.PortfolioRequest;
 import tarabaho.tarabaho.dto.ShareInfo;
@@ -446,7 +449,7 @@ public class PortfolioController {
         @ApiResponse(responseCode = "403", description = "Access denied"),
         @ApiResponse(responseCode = "404", description = "Portfolio not found")
     })
-    @GetMapping("/graduate/{graduateId}/portfolio/share-token")
+    @GetMapping("/graduate/{graduateId}/portfolio/share-token")  
     public ResponseEntity<?> getPortfolioShareToken(@PathVariable Long graduateId, Authentication authentication) {
         try {
             logger.debug("Fetching share token for graduate ID: {}", graduateId);
@@ -481,10 +484,16 @@ public class PortfolioController {
 
     // ← NEW: Public access with share token (uses ONLY service)
     @GetMapping("/public/graduate/{graduateId}/portfolio")
-    @CrossOrigin(origins = {"https://tarabaho.vercel.app", "http://localhost:5173"}, allowCredentials = "false")
+    @CrossOrigin(origins = {"https://tarabaho.vercel.app", "http://localhost:3000", "http://localhost:5173"}, allowCredentials = "true",
+    allowedHeaders = {"*"},
+    exposedHeaders = {"Set-Cookie"},  // ← ADD: Expose Set-Cookie for browser
+    methods = {RequestMethod.GET}
+    )
     public ResponseEntity<?> getPublicPortfolioByShareToken(
             @PathVariable Long graduateId, 
-            @RequestParam(value = "share", required = false) String shareToken) {
+            @RequestParam(value = "share", required = false) String shareToken,
+            jakarta.servlet.http.HttpServletRequest request,
+            jakarta.servlet.http.HttpServletResponse response) {  // ← ADD: For setting cookies
         try {
             logger.debug("Fetching public portfolio for graduate ID: {}, share token provided: {}", 
                 graduateId, shareToken != null ? "yes" : "no");
@@ -495,8 +504,39 @@ public class PortfolioController {
                         .body("⚠️ Share token is required to access this portfolio.");
             }
             
-            // ← THIS LINE MUST MATCH SERVICE RETURN TYPE
-            CompletePublicPortfolioResponse completePortfolio = portfolioService.getPublicPortfolioByShareToken(graduateId, shareToken);
+            // ← COOKIE-BASED TRACKING
+            String viewCookieName = "portfolio_view_" + graduateId;  // Unique per portfolio
+            String existingCookie = getCookieValue(request, viewCookieName);
+
+            String viewId = null;
+            boolean isNewView = true;
+
+            if (existingCookie != null) {
+                logger.debug("Found existing view cookie: {}", existingCookie.substring(0, 8) + "...");
+                viewId = existingCookie;
+                isNewView = false;  // Cookie exists = duplicate view
+            } else {
+                // Generate unique view ID
+                viewId = java.util.UUID.randomUUID().toString();
+                logger.debug("Generated new view ID: {}", viewId.substring(0, 8) + "...");
+                
+                // ← FIXED: Set cookie via header with SameSite=Lax
+                String cookieHeader = String.format(
+                    "%s=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=None; Secure=true",
+                    viewCookieName,
+                    viewId,
+                    24 * 60 * 60,  // 24 hours
+                    false  // Secure=false for local dev; set to true for production HTTPS
+                );
+                response.addHeader("Set-Cookie", cookieHeader);
+                
+                logger.info("🍪 Set new view cookie for portfolio {}: {}", graduateId, viewId.substring(0, 8) + "...");
+            }
+            
+            logger.info("📊 Portfolio view - New: {}, View ID: {}...", isNewView ? "YES" : "NO", viewId.substring(0, 8));
+            
+            // ← PASS VIEW ID TO SERVICE (not session ID)
+            CompletePublicPortfolioResponse completePortfolio = portfolioService.getPublicPortfolioByShareToken(graduateId, shareToken, viewId);
             
             if (completePortfolio == null) {
                 logger.warn("Public portfolio access denied for graduate ID: {}", graduateId);
@@ -512,6 +552,18 @@ public class PortfolioController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("⚠️ Unexpected error: " + e.getMessage());
         }
+    }
+
+    // ← HELPER: Get cookie value by name
+    private String getCookieValue(HttpServletRequest request, String cookieName) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (cookieName.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
     
     @Operation(summary = "Regenerate portfolio share token", description = "Generate a new share token (invalidates old links)")

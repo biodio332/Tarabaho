@@ -16,6 +16,14 @@ public interface PortfolioViewRepository extends JpaRepository<PortfolioView, Lo
     @Query("SELECT COUNT(v) > 0 FROM PortfolioView v WHERE v.portfolio.id = :portfolioId AND v.viewDate > :cutoffTime")
     boolean hasRecentView(@Param("portfolioId") Long portfolioId, @Param("cutoffTime") LocalDateTime cutoffTime);
     
+    @Query("SELECT COUNT(v) > 0 FROM PortfolioView v " +
+           "WHERE v.portfolio.id = :portfolioId " +
+           "AND v.sessionId = :viewId " +  
+           "AND v.viewDate > :cutoffTime")
+    boolean hasRecentViewByViewId(@Param("portfolioId") Long portfolioId, 
+                                  @Param("viewId") String viewId, 
+                                  @Param("cutoffTime") LocalDateTime cutoffTime);
+
     // ← YOUR EXISTING QUERY METHODS (keep them)
     @Query("SELECT COUNT(v) FROM PortfolioView v WHERE v.portfolio.id = :portfolioId AND v.viewDate >= :startDate")
     long getWeeklyViews(@Param("portfolioId") Long portfolioId, @Param("startDate") LocalDateTime startDate);
