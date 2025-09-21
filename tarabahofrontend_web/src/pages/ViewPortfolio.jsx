@@ -482,14 +482,6 @@ const ViewPortfolio = () => {
   // Debug portfolio state before rendering
   useEffect(() => {
     if (portfolio) {
-      console.log("=== RENDER DEBUG ===");
-      console.log("isGraduateView:", isGraduateView);
-      console.log("isPublicView:", isPublicView);
-      console.log("graduate object:", graduate);
-      console.log("graduate.profilePicture:", graduate?.profilePicture);
-      console.log("portfolio.avatar:", portfolio?.avatar);
-      console.log("Will show picture?", (isGraduateView || isPublicView) && (graduate?.profilePicture || portfolio.avatar));
-      console.log("=====================");
       console.log("Portfolio state at render:", {
         fullName: portfolio.fullName,
         professionalSummary: portfolio.professionalSummary,
@@ -671,18 +663,44 @@ const ViewPortfolio = () => {
   return (
     <div className="view-portfolio-page">
       <div className="view-portfolio-container">
-        {/* Profile Picture - Only show for graduate view */}
-        {isGraduateView && graduate?.profilePicture && (
-          <div className="profile-picture-container">
-            {(graduate?.profilePicture || portfolio?.avatar) && (
-              <img
-                src={graduate?.profilePicture || portfolio?.avatar || "/placeholder.svg"}
-                alt={`${portfolio.fullName || 'Profile'} Picture`}
-                className="profile-picture"
-              />
-            )}
-          </div>
-        )}
+          {/* ← FIXED: Separate containers for each view */}
+      {isGraduateView ? (
+        // Graduate view - use your existing complex CSS
+        <div className="profile-picture-container">
+          {graduate?.profilePicture && (
+            <img
+              src={graduate.profilePicture}
+              alt="Graduate Profile"
+              className="profile-picture"
+            />
+          )}
+        </div>
+      ) : (
+        // Public view - simple, reliable styling
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginBottom: '20px',
+          padding: '2rem'
+        }}>
+          {(graduate?.profilePicture || portfolio?.avatar) && (
+            <img
+              src={graduate?.profilePicture || portfolio?.avatar}
+              alt={`${portfolio.fullName || 'Profile'} Picture`}
+              style={{
+                width: '120px',
+                height: '120px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '4px solid #e9ecef',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                display: 'block'
+              }}
+            />
+          )}
+        </div>
+      )}
 
         <h1>{portfolio.fullName || "Unnamed Portfolio"}</h1>
         
