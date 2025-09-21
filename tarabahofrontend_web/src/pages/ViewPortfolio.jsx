@@ -478,9 +478,18 @@ const ViewPortfolio = () => {
     }
   };
 
+  
   // Debug portfolio state before rendering
   useEffect(() => {
     if (portfolio) {
+      console.log("=== RENDER DEBUG ===");
+      console.log("isGraduateView:", isGraduateView);
+      console.log("isPublicView:", isPublicView);
+      console.log("graduate object:", graduate);
+      console.log("graduate.profilePicture:", graduate?.profilePicture);
+      console.log("portfolio.avatar:", portfolio?.avatar);
+      console.log("Will show picture?", (isGraduateView || isPublicView) && (graduate?.profilePicture || portfolio.avatar));
+      console.log("=====================");
       console.log("Portfolio state at render:", {
         fullName: portfolio.fullName,
         professionalSummary: portfolio.professionalSummary,
