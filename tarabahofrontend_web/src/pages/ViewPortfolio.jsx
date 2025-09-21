@@ -62,40 +62,64 @@ const ViewPortfolio = () => {
   };
 
   // Function to normalize portfolio data to match PortfolioCreation fields
-  const normalizePortfolioData = (data) => {
-    console.log("Normalizing portfolio data:", data);
+    const normalizePortfolioData = (data) => {
+    console.log("Normalizing portfolio data structure:", Object.keys(data));
+    
+    // ← EXTRACT: Get the actual portfolio data (it's nested under "portfolio")
+    const portfolioData = data.portfolio || data;
+    
+    // ← EXTRACT: Get graduate data (could be nested or direct)
+    const graduateData = data.graduate || portfolioData.graduate || {};
+    
+    // ← EXTRACT: Get certificates (could be nested or direct)
+    const certificatesData = data.certificates || portfolioData.certificates || [];
+    
+    // ← EXTRACT: Get projects (could be nested or direct)
+    const projectsData = data.projects || portfolioData.projects || [];
+    
+    console.log("Extracted data:", {
+      portfolioKeys: Object.keys(portfolioData),
+      graduateKeys: Object.keys(graduateData),
+      certificateCount: certificatesData.length,
+      projectCount: projectsData.length
+    });
+    
     const normalized = {
-      id: data.id,
-      graduateId: data.graduate?.id || data.graduateId,
-      fullName: data.fullName || "Unnamed",
-      professionalSummary: data.professionalSummary || "",
-      professionalTitle: data.professionalTitle || "",
-      primaryCourseType: data.primaryCourseType || "",
-      scholarScheme: data.scholarScheme || "",
-      customSectionJson: data.customSectionJson || "",
-      avatar: data.avatar || "",
-      ncLevel: data.ncLevel || "",
-      trainingCenter: data.trainingCenter || "",
-      scholarshipType: data.scholarshipType || "",
-      trainingDuration: data.trainingDuration || "",
-      tesdaRegistrationNumber: data.tesdaRegistrationNumber || "",
-      email: data.email || "",
-      phone: data.phone || "",
-      website: data.website || "",
-      portfolioCategory: data.portfolioCategory || "",
-      preferredWorkLocation: data.preferredWorkLocation || "",
-      workScheduleAvailability: data.workScheduleAvailability || "",
-      salaryExpectations: data.salaryExpectations || "",
-      skills: data.skills
-        ? data.skills.map((skill) => ({
+      id: portfolioData.id,
+      graduateId: portfolioData.graduateId || graduateData.id,
+      fullName: portfolioData.fullName || graduateData.fullName || "Unnamed",
+      professionalSummary: portfolioData.professionalSummary || "",
+      professionalTitle: portfolioData.professionalTitle || "",
+      primaryCourseType: portfolioData.primaryCourseType || "",
+      scholarScheme: portfolioData.scholarScheme || "",
+      customSectionJson: portfolioData.customSectionJson || "",
+      avatar: portfolioData.avatar || graduateData.profilePicture || "",
+      ncLevel: portfolioData.ncLevel || "",
+      trainingCenter: portfolioData.trainingCenter || "",
+      scholarshipType: portfolioData.scholarshipType || "",
+      trainingDuration: portfolioData.trainingDuration || "",
+      tesdaRegistrationNumber: portfolioData.tesdaRegistrationNumber || "",
+      email: portfolioData.email || "", // Keep for now, hide in public view if needed
+      phone: portfolioData.phone || "",
+      website: portfolioData.website || "",
+      portfolioCategory: portfolioData.portfolioCategory || "",
+      preferredWorkLocation: portfolioData.preferredWorkLocation || "",
+      workScheduleAvailability: portfolioData.workScheduleAvailability || "",
+      salaryExpectations: portfolioData.salaryExpectations || "",
+      
+      // Skills (from portfolio)
+      skills: portfolioData.skills
+        ? portfolioData.skills.map((skill) => ({
             id: skill.id,
             name: skill.name || "Unnamed Skill",
             type: skill.type || "TECHNICAL",
             proficiencyLevel: skill.proficiencyLevel || "",
           }))
         : [],
-      experiences: data.experiences
-        ? data.experiences.map((exp) => ({
+      
+      // Experiences (from portfolio)
+      experiences: portfolioData.experiences
+        ? portfolioData.experiences.map((exp) => ({
             id: exp.id,
             jobTitle: exp.jobTitle || "Unnamed",
             company: exp.employer || "",
@@ -103,8 +127,10 @@ const ViewPortfolio = () => {
             responsibilities: exp.description || "",
           }))
         : [],
-      projects: data.projects
-        ? data.projects.map((project) => ({
+      
+      // Projects (use the extracted projects array)
+      projects: projectsData.length > 0 
+        ? projectsData.map((project) => ({
             id: project.id,
             title: project.title || "Unnamed Project",
             description: project.description || "",
@@ -113,33 +139,51 @@ const ViewPortfolio = () => {
             endDate: project.endDate || "",
             projectImageFilePath: project.projectImageFilePath || "",
           }))
-        : [],
-      awardsRecognitions: data.awardsRecognitions
-        ? data.awardsRecognitions.map((award) => ({
+        : portfolioData.projects
+          ? portfolioData.projects.map((project) => ({
+              id: project.id,
+              title: project.title || "Unnamed Project",
+              description: project.description || "",
+              imageUrls: project.imageUrls || "",
+              startDate: project.startDate || "",
+              endDate: project.endDate || "",
+              projectImageFilePath: project.projectImageFilePath || "",
+            }))
+          : [],
+      
+      // Awards
+      awardsRecognitions: portfolioData.awardsRecognitions
+        ? portfolioData.awardsRecognitions.map((award) => ({
             id: award.id,
             title: award.title || "Unnamed Award",
             issuer: award.issuer || "",
             dateReceived: award.dateReceived || "",
           }))
         : [],
-      continuingEducations: data.continuingEducations
-        ? data.continuingEducations.map((edu) => ({
+      
+      // Continuing Education
+      continuingEducations: portfolioData.continuingEducations
+        ? portfolioData.continuingEducations.map((edu) => ({
             id: edu.id,
             courseName: edu.courseName || "Unnamed Course",
             institution: edu.institution || "",
             completionDate: edu.completionDate || "",
           }))
         : [],
-      professionalMemberships: data.professionalMemberships
-        ? data.professionalMemberships.map((mem) => ({
+      
+      // Professional Memberships
+      professionalMemberships: portfolioData.professionalMemberships
+        ? portfolioData.professionalMemberships.map((mem) => ({
             id: mem.id,
             organization: mem.organization || "Unnamed Organization",
             membershipType: mem.membershipType || "",
             startDate: mem.startDate || "",
           }))
         : [],
-      references: data.references
-        ? data.references.map((ref) => ({
+      
+      // References
+      references: portfolioData.references
+        ? portfolioData.references.map((ref) => ({
             id: ref.id,
             name: ref.name || "Unnamed Reference",
             position: ref.relationship || "",
@@ -149,10 +193,16 @@ const ViewPortfolio = () => {
           }))
         : [],
     };
-    console.log("Normalized portfolio data:", normalized);
+    
+    console.log("✅ Normalized portfolio data:", {
+      fullName: normalized.fullName,
+      hasProjects: normalized.projects.length > 0,
+      hasSkills: normalized.skills.length > 0,
+      hasExperiences: normalized.experiences.length > 0
+    });
+    
     return normalized;
   };
-
   // Check if user is authenticated graduate
   const checkAuthStatus = async () => {
     try {
@@ -258,36 +308,83 @@ const ViewPortfolio = () => {
   };
 
   // ← NEW: Fetch public portfolio with share token from URL
-  const fetchPublicDataWithToken = async () => {
+    const fetchPublicDataWithToken = async () => {
     try {
       if (!urlShareToken) {
         throw new Error("Share token is required for public access");
       }
       
-      console.log("Fetching public portfolio with share token for graduate ID:", graduateId);
-      console.log("Share token:", urlShareToken.substring(0, 8) + "...");
+      console.log("🔄 Fetching complete public portfolio for ID:", graduateId);
+      console.log("🔑 Share token:", urlShareToken.substring(0, 8) + "...");
       
       const portfolioResponse = await axios.get(
         `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio?share=${urlShareToken}`,
         { withCredentials: false }
       );
       
-      console.log("Public portfolio response:", portfolioResponse.data);
+      // ← FIXED: Log the ACTUAL response structure
+      console.log("📦 API Response Structure:", {
+        isCompleteResponse: portfolioResponse.data.portfolio !== undefined,
+        hasPortfolio: !!portfolioResponse.data.portfolio,
+        hasGraduate: !!portfolioResponse.data.graduate,
+        certificateCount: (portfolioResponse.data.certificates || []).length,
+        projectCount: (portfolioResponse.data.projects || []).length,
+        directPortfolioKeys: portfolioResponse.data.portfolio ? Object.keys(portfolioResponse.data.portfolio) : Object.keys(portfolioResponse.data)
+      });
+      
+      // ← FIXED: Pass the COMPLETE response to normalizer
       const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data);
+      
+      // ← FIXED: Set ALL states from the response
       setPortfolio(normalizedPortfolio);
+      
+      // Graduate (could be Map or object)
+      const graduateData = portfolioResponse.data.graduate || 
+                          (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.graduate : null) ||
+                          { 
+                            id: graduateId, 
+                            fullName: normalizedPortfolio.fullName,
+                            profilePicture: normalizedPortfolio.avatar 
+                          };
+      setGraduate(graduateData);
+      
+      // Certificates
+      const certs = portfolioResponse.data.certificates || 
+                  (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.certificates : []);
+      setCertificates(certs);
+      
+      // Projects  
+      const projs = portfolioResponse.data.projects || 
+                  (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.projects : []);
+      setProjects(projs);
+      
       setIsPublicView(true);
       setIsGraduateView(false);
       setIsLoading(false);
+      
+      console.log("✅ Public portfolio loaded with:", {
+        graduate: !!graduateData,
+        certificates: certs.length,
+        projects: projs.length,
+        skills: normalizedPortfolio.skills?.length || 0,
+        experiences: normalizedPortfolio.experiences?.length || 0
+      });
+      
     } catch (err) {
-      console.error("Failed to fetch public data with token:", err);
-      setError(
-        err.response?.status === 400 
-          ? "Invalid or expired share link. Please request a new link from the portfolio owner."
-          : err.response?.status === 404
-          ? "Portfolio not found or access denied. The share link may have expired."
-          : "Failed to load portfolio. Please check the share link."
-      );
+      console.error("❌ Failed to fetch public data:", err.response?.status, err.message);
+      setError(getErrorMessage(err));
       setIsLoading(false);
+    }
+  };
+
+  // ← HELPER: Better error messages
+  const getErrorMessage = (err) => {
+    const status = err.response?.status;
+    switch (status) {
+      case 400: return "❌ Invalid share link. Please ask the portfolio owner for a new link.";
+      case 401: return "🔐 Please sign in to view this portfolio.";
+      case 404: return "❌ Portfolio not found. This share link may have expired.";
+      default: return err.response?.data?.message || "Failed to load portfolio.";
     }
   };
 
