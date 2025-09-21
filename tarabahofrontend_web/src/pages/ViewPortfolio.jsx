@@ -674,11 +674,13 @@ const ViewPortfolio = () => {
         {/* Profile Picture - Only show for graduate view */}
         {isGraduateView && graduate?.profilePicture && (
           <div className="profile-picture-container">
-            <img
-              src={graduate.profilePicture || "/placeholder.svg"}
-              alt="Graduate Profile"
-              className="profile-picture"
-            />
+            {(graduate?.profilePicture || portfolio?.avatar) && (
+              <img
+                src={graduate?.profilePicture || portfolio?.avatar || "/placeholder.svg"}
+                alt={`${portfolio.fullName || 'Profile'} Picture`}
+                className="profile-picture"
+              />
+            )}
           </div>
         )}
 
