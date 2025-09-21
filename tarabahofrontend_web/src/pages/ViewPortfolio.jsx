@@ -308,7 +308,7 @@ const ViewPortfolio = () => {
   };
 
   // ← NEW: Fetch public portfolio with share token from URL
-    const fetchPublicDataWithToken = async () => {
+  const fetchPublicDataWithToken = async () => {
     try {
       if (!urlShareToken) {
         throw new Error("Share token is required for public access");
@@ -319,7 +319,9 @@ const ViewPortfolio = () => {
       
       const portfolioResponse = await axios.get(
         `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio?share=${urlShareToken}`,
-        { withCredentials: false }
+        { 
+          withCredentials: true,  // ← FIXED: Enable cookies for session tracking
+        }
       );
       
       // ← FIXED: Log the ACTUAL response structure
