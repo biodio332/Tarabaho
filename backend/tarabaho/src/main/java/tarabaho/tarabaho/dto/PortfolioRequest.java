@@ -47,6 +47,7 @@ public class PortfolioRequest {
     private List<Reference> references = new ArrayList<>();
     private List<Long> certificateIds = new ArrayList<>(); // For creation/updating
     private List<Certificate> certificates = new ArrayList<>(); // For viewing
+    private List<Project> projects = new ArrayList<>();
 
     // Constructor for mapping from Portfolio entity (for viewing)
     public PortfolioRequest(Portfolio portfolio) {
@@ -85,6 +86,7 @@ public class PortfolioRequest {
                 portfolio.getProfessionalMemberships() : new ArrayList<>();
         this.references = portfolio.getReferences() != null ? portfolio.getReferences() : new ArrayList<>();
         // Certificates will be set separately in the service
+        this.projects = portfolio.getProjects() != null ? portfolio.getProjects() : new ArrayList<>();
     }
 
     // Default constructor
@@ -93,6 +95,8 @@ public class PortfolioRequest {
     // Getters and setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public List<Project> getProjects() { return projects; }
+    public void setProjects(List<Project> projects) { this.projects = projects != null ? projects : new ArrayList<>(); }
     public Long getGraduateId() { return graduateId; }
     public void setGraduateId(Long graduateId) { this.graduateId = graduateId; }
     public String getProfessionalSummary() { return professionalSummary; }

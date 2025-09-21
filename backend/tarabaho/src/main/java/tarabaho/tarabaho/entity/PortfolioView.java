@@ -6,6 +6,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -28,15 +29,16 @@ public class PortfolioView {
     @JoinColumn(name = "portfolio_id", nullable = false)
     @JsonBackReference
     private Portfolio portfolio;
-
-    private LocalDateTime viewTimestamp;
+    
+    @Column(name = "view_date")
+    private LocalDateTime viewDate;
 
     // Optional: Add anonymous viewer info if needed, but minimize for privacy
     // private String viewerIpHash; // Commented out to avoid privacy issues
 
     @PrePersist
     protected void onCreate() {
-        viewTimestamp = LocalDateTime.now();
+        viewDate = LocalDateTime.now();
     }
 
     // Equals and hashCode
@@ -58,6 +60,6 @@ public class PortfolioView {
     public void setId(Long id) { this.id = id; }
     public Portfolio getPortfolio() { return portfolio; }
     public void setPortfolio(Portfolio portfolio) { this.portfolio = portfolio; }
-    public LocalDateTime getViewTimestamp() { return viewTimestamp; }
-    public void setViewTimestamp(LocalDateTime viewTimestamp) { this.viewTimestamp = viewTimestamp; }
+    public LocalDateTime getViewDate() { return viewDate; }
+    public void setViewDate(LocalDateTime viewDate) { this.viewDate = viewDate; }
 }

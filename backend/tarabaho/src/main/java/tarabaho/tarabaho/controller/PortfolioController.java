@@ -24,7 +24,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import tarabaho.tarabaho.dto.CompletePublicPortfolioResponse;
 import tarabaho.tarabaho.dto.PortfolioRequest;
+import tarabaho.tarabaho.dto.ShareInfo;
 import tarabaho.tarabaho.entity.AwardRecognition;
 import tarabaho.tarabaho.entity.ContinuingEducation;
 import tarabaho.tarabaho.entity.Experience;
@@ -37,7 +39,6 @@ import tarabaho.tarabaho.entity.Visibility;
 import tarabaho.tarabaho.service.GraduateService;
 import tarabaho.tarabaho.service.PortfolioService;
 import tarabaho.tarabaho.service.ProjectService;
-import tarabaho.tarabaho.dto.ShareInfo;
 
 @RestController
 @RequestMapping("/api/portfolio")
@@ -479,12 +480,6 @@ public class PortfolioController {
     }
 
     // ← NEW: Public access with share token (uses ONLY service)
-    @Operation(summary = "Get public portfolio with share token", description = "Access public portfolio using graduate ID and share token")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Public portfolio retrieved successfully"),
-        @ApiResponse(responseCode = "400", description = "Missing share token"),
-        @ApiResponse(responseCode = "404", description = "Portfolio not found or access denied")
-    })
     @GetMapping("/public/graduate/{graduateId}/portfolio")
     @CrossOrigin(origins = {"https://tarabaho.vercel.app", "http://localhost:5173"}, allowCredentials = "false")
     public ResponseEntity<?> getPublicPortfolioByShareToken(
@@ -494,24 +489,23 @@ public class PortfolioController {
             logger.debug("Fetching public portfolio for graduate ID: {}, share token provided: {}", 
                 graduateId, shareToken != null ? "yes" : "no");
             
-            // Validate share token presence
             if (shareToken == null || shareToken.trim().isEmpty()) {
                 logger.warn("Share token required for public portfolio access");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("⚠️ Share token is required to access this portfolio.");
             }
             
-            // ← USE SERVICE: All validation and logic in service
-            PortfolioRequest portfolio = portfolioService.getPublicPortfolioByShareToken(graduateId, shareToken);
+            // ← THIS LINE MUST MATCH SERVICE RETURN TYPE
+            CompletePublicPortfolioResponse completePortfolio = portfolioService.getPublicPortfolioByShareToken(graduateId, shareToken);
             
-            if (portfolio == null) {
+            if (completePortfolio == null) {
                 logger.warn("Public portfolio access denied for graduate ID: {}", graduateId);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("⚠️ Portfolio not found or access denied.");
             }
             
-            logger.info("Public portfolio accessed successfully, ID: {}", portfolio.getId());
-            return ResponseEntity.ok(portfolio);
+            logger.info("Complete public portfolio accessed successfully, ID: {}", completePortfolio.getPortfolio().getId());
+            return ResponseEntity.ok(completePortfolio);
             
         } catch (Exception e) {
             logger.error("Unexpected error accessing public portfolio: {}", e.getMessage(), e);
@@ -519,6 +513,7 @@ public class PortfolioController {
                     .body("⚠️ Unexpected error: " + e.getMessage());
         }
     }
+    
     @Operation(summary = "Regenerate portfolio share token", description = "Generate a new share token (invalidates old links)")
     @PostMapping("/graduate/{graduateId}/portfolio/regenerate-token")
     public ResponseEntity<?> regenerateShareToken(@PathVariable Long graduateId, Authentication authentication) {

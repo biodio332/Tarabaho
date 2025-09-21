@@ -833,6 +833,7 @@ public class GraduateController {
                 .body("Failed to retrieve category requests: " + e.getMessage());
         }
     }
+    
 
 
     // NEW: DTO class for handling single category request payload

@@ -1,5 +1,6 @@
 package tarabaho.tarabaho.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,4 +25,7 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
     
    @Query("SELECT p FROM Portfolio p WHERE p.graduate.id = :graduateId AND p.shareToken = :shareToken")
     Optional<Portfolio> findByGraduateIdAndShareToken(@Param("graduateId") Long graduateId, @Param("shareToken") String shareToken);
+
+    @Query("SELECT COUNT(v) > 0 FROM PortfolioView v WHERE v.portfolio.id = :portfolioId AND v.viewDate > :cutoffTime")
+    boolean hasRecentView(@Param("portfolioId") Long portfolioId, @Param("cutoffTime") LocalDateTime cutoffTime);
 }

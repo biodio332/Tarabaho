@@ -1,7 +1,9 @@
 package tarabaho.tarabaho.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
+import tarabaho.tarabaho.dto.CompletePublicPortfolioResponse;
 import tarabaho.tarabaho.dto.PortfolioRequest;
 import tarabaho.tarabaho.dto.ShareInfo;
 import tarabaho.tarabaho.entity.AwardRecognition;
@@ -69,6 +72,9 @@ public class PortfolioService {
 
     @Autowired
     private CertificateService certificateService;
+
+    @Autowired
+    private PortfolioViewService portfolioViewService;
 
     // Added for project cleanup
     @Autowired
@@ -607,11 +613,9 @@ public class PortfolioService {
         return new ShareInfo(shareToken, shareUrl);
     }
 
-    // ← NEW: Get public portfolio by share token
-    public PortfolioRequest getPublicPortfolioByShareToken(Long graduateId, String shareToken) {
+    public CompletePublicPortfolioResponse getPublicPortfolioByShareToken(Long graduateId, String shareToken) {
         System.out.println("PortfolioService: Validating public access for graduate ID: " + graduateId);
         
-        // Find portfolio by graduateId and shareToken
         Optional<Portfolio> portfolioOpt = portfolioRepository.findByGraduateIdAndShareToken(graduateId, shareToken);
         if (!portfolioOpt.isPresent()) {
             System.out.println("PortfolioService: Invalid share token for graduate ID: " + graduateId);
@@ -619,24 +623,35 @@ public class PortfolioService {
         }
         
         Portfolio portfolio = portfolioOpt.get();
-        
-        // Double-check visibility
         if (portfolio.getVisibility() != Visibility.PUBLIC) {
             System.out.println("PortfolioService: Portfolio is not public: " + graduateId);
             return null;
         }
+        // ← NEW: Record the view!
+        boolean viewRecorded = portfolioViewService.recordView(portfolio);
+        System.out.println("PortfolioService: View recorded: " + (viewRecorded ? "NEW" : "DUPLICATE"));
+        // Create base portfolio request
+        PortfolioRequest portfolioRequest = new PortfolioRequest(portfolio);
         
-        // Log successful access
+        // Create public graduate data
+        Graduate originalGraduate = portfolio.getGraduate();
+        Map<String, Object> publicGraduate = new HashMap<>();
+        publicGraduate.put("id", originalGraduate.getId());
+        publicGraduate.put("fullName", (originalGraduate.getFirstName() != null ? originalGraduate.getFirstName() : "") + 
+                                (originalGraduate.getLastName() != null ? " " + originalGraduate.getLastName() : ""));
+        publicGraduate.put("profilePicture", originalGraduate.getProfilePicture());
+        
+        // Get related data
+        List<Certificate> publicCertificates = certificateRepository.findByGraduateId(graduateId);
+        List<Project> publicProjects = projectRepository.findByPortfolioId(portfolio.getId());
+        
+        // Log access
         logPortfolioView(portfolio.getId(), "share-token:" + shareToken.substring(0, 8));
         
-        Long actualGraduateId = portfolio.getGraduate().getId();
-        PortfolioRequest portfolioRequest = new PortfolioRequest(portfolio);
-        List<Certificate> certificates = certificateRepository.findByGraduateId(actualGraduateId);
-        portfolioRequest.setCertificates(certificates);
-        
-        System.out.println("PortfolioService: Public access granted for portfolio ID: " + portfolio.getId());
-        return portfolioRequest;
+        return new CompletePublicPortfolioResponse(portfolioRequest, publicGraduate, publicCertificates, publicProjects);
     }
+
+    
 
     // ← NEW: Log portfolio views (simple version)
     private void logPortfolioView(Long portfolioId, String accessMethod) {
