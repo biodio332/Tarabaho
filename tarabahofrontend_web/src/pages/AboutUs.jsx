@@ -57,25 +57,26 @@ const AboutUs = () => {
 
         <div className="about-us-description">
           <p>
-            We are the passionate minds behind Tarabaho—a team of developers, innovators, and problem-solvers driven by
-            one mission: to create a seamless platform that connects job seekers and employers with ease.
+            We are the passionate minds behind <strong>Tarabaho</strong>—a team of developers, innovators, and problem-solvers
+            with one mission: to empower TESDA graduates by giving their skills the spotlight they deserve.
           </p>
 
           <p>
-            What started as an idea quickly became a vision—to bridge the gap between opportunities and talent through
-            intuitive technology. As developers, we understand the struggles of finding the right job and the challenges
-            businesses face in hiring the right people. That's why we built Tarabaho—a platform designed not just for
-            efficiency but also for real impact.
+            What started as a simple idea has grown into a vision—to build a trusted digital space where talent is verified,
+            visible, and valued. Instead of focusing on traditional job postings, Tarabaho highlights what truly matters: the
+            skills, certifications, and accomplishments of TESDA-accredited professionals.
           </p>
 
           <p>
-            From writing lines of code to designing an intuitive user experience, we are committed to building a
-            platform that simplifies job searching and recruitment. Every feature we develop, every update we release,
-            is done with the goal of making Tarabaho a game-changer in the employment space.
+            As developers, we understand how challenging it can be for skilled workers to stand out and for employers to find
+            trustworthy talent. That’s why we created Tarabaho as a portfolio-driven platform that bridges this gap—making it
+            easier for clients to discover, evaluate, and connect with verified professionals.
           </p>
 
           <p>
-            We're not just building an app—we're shaping a future where opportunities are within reach for everyone.
+            Every feature we design, from portfolio creation to TESDA verification, is crafted to build trust, credibility, and
+            opportunity. We’re not just showcasing profiles—we’re redefining how skills are recognized and valued in the digital
+            age.
           </p>
 
           <div className="about-us-tagline">

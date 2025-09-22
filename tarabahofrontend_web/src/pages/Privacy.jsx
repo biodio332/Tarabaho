@@ -69,45 +69,25 @@ const Privacy = () => {
         <div className="table-of-contents">
           <h3>Quick Navigation</h3>
           <ul className="toc-list">
-            <li>
-              <a href="#introduction">Introduction</a>
-            </li>
-            <li>
-              <a href="#information">Information We Collect</a>
-            </li>
-            <li>
-              <a href="#use">How We Use Your Information</a>
-            </li>
-            <li>
-              <a href="#protection">How We Protect Your Information</a>
-            </li>
-            <li>
-              <a href="#sharing">Sharing of Information</a>
-            </li>
-            <li>
-              <a href="#rights">User Rights</a>
-            </li>
-            <li>
-              <a href="#retention">Data Retention</a>
-            </li>
-            <li>
-              <a href="#cookies">Cookies Policy</a>
-            </li>
-            <li>
-              <a href="#changes">Changes to Privacy Policy</a>
-            </li>
-            <li>
-              <a href="#contact">Contact Information</a>
-            </li>
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#information">Information We Collect</a></li>
+            <li><a href="#use">How We Use Your Information</a></li>
+            <li><a href="#protection">How We Protect Your Information</a></li>
+            <li><a href="#sharing">Sharing of Information</a></li>
+            <li><a href="#rights">User Rights</a></li>
+            <li><a href="#retention">Data Retention</a></li>
+            <li><a href="#cookies">Cookies Policy</a></li>
+            <li><a href="#changes">Changes to Privacy Policy</a></li>
+            <li><a href="#contact">Contact Information</a></li>
           </ul>
         </div>
 
         <section className="legal-section">
           <span id="introduction" className="section-anchor"></span>
           <h2>1. Introduction</h2>
-          <p>At Tarabaho, your privacy is very important to us.</p>
+          <p>At Tarabaho, your privacy is our priority.</p>
           <p>
-            This Privacy Policy explains how we collect, use, and protect your personal information when you use our
+            This Privacy Policy explains how we collect, use, and safeguard your personal information when you use our
             platform (website and mobile app).
           </p>
           <p>By using Tarabaho, you agree to the practices described in this Privacy Policy.</p>
@@ -122,13 +102,13 @@ const Privacy = () => {
           <p>Name, email address, phone number, birthday, address, TESDA certifications, skills, etc.</p>
 
           <h3>Job-Related Information:</h3>
-          <p>Job postings, job applications, work experience, reviews, ratings.</p>
+          <p>Job searches, applications, work history, reviews, and ratings.</p>
 
           <h3>Payment Information:</h3>
           <p>E-wallet details (e.g., GCash number) or bank account information for payments and payouts.</p>
 
           <h3>Location Information:</h3>
-          <p>Real-time location (for GPS tracking, job matching nearby).</p>
+          <p>Optional location data to improve job matching.</p>
 
           <h3>Technical Information:</h3>
           <p>Device information, browser type, IP address, and cookies for system optimization and analytics.</p>
@@ -137,14 +117,14 @@ const Privacy = () => {
         <section className="legal-section">
           <span id="use" className="section-anchor"></span>
           <h2>3. How We Use Your Information</h2>
-          <p>We use your information for the following purposes:</p>
+          <p>We use your information to:</p>
           <ul>
-            <li>To create and manage your account.</li>
-            <li>To match workers and employers based on skills and location.</li>
-            <li>To process payments securely.</li>
-            <li>To send notifications about jobs, applications, or platform updates.</li>
-            <li>To improve and personalize your experience on Tarabaho.</li>
-            <li>To comply with legal obligations (e.g., fraud prevention).</li>
+            <li>Create and manage your account.</li>
+            <li>Match users with skilled workers or employers.</li>
+            <li>Process payments securely.</li>
+            <li>Send notifications about bookings, updates, or platform features.</li>
+            <li>Improve and personalize your experience on Tarabaho.</li>
+            <li>Comply with legal requirements (e.g., fraud prevention).</li>
           </ul>
         </section>
 
@@ -152,22 +132,22 @@ const Privacy = () => {
           <span id="protection" className="section-anchor"></span>
           <h2>4. How We Protect Your Information</h2>
           <ul>
-            <li>All communications are secured through HTTPS encryption.</li>
-            <li>Sensitive data (e.g., passwords, payment information) are encrypted and securely stored.</li>
-            <li>We limit access to personal information to authorized employees only.</li>
-            <li>Regular security audits and system updates help keep your data safe.</li>
+            <li>All communications use HTTPS encryption.</li>
+            <li>Sensitive data (e.g., passwords, payment details) are encrypted and stored securely.</li>
+            <li>Access to personal information is limited to authorized staff only.</li>
+            <li>Regular system updates and audits maintain security.</li>
           </ul>
         </section>
 
         <section className="legal-section">
           <span id="sharing" className="section-anchor"></span>
           <h2>5. Sharing of Information</h2>
-          <p>Tarabaho does not sell or rent your personal information to third parties.</p>
-          <p>We only share information:</p>
+          <p>We do not sell or rent your personal information.</p>
+          <p>We only share data:</p>
           <ul>
-            <li>With employers or workers when matching jobs.</li>
+            <li>With employers or workers when relevant to a service or job.</li>
             <li>With third-party service providers (e.g., payment processors) necessary to operate Tarabaho.</li>
-            <li>When required by law or to protect our platform and users.</li>
+            <li>When required by law or to protect our users and platform.</li>
           </ul>
         </section>
 
@@ -176,21 +156,21 @@ const Privacy = () => {
           <h2>6. User Rights</h2>
           <p>You have the right to:</p>
           <ul>
-            <li>Access the information we have about you.</li>
-            <li>Correct inaccurate information.</li>
-            <li>Request deletion of your data.</li>
-            <li>Withdraw your consent at any time (subject to legal or contractual obligations).</li>
+            <li>Access your personal information.</li>
+            <li>Update or correct inaccurate information.</li>
+            <li>Request deletion of your account and data.</li>
+            <li>Withdraw consent at any time (subject to legal or contractual obligations).</li>
           </ul>
-          <p>You can manage your information through your Account Settings or contact our support team.</p>
+          <p>You may exercise these rights via your Account Settings or by contacting our support team.</p>
         </section>
 
         <section className="legal-section">
           <span id="retention" className="section-anchor"></span>
           <h2>7. Data Retention</h2>
-          <p>We retain your personal information only for as long as necessary:</p>
+          <p>We retain your data only as long as necessary:</p>
           <ul>
-            <li>While your account is active.</li>
-            <li>As required to comply with legal obligations, resolve disputes, and enforce agreements.</li>
+            <li>While your account remains active.</li>
+            <li>As required by law or for dispute resolution.</li>
           </ul>
         </section>
 
@@ -198,8 +178,8 @@ const Privacy = () => {
           <span id="cookies" className="section-anchor"></span>
           <h2>8. Cookies Policy</h2>
           <ul>
-            <li>We use cookies to improve website functionality and user experience.</li>
-            <li>You can manage or disable cookies through your browser settings.</li>
+            <li>We use cookies to enhance functionality and improve user experience.</li>
+            <li>You may disable cookies in your browser settings, though some features may be limited.</li>
           </ul>
         </section>
 
@@ -208,15 +188,15 @@ const Privacy = () => {
           <h2>9. Changes to this Privacy Policy</h2>
           <ul>
             <li>We may update this Privacy Policy from time to time.</li>
-            <li>Significant changes will be communicated via email or app notifications.</li>
-            <li>Continued use of Tarabaho means you accept the updated Privacy Policy.</li>
+            <li>Major changes will be communicated via email or in-app notifications.</li>
+            <li>Continued use of Tarabaho constitutes acceptance of the updated Privacy Policy.</li>
           </ul>
         </section>
 
         <section className="legal-section">
           <span id="contact" className="section-anchor"></span>
           <h2>10. Contact Information</h2>
-          <p>If you have questions, concerns, or requests regarding your data:</p>
+          <p>If you have questions, concerns, or requests about your data:</p>
           <ul>
             <li>📧 Email: privacy@tarabaho.com</li>
             <li>📞 Phone: +63 (2) 8123-4567</li>
@@ -227,13 +207,13 @@ const Privacy = () => {
           <h2>Quick Reminders</h2>
           <ul>
             <li>Your data is safe with us.</li>
-            <li>We never sell your information.</li>
-            <li>You control your own data.</li>
+            <li>We never sell your personal information.</li>
+            <li>You have full control over your data.</li>
           </ul>
         </section>
 
         <div className="last-updated">
-          <p>Last Updated: April 27, 2023</p>
+          <p>Last Updated: September 22, 2025</p>
         </div>
       </div>
 

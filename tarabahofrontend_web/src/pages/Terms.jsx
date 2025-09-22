@@ -69,42 +69,18 @@ const Terms = () => {
         <div className="table-of-contents">
           <h3>Quick Navigation</h3>
           <ul className="toc-list">
-            <li>
-              <a href="#introduction">Introduction</a>
-            </li>
-            <li>
-              <a href="#eligibility">Eligibility</a>
-            </li>
-            <li>
-              <a href="#account">Account Responsibilities</a>
-            </li>
-            <li>
-              <a href="#services">Services Provided</a>
-            </li>
-            <li>
-              <a href="#payment">Payment Terms</a>
-            </li>
-            <li>
-              <a href="#ratings">Ratings and Reviews</a>
-            </li>
-            <li>
-              <a href="#prohibited">Prohibited Activities</a>
-            </li>
-            <li>
-              <a href="#safety">Safety Guidelines</a>
-            </li>
-            <li>
-              <a href="#suspension">Account Suspension</a>
-            </li>
-            <li>
-              <a href="#liability">Limitation of Liability</a>
-            </li>
-            <li>
-              <a href="#changes">Changes to Terms</a>
-            </li>
-            <li>
-              <a href="#contact">Contact Information</a>
-            </li>
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#eligibility">Eligibility</a></li>
+            <li><a href="#account">Account Responsibilities</a></li>
+            <li><a href="#services">Services Provided</a></li>
+            <li><a href="#verification">TESDA Verification</a></li>
+            <li><a href="#portfolio">Portfolio Usage</a></li>
+            <li><a href="#prohibited">Prohibited Activities</a></li>
+            <li><a href="#privacy">Data Privacy</a></li>
+            <li><a href="#suspension">Account Suspension</a></li>
+            <li><a href="#liability">Limitation of Liability</a></li>
+            <li><a href="#changes">Changes to Terms</a></li>
+            <li><a href="#contact">Contact Information</a></li>
           </ul>
         </div>
 
@@ -113,12 +89,11 @@ const Terms = () => {
           <h2>1. Introduction</h2>
           <p>Welcome to Tarabaho!</p>
           <p>
-            Tarabaho is a platform that connects TESDA-accredited individuals, out-of-school youth, and skilled workers
-            with employers seeking services for various tasks and projects.
+            Tarabaho is a platform that helps <strong>TESDA-accredited graduates</strong> and skilled professionals
+            showcase their verified digital portfolios, making it easier for clients and employers to discover their talents.
           </p>
           <p>
-            By using our platform (web or mobile app), you agree to comply with these Terms and Conditions. Please read
-            them carefully.
+            By using our platform, you agree to these Terms and Conditions. Please read them carefully.
           </p>
         </section>
 
@@ -126,10 +101,10 @@ const Terms = () => {
           <span id="eligibility" className="section-anchor"></span>
           <h2>2. Eligibility</h2>
           <ul>
-            <li>Minimum age to join as a Trabahador: 15 years old</li>
-            <li>Minimum age to post or hire as an Employer: 18 years old</li>
-            <li>Priority is given to TESDA-accredited individuals and out-of-school youth.</li>
-            <li>Users must provide accurate and truthful information upon registration.</li>
+            <li>Users must be at least 15 years old to create an account.</li>
+            <li>TESDA graduates must upload valid certificates to create verified portfolios.</li>
+            <li>Employers/clients must be at least 18 years old to browse and connect with graduates.</li>
+            <li>All users must provide accurate and truthful information upon registration.</li>
           </ul>
         </section>
 
@@ -137,9 +112,9 @@ const Terms = () => {
           <span id="account" className="section-anchor"></span>
           <h2>3. Account Responsibilities</h2>
           <ul>
-            <li>You are responsible for maintaining the security of your account.</li>
+            <li>You are responsible for keeping your account credentials secure.</li>
             <li>Any activity under your account is your responsibility.</li>
-            <li>Report any unauthorized account activity to Tarabaho Support immediately.</li>
+            <li>Report unauthorized use to Tarabaho Support immediately.</li>
           </ul>
         </section>
 
@@ -147,38 +122,28 @@ const Terms = () => {
           <span id="services" className="section-anchor"></span>
           <h2>4. Services Provided</h2>
           <ul>
-            <li>
-              <strong>Employers:</strong> Can post jobs, search and hire Trabahadors, chat securely, and process
-              payments through the platform.
-            </li>
-            <li>
-              <strong>Trabahadors:</strong> Can create profiles, browse job opportunities, accept jobs, and get rated
-              after job completion.
-            </li>
-            <li>
-              Tarabaho acts only as a facilitator and is not responsible for the actual work or external payment
-              arrangements.
-            </li>
+            <li><strong>Graduates:</strong> Can create and manage digital portfolios, upload TESDA certificates, and share their profiles.</li>
+            <li><strong>Employers/Clients:</strong> Can browse and view verified graduate portfolios for potential collaboration or hiring.</li>
+            <li>Tarabaho acts only as a <em>portfolio platform</em> and does not handle payments, contracts, or direct hiring.</li>
           </ul>
         </section>
 
         <section className="legal-section">
-          <span id="payment" className="section-anchor"></span>
-          <h2>5. Payment Terms</h2>
+          <span id="verification" className="section-anchor"></span>
+          <h2>5. TESDA Verification</h2>
           <ul>
-            <li>Payments are processed through approved gateways (e.g., GCash, PayMongo).</li>
-            <li>Tarabaho may charge a small service fee on transactions (disclosed during booking).</li>
-            <li>Trabahadors must have a verified e-wallet or bank account for payouts.</li>
+            <li>TESDA graduates must upload valid certificates for verification.</li>
+            <li>Any falsified or fraudulent documents will lead to account suspension or termination.</li>
           </ul>
         </section>
 
         <section className="legal-section">
-          <span id="ratings" className="section-anchor"></span>
-          <h2>6. Ratings and Reviews</h2>
+          <span id="portfolio" className="section-anchor"></span>
+          <h2>6. Portfolio Usage</h2>
           <ul>
-            <li>Employers can rate workers after a job is completed.</li>
-            <li>Ratings must be fair, honest, and respectful.</li>
-            <li>Abusive, fake, or malicious reviews are prohibited and may be removed by Tarabaho.</li>
+            <li>Graduates are responsible for keeping their portfolio information accurate and updated.</li>
+            <li>Employers may view and evaluate portfolios but must contact graduates outside the platform for hiring arrangements.</li>
+            <li>Tarabaho is not liable for any agreements, payments, or disputes that occur outside the platform.</li>
           </ul>
         </section>
 
@@ -186,29 +151,27 @@ const Terms = () => {
           <span id="prohibited" className="section-anchor"></span>
           <h2>7. Prohibited Activities</h2>
           <ul>
-            <li>Falsifying identities, skills, or certifications.</li>
-            <li>Conducting payments outside of the Tarabaho platform.</li>
-            <li>Harassment, discrimination, or abuse of any user.</li>
-            <li>Uploading fraudulent certifications or false information.</li>
+            <li>Uploading false or fraudulent certifications.</li>
+            <li>Impersonating another person or providing misleading information.</li>
+            <li>Using the platform for harassment, discrimination, or unlawful activity.</li>
           </ul>
         </section>
 
         <section className="legal-section">
-          <span id="safety" className="section-anchor"></span>
-          <h2>8. Safety Guidelines</h2>
-          <ul>
-            <li>Always communicate within the platform.</li>
-            <li>For minors (ages 13–17), inform a guardian before accepting jobs.</li>
-            <li>Prefer safe, public meeting locations whenever possible.</li>
-          </ul>
+          <span id="privacy" className="section-anchor"></span>
+          <h2>8. Data Privacy</h2>
+          <p>
+            Tarabaho follows the <strong>Data Privacy Act of 2012</strong>. Personal data, certificates, and portfolio
+            details are stored securely and only used for platform purposes. We will never sell or misuse your information.
+          </p>
         </section>
 
         <section className="legal-section">
           <span id="suspension" className="section-anchor"></span>
           <h2>9. Account Suspension and Termination</h2>
           <ul>
-            <li>Tarabaho reserves the right to suspend or permanently ban accounts violating these Terms.</li>
-            <li>Serious violations (e.g., fraud, harassment) will result in immediate termination without refund.</li>
+            <li>Tarabaho reserves the right to suspend or terminate accounts that violate these Terms.</li>
+            <li>Fraudulent certificates or repeated policy violations will result in permanent removal.</li>
           </ul>
         </section>
 
@@ -216,11 +179,8 @@ const Terms = () => {
           <span id="liability" className="section-anchor"></span>
           <h2>10. Limitation of Liability</h2>
           <ul>
-            <li>Tarabaho is not responsible for any loss, injury, or dispute that arises outside of the platform.</li>
-            <li>
-              We only facilitate connections — we do not guarantee job outcomes or payment security outside the
-              platform.
-            </li>
+            <li>Tarabaho is not responsible for outcomes, payments, or disputes outside the platform.</li>
+            <li>We only provide a secure space for showcasing verified portfolios.</li>
           </ul>
         </section>
 
@@ -228,9 +188,9 @@ const Terms = () => {
           <span id="changes" className="section-anchor"></span>
           <h2>11. Changes to Terms</h2>
           <ul>
-            <li>Tarabaho may update these Terms and Conditions as needed.</li>
-            <li>Major changes will be notified through email or in-app alerts.</li>
-            <li>Continued use after changes means you accept the updated Terms.</li>
+            <li>We may update these Terms and Conditions as necessary.</li>
+            <li>Significant changes will be communicated via in-app notifications or email.</li>
+            <li>Continued use of Tarabaho means you accept the updated Terms.</li>
           </ul>
         </section>
 
@@ -247,15 +207,15 @@ const Terms = () => {
         <section className="quick-reminders">
           <h2>Quick Reminders</h2>
           <ul>
-            <li>Be honest.</li>
-            <li>Stay professional.</li>
-            <li>Use the platform properly.</li>
-            <li>Keep all transactions safe and inside the platform.</li>
+            <li>Be truthful when uploading certifications.</li>
+            <li>Keep portfolios professional and updated.</li>
+            <li>Tarabaho does not handle contracts or payments.</li>
+            <li>Respect other users and follow community standards.</li>
           </ul>
         </section>
 
         <div className="last-updated">
-          <p>Last Updated: April 27, 2023</p>
+          <p>Last Updated: September 22, 2025</p>
         </div>
       </div>
 

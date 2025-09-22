@@ -30,23 +30,28 @@ const UserHomepage = () => {
             <div className="description-container">
               <div className="description">
                 <p>
-                  Tarabaho: Tara! Trabaho is a platform designed to connect individuals seeking help with day-to-day
-                  tasks and those looking for job opportunities or side hustles. Whether it's running errands, cleaning,
-                  tutoring, or other tasks, Tarabaho makes it easy to hire or be hired for specific jobs or durations.
+                  <strong>Tarabaho: Tara! Trabaho</strong> is a platform designed to help{" "}
+                  <strong>employers and clients</strong> easily discover skilled TESDA-accredited
+                  professionals through verified digital portfolios.
                 </p>
                 <p>
-                  The platform empowers Filipinos, especially those seeking flexible work, by providing a gateway to
-                  earn, learn, and grow—all while fostering a sense of community and collaboration.
+                  Instead of sifting through unverified listings, users can browse professional
+                  profiles that showcase certifications, skills, and past projects — all in one
+                  trusted space. Each portfolio comes with a TESDA verification badge, ensuring that
+                  the talents you find are credible and qualified.
                 </p>
                 <p>
-                  For teenagers aged 15–18, Tarabaho places a special emphasis on safety, balance, and responsibility.
-                  Tasks suitable for their age group, such as tutoring or light errands, are available with work hour
-                  limitations to prioritize education.
+                  The platform makes it simple to:
+                  <ul>
+                    <li>Search by skills or category to find the right graduate for your needs.</li>
+                    <li>
+                      View complete portfolios with certifications, work samples, and testimonials.
+                    </li>
+                  </ul>
                 </p>
                 <p>
-                  With built-in tools for safe communication, task tracking, and secure payments, Tarabaho ensures a
-                  user-friendly and secure environment. Join today and explore a platform where opportunities meet
-                  flexibility and growth!
+                  With Tarabaho, users gain confidence knowing they are engaging with verified, skilled
+                  professionals, making it easier to match the right person to the right opportunity.
                 </p>
               </div>
             </div>
