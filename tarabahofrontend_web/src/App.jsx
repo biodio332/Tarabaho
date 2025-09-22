@@ -40,7 +40,8 @@ import SuccessPage from "./pages/SuccessPage"
 import FailedPage from "./pages/FailedPage"
 import PortfolioCreation from "./pages/PortfolioCreation"
 import ViewPortfolio from "./pages/ViewPortfolio"
-import EditPortfolio from "./pages/EditPortfolio";
+import EditPortfolio from "./pages/EditPortfolio"
+import GeneralLayout from "./components/GeneralLayout"
 
 
 function App() {
@@ -82,15 +83,15 @@ function App() {
         <Route path="/user-browse/:categoryName" element={<UserBrowseCategory />} />
 
         {/* Trabahador-specific routes */}
-        <Route path="/graduate-homepage" element={<TrabahadorHomepage />} />
+        <Route path="/graduate-homepage" element={<GeneralLayout><TrabahadorHomepage /></GeneralLayout>} />
         <Route path="/graduate-contact" element={<TrabahadorContactUs />} />
         <Route path="/graduate-history" element={<TrabahadorHistory />} />
         <Route path="/graduate-profile" element={<TrabahadorProfile />} />
         <Route path="/graduate-about" element={<TrabahadorAboutUs />} />
         <Route path="/graduate-profile-detail/:graduateId" element={<WorkerProfileDetail />} />
-        <Route path="/create-portfolio" element={<PortfolioCreation />} /> {/* New route */}
-        <Route path="/portfolio/:graduateId" element={<ViewPortfolio />} />
-        <Route path="/portfolio/edit/:graduateId" element={<EditPortfolio />} />
+        <Route path="/create-portfolio" element={<GeneralLayout><PortfolioCreation /></GeneralLayout>} />
+        <Route path="/portfolio/:graduateId" element={<GeneralLayout><ViewPortfolio /></GeneralLayout>} />
+        <Route path="/portfolio/edit/:graduateId" element={<GeneralLayout><EditPortfolio /></GeneralLayout>} />
 
 
         {/* General routes */}

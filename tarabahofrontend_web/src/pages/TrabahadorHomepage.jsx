@@ -16,8 +16,6 @@ import {
   Filler,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
-import TrabahadorNavbar from "../components/TrabahadorNavbar";
-import Footer from "../components/Footer";
 import "../styles/TrabahadorHomepage.css";
 import { FaPlus, FaTimes, FaEye, FaClock, FaCalendarAlt, FaChartLine } from "react-icons/fa";
 
@@ -615,8 +613,6 @@ const TrabahadorHomepage = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
-      {/* Navbar */}
-      <TrabahadorNavbar activePage="homepage" />
       
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center py-8 px-4">
@@ -846,9 +842,6 @@ const TrabahadorHomepage = () => {
           )}
         </div>
       </main>
-
-      {/* Footer */}
-      <Footer />
 
       {/* Certificate Upload Modal */}
       {showCertificateModal && (
