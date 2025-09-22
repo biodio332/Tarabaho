@@ -1,6 +1,7 @@
 package tarabaho.tarabaho.repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -33,6 +34,31 @@ public interface PortfolioViewRepository extends JpaRepository<PortfolioView, Lo
     
     @Query("SELECT COUNT(v) FROM PortfolioView v WHERE v.portfolio.id = :portfolioId AND v.viewDate >= :startDate")
     long getYearlyViews(@Param("portfolioId") Long portfolioId, @Param("startDate") LocalDateTime startDate);
+    
+    // ← SIMPLIFIED: Daily view trends using native query
+    @Query(value = """
+        SELECT DATE(view_date) as date, COUNT(*) as views 
+        FROM portfolio_views 
+        WHERE portfolio_id = :portfolioId 
+        AND view_date >= :startDate 
+        GROUP BY DATE(view_date) 
+        ORDER BY DATE(view_date)
+        """, nativeQuery = true)
+    List<Object[]> getDailyViewTrends(@Param("portfolioId") Long portfolioId, @Param("startDate") LocalDateTime startDate);
+    
+    // ← SIMPLIFIED: Monthly view trends for yearly data using native query
+        @Query(value = """
+        SELECT 
+            EXTRACT(YEAR FROM view_date) as year,
+            EXTRACT(MONTH FROM view_date) as month,
+            COUNT(*) as views 
+        FROM portfolio_views 
+        WHERE portfolio_id = :portfolioId 
+        AND view_date >= :startDate 
+        GROUP BY EXTRACT(YEAR FROM view_date), EXTRACT(MONTH FROM view_date) 
+        ORDER BY EXTRACT(YEAR FROM view_date), EXTRACT(MONTH FROM view_date)
+        """, nativeQuery = true)
+    List<Object[]> getMonthlyViewTrends(@Param("portfolioId") Long portfolioId, @Param("startDate") LocalDateTime startDate);
     
     // ← HELPER: Get weekly views (last 7 days)
     default long getWeeklyViews(Long portfolioId) {
