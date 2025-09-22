@@ -1,89 +1,82 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import "../styles/ViewPortfolio.css";
+import { useState, useEffect } from "react"
+import { useParams, useNavigate, Link } from "react-router-dom"
+import axios from "axios"
+import {
+  Card,
+  CardBody,
+  Typography,
+  Button,
+  Avatar,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  Chip,
+  Spinner,
+} from "@material-tailwind/react"
 
 const ViewPortfolio = () => {
-  const { graduateId } = useParams();
-  const [portfolio, setPortfolio] = useState(null);
-  const [graduate, setGraduate] = useState(null);
-  const [certificates, setCertificates] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [selectedCertificate, setSelectedCertificate] = useState(null);
-  const [token, setToken] = useState(null);
-  const [shareToken, setShareToken] = useState(null); // ← NEW: Store share token
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [isPublicView, setIsPublicView] = useState(false);
-  const [isGraduateView, setIsGraduateView] = useState(false);
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
-  const navigate = useNavigate();
-  const [selectedProjectImage, setSelectedProjectImage] = useState(null);
+  const { graduateId } = useParams()
+  const [portfolio, setPortfolio] = useState(null)
+  const [graduate, setGraduate] = useState(null)
+  const [certificates, setCertificates] = useState([])
+  const [projects, setProjects] = useState([])
+  const [selectedCertificate, setSelectedCertificate] = useState(null)
+  const [token, setToken] = useState(null)
+  const [shareToken, setShareToken] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [isPublicView, setIsPublicView] = useState(false)
+  const [isGraduateView, setIsGraduateView] = useState(false)
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080"
+  const navigate = useNavigate()
+  const [selectedProjectImage, setSelectedProjectImage] = useState(null)
 
-  // ← NEW: Get share token from URL params
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlShareToken = urlParams.get('share');
+  const urlParams = new URLSearchParams(window.location.search)
+  const urlShareToken = urlParams.get("share")
 
-  // Helper function to get the shareable URL
   const getShareableUrl = () => {
-    const baseUrl = import.meta.env.PROD ? window.location.origin : `http://localhost:3000`;
-    const currentToken = shareToken || localStorage.getItem(`portfolio_${graduateId}_shareToken`);
-    
+    const baseUrl = import.meta.env.PROD ? window.location.origin : `http://localhost:3000`
+    const currentToken = shareToken || localStorage.getItem(`portfolio_${graduateId}_shareToken`)
     if (currentToken) {
-      return `${baseUrl}/portfolio/${graduateId}?share=${currentToken}`;
+      return `${baseUrl}/portfolio/${graduateId}?share=${currentToken}`
     }
-    return `${baseUrl}/portfolio/${graduateId}`;
-  };
+    return `${baseUrl}/portfolio/${graduateId}`
+  }
 
-  // ← NEW: Get share token for this portfolio (authenticated users only)
   const fetchShareToken = async (authToken) => {
     try {
-      console.log("Fetching share token for graduate ID:", graduateId);
-      const response = await axios.get(
-        `${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio/share-token`,
-        {
-          withCredentials: true,
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      );
-      
-      const tokenData = response.data;
-      setShareToken(tokenData.shareToken);
-      localStorage.setItem(`portfolio_${graduateId}_shareToken`, tokenData.shareToken);
-      console.log("Share token retrieved:", tokenData.shareToken.substring(0, 8) + "...");
-      
-      return tokenData;
+      console.log("Fetching share token for graduate ID:", graduateId)
+      const response = await axios.get(`${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio/share-token`, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${authToken}` },
+      })
+      const tokenData = response.data
+      setShareToken(tokenData.shareToken)
+      localStorage.setItem(`portfolio_${graduateId}_shareToken`, tokenData.shareToken)
+      console.log("Share token retrieved:", tokenData.shareToken.substring(0, 8) + "...")
+      return tokenData
     } catch (err) {
-      console.error("Failed to fetch share token:", err);
-      return null;
+      console.error("Failed to fetch share token:", err)
+      return null
     }
-  };
+  }
 
-  // Function to normalize portfolio data to match PortfolioCreation fields
-    const normalizePortfolioData = (data) => {
-    console.log("Normalizing portfolio data structure:", Object.keys(data));
-    
-    // ← EXTRACT: Get the actual portfolio data (it's nested under "portfolio")
-    const portfolioData = data.portfolio || data;
-    
-    // ← EXTRACT: Get graduate data (could be nested or direct)
-    const graduateData = data.graduate || portfolioData.graduate || {};
-    
-    // ← EXTRACT: Get certificates (could be nested or direct)
-    const certificatesData = data.certificates || portfolioData.certificates || [];
-    
-    // ← EXTRACT: Get projects (could be nested or direct)
-    const projectsData = data.projects || portfolioData.projects || [];
-    
+  const normalizePortfolioData = (data) => {
+    console.log("Normalizing portfolio data structure:", Object.keys(data))
+    const portfolioData = data.portfolio || data
+    const graduateData = data.graduate || portfolioData.graduate || {}
+    const certificatesData = data.certificates || portfolioData.certificates || []
+    const projectsData = data.projects || portfolioData.projects || []
+
     console.log("Extracted data:", {
       portfolioKeys: Object.keys(portfolioData),
       graduateKeys: Object.keys(graduateData),
       certificateCount: certificatesData.length,
-      projectCount: projectsData.length
-    });
-    
+      projectCount: projectsData.length,
+    })
+
     const normalized = {
       id: portfolioData.id,
       graduateId: portfolioData.graduateId || graduateData.id,
@@ -99,15 +92,13 @@ const ViewPortfolio = () => {
       scholarshipType: portfolioData.scholarshipType || "",
       trainingDuration: portfolioData.trainingDuration || "",
       tesdaRegistrationNumber: portfolioData.tesdaRegistrationNumber || "",
-      email: portfolioData.email || "", // Keep for now, hide in public view if needed
+      email: portfolioData.email || "",
       phone: portfolioData.phone || "",
       website: portfolioData.website || "",
       portfolioCategory: portfolioData.portfolioCategory || "",
       preferredWorkLocation: portfolioData.preferredWorkLocation || "",
       workScheduleAvailability: portfolioData.workScheduleAvailability || "",
       salaryExpectations: portfolioData.salaryExpectations || "",
-      
-      // Skills (from portfolio)
       skills: portfolioData.skills
         ? portfolioData.skills.map((skill) => ({
             id: skill.id,
@@ -116,8 +107,6 @@ const ViewPortfolio = () => {
             proficiencyLevel: skill.proficiencyLevel || "",
           }))
         : [],
-      
-      // Experiences (from portfolio)
       experiences: portfolioData.experiences
         ? portfolioData.experiences.map((exp) => ({
             id: exp.id,
@@ -127,20 +116,9 @@ const ViewPortfolio = () => {
             responsibilities: exp.description || "",
           }))
         : [],
-      
-      // Projects (use the extracted projects array)
-      projects: projectsData.length > 0 
-        ? projectsData.map((project) => ({
-            id: project.id,
-            title: project.title || "Unnamed Project",
-            description: project.description || "",
-            imageUrls: project.imageUrls || "",
-            startDate: project.startDate || "",
-            endDate: project.endDate || "",
-            projectImageFilePath: project.projectImageFilePath || "",
-          }))
-        : portfolioData.projects
-          ? portfolioData.projects.map((project) => ({
+      projects:
+        projectsData.length > 0
+          ? projectsData.map((project) => ({
               id: project.id,
               title: project.title || "Unnamed Project",
               description: project.description || "",
@@ -149,9 +127,17 @@ const ViewPortfolio = () => {
               endDate: project.endDate || "",
               projectImageFilePath: project.projectImageFilePath || "",
             }))
-          : [],
-      
-      // Awards
+          : portfolioData.projects
+            ? portfolioData.projects.map((project) => ({
+                id: project.id,
+                title: project.title || "Unnamed Project",
+                description: project.description || "",
+                imageUrls: project.imageUrls || "",
+                startDate: project.startDate || "",
+                endDate: project.endDate || "",
+                projectImageFilePath: project.projectImageFilePath || "",
+              }))
+            : [],
       awardsRecognitions: portfolioData.awardsRecognitions
         ? portfolioData.awardsRecognitions.map((award) => ({
             id: award.id,
@@ -160,8 +146,6 @@ const ViewPortfolio = () => {
             dateReceived: award.dateReceived || "",
           }))
         : [],
-      
-      // Continuing Education
       continuingEducations: portfolioData.continuingEducations
         ? portfolioData.continuingEducations.map((edu) => ({
             id: edu.id,
@@ -170,8 +154,6 @@ const ViewPortfolio = () => {
             completionDate: edu.completionDate || "",
           }))
         : [],
-      
-      // Professional Memberships
       professionalMemberships: portfolioData.professionalMemberships
         ? portfolioData.professionalMemberships.map((mem) => ({
             id: mem.id,
@@ -180,8 +162,6 @@ const ViewPortfolio = () => {
             startDate: mem.startDate || "",
           }))
         : [],
-      
-      // References
       references: portfolioData.references
         ? portfolioData.references.map((ref) => ({
             id: ref.id,
@@ -192,120 +172,99 @@ const ViewPortfolio = () => {
             email: ref.email || "",
           }))
         : [],
-    };
-    
+    }
+
     console.log("✅ Normalized portfolio data:", {
       fullName: normalized.fullName,
       hasProjects: normalized.projects.length > 0,
       hasSkills: normalized.skills.length > 0,
-      hasExperiences: normalized.experiences.length > 0
-    });
-    
-    return normalized;
-  };
-  // Check if user is authenticated graduate
+      hasExperiences: normalized.experiences.length > 0,
+    })
+
+    return normalized
+  }
+
   const checkAuthStatus = async () => {
     try {
       const tokenResponse = await axios.get(`${BACKEND_URL}/api/graduate/get-token`, {
         withCredentials: true,
-      });
-      const fetchedToken = tokenResponse.data.token;
+      })
+      const fetchedToken = tokenResponse.data.token
       if (fetchedToken) {
-        setToken(fetchedToken);
-        return true;
+        setToken(fetchedToken)
+        return true
       }
-      return false;
+      return false
     } catch (err) {
-      console.log("User not authenticated");
-      return false;
+      console.log("User not authenticated")
+      return false
     }
-  };
+  }
 
-  // Fetch token, portfolio, graduate, certificates, and projects for authenticated users
   const fetchAuthenticatedData = async () => {
     try {
-      console.log("Fetching JWT token for graduate ID:", graduateId);
+      console.log("Fetching JWT token for graduate ID:", graduateId)
       const tokenResponse = await axios.get(`${BACKEND_URL}/api/graduate/get-token`, {
         withCredentials: true,
-      });
-      const fetchedToken = tokenResponse.data.token;
-      console.log("Token response:", tokenResponse.data);
+      })
+      const fetchedToken = tokenResponse.data.token
+      console.log("Token response:", tokenResponse.data)
       if (!fetchedToken) {
-        throw new Error("No token returned from /api/graduate/get-token");
+        throw new Error("No token returned from /api/graduate/get-token")
       }
-      setToken(fetchedToken);
+      setToken(fetchedToken)
 
-      // ← NEW: Fetch share token first
-      await fetchShareToken(fetchedToken);
+      await fetchShareToken(fetchedToken)
 
-      // Fetch portfolio
-      console.log("Fetching portfolio for graduate ID:", graduateId);
-      const portfolioResponse = await axios.get(
-        `${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio`,
-        {
-          withCredentials: true,
-          headers: { Authorization: `Bearer ${fetchedToken}` },
-        }
-      );
-      console.log("Portfolio response:", portfolioResponse.data);
-      const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data);
-      setPortfolio(normalizedPortfolio);
-      setIsGraduateView(true);
-      setIsPublicView(false);
+      console.log("Fetching portfolio for graduate ID:", graduateId)
+      const portfolioResponse = await axios.get(`${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio`, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${fetchedToken}` },
+      })
+      console.log("Portfolio response:", portfolioResponse.data)
+      const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data)
+      setPortfolio(normalizedPortfolio)
+      setIsGraduateView(true)
+      setIsPublicView(false)
 
-      // Fetch graduate data
-      console.log("Fetching graduate data for ID:", graduateId);
+      console.log("Fetching graduate data for ID:", graduateId)
       const graduateResponse = await axios.get(`${BACKEND_URL}/api/graduate/${graduateId}`, {
         withCredentials: true,
         headers: { Authorization: `Bearer ${fetchedToken}` },
         params: { includePortfolio: false },
-      });
-      console.log("Graduate response:", graduateResponse.data);
-      setGraduate(graduateResponse.data);
+      })
+      console.log("Graduate response:", graduateResponse.data)
+      setGraduate(graduateResponse.data)
 
-      // Fetch certificates
-      console.log("Fetching certificates for graduate ID:", graduateId);
-      const certificatesResponse = await axios.get(
-        `${BACKEND_URL}/api/certificate/graduate/${graduateId}`,
-        {
+      console.log("Fetching certificates for graduate ID:", graduateId)
+      const certificatesResponse = await axios.get(`${BACKEND_URL}/api/certificate/graduate/${graduateId}`, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${fetchedToken}` },
+      })
+      console.log("Certificates response:", certificatesResponse.data)
+      setCertificates(certificatesResponse.data)
+
+      console.log("Fetching projects for portfolio ID:", normalizedPortfolio.id)
+      if (normalizedPortfolio.id) {
+        const projectsResponse = await axios.get(`${BACKEND_URL}/api/project/portfolio/${normalizedPortfolio.id}`, {
           withCredentials: true,
           headers: { Authorization: `Bearer ${fetchedToken}` },
-        }
-      );
-      console.log("Certificates response:", certificatesResponse.data);
-      setCertificates(certificatesResponse.data);
-
-      // Fetch projects
-      console.log("Fetching projects for portfolio ID:", normalizedPortfolio.id);
-      if (normalizedPortfolio.id) {
-        const projectsResponse = await axios.get(
-          `${BACKEND_URL}/api/project/portfolio/${normalizedPortfolio.id}`,
-          {
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${fetchedToken}` },
-          }
-        );
-        console.log("Projects response:", projectsResponse.data);
-        setProjects(projectsResponse.data);
+        })
+        console.log("Projects response:", projectsResponse.data)
+        setProjects(projectsResponse.data)
       }
     } catch (err) {
-      console.error("Failed to fetch authenticated data:", err);
-      // If unauthorized, try public view with URL token
+      console.error("Failed to fetch authenticated data:", err)
       if (err.response?.status === 401 && urlShareToken) {
-        console.log("Unauthorized, trying public view with share token...");
-        fetchPublicDataWithToken();
+        console.log("Unauthorized, trying public view with share token...")
+        fetchPublicDataWithToken()
       } else {
-        setError(
-          err.response?.data?.message ||
-            err.response?.data?.error ||
-            err.message ||
-            "Failed to load portfolio"
-        );
+        setError(err.response?.data?.message || err.response?.data?.error || err.message || "Failed to load portfolio")
       }
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   // ← NEW: Fetch public portfolio with share token from URL
   const fetchPublicDataWithToken = async () => {
@@ -379,109 +338,100 @@ const ViewPortfolio = () => {
   }
 };
 
-  // ← HELPER: Better error messages
   const getErrorMessage = (err) => {
-    const status = err.response?.status;
+    const status = err.response?.status
     switch (status) {
-      case 400: return "❌ Invalid share link. Please ask the portfolio owner for a new link.";
-      case 401: return "🔐 Please sign in to view this portfolio.";
-      case 404: return "❌ Portfolio not found. This share link may have expired.";
-      default: return err.response?.data?.message || "Failed to load portfolio.";
+      case 400:
+        return "❌ Invalid share link. Please ask the portfolio owner for a new link."
+      case 401:
+        return "🔐 Please sign in to view your portfolio."
+      case 404:
+        return "❌ Portfolio not found. This share link may have expired."
+      default:
+        return err.response?.data?.message || "Failed to load portfolio."
     }
-  };
+  }
 
-  // ← UPDATED: Simple public data fetch (no token - for backward compatibility)
   const fetchPublicData = async () => {
-    // If we have a URL token, use the secure method
     if (urlShareToken) {
-      return fetchPublicDataWithToken();
+      return fetchPublicDataWithToken()
     }
-    
-    // Fallback to old method (no token required - less secure)
+
     try {
-      console.log("Fetching public portfolio for graduate ID:", graduateId, "(no token - legacy access)");
+      console.log("Fetching public portfolio for graduate ID:", graduateId, "(no token - legacy access)")
       const portfolioResponse = await axios.get(
         `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio`,
-        { withCredentials: false }
-      );
-      
-      console.log("Public portfolio response:", portfolioResponse.data);
-      const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data);
-      setPortfolio(normalizedPortfolio);
-      setIsPublicView(true);
-      setIsGraduateView(false);
-      setIsLoading(false);
+        { withCredentials: false },
+      )
+
+      console.log("Public portfolio response:", portfolioResponse.data)
+      const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data)
+      setPortfolio(normalizedPortfolio)
+      setIsPublicView(true)
+      setIsGraduateView(false)
+      setIsLoading(false)
     } catch (err) {
-      console.error("Failed to fetch public data:", err);
+      console.error("Failed to fetch public data:", err)
       setError(
         err.response?.data?.message ||
           err.response?.data?.error ||
           err.message ||
-          "Public portfolio not found or not accessible"
-      );
-      setIsLoading(false);
+          "Public portfolio not found or not accessible",
+      )
+      setIsLoading(false)
     }
-  };
+  }
 
-  // Fetch initial data
   useEffect(() => {
     const initializeData = async () => {
-      setIsLoading(true);
-      const isAuthenticated = await checkAuthStatus();
-      
+      setIsLoading(true)
+      const isAuthenticated = await checkAuthStatus()
       if (isAuthenticated) {
-        await fetchAuthenticatedData();
+        await fetchAuthenticatedData()
       } else {
-        // Try public view (with or without token)
-        await fetchPublicData();
+        await fetchPublicData()
       }
-    };
+    }
+    initializeData()
+  }, [graduateId])
 
-    initializeData();
-  }, [graduateId]);
-
-  // ← NEW: Generate new share token (for graduate view only)
   const generateNewShareToken = async () => {
-    if (!window.confirm(
-      "This will create a NEW share link and INVALIDATE ALL EXISTING LINKS!\n\n" +
-      "Anyone with old links will see 'Portfolio not found' errors.\n\n" +
-      "Are you sure you want to continue?"
-    )) {
-      return;
+    if (
+      !window.confirm(
+        "This will create a NEW share link and INVALIDATE ALL EXISTING LINKS!\n\n" +
+          "Anyone with old links will see 'Portfolio not found' errors.\n\n" +
+          "Are you sure you want to continue?",
+      )
+    ) {
+      return
     }
 
     try {
-      console.log("Generating new share token for graduate ID:", graduateId);
+      console.log("Generating new share token for graduate ID:", graduateId)
       const response = await axios.post(
         `${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio/regenerate-token`,
         {},
         {
           withCredentials: true,
           headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      
-      const newTokenData = response.data;
-      setShareToken(newTokenData.shareToken);
-      localStorage.setItem(`portfolio_${graduateId}_shareToken`, newTokenData.shareToken);
-      
+        },
+      )
+
+      const newTokenData = response.data
+      setShareToken(newTokenData.shareToken)
+      localStorage.setItem(`portfolio_${graduateId}_shareToken`, newTokenData.shareToken)
+
       alert(
         `✅ New share link created successfully!\n\n` +
-        `📋 ${newTokenData.shareUrl}\n\n` +
-        `⚠️ All previous share links are now invalid.`
-      );
-      
+          `📋 ${newTokenData.shareUrl}\n\n` +
+          `⚠️ All previous share links are now invalid.`,
+      )
     } catch (err) {
-      console.error("Failed to generate new share token:", err);
-      alert(
-        "❌ Failed to generate new share link.\n\n" +
-        "Please try again or contact support."
-      );
+      console.error("Failed to generate new share token:", err)
+      alert("❌ Failed to generate new share link.\n\nPlease try again or contact support.")
     }
-  };
+  }
 
-  
-  // Debug portfolio state before rendering
   useEffect(() => {
     if (portfolio) {
       console.log("Portfolio state at render:", {
@@ -514,716 +464,890 @@ const ViewPortfolio = () => {
         isGraduateView,
         hasShareToken: !!shareToken,
         urlHasToken: !!urlShareToken,
-      });
+      })
     }
-  }, [portfolio, isPublicView, isGraduateView, shareToken, urlShareToken]);
+  }, [portfolio, isPublicView, isGraduateView, shareToken, urlShareToken])
 
   const handleCertificateClick = (certificate) => {
-    setSelectedCertificate(selectedCertificate?.id === certificate.id ? null : certificate);
-  };
+    setSelectedCertificate(selectedCertificate?.id === certificate.id ? null : certificate)
+  }
 
-  // ← UPDATED: Copy secure share link
   const copyToClipboard = () => {
-    const shareableUrl = getShareableUrl();
-    const displayUrl = shareableUrl.includes('?share=') 
+    const shareableUrl = getShareableUrl()
+    const displayUrl = shareableUrl.includes("?share=")
       ? `${window.location.origin}/portfolio/${graduateId}?share=${shareToken?.substring(0, 8)}...`
-      : shareableUrl;
-    
-    navigator.clipboard.writeText(shareableUrl).then(() => {
-      alert(
-        `✅ Secure share link copied!\n\n` +
-        `📋 ${displayUrl}\n\n` +
-        `🔒 Only people with this exact link can view your portfolio.\n` +
-        `💡 Links remain valid until you generate a new one.`
-      );
-    }).catch((err) => {
-      console.error("Failed to copy:", err);
-      alert("Failed to copy link. Please try again.");
-    });
-  };
+      : shareableUrl
 
-  // ← UPDATED: Share to LinkedIn with secure token
+    navigator.clipboard
+      .writeText(shareableUrl)
+      .then(() => {
+        alert(
+          `✅ Secure share link copied!\n\n` +
+            `📋 ${displayUrl}\n\n` +
+            `🔒 Only people with this exact link can view your portfolio.\n` +
+            `💡 Links remain valid until you generate a new one.`,
+        )
+      })
+      .catch((err) => {
+        console.error("Failed to copy:", err)
+        alert("Failed to copy link. Please try again.")
+      })
+  }
+
   const shareToLinkedIn = () => {
-    const title = `${portfolio?.fullName || "Portfolio"} - Professional Portfolio`;
-    const summary = portfolio?.professionalSummary || "Check out my professional portfolio showcasing my skills, experiences, and achievements!";
-    const shareableUrl = getShareableUrl();
-    
-    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(summary)}`;
-    window.open(linkedInUrl, "_blank");
-  };
+    const title = `${portfolio?.fullName || "Portfolio"} - Professional Portfolio`
+    const summary =
+      portfolio?.professionalSummary ||
+      "Check out my professional portfolio showcasing my skills, experiences, and achievements!"
+    const shareableUrl = getShareableUrl()
 
-  // ← UPDATED: Share to Facebook with secure token
+    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+      shareableUrl,
+    )}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(summary)}`
+    window.open(linkedInUrl, "_blank")
+  }
+
   const shareToFacebook = () => {
-    const title = `${portfolio?.fullName || "Portfolio"} - Professional Portfolio`;
-    const summary = portfolio?.professionalSummary || "Check out my professional portfolio showcasing my skills, experiences, and achievements!";
-    const shareableUrl = getShareableUrl();
-    
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}&quote=${encodeURIComponent(summary)}&title=${encodeURIComponent(title)}`;
-    window.open(facebookUrl, "_blank");
-  };
+    const title = `${portfolio?.fullName || "Portfolio"} - Professional Portfolio`
+    const summary =
+      portfolio?.professionalSummary ||
+      "Check out my professional portfolio showcasing my skills, experiences, and achievements!"
+    const shareableUrl = getShareableUrl()
 
-  // ← NEW: Manual token regeneration
-  const handleRegenerateToken = generateNewShareToken; // Already defined above
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+      shareableUrl,
+    )}&quote=${encodeURIComponent(summary)}&title=${encodeURIComponent(title)}`
+    window.open(facebookUrl, "_blank")
+  }
+
+  const handleRegenerateToken = generateNewShareToken
 
   const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this portfolio? This action cannot be undone.")) {
       try {
-        console.log("Deleting portfolio for graduate ID:", graduateId);
+        console.log("Deleting portfolio for graduate ID:", graduateId)
         await axios.delete(`${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio`, {
           withCredentials: true,
           headers: { Authorization: `Bearer ${token}` },
-        });
-        console.log("Portfolio deleted successfully");
-        alert("Portfolio deleted successfully.");
-        navigate("/graduate-homepage");
+        })
+        console.log("Portfolio deleted successfully")
+        alert("Portfolio deleted successfully.")
+        navigate("/graduate-homepage")
       } catch (err) {
-        console.error("Failed to delete portfolio:", err);
-        setError(
-          err.response?.data?.message ||
-            err.response?.data?.error ||
-            "Failed to delete portfolio"
-        );
+        console.error("Failed to delete portfolio:", err)
+        setError(err.response?.data?.message || err.response?.data?.error || "Failed to delete portfolio")
       }
     }
-  };
+  }
 
   if (isLoading) {
-    console.log("Rendering: isLoading");
-    return <div className="view-portfolio-loading">Loading...</div>;
-  }
-  if (error) {
-    console.log("Rendering: error", error);
     return (
-      <div className="view-portfolio-error" style={{ 
-        textAlign: 'center', 
-        padding: '40px', 
-        background: '#f8d7da', 
-        borderRadius: '8px', 
-        margin: '20px',
-        color: '#721c24'
-      }}>
-        <h3>❌ Access Error</h3>
-        <p>{error}</p>
-        {error.includes('share link') && (
-          <p style={{ marginTop: '10px' }}>
-            <Link to="/signin" style={{ color: '#721c24', textDecoration: 'underline' }}>
-              🔐 Sign in to view your portfolio
-            </Link>
-          </p>
-        )}
+      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <Spinner className="h-12 w-12 mx-auto mb-4" />
+          <Typography variant="h6" color="blue-gray">
+            Loading Portfolio...
+          </Typography>
+        </div>
       </div>
-    );
-  }
-  if (!portfolio) {
-    console.log("Rendering: no portfolio");
-    return (
-      <div className="view-portfolio-no-data" style={{ 
-        textAlign: 'center', 
-        padding: '40px', 
-        background: '#fff3cd', 
-        borderRadius: '8px', 
-        margin: '20px',
-        color: '#856404'
-      }}>
-        <h3>📂 Portfolio Not Found</h3>
-        <p>The portfolio you're looking for doesn't exist or isn't accessible.</p>
-        <Link to="/" style={{ color: '#856404', textDecoration: 'underline' }}>
-          ← Return to Homepage
-        </Link>
-      </div>
-    );
+    )
   }
 
-  console.log("Rendering: portfolio data", {
-    fullName: portfolio.fullName,
-    professionalSummary: portfolio.professionalSummary,
-    professionalTitle: portfolio.professionalTitle,
-    primaryCourseType: portfolio.primaryCourseType,
-    scholarScheme: portfolio.scholarScheme,
-    designTemplate: portfolio.designTemplate,
-    ncLevel: portfolio.ncLevel,
-    trainingCenter: portfolio.trainingCenter,
-    scholarshipType: portfolio.scholarshipType,
-    trainingDuration: portfolio.trainingDuration,
-    tesdaRegistrationNumber: portfolio.tesdaRegistrationNumber,
-    email: portfolio.email,
-    phone: portfolio.phone,
-    website: portfolio.website,
-    portfolioCategory: portfolio.portfolioCategory,
-    preferredWorkLocation: portfolio.preferredWorkLocation,
-    workScheduleAvailability: portfolio.workScheduleAvailability,
-    salaryExpectations: portfolio.salaryExpectations,
-    skills: portfolio.skills,
-    experiences: portfolio.experiences,
-    projects: portfolio.projects,
-    awardsRecognitions: portfolio.awardsRecognitions,
-    continuingEducations: portfolio.continuingEducations,
-    professionalMemberships: portfolio.professionalMemberships,
-    references: portfolio.references,
-  });
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center p-4">
+        <Card className="max-w-md mx-auto bg-white shadow-xl">
+          <CardBody className="text-center p-8">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Typography variant="h4" color="red">
+                ❌
+              </Typography>
+            </div>
+            <Typography variant="h5" color="red" className="mb-4">
+              Access Error
+            </Typography>
+            <Typography color="gray" className="mb-6">
+              {error}
+            </Typography>
+            {error.includes("share link") && (
+              <Link to="/signin">
+                <Button color="blue" className="w-full">
+                  🔐 Sign in to view your portfolio
+                </Button>
+              </Link>
+            )}
+          </CardBody>
+        </Card>
+      </div>
+    )
+  }
+
+  if (!portfolio) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-100 flex items-center justify-center p-4">
+        <Card className="max-w-md mx-auto bg-white shadow-xl">
+          <CardBody className="text-center p-8">
+            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Typography variant="h4" color="amber">
+                📂
+              </Typography>
+            </div>
+            <Typography variant="h5" color="amber" className="mb-4">
+              Portfolio Not Found
+            </Typography>
+            <Typography color="gray" className="mb-6">
+              The portfolio you're looking for doesn't exist or isn't accessible.
+            </Typography>
+            <Link to="/">
+              <Button color="blue" className="w-full">
+                ← Return to Homepage
+              </Button>
+            </Link>
+          </CardBody>
+        </Card>
+      </div>
+    )
+  }
 
   return (
-    <div className="view-portfolio-page">
-      <div className="view-portfolio-container">
-          {/* ← FIXED: Separate containers for each view */}
-      {isGraduateView ? (
-        // Graduate view - use your existing complex CSS
-        <div className="profile-picture-container">
-          {graduate?.profilePicture && (
-            <img
-              src={graduate.profilePicture}
-              alt="Graduate Profile"
-              className="profile-picture"
-            />
-          )}
-        </div>
-      ) : (
-        // Public view - simple, reliable styling
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginBottom: '20px',
-          padding: '2rem'
-        }}>
-          {(graduate?.profilePicture || portfolio?.avatar) && (
-            <img
-              src={graduate?.profilePicture || portfolio?.avatar}
-              alt={`${portfolio.fullName || 'Profile'} Picture`}
-              style={{
-                width: '120px',
-                height: '120px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '4px solid #e9ecef',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                display: 'block'
-              }}
-            />
-          )}
-        </div>
-      )}
+    <div className="min-h-screen bg-white">
+      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white relative overflow-hidden">
+        {/* Background pattern */}
+        <div className="absolute inset-0 bg-white/5 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px] animate-pulse"></div>
 
-        <h1>{portfolio.fullName || "Unnamed Portfolio"}</h1>
-        
-        {/* ← NEW: Access Type Indicator */}
-        <div className="access-indicator" style={{ 
-          textAlign: 'center', 
-          marginBottom: '20px',
-          padding: '8px 16px',
-          borderRadius: '20px',
-          fontSize: '14px',
-          fontWeight: '500'
-        }}>
-          {isGraduateView ? (
-            <span style={{ color: '#28a745', background: '#d4edda' }}>
-              👤 Owner View
-            </span>
-          ) : (
-            <span style={{ color: '#007bff', background: '#cce7ff' }}>
-              👁️ Secure Public View
-              {urlShareToken && (
-                <span style={{ marginLeft: '8px', fontSize: '12px', opacity: 0.7 }}>
-                  🔒 (Private Link)
-                </span>
+        <div className="container mx-auto px-6 py-24 relative">
+          <div className="flex items-center justify-between max-w-6xl mx-auto gap-16">
+            {/* Profile Image - Left Side */}
+            {(graduate?.profilePicture || portfolio?.avatar) && (
+              <div className="relative flex-shrink-0 animate-fade-in-up">
+                <div className="absolute inset-0 bg-white/20 blur-xl scale-110 animate-pulse"></div>
+                <div className="absolute inset-0 bg-blue-300/30 blur-2xl scale-125 animate-ping opacity-20"></div>
+                <Avatar
+                  src={graduate?.profilePicture || portfolio?.avatar}
+                  alt={`${portfolio.fullName || "Profile"} Picture`}
+                  size="xxl"
+                  className="relative shadow-2xl w-80 h-80 backdrop-blur-sm hover:scale-105 transition-all duration-500 animate-float rounded-none border-0"
+                />
+              </div>
+            )}
+
+            {/* Text Content - Right Side */}
+            <div className="flex-1 text-left space-y-8">
+              <div className="animate-fade-in-up animation-delay-300">
+                <Typography
+                  variant="h1"
+                  className="mb-6 font-extralight text-5xl md:text-6xl lg:text-7xl tracking-tight animate-typing overflow-hidden whitespace-nowrap border-r-4 border-white/50 break-words"
+                >
+                  {portfolio.fullName || "Professional Portfolio"}
+                </Typography>
+              </div>
+
+              {portfolio.professionalTitle && (
+                <div className="relative animate-fade-in-up animation-delay-600">
+                  <Typography
+                    variant="h3"
+                    className="font-light text-white/90 text-2xl md:text-3xl tracking-wide break-words"
+                  >
+                    {portfolio.professionalTitle}
+                  </Typography>
+                  <div className="w-0 h-0.5 bg-white/40 mt-4 animate-expand-line"></div>
+                </div>
               )}
-            </span>
-          )}
+
+              {portfolio.professionalSummary && (
+                <div className="max-w-3xl mt-10 animate-fade-in-up animation-delay-900">
+                  <Typography
+                    variant="lead"
+                    className="text-white/80 leading-relaxed text-xl md:text-2xl font-light tracking-wide break-words overflow-wrap-anywhere"
+                  >
+                    {portfolio.professionalSummary}
+                  </Typography>
+                </div>
+              )}
+
+              <div className="mt-14 flex justify-start animate-fade-in-up animation-delay-1200">
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-8 py-4 hover:bg-white/20 hover:scale-105 transition-all duration-300 animate-bounce-subtle">
+                  <Chip
+                    value={isGraduateView ? "Owner View" : `Public View ${urlShareToken ? "🔒" : ""}`}
+                    color="blue-gray"
+                    className="bg-transparent text-white border-none font-light text-base"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="portfolio-details">
-          <h2>Basic Information</h2>
-          <p><strong>Full Name:</strong> {portfolio.fullName ? portfolio.fullName : "Not provided"}</p>
-          <p><strong>Professional Title:</strong> {portfolio.professionalTitle ? portfolio.professionalTitle : "Not provided"}</p>
-          <p><strong>Professional Summary:</strong> {portfolio.professionalSummary ? portfolio.professionalSummary : "Not provided"}</p>
-          <p><strong>Primary Course Type:</strong> {portfolio.primaryCourseType ? portfolio.primaryCourseType : "Not provided"}</p>
+        {/* Bottom wave decoration */}
+        <div className="absolute bottom-0 left-0 right-0 animate-wave">
+          <svg viewBox="0 0 1200 120" className="w-full h-12 fill-white">
+            <path d="M0,60 C300,120 900,0 1200,60 L1200,120 L0,120 Z"></path>
+          </svg>
+        </div>
+      </div>
 
-          <h2>TESDA Information</h2>
-          <p><strong>NC Level:</strong> {portfolio.ncLevel ? portfolio.ncLevel : "Not provided"}</p>
-          <p><strong>Training Center:</strong> {portfolio.trainingCenter ? portfolio.trainingCenter : "Not provided"}</p>
-          <p><strong>Scholarship Type:</strong> {portfolio.scholarshipType ? portfolio.scholarshipType : "Not provided"}</p>
-          <p><strong>Training Duration:</strong> {portfolio.trainingDuration ? portfolio.trainingDuration : "Not provided"}</p>
-          <p><strong>TESDA Registration Number:</strong> {portfolio.tesdaRegistrationNumber ? portfolio.tesdaRegistrationNumber : "Not provided"}</p>
+      <style>{`
+        @keyframes fade-in-up {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
 
-          <h2>Contact Information</h2>
-          <p><strong>Email:</strong> {portfolio.email ? portfolio.email : "Not provided"}</p>
-          <p><strong>Phone:</strong> {portfolio.phone ? portfolio.phone : "Not provided"}</p>
-          <p><strong>Website:</strong> {portfolio.website ? portfolio.website : "Not provided"}</p>
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
 
-          <h2>Skills</h2>
-          {portfolio.skills && Array.isArray(portfolio.skills) && portfolio.skills.length > 0 ? (
-            <div className="skill-list">
-              {portfolio.skills.map((skill, index) => (
-                <div key={index} className="skill-item">
-                  <div className="skill-details">
-                    <h5>{skill.name || "Unnamed Skill"}</h5>
-                    <p>Type: {skill.type || "Not specified"}</p>
-                    {skill.proficiencyLevel && <p>Proficiency: {skill.proficiencyLevel}</p>}
+        @keyframes typing {
+          from {
+            width: 0;
+          }
+          to {
+            width: 100%;
+          }
+        }
+
+        @keyframes expand-line {
+          from {
+            width: 0;
+          }
+          to {
+            width: 6rem;
+          }
+        }
+
+        @keyframes bounce-subtle {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-2px);
+          }
+        }
+
+        @keyframes wave {
+          0%, 100% {
+            transform: translateX(0);
+          }
+          50% {
+            transform: translateX(-10px);
+          }
+        }
+
+        .animate-fade-in-up {
+          animation: fade-in-up 0.8s ease-out forwards;
+        }
+
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+
+        .animate-typing {
+          animation: typing 3s steps(40, end) 1s forwards;
+          width: 0;
+        }
+
+        .animate-expand-line {
+          animation: expand-line 1s ease-out 2s forwards;
+        }
+
+        .animate-bounce-subtle {
+          animation: bounce-subtle 2s ease-in-out infinite;
+        }
+
+        .animate-wave {
+          animation: wave 4s ease-in-out infinite;
+        }
+
+        .animation-delay-300 {
+          animation-delay: 0.3s;
+        }
+
+        .animation-delay-600 {
+          animation-delay: 0.6s;
+        }
+
+        .animation-delay-900 {
+          animation-delay: 0.9s;
+        }
+
+        .animation-delay-1200 {
+          animation-delay: 1.2s;
+        }
+      `}</style>
+
+      <div className="container mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+          <div className="lg:col-span-1 space-y-8">
+            {/* Contact Information */}
+            <div className="bg-white border border-gray-100 rounded-lg p-6">
+              <Typography variant="h6" className="font-light text-blue-600 mb-6 text-lg">
+                Contact
+              </Typography>
+              <div className="space-y-4">
+                {portfolio.email && (
+                  <div>
+                    <Typography variant="small" color="gray" className="font-medium mb-1">
+                      Email
+                    </Typography>
+                    <Typography variant="small" className="text-gray-800 break-all">
+                      {portfolio.email}
+                    </Typography>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p>No skills provided.</p>
-          )}
-
-          <h2>Experiences</h2>
-          {portfolio.experiences && Array.isArray(portfolio.experiences) && portfolio.experiences.length > 0 ? (
-            <div className="experience-list">
-              {portfolio.experiences.map((exp, index) => (
-                <div key={index} className="experience-item">
-                  <div className="experience-details">
-                    <h5>{exp.jobTitle && exp.company ? `${exp.jobTitle} at ${exp.company}` : "Unnamed Experience"}</h5>
-                    {exp.responsibilities && <p>Responsibilities: {exp.responsibilities}</p>}
-                    {exp.duration && <p>Duration: {exp.duration}</p>}
+                )}
+                {portfolio.phone && (
+                  <div>
+                    <Typography variant="small" color="gray" className="font-medium mb-1">
+                      Phone
+                    </Typography>
+                    <Typography variant="small" className="text-gray-800">
+                      {portfolio.phone}
+                    </Typography>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p>No experiences provided.</p>
-          )}
-
-          <h2>Awards & Recognitions</h2>
-          {portfolio.awardsRecognitions && Array.isArray(portfolio.awardsRecognitions) && portfolio.awardsRecognitions.length > 0 ? (
-            <div className="award-list">
-              {portfolio.awardsRecognitions.map((award, index) => (
-                <div key={index} className="award-item">
-                  <div className="award-details">
-                    <h5>{award.title || "Unnamed Award"}</h5>
-                    {award.issuer && <p>Issuer: {award.issuer}</p>}
-                    {award.dateReceived && <p>Issued: {award.dateReceived}</p>}
+                )}
+                {portfolio.website && (
+                  <div>
+                    <Typography variant="small" color="gray" className="font-medium mb-1">
+                      Website
+                    </Typography>
+                    <Typography variant="small" className="text-gray-800 break-all">
+                      {portfolio.website}
+                    </Typography>
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
             </div>
-          ) : (
-            <p>No awards provided.</p>
-          )}
 
-          <h2>Continuing Education</h2>
-          {portfolio.continuingEducations && Array.isArray(portfolio.continuingEducations) && portfolio.continuingEducations.length > 0 ? (
-            <div className="education-list">
-              {portfolio.continuingEducations.map((edu, index) => (
-                <div key={index} className="education-item">
-                  <div className="education-details">
-                    <h5>{edu.courseName || "Unnamed Course"}</h5>
-                    {edu.institution && <p>Institution: {edu.institution}</p>}
-                    {edu.completionDate && <p>Completed: {edu.completionDate}</p>}
+            {/* Skills */}
+            <div className="bg-white border border-gray-100 rounded-lg p-6">
+              <Typography variant="h6" className="font-light text-blue-600 mb-6 text-lg">
+                Skills
+              </Typography>
+              {portfolio.skills && portfolio.skills.length > 0 ? (
+                <div className="space-y-3">
+                  {portfolio.skills.map((skill, index) => (
+                    <div key={index} className="pb-3 border-b border-gray-50 last:border-b-0">
+                      <Typography variant="small" className="font-medium text-gray-800 mb-1">
+                        {skill.name}
+                      </Typography>
+                      <div className="flex items-center space-x-2">
+                        <Chip size="sm" value={skill.type} color="blue" className="text-xs font-light" />
+                        {skill.proficiencyLevel && (
+                          <Typography variant="small" color="gray" className="text-xs">
+                            {skill.proficiencyLevel}
+                          </Typography>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <Typography variant="small" className="text-gray-500 italic">
+                  No skills added yet
+                </Typography>
+              )}
+            </div>
+
+            {/* TESDA Information */}
+            <div className="bg-white border border-gray-100 rounded-lg p-6">
+              <Typography variant="h6" className="font-light text-blue-600 mb-6 text-lg">
+                TESDA Information
+              </Typography>
+              <div className="space-y-4">
+                {portfolio.ncLevel && (
+                  <div>
+                    <Typography variant="small" color="gray" className="font-medium mb-1">
+                      NC Level
+                    </Typography>
+                    <Typography variant="small" className="text-gray-800">
+                      {portfolio.ncLevel}
+                    </Typography>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p>No continuing education provided.</p>
-          )}
-
-          <h2>Professional Memberships</h2>
-          {portfolio.professionalMemberships && Array.isArray(portfolio.professionalMemberships) && portfolio.professionalMemberships.length > 0 ? (
-            <div className="membership-list">
-              {portfolio.professionalMemberships.map((mem, index) => (
-                <div key={index} className="membership-item">
-                  <div className="membership-details">
-                    <h5>{mem.organization || "Unnamed Organization"}</h5>
-                    {mem.membershipType && <p>Type: {mem.membershipType}</p>}
-                    {mem.startDate && <p>Joined: {mem.startDate}</p>}
+                )}
+                {portfolio.trainingCenter && (
+                  <div>
+                    <Typography variant="small" color="gray" className="font-medium mb-1">
+                      Training Center
+                    </Typography>
+                    <Typography variant="small" className="text-gray-800">
+                      {portfolio.trainingCenter}
+                    </Typography>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p>No professional memberships provided.</p>
-          )}
-
-          <h2>References</h2>
-          {portfolio.references && Array.isArray(portfolio.references) && portfolio.references.length > 0 ? (
-            <div className="reference-list">
-              {portfolio.references.map((ref, index) => (
-                <div key={index} className="reference-item">
-                  <div className="reference-details">
-                    <h5>{ref.name || "Unnamed Reference"}</h5>
-                    {ref.position && <p>Position: {ref.position}</p>}
-                    {ref.company && <p>Company: {ref.company}</p>}
-                    {ref.email && <p>Email: {ref.email}</p>}
-                    {ref.contact && <p>Contact: {ref.contact}</p>}
+                )}
+                {portfolio.scholarshipType && (
+                  <div>
+                    <Typography variant="small" color="gray" className="font-medium mb-1">
+                      Scholarship Type
+                    </Typography>
+                    <Typography variant="small" className="text-gray-800">
+                      {portfolio.scholarshipType}
+                    </Typography>
                   </div>
-                </div>
-              ))}
+                )}
+                {portfolio.trainingDuration && (
+                  <div>
+                    <Typography variant="small" color="gray" className="font-medium mb-1">
+                      Training Duration
+                    </Typography>
+                    <Typography variant="small" className="text-gray-800">
+                      {portfolio.trainingDuration}
+                    </Typography>
+                  </div>
+                )}
+                {portfolio.tesdaRegistrationNumber && (
+                  <div>
+                    <Typography variant="small" color="gray" className="font-medium mb-1">
+                      Registration Number
+                    </Typography>
+                    <Typography variant="small" className="text-gray-800">
+                      {portfolio.tesdaRegistrationNumber}
+                    </Typography>
+                  </div>
+                )}
+              </div>
             </div>
-          ) : (
-            <p>No references provided.</p>
-          )}
+          </div>
 
-          <h2>Certificates</h2>
-          {certificates && Array.isArray(certificates) && certificates.length > 0 ? (
-            <div className="certificate-list">
-              {certificates.map((certificate) => (
-                <div key={certificate.id} className="certificate-item">
-                  <div className="certificate-details">
-                    {certificate.certificateFilePath && (
-                      <img
-                        src={certificate.certificateFilePath}
-                        alt={certificate.courseName || "Certificate"}
-                        className="certificate-preview"
-                      />
-                    )}
-                    <div>
-                      <h5>
-                        <button
-                          onClick={() => handleCertificateClick(certificate)}
-                          className="certificate-link"
+          <div className="lg:col-span-3 space-y-12">
+            {/* Experience */}
+            <div>
+              <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
+                Experience
+              </Typography>
+              {portfolio.experiences && portfolio.experiences.length > 0 ? (
+                <div className="space-y-8">
+                  {portfolio.experiences.map((exp, index) => (
+                    <div key={index} className="border-l-2 border-blue-100 pl-8 pb-8">
+                      <Typography variant="h6" className="font-medium text-gray-800 mb-2 break-words">
+                        {exp.jobTitle}
+                      </Typography>
+                      {exp.company && (
+                        <Typography variant="small" color="blue" className="font-medium mb-2 break-words">
+                          {exp.company}
+                        </Typography>
+                      )}
+                      {exp.duration && (
+                        <Typography variant="small" color="gray" className="mb-4">
+                          {exp.duration}
+                        </Typography>
+                      )}
+                      {exp.responsibilities && (
+                        <Typography
+                          variant="small"
+                          className="text-gray-700 leading-relaxed break-words overflow-wrap-anywhere"
                         >
-                          {certificate.courseName || "Unnamed Certificate"}
-                        </button>
-                      </h5>
-                      <p>Certificate Number: {certificate.certificateNumber || "Not provided"}</p>
-                      <p>Issue Date: {certificate.issueDate || "Not provided"}</p>
-                    </div>
-                  </div>
-                  {selectedCertificate?.id === certificate.id && (
-                    <div className="certificate-preview">
-                      {certificate.certificateFilePath ? (
-                        certificate.certificateFilePath.endsWith(".pdf") ? (
-                          <iframe
-                            src={`${certificate.certificateFilePath}#toolbar=0`}
-                            title={certificate.courseName || "Certificate"}
-                          />
-                        ) : (
-                          <img
-                            src={certificate.certificateFilePath}
-                            alt={certificate.courseName || "Certificate"}
-                          />
-                        )
-                      ) : (
-                        <p>No certificate file available.</p>
+                          {exp.responsibilities}
+                        </Typography>
                       )}
                     </div>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p>No certificates available.</p>
-          )}
-
-          {/* Projects Section */}
-          <h2>Projects</h2>
-          {projects && Array.isArray(projects) && projects.length > 0 ? (
-            <div className="project-list">
-              {projects.map((project) => (
-                <div key={project.id} className="project-item">
-                  <div className="project-details">
-                    {project.projectImageFilePath && (
-                      <img
-                        src={project.projectImageFilePath}
-                        alt={project.title || "Project"}
-                        className="project-preview"
-                        onClick={() => setSelectedProjectImage(project.projectImageFilePath)}
-                      />
-                    )}
-                    <div className="project-title">
-                      <h5>{project.title || "Unnamed Project"}</h5>
-                      {project.startDate && project.endDate && (
-                        <p>
-                          <strong>Timeline:</strong> {new Date(project.startDate).toLocaleDateString()} -{" "}
-                          {new Date(project.endDate).toLocaleDateString()}
-                        </p>
-                      )}
-                      {project.imageUrls && (
-                        <p>
-                          <strong>Additional Images:</strong> {project.imageUrls}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p>No projects available.</p>
-          )}
-        </div>
-
-        {/* ← NEW: Enhanced Action Buttons for Graduate View */}
-        {isGraduateView && (
-          <div className="graduate-actions">
-            {/* ← NEW: Share Section with Two Options */}
-            <div className="share-section" style={{ 
-              background: '#f8f9fa', 
-              padding: '20px', 
-              borderRadius: '8px', 
-              marginBottom: '20px',
-              borderLeft: '4px solid #007bff'
-            }}>
-              <h3 style={{ marginTop: 0, color: '#495057' }}>🔗 Share Your Portfolio</h3>
-              
-              <div className="share-buttons" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
-                <button 
-                  onClick={copyToClipboard} 
-                  className="share-button primary"
-                  style={{ 
-                    background: '#007bff', 
-                    color: 'white', 
-                    border: 'none', 
-                    padding: '10px 16px', 
-                    borderRadius: '6px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  📋 Copy Secure Share Link
-                </button>
-                
-                <button 
-                  onClick={shareToLinkedIn} 
-                  className="share-button"
-                  style={{ 
-                    background: '#0077b5', 
-                    color: 'white', 
-                    border: 'none', 
-                    padding: '10px 16px', 
-                    borderRadius: '6px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  💼 Share to LinkedIn
-                </button>
-                
-                <button 
-                  onClick={shareToFacebook} 
-                  className="share-button"
-                  style={{ 
-                    background: '#1877f2', 
-                    color: 'white', 
-                    border: 'none', 
-                    padding: '10px 16px', 
-                    borderRadius: '6px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  📘 Share to Facebook
-                </button>
-              </div>
-
-              {/* ← NEW: Token Management */}
-              {shareToken && (
-                <div className="token-info" style={{ 
-                  background: '#e7f3ff', 
-                  padding: '12px', 
-                  borderRadius: '6px', 
-                  marginTop: '10px',
-                  fontSize: '14px'
-                }}>
-                  <p style={{ margin: 0, color: '#0c5460' }}>
-                    <strong>🔒 Your Secure Token:</strong> {shareToken.substring(0, 8)}...{shareToken.slice(-4)}
-                  </p>
-                  <p style={{ 
-                    margin: '5px 0 0 0', 
-                    fontSize: '12px', 
-                    color: '#6c757d',
-                    fontStyle: 'italic'
-                  }}>
-                    Links using this token will work until you generate a new one.
-                  </p>
+              ) : (
+                <div className="bg-white border border-gray-100 rounded-lg p-6">
+                  <Typography variant="small" className="text-gray-500 italic">
+                    No experience added yet
+                  </Typography>
                 </div>
               )}
+            </div>
 
-              {/* ← NEW: Generate New Token Button */}
-              <div style={{ marginTop: '15px' }}>
-                <button 
-                  onClick={handleRegenerateToken}
-                  className="regenerate-button"
-                  style={{ 
-                    background: '#dc3545', 
-                    color: 'white', 
-                    border: 'none', 
-                    padding: '8px 16px', 
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
-                >
-                  🔄 Generate New Share Link
-                </button>
-                <small style={{ 
-                  display: 'block', 
-                  marginTop: '5px', 
-                  color: '#dc3545', 
-                  fontSize: '12px' 
-                }}>
-                  ⚠️ This will invalidate ALL existing share links
-                </small>
+            {/* Projects */}
+            <div>
+              <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
+                Projects
+              </Typography>
+              {projects && projects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {projects.map((project) => (
+                    <div
+                      key={project.id}
+                      className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300"
+                    >
+                      {project.projectImageFilePath && (
+                        <div className="relative h-48 overflow-hidden">
+                          <img
+                            src={project.projectImageFilePath || "/placeholder.svg"}
+                            alt={project.title || "Project"}
+                            className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                            onClick={() => setSelectedProjectImage(project.projectImageFilePath)}
+                          />
+                        </div>
+                      )}
+                      <div className="p-6">
+                        <Typography variant="h6" className="font-medium mb-3 break-words">
+                          {project.title || "Unnamed Project"}
+                        </Typography>
+                        {project.description && (
+                          <Typography
+                            variant="small"
+                            color="gray"
+                            className="mb-4 leading-relaxed break-words overflow-wrap-anywhere"
+                          >
+                            {project.description}
+                          </Typography>
+                        )}
+                        {project.startDate && project.endDate && (
+                          <Typography variant="small" color="blue" className="font-medium">
+                            {new Date(project.startDate).toLocaleDateString()} -{" "}
+                            {new Date(project.endDate).toLocaleDateString()}
+                          </Typography>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white border border-gray-100 rounded-lg p-6">
+                  <Typography variant="small" className="text-gray-500 italic">
+                    No projects added yet
+                  </Typography>
+                </div>
+              )}
+            </div>
+
+            {/* Certificates */}
+            <div>
+              <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
+                Certificates
+              </Typography>
+              {certificates && certificates.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {certificates.map((certificate) => (
+                    <div
+                      key={certificate.id}
+                      className="bg-white border border-gray-100 rounded-lg p-6 cursor-pointer hover:shadow-md transition-shadow duration-300"
+                      onClick={() => handleCertificateClick(certificate)}
+                    >
+                      <div className="flex items-start space-x-4">
+                        {certificate.certificateFilePath && (
+                          <img
+                            src={certificate.certificateFilePath || "/placeholder.svg"}
+                            alt={certificate.courseName || "Certificate"}
+                            className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <Typography variant="h6" className="font-medium mb-2">
+                            {certificate.courseName || "Certificate"}
+                          </Typography>
+                          <Typography variant="small" color="gray" className="mb-1">
+                            {certificate.certificateNumber || "N/A"}
+                          </Typography>
+                          <Typography variant="small" color="blue">
+                            {certificate.issueDate || "N/A"}
+                          </Typography>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white border border-gray-100 rounded-lg p-6">
+                  <Typography variant="small" className="text-gray-500 italic">
+                    No certificates added yet
+                  </Typography>
+                </div>
+              )}
+            </div>
+
+            {/* Awards & Recognition */}
+            <div>
+              <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
+                Awards & Recognition
+              </Typography>
+              {portfolio.awardsRecognitions && portfolio.awardsRecognitions.length > 0 ? (
+                <div className="space-y-4">
+                  {portfolio.awardsRecognitions.map((award, index) => (
+                    <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
+                      <Typography variant="h6" className="font-medium mb-2">
+                        {award.title}
+                      </Typography>
+                      {award.issuer && (
+                        <Typography variant="small" color="gray" className="mb-1">
+                          Issued by: {award.issuer}
+                        </Typography>
+                      )}
+                      {award.dateReceived && (
+                        <Typography variant="small" color="blue">
+                          {award.dateReceived}
+                        </Typography>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white border border-gray-100 rounded-lg p-6">
+                  <Typography variant="small" className="text-gray-500 italic">
+                    No awards or recognition added yet
+                  </Typography>
+                </div>
+              )}
+            </div>
+
+            {/* Education & Memberships */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Continuing Education */}
+              <div>
+                <Typography variant="h5" className="font-light text-blue-600 mb-6">
+                  Continuing Education
+                </Typography>
+                {portfolio.continuingEducations && portfolio.continuingEducations.length > 0 ? (
+                  <div className="space-y-4">
+                    {portfolio.continuingEducations.map((edu, index) => (
+                      <div key={index} className="border-l-2 border-blue-100 pl-4 py-2">
+                        <Typography variant="small" className="font-medium mb-1">
+                          {edu.courseName}
+                        </Typography>
+                        {edu.institution && (
+                          <Typography variant="small" color="gray" className="mb-1">
+                            {edu.institution}
+                          </Typography>
+                        )}
+                        {edu.completionDate && (
+                          <Typography variant="small" color="blue">
+                            {edu.completionDate}
+                          </Typography>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Typography variant="small" className="text-gray-500 italic">
+                    No continuing education added yet
+                  </Typography>
+                )}
+              </div>
+
+              {/* Professional Memberships */}
+              <div>
+                <Typography variant="h5" className="font-light text-blue-600 mb-6">
+                  Professional Memberships
+                </Typography>
+                {portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0 ? (
+                  <div className="space-y-4">
+                    {portfolio.professionalMemberships.map((mem, index) => (
+                      <div key={index} className="border-l-2 border-blue-100 pl-4 py-2">
+                        <Typography variant="small" className="font-medium mb-1">
+                          {mem.organization}
+                        </Typography>
+                        {mem.membershipType && (
+                          <Typography variant="small" color="gray" className="mb-1">
+                            {mem.membershipType}
+                          </Typography>
+                        )}
+                        {mem.startDate && (
+                          <Typography variant="small" color="blue">
+                            Since {mem.startDate}
+                          </Typography>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Typography variant="small" className="text-gray-500 italic">
+                    No professional memberships added yet
+                  </Typography>
+                )}
               </div>
             </div>
 
-            {/* ← Existing Edit/Delete Buttons */}
-            <div className="edit-delete-buttons" style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '20px' }}>
-              <Link 
-                to={`/portfolio/edit/${graduateId}`} 
-                className="edit-portfolio-button"
-                style={{ 
-                  background: '#28a745', 
-                  color: 'white', 
-                  textDecoration: 'none', 
-                  padding: '10px 20px', 
-                  borderRadius: '6px',
-                  fontWeight: '500'
-                }}
-              >
-                ✏️ Edit Portfolio
-              </Link>
-              
-              <button 
-                onClick={handleDelete} 
-                className="delete-button"
-                style={{ 
-                  background: '#dc3545', 
-                  color: 'white', 
-                  border: 'none', 
-                  padding: '10px 20px', 
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: '500'
-                }}
-              >
-                🗑️ Delete Portfolio
-              </button>
+            {/* References */}
+            <div>
+              <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
+                References
+              </Typography>
+              {portfolio.references && portfolio.references.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {portfolio.references.map((ref, index) => (
+                    <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
+                      <Typography variant="h6" className="font-medium mb-2 break-words">
+                        {ref.name}
+                      </Typography>
+                      {ref.position && (
+                        <Typography variant="small" color="gray" className="mb-1 break-words">
+                          {ref.position}
+                        </Typography>
+                      )}
+                      {ref.company && (
+                        <Typography variant="small" color="blue" className="mb-3 break-words">
+                          {ref.company}
+                        </Typography>
+                      )}
+                      <div className="space-y-1">
+                        {ref.email && (
+                          <Typography variant="small" color="gray" className="break-all">
+                            {ref.email}
+                          </Typography>
+                        )}
+                        {ref.contact && (
+                          <Typography variant="small" color="gray" className="break-words">
+                            {ref.contact}
+                          </Typography>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white border border-gray-100 rounded-lg p-6">
+                  <Typography variant="small" className="text-gray-500 italic">
+                    No references added yet
+                  </Typography>
+                </div>
+              )}
             </div>
-            
-            <Link 
-              to="/graduate-homepage" 
-              className="view-portfolio-back-button"
-              style={{ 
-                display: 'inline-block', 
-                color: '#6c757d', 
-                textDecoration: 'none', 
-                padding: '8px 16px', 
-                border: '1px solid #dee2e6',
-                borderRadius: '6px',
-                marginBottom: '20px'
-              }}
-            >
-              ← Back to Homepage
-            </Link>
+          </div>
+        </div>
+
+        {isGraduateView && (
+          <div className="mt-16 bg-white border border-gray-100 rounded-lg p-8">
+            <div className="text-center mb-8">
+              <Typography variant="h4" color="blue" className="mb-4 font-light">
+                Share Your Portfolio
+              </Typography>
+              <Typography color="gray" className="max-w-2xl mx-auto font-light">
+                Share your professional portfolio with potential employers, clients, or collaborators using secure
+                links.
+              </Typography>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              <Button onClick={copyToClipboard} color="blue" size="lg" className="font-light">
+                Copy Secure Link
+              </Button>
+              <Button onClick={shareToLinkedIn} color="blue" variant="outlined" size="lg" className="font-light">
+                Share to LinkedIn
+              </Button>
+              <Button onClick={shareToFacebook} color="blue" variant="outlined" size="lg" className="font-light">
+                Share to Facebook
+              </Button>
+            </div>
+
+            {shareToken && (
+              <div className="p-6 bg-blue-50 rounded-lg mb-6">
+                <Typography variant="h6" color="blue" className="mb-2 font-light">
+                  Your Secure Token
+                </Typography>
+                <Typography variant="small" color="blue-gray" className="font-mono">
+                  {shareToken.substring(0, 8)}...{shareToken.slice(-4)}
+                </Typography>
+                <Typography variant="small" color="gray" className="mt-2 italic">
+                  Links using this token will work until you generate a new one.
+                </Typography>
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-4 justify-center">
+              <Link to={`/portfolio/edit/${graduateId}`}>
+                <Button color="blue" size="lg" className="font-light">
+                  Edit Portfolio
+                </Button>
+              </Link>
+              <Button onClick={handleRegenerateToken} color="blue" variant="outlined" size="lg" className="font-light">
+                Generate New Link
+              </Button>
+              <Button onClick={handleDelete} color="red" variant="outlined" size="lg" className="font-light">
+                Delete Portfolio
+              </Button>
+            </div>
+
+            <div className="text-center mt-8">
+              <Link to="/graduate-homepage">
+                <Button color="gray" variant="text" size="lg" className="font-light">
+                  ← Back to Homepage
+                </Button>
+              </Link>
+            </div>
           </div>
         )}
 
-        {/* ← UPDATED: Enhanced Public View Footer */}
         {isPublicView && (
-          <div className="public-view-footer" style={{ 
-            background: '#f8f9fa', 
-            padding: '20px', 
-            borderRadius: '8px', 
-            marginTop: '30px',
-            textAlign: 'center',
-            borderLeft: '4px solid #007bff'
-          }}>
-            <h4 style={{ color: '#495057', marginTop: 0 }}>🔒 Secure Portfolio Access</h4>
-            <p style={{ color: '#6c757d', marginBottom: '10px' }}>
-              You've accessed this portfolio through a secure private link.
-            </p>
-            <p style={{ color: '#6c757d', fontSize: '14px' }}>
-              👤 Want to edit this portfolio or view your own?{' '}
-              <Link to="/signin" style={{ color: '#007bff', fontWeight: '500' }}>
+          <div className="mt-16 bg-blue-50 border border-blue-100 rounded-lg p-8 text-center">
+            <Typography variant="h5" color="blue" className="mb-4 font-light">
+              Secure Portfolio Access
+            </Typography>
+            <Typography color="blue-gray" className="mb-6 max-w-2xl mx-auto font-light">
+              You've accessed this portfolio through a secure private link. This ensures the portfolio owner's privacy
+              and control over who can view their information.
+            </Typography>
+            <Typography color="blue-gray" className="mb-6 font-light">
+              Want to edit this portfolio or view your own?
+            </Typography>
+            <Link to="/signin">
+              <Button color="blue" size="lg" className="font-light">
                 Sign in here
-              </Link>
-            </p>
+              </Button>
+            </Link>
             {!urlShareToken && (
-              <p style={{ 
-                color: '#856404', 
-                background: '#fff3cd', 
-                padding: '8px', 
-                borderRadius: '4px', 
-                fontSize: '12px',
-                marginTop: '10px'
-              }}>
-                ⚠️ <strong>Legacy Access:</strong> This portfolio allows public access without a share token 
-                (less secure). Contact the owner to get a secure share link.
-              </p>
+              <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <Typography color="amber" className="text-sm font-light">
+                  <strong>Legacy Access:</strong> This portfolio allows public access without a share token (less
+                  secure). Contact the owner to get a secure share link.
+                </Typography>
+              </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Project Image Modal */}
-      {selectedProjectImage && (
-        <div className="modal-overlay" onClick={() => setSelectedProjectImage(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button 
-              className="modal-close-button" 
-              onClick={() => setSelectedProjectImage(null)}
-              style={{
-                position: 'absolute',
-                top: '10px',
-                right: '15px',
-                background: 'rgba(0,0,0,0.5)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '50%',
-                width: '30px',
-                height: '30px',
-                cursor: 'pointer',
-                fontSize: '18px'
-              }}
-            >
-              ×
-            </button>
-            <img 
-              src={selectedProjectImage} 
-              alt="Enlarged Project" 
-              style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }}
-            />
-          </div>
-        </div>
+      {selectedCertificate && (
+        <Dialog open={!!selectedCertificate} handler={() => setSelectedCertificate(null)} size="md">
+          <DialogBody className="p-2 flex items-center justify-center min-h-[200px]">
+            {selectedCertificate.certificateFilePath ? (
+              selectedCertificate.certificateFilePath.endsWith(".pdf") ? (
+                <iframe
+                  src={`${selectedCertificate.certificateFilePath}#toolbar=0&navpanes=0&scrollbar=0`}
+                  title={selectedCertificate.courseName || "Certificate"}
+                  className="w-full h-[70vh]"
+                />
+              ) : (
+                <img
+                  src={selectedCertificate.certificateFilePath || "/placeholder.svg"}
+                  alt={selectedCertificate.courseName || "Certificate"}
+                  className="max-w-full max-h-[70vh] w-auto h-auto object-contain"
+                />
+              )
+            ) : (
+              <div className="p-8 text-center">
+                <Typography variant="small">No certificate file available.</Typography>
+              </div>
+            )}
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="text" color="red" onClick={() => setSelectedCertificate(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </Dialog>
       )}
 
-      {/* Certificate Preview Modal */}
-      {selectedCertificate && (
-        <div className="modal-overlay" onClick={() => setSelectedCertificate(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button 
-              className="modal-close-button" 
-              onClick={() => setSelectedCertificate(null)}
-              style={{
-                position: 'absolute',
-                top: '10px',
-                right: '15px',
-                background: 'rgba(0,0,0,0.5)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '50%',
-                width: '30px',
-                height: '30px',
-                cursor: 'pointer',
-                fontSize: '18px'
-              }}
-            >
-              ×
-            </button>
-            <div className="certificate-modal-content">
-              {selectedCertificate.certificateFilePath ? (
-                selectedCertificate.certificateFilePath.endsWith(".pdf") ? (
-                  <iframe
-                    src={`${selectedCertificate.certificateFilePath}#toolbar=0&navpanes=0&scrollbar=0`}
-                    title={selectedCertificate.courseName || "Certificate"}
-                    style={{ width: '100%', height: '80vh', border: 'none' }}
-                  />
-                ) : (
-                  <img
-                    src={selectedCertificate.certificateFilePath}
-                    alt={selectedCertificate.courseName || "Certificate"}
-                    style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }}
-                  />
-                )
-              ) : (
-                <p>No certificate file available.</p>
-              )}
-            </div>
-          </div>
-        </div>
+      {selectedProjectImage && (
+        <Dialog open={!!selectedProjectImage} handler={() => setSelectedProjectImage(null)} size="md">
+          <DialogBody className="p-2 flex items-center justify-center min-h-[200px]">
+            <img
+              src={selectedProjectImage || "/placeholder.svg"}
+              alt="Enlarged Project"
+              className="max-w-full max-h-[70vh] w-auto h-auto object-contain"
+            />
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="text" color="red" onClick={() => setSelectedProjectImage(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </Dialog>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default ViewPortfolio;
+export default ViewPortfolio
