@@ -74,4 +74,5 @@ public interface PortfolioViewRepository extends JpaRepository<PortfolioView, Lo
     default long getYearlyViews(Long portfolioId) {
         return getYearlyViews(portfolioId, LocalDateTime.now().minusDays(365));
     }
+    
 }

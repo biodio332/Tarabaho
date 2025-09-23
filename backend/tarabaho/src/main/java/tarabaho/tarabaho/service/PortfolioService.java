@@ -1,10 +1,12 @@
 package tarabaho.tarabaho.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import tarabaho.tarabaho.dto.CompletePublicPortfolioResponse;
 import tarabaho.tarabaho.dto.PortfolioRequest;
+import tarabaho.tarabaho.dto.PublicPortfolioSearchResult;
 import tarabaho.tarabaho.dto.ShareInfo;
 import tarabaho.tarabaho.entity.AwardRecognition;
 import tarabaho.tarabaho.entity.Certificate;
@@ -689,5 +692,16 @@ public class PortfolioService {
         String shareUrl = String.format("https://tarabaho.vercel.app/portfolio/%d?share=%s", graduateId, newToken);
         
         return new ShareInfo(newToken, shareUrl);
+    }
+    
+    @Transactional
+    public List<PublicPortfolioSearchResult> searchPublicPortfolios(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Portfolio> portfolios = portfolioRepository.searchPublicPortfolios(query);
+        return portfolios.stream()
+                .map(PublicPortfolioSearchResult::new)
+                .collect(Collectors.toList());
     }
 }

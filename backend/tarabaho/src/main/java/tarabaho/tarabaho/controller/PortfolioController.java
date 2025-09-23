@@ -1,5 +1,7 @@
 package tarabaho.tarabaho.controller;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -29,6 +31,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import tarabaho.tarabaho.dto.CompletePublicPortfolioResponse;
 import tarabaho.tarabaho.dto.PortfolioRequest;
+import tarabaho.tarabaho.dto.PublicPortfolioSearchResult;
 import tarabaho.tarabaho.dto.ShareInfo;
 import tarabaho.tarabaho.entity.AwardRecognition;
 import tarabaho.tarabaho.entity.ContinuingEducation;
@@ -580,6 +583,23 @@ public class PortfolioController {
             return ResponseEntity.ok(newShareInfo);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error regenerating token.");
+        }
+    }
+
+    @Operation(summary = "Search public portfolios", description = "Searches public portfolios by keyword across multiple fields including skills, experiences, etc.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Search results returned"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/search")
+    public ResponseEntity<List<PublicPortfolioSearchResult>> searchPublicPortfolios(
+            @RequestParam("query") String query) {
+        try {
+            List<PublicPortfolioSearchResult> results = portfolioService.searchPublicPortfolios(query);
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            logger.error("Error during portfolio search: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }
 }
