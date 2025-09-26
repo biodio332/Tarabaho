@@ -51,9 +51,6 @@ const ContactUs = () => {
 
   return (
     <div className="admin-contact-page-container">
-      {/* NAVIGATION BAR */}
-      <Navbar activePage="contact" />
-
       {/* MAIN CONTENT */}
       <div className="admin-contact-content">
         <div className="admin-contact-left">
@@ -172,8 +169,7 @@ const ContactUs = () => {
             </form>
           </div>
         </div>
-      </div>
-      <Footer />
+      </div>  
     </div>
   )
 }

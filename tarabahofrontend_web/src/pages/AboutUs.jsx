@@ -41,7 +41,6 @@ const AboutUs = () => {
 
   return (
     <div className="about-us-page">
-      <Navbar activePage="about" />
 
       <div className="about-us-content">
         <h1 className="about-us-title">ABOUT US</h1>
@@ -173,7 +172,6 @@ const AboutUs = () => {
         </svg>
       </div>
 
-      <Footer />
     </div>
   )
 }

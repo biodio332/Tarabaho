@@ -42,20 +42,25 @@ import PortfolioCreation from "./pages/PortfolioCreation"
 import ViewPortfolio from "./pages/ViewPortfolio"
 import EditPortfolio from "./pages/EditPortfolio"
 import GeneralLayout from "./components/GeneralLayout"
+import HomePageLayout from "./components/HomePageLayout"
 
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Homepage />} />
+        {/* Using HomePageLayout */}
+        <Route path="/" element={<HomePageLayout><Homepage /></HomePageLayout>} />
+        <Route path="/about" element={<HomePageLayout><AboutUs /></HomePageLayout>} />
+        <Route path="/contact" element={<HomePageLayout><ContactUs /></HomePageLayout>} />
+        
+
         <Route path="/signin" element={<SignIn />} />
         <Route path="/register" element={<Register />} />
         <Route path="/register-user" element={<RegisterUser />} />
         <Route path="/register-graduate" element={<RegisterTrabahador />} />
         <Route path="/register-admin" element={<RegisterAdmin />} />
         <Route path="/admin-login" element={<AdminLogin />} />
-        <Route path="/about" element={<AboutUs />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
 
@@ -70,6 +75,7 @@ function App() {
         <Route path="/admin/about" element={<AdminAboutUs />} />
         <Route path="/admin/manage-trabahador/register-graduate" element={<RegisterTrabahador/>}/>
         <Route path="/admin/manage-users/register-user"element={<RegisterUser/>}/>
+
         {/* User-specific routes */}
         <Route path="/user-home" element={<UserHomepage />} />
         <Route path="/user-browse" element={<UserBrowse />} />
@@ -83,19 +89,18 @@ function App() {
         <Route path="/user-browse/:categoryName" element={<UserBrowseCategory />} />
 
         {/* Trabahador-specific routes */}
-        <Route path="/graduate-homepage" element={<GeneralLayout><TrabahadorHomepage /></GeneralLayout>} />
         <Route path="/graduate-contact" element={<TrabahadorContactUs />} />
         <Route path="/graduate-history" element={<TrabahadorHistory />} />
         <Route path="/graduate-profile" element={<TrabahadorProfile />} />
         <Route path="/graduate-about" element={<TrabahadorAboutUs />} />
         <Route path="/graduate-profile-detail/:graduateId" element={<WorkerProfileDetail />} />
+
+        {/* Using GeneralLayout */}
+        <Route path="/graduate-homepage" element={<GeneralLayout><TrabahadorHomepage /></GeneralLayout>} />
         <Route path="/create-portfolio" element={<GeneralLayout><PortfolioCreation /></GeneralLayout>} />
         <Route path="/portfolio/:graduateId" element={<GeneralLayout><ViewPortfolio /></GeneralLayout>} />
         <Route path="/portfolio/edit/:graduateId" element={<GeneralLayout><EditPortfolio /></GeneralLayout>} />
 
-
-        {/* General routes */}
-        <Route path="/contact" element={<ContactUs />} />
 
         <Route path="/category/:categoryName" element={<UserBrowseCategory />} />
         <Route path="/graduate/:graduateId" element={<WorkerProfile />} />
