@@ -6,8 +6,7 @@ import axios from "axios";
 import TrabahadorNavbar from "../components/TrabahadorNavbar";
 import TrabahadorLogoutConfirmation from "../components/TrabahadorLogoutConfirmation";
 import Footer from "../components/Footer";
-import "../styles/TrabahadorProfile.css";
-import { FaStar, FaCertificate, FaPlus, FaTrash, FaPen, FaCheck, FaTimes } from "react-icons/fa";
+import { FaPen, FaCheck, FaTimes } from "react-icons/fa";
 
 const TrabahadorProfile = () => {
   const navigate = useNavigate();
@@ -16,21 +15,7 @@ const TrabahadorProfile = () => {
   const [profileImage, setProfileImage] = useState("/placeholder.svg");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [error, setError] = useState("");
-  const [isAddingCertificate, setIsAddingCertificate] = useState(false);
-  const [newCertificate, setNewCertificate] = useState({
-    courseName: "",
-    certificateNumber: "",
-    issueDate: "",
-    certificateFile: null,
-  });
-  const [editingCertificateId, setEditingCertificateId] = useState(null);
-  const [selectedCertificateImage, setSelectedCertificateImage] = useState(null);
-  const [pendingRequests, setPendingRequests] = useState([]);
-  const [showCategoryRequestModal, setShowCategoryRequestModal] = useState(false);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
   const fileInputRef = useRef(null);
-  const certificateFileInputRef = useRef(null);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
   // Inline editing states
@@ -39,8 +24,8 @@ const TrabahadorProfile = () => {
     email: "",
     address: "",
     birthday: "",
-    biography: "",
     password: "",
+    phoneNumber: "",
   });
 
   useEffect(() => {
@@ -61,31 +46,10 @@ const TrabahadorProfile = () => {
             email: graduateData.email || "",
             address: graduateData.address || "",
             birthday: graduateData.birthday || "",
-            biography: graduateData.biography || "",
             password: "",
+            phoneNumber: graduateData.phoneNumber || "",
           });
           setProfileImage(graduateData.profilePicture || "/placeholder.svg");
-
-          // Fetch pending category requests for this graduate
-          try {
-            const pendingRequestsResponse = await axios.get(
-              `${BACKEND_URL}/api/graduate/${graduateData.id}/category-requests`,
-              { withCredentials: true }
-            );
-            setPendingRequests(pendingRequestsResponse.data);
-          } catch (reqErr) {
-            console.error("Failed to fetch pending requests:", reqErr);
-          }
-
-          // Fetch all categories
-          try {
-            const categoriesResponse = await axios.get(`${BACKEND_URL}/api/categories`, {
-              withCredentials: true,
-            });
-            setCategories(categoriesResponse.data);
-          } catch (catErr) {
-            console.error("Failed to fetch categories:", catErr);
-          }
         } else {
           setError("Worker not found.");
         }
@@ -98,9 +62,18 @@ const TrabahadorProfile = () => {
   }, [navigate]);
 
   const handleFileChange = async (e) => {
+    if (!graduate) {
+      setError("Profile not loaded yet. Please wait.");
+      return;
+    }
+
     const file = e.target.files[0];
     if (!file) {
       setError("No file selected.");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file.");
       return;
     }
     setSelectedFile(file);
@@ -123,33 +96,17 @@ const TrabahadorProfile = () => {
       setError("");
     } catch (err) {
       console.error("Failed to upload picture:", err);
-      setError(err.response?.data || "Failed to upload picture. Please try again.");
+      setError(err.response?.data?.message || "Failed to upload picture. Please try again.");
     }
   };
 
   const handleImageClick = () => {
-    fileInputRef.current.click();
-  };
-
-  const handleCertificateFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setNewCertificate((prev) => ({ ...prev, certificateFile: file }));
-    }
-  };
-
-  const handleCertificateImageClick = () => {
-    certificateFileInputRef.current.click();
+    fileInputRef.current?.click();
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditValues((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleCertificateInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewCertificate((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEditField = (field) => {
@@ -163,169 +120,73 @@ const TrabahadorProfile = () => {
         email: graduate.email || "",
         address: graduate.address || "",
         birthday: graduate.birthday || "",
-        biography: graduate.biography || "",
         password: "",
+        phoneNumber: graduate.phoneNumber || "",
       });
     }
   };
 
-  const handleSaveField = async (field) => {
-    try {
-      const updatedWorker = {
-        ...graduate,
-        [field]: editValues[field],
-      };
+const handleSaveField = async (field) => {
+  // Validate inputs
+  if (!editValues[field] && field !== "password") {
+    setError(`Please enter a valid ${field}.`);
+    return;
+  }
+  if (field === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editValues.email)) {
+    setError("Please enter a valid email address.");
+    return;
+  }
+  if (field === "phoneNumber" && !/^\+?\d{10,15}$/.test(editValues.phoneNumber)) {
+    setError("Please enter a valid phone number.");
+    return;
+  }
 
-      if (field === "password" && !editValues.password) {
-        delete updatedWorker.password;
-      }
+  try {
+    // Create an object with only the field being updated
+    const updatedField = {
+      [field]: editValues[field],
+    };
 
-      const response = await axios.put(
-        `${BACKEND_URL}/api/graduate/${graduate.id}`,
-        updatedWorker,
-        {
-          withCredentials: true,
-        }
-      );
-
-      setWorker(response.data);
+    // If password is empty, skip it (optional field)
+    if (field === "password" && !editValues.password) {
       setEditingField(null);
       setError("");
-    } catch (err) {
-      console.error(`Failed to update ${field}:`, err);
-      setError(err.response?.data || `Failed to update ${field}. Please try again.`);
+      return;
     }
-  };
 
-  const handleAddCertificate = async () => {
-    try {
-      console.log("Adding certificate for graduate ID:", graduate.id);
-      const certificateData = new FormData();
-      certificateData.append("courseName", newCertificate.courseName);
-      certificateData.append("certificateNumber", newCertificate.certificateNumber);
-      certificateData.append("issueDate", newCertificate.issueDate);
-      if (newCertificate.certificateFile) {
-        certificateData.append("certificateFile", newCertificate.certificateFile);
-      }
-
-      const response = await axios.post(
-        `${BACKEND_URL}/api/certificate/graduate/${graduate.id}`,
-        certificateData,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-      console.log("Certificate added:", response.data);
-      setWorker((prev) => ({
-        ...prev,
-        certificates: [...(prev.certificates || []), response.data],
-      }));
-      setNewCertificate({
-        courseName: "",
-        certificateNumber: "",
-        issueDate: "",
-        certificateFile: null,
-      });
-      setIsAddingCertificate(false);
-    } catch (err) {
-      console.error("Failed to add certificate:", err);
-      setError(err.response?.data || "Failed to add certificate. Please try again.");
-    }
-  };
-
-  const handleEditCertificate = (certificate) => {
-    setEditingCertificateId(certificate.id);
-    setNewCertificate({
-      courseName: certificate.courseName,
-      certificateNumber: certificate.certificateNumber,
-      issueDate: certificate.issueDate,
-      certificateFile: null,
-    });
-  };
-
-  const handleUpdateCertificate = async (certificateId) => {
-    try {
-      console.log("Updating certificate ID:", certificateId);
-      const certificateData = new FormData();
-      certificateData.append("courseName", newCertificate.courseName);
-      certificateData.append("certificateNumber", newCertificate.certificateNumber);
-      certificateData.append("issueDate", newCertificate.issueDate);
-      certificateData.append("graduateId", graduate.id);
-      if (newCertificate.certificateFile) {
-        certificateData.append("certificateFile", newCertificate.certificateFile);
-      }
-
-      const response = await axios.put(
-        `${BACKEND_URL}/api/certificate/${certificateId}`,
-        certificateData,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-      console.log("Certificate updated:", response.data);
-      setWorker((prev) => ({
-        ...prev,
-        certificates: prev.certificates.map((cert) =>
-          cert.id === certificateId ? response.data : cert
-        ),
-      }));
-      setNewCertificate({
-        courseName: "",
-        certificateNumber: "",
-        issueDate: "",
-        certificateFile: null,
-      });
-      setEditingCertificateId(null);
-      setError("");
-    } catch (err) {
-      console.error("Failed to update certificate:", err);
-      if (err.response?.status === 401) {
-        setError("Session expired. Please sign in again.");
-        navigate("/signin");
-      } else {
-        setError(err.response?.data || "Failed to update certificate. Please try again.");
-      }
-    }
-  };
-
-  const handleDeleteCertificate = async (certificateId) => {
-    try {
-      console.log("Deleting certificate ID:", certificateId);
-      await axios.delete(`${BACKEND_URL}/api/certificate/${certificateId}`, {
+    const response = await axios.put(
+      `${BACKEND_URL}/api/graduate/${graduate.id}`,
+      updatedField, // Send only the changed field
+      {
         withCredentials: true,
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setWorker((prev) => ({
-        ...prev,
-        certificates: prev.certificates.filter((cert) => cert.id !== certificateId),
-      }));
-      setError("");
-    } catch (err) {
-      console.error("Failed to delete certificate:", err);
-      if (err.response?.status === 401) {
-        setError("Session expired. Please sign in again.");
-        navigate("/signin");
-      } else {
-        setError(err.response?.data || "Failed to delete certificate. Please try again.");
       }
+    );
+
+    // Update local state with the response
+    setWorker(response.data);
+    if (field === "email") {
+      localStorage.setItem("username", response.data.email); // Sync localStorage if email is used for login
+      setError(`Your ${field} has been updated.`); // Sync localStorage if email is used for login
     }
-  };
-
-  const handleCertificateClick = (certificate) => {
-    if (certificate.certificateFilePath) {
-      setSelectedCertificateImage(certificate.certificateFilePath);
+    if (field === "password") {
+      setError(`Your ${field} has been updated. Please log in again.`);
+      await confirmLogout();
+    } else {
+      setEditingField(null);
+      setError("");
     }
-  };
+  } catch (err) {
+    console.error(`Failed to update ${field}:`, err);
+    if (err.response?.status === 401 || err.response?.status === 403) {
+      setError("Session expired. Please log in again.");
+      localStorage.clear();
+      navigate("/signin");
+    } else {
+      setError(err.response?.data?.message || `Failed to update ${field}. Please try again.`);
+    }
+  }
+};
 
-  const handleCloseModal = () => {
-    setSelectedCertificateImage(null);
-  };
-
-  const handleLogout = () => {
-    setShowLogoutModal(true);
-  };
 
   const confirmLogout = async () => {
     try {
@@ -333,6 +194,12 @@ const TrabahadorProfile = () => {
       localStorage.removeItem("isLoggedIn");
       localStorage.removeItem("userType");
       localStorage.removeItem("username");
+      // Clear all cookies
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
       setShowLogoutModal(false);
       navigate("/signin");
     } catch (err) {
@@ -345,75 +212,28 @@ const TrabahadorProfile = () => {
     setShowLogoutModal(false);
   };
 
-  const handleRequestCategoryClick = () => {
-    setShowCategoryRequestModal(true);
-    setSelectedCategory("");
-    setError("");
-  };
-
-  const handleCategoryChange = (e) => {
-    setSelectedCategory(e.target.value);
-  };
-
-  const handleRequestCategorySubmit = async () => {
-    try {
-      if (!selectedCategory) {
-        setError("Please select a category to request.");
-        return;
-      }
-      const category = categories.find((cat) => cat.id === parseInt(selectedCategory));
-      if (!category) {
-        setError("Invalid category selected.");
-        return;
-      }
-      const requestData = { categoryName: category.name };
-      const response = await axios.post(
-        `${BACKEND_URL}/api/graduate/${graduate.id}/request-category`,
-        requestData,
-        { withCredentials: true, headers: { "Content-Type": "application/json" } }
-      );
-      // Refresh pending requests
-      const pendingRequestsResponse = await axios.get(
-        `${BACKEND_URL}/api/graduate/${graduate.id}/category-requests`,
-        { withCredentials: true }
-      );
-      setPendingRequests(pendingRequestsResponse.data);
-      setShowCategoryRequestModal(false);
-      setError("");
-    } catch (err) {
-      console.error("Failed to request category:", err);
-      setError(
-        err.response?.data?.replace("⚠️ ", "") || "Failed to request category. Please try again."
-      );
-    }
-  };
-
-  const handleCategoryRequestModalClose = () => {
-    setShowCategoryRequestModal(false);
-    setError("");
-  };
-
   // Determine verification status
   const getVerificationStatus = () => {
     if (graduate?.isVerified) {
-      return { text: "Verified", className: "verified-status" };
-    } else if (pendingRequests.length > 0) {
-      return { text: "Semi Verified", className: "semi-verified-status" };
+      return { text: "Verified", className: "text-green-500 font-semibold" };
     }
-    return { text: "Not Verified", className: "not-verified-status" };
+    return { text: "Not Verified", className: "text-red-500 font-semibold" };
   };
 
   const verificationStatus = getVerificationStatus();
 
   return (
-    <div className="trabahador-profile-page">
+    <div className="min-h-screen w-full bg-gray-50 flex flex-col font-sans">
       <TrabahadorNavbar activePage="profile" />
 
-      <div className="trabahador-profile-content">
-        <div className="trabahador-profile-header">
-          <h1 className="trabahador-profile-heading">GRADUATE PROFILE</h1>
-          <button className="logout-button" onClick={handleLogout}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <div className="flex-1 p-6 max-w-6xl mx-auto w-full">
+        <div className="flex justify-between items-center flex-wrap gap-4 mb-8">
+          <h1 className="text-4xl font-bold text-blue-600 drop-shadow-sm">GRADUATE PROFILE</h1>
+          <button
+            className="flex items-center gap-2 text-red-500 border border-red-200/50 px-4 py-2 rounded-lg hover:bg-red-50 hover:shadow-sm transition-transform hover:-translate-y-0.5 text-sm font-semibold"
+            onClick={() => setShowLogoutModal(true)}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path
                 d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
                 stroke="currentColor"
@@ -440,81 +260,61 @@ const TrabahadorProfile = () => {
           </button>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className="text-red-500 bg-red-50 text-center py-3 px-4 rounded-lg mb-6 border-l-4 border-red-500 shadow-md text-sm">
+            {error}
+          </div>
+        )}
 
-        <div className="profile-container">
-          <div className="profile-card">
-            <div className="profile-top-section">
-              <div className="profile-image-section">
+        <div className="w-full">
+          <div className="bg-white rounded-xl shadow-2xl overflow-hidden relative">
+            {/* Header section */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-900 p-10 text-white relative">
+              {/* Floating profile image */}
+              <div className="absolute -bottom-20 left-10 w-40 h-40 group">
                 <img
                   src={profileImage || "/placeholder.svg"}
-                  alt="Worker Profile"
-                  className="profile-image"
+                  alt="Profile"
+                  className="w-full h-full rounded-full object-cover cursor-pointer border-4 border-white shadow-xl hover:border-blue-200 hover:scale-105 transition-all duration-300"
                   onClick={handleImageClick}
                 />
+                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs text-center py-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-b-full">
+                  Change Photo
+                </div>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
-                  className="file-input"
+                  className="hidden"
                   ref={fileInputRef}
-                  style={{ display: "none" }}
                 />
               </div>
 
-              <div className="profile-credentials-section">
-                <h3>
+              {/* Name and status */}
+              <div className="ml-56">
+                <h3 className="text-3xl font-bold text-white drop-shadow-md">
                   {graduate ? `${graduate.firstName} ${graduate.lastName}` : "Loading..."}
-                  <span
-                    className={verificationStatus.className}
-                    title={`Worker is ${verificationStatus.text.toLowerCase()}`}
-                  >
+                  <span className={`${verificationStatus.className} text-base ml-2 drop-shadow-sm`}>
                     ({verificationStatus.text})
                   </span>
                 </h3>
-                <p className="graduate-bio">{graduate?.biography || "No biography available"}</p>
-                <div className="graduate-rating">
-                  {[...Array(5)].map((_, i) => (
-                    <FaStar
-                      key={i}
-                      className={`star-icon ${i < Math.floor(graduate?.stars || 0) ? "filled" : ""}`}
-                    />
-                  ))}
-                </div>
-                <div className="graduate-rate">₱{graduate?.hourly || "63.00"}/hour</div>
-                <div className="graduate-skills">
-                  {graduate?.categories?.length > 0 ? (
-                    graduate.categories.map((category, index) => (
-                      <span key={index} className="skill-tag">
-                        {category.name}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="skill-tag">No categories assigned</span>
-                  )}
-                  {graduate?.isVerified && (
-                    <button className="add-skill-btn" onClick={handleRequestCategoryClick}>
-                      <FaPlus /> Request Category
-                    </button>
-                  )}
-                </div>
               </div>
             </div>
 
-            <div className="profile-details-section">
-              <div className="detail-row">
-                <div className="detail-label">Full Name:</div>
-                <div className="detail-value">
-                  <div className="detail-text">
-                    {graduate ? `${graduate.firstName} ${graduate.lastName}` : "Loading..."}
-                    
-                  </div>
+            {/* Editable fields */}
+            <div className="p-6 mt-20">
+              {/* Full name */}
+              <div className="flex items-center p-4 border-b border-gray-100">
+                <div className="w-44 font-semibold text-gray-600">Full Name:</div>
+                <div className="flex-1 text-gray-900">
+                  {graduate ? `${graduate.firstName} ${graduate.lastName}` : "Loading..."}
                 </div>
               </div>
 
-              <div className="detail-row">
-                <div className="detail-label">Email:</div>
-                <div className="detail-value">
+              {/* Email */}
+              <div className="flex items-center p-4 border-b border-gray-100 group">
+                <div className="w-44 font-semibold text-gray-600">Email:</div>
+                <div className="flex-1 flex items-center min-h-[40px]">
                   {editingField === "email" ? (
                     <>
                       <input
@@ -522,22 +322,31 @@ const TrabahadorProfile = () => {
                         name="email"
                         value={editValues.email}
                         onChange={handleInputChange}
-                        className="detail-input"
+                        className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
                         autoFocus
                       />
-                      <div className="save-cancel-buttons">
-                        <button className="save-button" onClick={() => handleSaveField("email")}>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          className="bg-green-500 text-white p-2 rounded-lg"
+                          onClick={() => handleSaveField("email")}
+                        >
                           <FaCheck />
                         </button>
-                        <button className="cancel-button" onClick={handleCancelEdit}>
+                        <button
+                          className="bg-gray-500 text-white p-2 rounded-lg"
+                          onClick={handleCancelEdit}
+                        >
                           <FaTimes />
                         </button>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className="detail-text">{graduate?.email || "N/A"}</div>
-                      <button className="edit-button" onClick={() => handleEditField("email")}>
+                      <div className="flex-1">{graduate?.email || "N/A"}</div>
+                      <button
+                        className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
+                        onClick={() => handleEditField("email")}
+                      >
                         <FaPen />
                       </button>
                     </>
@@ -545,16 +354,54 @@ const TrabahadorProfile = () => {
                 </div>
               </div>
 
-              <div className="detail-row">
-                <div className="detail-label">Contact no.:</div>
-                <div className="detail-value">
-                  <div className="detail-text">{graduate?.phoneNumber || "N/A"}</div>
+              {/* Phone */}
+              <div className="flex items-center p-4 border-b border-gray-100 group">
+                <div className="w-44 font-semibold text-gray-600">Contact no.:</div>
+                <div className="flex-1 flex items-center min-h-[40px]">
+                  {editingField === "phoneNumber" ? (
+                    <>
+                      <input
+                        type="text"
+                        name="phoneNumber"
+                        value={editValues.phoneNumber}
+                        onChange={handleInputChange}
+                        className="flex-1 p-3 border border-gray-300 rounded-lg"
+                        placeholder="Enter phone number"
+                        autoFocus
+                      />
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          className="bg-green-500 text-white p-2 rounded-lg"
+                          onClick={() => handleSaveField("phoneNumber")}
+                        >
+                          <FaCheck />
+                        </button>
+                        <button
+                          className="bg-gray-500 text-white p-2 rounded-lg"
+                          onClick={handleCancelEdit}
+                        >
+                          <FaTimes />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex-1">{graduate?.phoneNumber || "N/A"}</div>
+                      <button
+                        className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
+                        onClick={() => handleEditField("phoneNumber")}
+                      >
+                        <FaPen />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
-              <div className="detail-row">
-                <div className="detail-label">Address:</div>
-                <div className="detail-value">
+              {/* Address */}
+              <div className="flex items-center p-4 border-b border-gray-100 group">
+                <div className="w-44 font-semibold text-gray-600">Address:</div>
+                <div className="flex-1 flex items-center min-h-[40px]">
                   {editingField === "address" ? (
                     <>
                       <input
@@ -562,22 +409,31 @@ const TrabahadorProfile = () => {
                         name="address"
                         value={editValues.address}
                         onChange={handleInputChange}
-                        className="detail-input"
+                        className="flex-1 p-3 border border-gray-300 rounded-lg"
                         autoFocus
                       />
-                      <div className="save-cancel-buttons">
-                        <button className="save-button" onClick={() => handleSaveField("address")}>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          className="bg-green-500 text-white p-2 rounded-lg"
+                          onClick={() => handleSaveField("address")}
+                        >
                           <FaCheck />
                         </button>
-                        <button className="cancel-button" onClick={handleCancelEdit}>
+                        <button
+                          className="bg-gray-500 text-white p-2 rounded-lg"
+                          onClick={handleCancelEdit}
+                        >
                           <FaTimes />
                         </button>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className="detail-text">{graduate?.address || "N/A"}</div>
-                      <button className="edit-button" onClick={() => handleEditField("address")}>
+                      <div className="flex-1">{graduate?.address || "N/A"}</div>
+                      <button
+                        className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
+                        onClick={() => handleEditField("address")}
+                      >
                         <FaPen />
                       </button>
                     </>
@@ -585,9 +441,10 @@ const TrabahadorProfile = () => {
                 </div>
               </div>
 
-              <div className="detail-row">
-                <div className="detail-label">Birthday:</div>
-                <div className="detail-value">
+              {/* Birthday */}
+              <div className="flex items-center p-4 border-b border-gray-100 group">
+                <div className="w-44 font-semibold text-gray-600">Birthday:</div>
+                <div className="flex-1 flex items-center min-h-[40px]">
                   {editingField === "birthday" ? (
                     <>
                       <input
@@ -595,22 +452,31 @@ const TrabahadorProfile = () => {
                         name="birthday"
                         value={editValues.birthday}
                         onChange={handleInputChange}
-                        className="detail-input"
+                        className="flex-1 p-3 border border-gray-300 rounded-lg"
                         autoFocus
                       />
-                      <div className="save-cancel-buttons">
-                        <button className="save-button" onClick={() => handleSaveField("birthday")}>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          className="bg-green-500 text-white p-2 rounded-lg"
+                          onClick={() => handleSaveField("birthday")}
+                        >
                           <FaCheck />
                         </button>
-                        <button className="cancel-button" onClick={handleCancelEdit}>
+                        <button
+                          className="bg-gray-500 text-white p-2 rounded-lg"
+                          onClick={handleCancelEdit}
+                        >
                           <FaTimes />
                         </button>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className="detail-text">{graduate?.birthday || "N/A"}</div>
-                      <button className="edit-button" onClick={() => handleEditField("birthday")}>
+                      <div className="flex-1">{graduate?.birthday || "N/A"}</div>
+                      <button
+                        className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
+                        onClick={() => handleEditField("birthday")}
+                      >
                         <FaPen />
                       </button>
                     </>
@@ -618,41 +484,10 @@ const TrabahadorProfile = () => {
                 </div>
               </div>
 
-              <div className="detail-row">
-                <div className="detail-label">Biography:</div>
-                <div className="detail-value">
-                  {editingField === "biography" ? (
-                    <>
-                      <textarea
-                        name="biography"
-                        value={editValues.biography}
-                        onChange={handleInputChange}
-                        className="detail-textarea"
-                        autoFocus
-                      />
-                      <div className="save-cancel-buttons">
-                        <button className="save-button" onClick={() => handleSaveField("biography")}>
-                          <FaCheck />
-                        </button>
-                        <button className="cancel-button" onClick={handleCancelEdit}>
-                          <FaTimes />
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="detail-text">{graduate?.biography || "N/A"}</div>
-                      <button className="edit-button" onClick={() => handleEditField("biography")}>
-                        <FaPen />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="detail-row">
-                <div className="detail-label">Password:</div>
-                <div className="detail-value">
+              {/* Password */}
+              <div className="flex items-center p-4 group">
+                <div className="w-44 font-semibold text-gray-600">Password:</div>
+                <div className="flex-1 flex items-center min-h-[40px]">
                   {editingField === "password" ? (
                     <>
                       <input
@@ -660,23 +495,32 @@ const TrabahadorProfile = () => {
                         name="password"
                         value={editValues.password}
                         onChange={handleInputChange}
-                        className="detail-input"
+                        className="flex-1 p-3 border border-gray-300 rounded-lg"
                         placeholder="Enter new password"
                         autoFocus
                       />
-                      <div className="save-cancel-buttons">
-                        <button className="save-button" onClick={() => handleSaveField("password")}>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          className="bg-green-500 text-white p-2 rounded-lg"
+                          onClick={() => handleSaveField("password")}
+                        >
                           <FaCheck />
                         </button>
-                        <button className="cancel-button" onClick={handleCancelEdit}>
+                        <button
+                          className="bg-gray-500 text-white p-2 rounded-lg"
+                          onClick={handleCancelEdit}
+                        >
                           <FaTimes />
                         </button>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className="detail-text">••••••••</div>
-                      <button className="edit-button" onClick={() => handleEditField("password")}>
+                      <div className="flex-1">••••••••</div>
+                      <button
+                        className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
+                        onClick={() => handleEditField("password")}
+                      >
                         <FaPen />
                       </button>
                     </>
@@ -684,255 +528,12 @@ const TrabahadorProfile = () => {
                 </div>
               </div>
             </div>
-
-            <div className="certificates-section">
-              <h3 className="certificates-title">
-                CERTIFICATES
-                <button className="add-certificate-btn" onClick={() => setIsAddingCertificate(true)}>
-                  <FaPlus /> Add Certificate
-                </button>
-              </h3>
-
-              {isAddingCertificate && (
-                <div className="certificate-form">
-                  <div className="form-group">
-                    <label className="credential-label">Course Name:</label>
-                    <input
-                      type="text"
-                      name="courseName"
-                      value={newCertificate.courseName}
-                      onChange={handleCertificateInputChange}
-                      className="form-input"
-                      placeholder="Enter course name"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="credential-label">Certificate Number:</label>
-                    <input
-                      type="text"
-                      name="certificateNumber"
-                      value={newCertificate.certificateNumber}
-                      onChange={handleCertificateInputChange}
-                      className="form-input"
-                      placeholder="Enter certificate number"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="credential-label">Issue Date:</label>
-                    <input
-                      type="date"
-                      name="issueDate"
-                      value={newCertificate.issueDate}
-                      onChange={handleCertificateInputChange}
-                      className="form-input"
-                      placeholder="Select issue date"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="credential-label">Certificate File:</label>
-                    <div className="certificate-image-upload">
-                      <img
-                        src={
-                          newCertificate.certificateFile
-                            ? URL.createObjectURL(newCertificate.certificateFile)
-                            : "/placeholder.svg"
-                        }
-                        alt="Certificate Preview"
-                        className="certificate-preview-image"
-                        onClick={handleCertificateImageClick}
-                      />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleCertificateFileChange}
-                        className="file-input"
-                        ref={certificateFileInputRef}
-                        style={{ display: "none" }}
-                      />
-                    </div>
-                  </div>
-                  <div className="form-actions">
-                    <button className="save-btn" onClick={handleAddCertificate}>
-                      Add Certificate
-                    </button>
-                    <button className="cancel-btn" onClick={() => setIsAddingCertificate(false)}>
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {graduate?.certificates?.length > 0 ? (
-                graduate.certificates.map((certificate) => (
-                  <div key={certificate.id} className="certificate-item">
-                    {editingCertificateId === certificate.id ? (
-                      <div className="certificate-form">
-                        <div className="form-group">
-                          <label className="credential-label">Course Name:</label>
-                          <input
-                            type="text"
-                            name="courseName"
-                            value={newCertificate.courseName}
-                            onChange={handleCertificateInputChange}
-                            className="form-input"
-                            placeholder="Enter course name"
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label className="credential-label">Certificate Number:</label>
-                          <input
-                            type="text"
-                            name="certificateNumber"
-                            value={newCertificate.certificateNumber}
-                            onChange={handleCertificateInputChange}
-                            className="form-input"
-                            placeholder="Enter certificate number"
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label className="credential-label">Issue Date:</label>
-                          <input
-                            type="date"
-                            name="issueDate"
-                            value={newCertificate.issueDate}
-                            onChange={handleCertificateInputChange}
-                            className="form-input"
-                            placeholder="Select issue date"
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label className="credential-label">Certificate File:</label>
-                          <div className="certificate-image-upload">
-                            <img
-                              src={
-                                newCertificate.certificateFile
-                                  ? URL.createObjectURL(newCertificate.certificateFile)
-                                  : certificate.certificateFilePath || "/placeholder.svg"
-                              }
-                              alt="Certificate Preview"
-                              className="certificate-preview-image"
-                              onClick={handleCertificateImageClick}
-                            />
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleCertificateFileChange}
-                              className="file-input"
-                              ref={certificateFileInputRef}
-                              style={{ display: "none" }}
-                            />
-                          </div>
-                        </div>
-                        <div className="form-actions">
-                          <button
-                            className="save-btn"
-                            onClick={() => handleUpdateCertificate(certificate.id)}
-                          >
-                            Save
-                          </button>
-                          <button className="cancel-btn" onClick={() => setEditingCertificateId(null)}>
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div
-                          className="certificate-details"
-                          onClick={() => handleCertificateClick(certificate)}
-                        >
-                          <FaCertificate className="certificate-icon" />
-                          <div>
-                            <h4>{certificate.courseName}</h4>
-                            <p>Certificate Number: {certificate.certificateNumber}</p>
-                            <p className="certificate-date">Issued: {certificate.issueDate}</p>
-                          </div>
-                        </div>
-                        <div className="certificate-actions">
-                          <button
-                            className="edit-btn"
-                            onClick={() => handleEditCertificate(certificate)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="delete-btn"
-                            onClick={() => handleDeleteCertificate(certificate.id)}
-                          >
-                            <FaTrash />
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="no-certificates">
-                  <p>No certificates added yet. Add your first certificate to showcase your skills.</p>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
 
       {showLogoutModal && (
         <TrabahadorLogoutConfirmation onConfirm={confirmLogout} onCancel={cancelLogout} />
-      )}
-
-      {selectedCertificateImage && (
-        <div className="certificate-modal">
-          <div className="certificate-modal-content">
-            <span className="certificate-modal-close" onClick={handleCloseModal}>
-              ×
-            </span>
-            <img
-              src={selectedCertificateImage || "/placeholder.svg"}
-              alt="Certificate"
-              className="certificate-modal-image"
-            />
-          </div>
-        </div>
-      )}
-
-      {showCategoryRequestModal && (
-        <div className="modal-overlay">
-          <div className="category-modal">
-            <h2 className="category-modal-title">Request a New Category</h2>
-            {error && <div className="error-message">{error}</div>}
-            <div className="category-modal-content">
-              <select
-                value={selectedCategory}
-                onChange={handleCategoryChange}
-                className="category-select"
-              >
-                <option value="">Select a category</option>
-                {categories
-                  .filter(
-                    (category) =>
-                      !graduate.categories?.some((cat) => cat.name === category.name) &&
-                      !pendingRequests.some((req) => req.category.name === category.name)
-                  )
-                  .map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-            <div className="category-modal-actions">
-              <button className="category-save-button" onClick={handleRequestCategorySubmit}>
-                Request
-              </button>
-              <button
-                className="category-cancel-button"
-                onClick={handleCategoryRequestModalClose}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       <Footer />
