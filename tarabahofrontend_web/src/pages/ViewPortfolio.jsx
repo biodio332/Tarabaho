@@ -14,6 +14,7 @@ import {
   DialogFooter,
   Chip,
   Spinner,
+  Input,
 } from "@material-tailwind/react"
 
 const ViewPortfolio = () => {
@@ -29,10 +30,12 @@ const ViewPortfolio = () => {
   const [error, setError] = useState("")
   const [isPublicView, setIsPublicView] = useState(false)
   const [isGraduateView, setIsGraduateView] = useState(false)
+  const [selectedProjectImage, setSelectedProjectImage] = useState(null)
+  const [isCaptionDialogOpen, setIsCaptionDialogOpen] = useState(false)
+  const [caption, setCaption] = useState("")
+  const [sharePlatform, setSharePlatform] = useState("")
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080"
   const navigate = useNavigate()
-  const [selectedProjectImage, setSelectedProjectImage] = useState(null)
-
   const urlParams = new URLSearchParams(window.location.search)
   const urlShareToken = urlParams.get("share")
 
@@ -266,77 +269,69 @@ const ViewPortfolio = () => {
     }
   }
 
-  // ← NEW: Fetch public portfolio with share token from URL
   const fetchPublicDataWithToken = async () => {
-  try {
-    if (!urlShareToken) {
-      throw new Error("Share token is required for public access");
-    }
-    
-    console.log("🔄 Fetching complete public portfolio for ID:", graduateId);
-    console.log("🔑 Share token:", urlShareToken.substring(0, 8) + "...");
-    
-    const portfolioResponse = await axios.get(
-      `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio?share=${urlShareToken}`,
-      { 
-        withCredentials: true,  // ← FIXED: Enable cookies for session tracking
+    try {
+      if (!urlShareToken) {
+        throw new Error("Share token is required for public access")
       }
-    );
-    
-    // ← FIXED: Log the ACTUAL response structure
-    console.log("📦 API Response Structure:", {
-      isCompleteResponse: portfolioResponse.data.portfolio !== undefined,
-      hasPortfolio: !!portfolioResponse.data.portfolio,
-      hasGraduate: !!portfolioResponse.data.graduate,
-      certificateCount: (portfolioResponse.data.certificates || []).length,
-      projectCount: (portfolioResponse.data.projects || []).length,
-      directPortfolioKeys: portfolioResponse.data.portfolio ? Object.keys(portfolioResponse.data.portfolio) : Object.keys(portfolioResponse.data)
-    });
-    
-    // ← FIXED: Pass the COMPLETE response to normalizer
-    const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data);
-    
-    // ← FIXED: Set ALL states from the response
-    setPortfolio(normalizedPortfolio);
-    
-    // Graduate (could be Map or object)
-    const graduateData = portfolioResponse.data.graduate || 
-                        (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.graduate : null) ||
-                        { 
-                          id: graduateId, 
-                          fullName: normalizedPortfolio.fullName,
-                          profilePicture: normalizedPortfolio.avatar 
-                        };
-    setGraduate(graduateData);
-    
-    // Certificates
-    const certs = portfolioResponse.data.certificates || 
-                (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.certificates : []);
-    setCertificates(certs);
-    
-    // Projects  
-    const projs = portfolioResponse.data.projects || 
-                (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.projects : []);
-    setProjects(projs);
-    
-    setIsPublicView(true);
-    setIsGraduateView(false);
-    setIsLoading(false);
-    
-    console.log("✅ Public portfolio loaded with:", {
-      graduate: !!graduateData,
-      certificates: certs.length,
-      projects: projs.length,
-      skills: normalizedPortfolio.skills?.length || 0,
-      experiences: normalizedPortfolio.experiences?.length || 0
-    });
-    
-  } catch (err) {
-    console.error("❌ Failed to fetch public data:", err.response?.status, err.message);
-    setError(getErrorMessage(err));
-    setIsLoading(false);
+
+      console.log("🔄 Fetching complete public portfolio for ID:", graduateId)
+      console.log("🔑 Share token:", urlShareToken.substring(0, 8) + "...")
+
+      const portfolioResponse = await axios.get(
+        `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio?share=${urlShareToken}`,
+        { withCredentials: true },
+      )
+
+      console.log("📦 API Response Structure:", {
+        isCompleteResponse: portfolioResponse.data.portfolio !== undefined,
+        hasPortfolio: !!portfolioResponse.data.portfolio,
+        hasGraduate: !!portfolioResponse.data.graduate,
+        certificateCount: (portfolioResponse.data.certificates || []).length,
+        projectCount: (portfolioResponse.data.projects || []).length,
+        directPortfolioKeys: portfolioResponse.data.portfolio ? Object.keys(portfolioResponse.data.portfolio) : Object.keys(portfolioResponse.data),
+      })
+
+      const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data)
+
+      setPortfolio(normalizedPortfolio)
+
+      const graduateData =
+        portfolioResponse.data.graduate ||
+        (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.graduate : null) ||
+        {
+          id: graduateId,
+          fullName: normalizedPortfolio.fullName,
+          profilePicture: normalizedPortfolio.avatar,
+        }
+      setGraduate(graduateData)
+
+      const certs =
+        portfolioResponse.data.certificates ||
+        (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.certificates : [])
+      setCertificates(certs)
+
+      const projs =
+        portfolioResponse.data.projects || (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.projects : [])
+      setProjects(projs)
+
+      setIsPublicView(true)
+      setIsGraduateView(false)
+      setIsLoading(false)
+
+      console.log("✅ Public portfolio loaded with:", {
+        graduate: !!graduateData,
+        certificates: certs.length,
+        projects: projs.length,
+        skills: normalizedPortfolio.skills?.length || 0,
+        experiences: normalizedPortfolio.experiences?.length || 0,
+      })
+    } catch (err) {
+      console.error("❌ Failed to fetch public data:", err.response?.status, err.message)
+      setError(getErrorMessage(err))
+      setIsLoading(false)
+    }
   }
-};
 
   const getErrorMessage = (err) => {
     const status = err.response?.status
@@ -494,29 +489,51 @@ const ViewPortfolio = () => {
       })
   }
 
-  const shareToLinkedIn = () => {
-    const title = `${portfolio?.fullName || "Portfolio"} - Professional Portfolio`
-    const summary =
+  const openCaptionDialog = (platform) => {
+    setSharePlatform(platform)
+    setCaption(
       portfolio?.professionalSummary ||
-      "Check out my professional portfolio showcasing my skills, experiences, and achievements!"
-    const shareableUrl = getShareableUrl()
+        "Check out my professional portfolio showcasing my skills, experiences, and achievements!"
+    )
+    setIsCaptionDialogOpen(true)
+  }
 
-    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-      shareableUrl,
-    )}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(summary)}`
+  const handleShareWithCaption = () => {
+    if (!caption.trim()) {
+      alert("Please enter a caption before sharing.")
+      return
+    }
+    if (sharePlatform === "linkedin") {
+      shareToLinkedIn()
+    } else if (sharePlatform === "facebook") {
+      shareToFacebook()
+    }
+    setIsCaptionDialogOpen(false)
+    setCaption("")
+    setSharePlatform("")
+  }
+
+  const shareToLinkedIn = () => {
+    const title = portfolio?.fullName ? `${portfolio.fullName}'s Professional Portfolio` : "Professional Portfolio"
+    const shareableUrl = getShareableUrl()
+    const encodedCaption = encodeURIComponent(caption)
+    const encodedTitle = encodeURIComponent(title)
+    const encodedUrl = encodeURIComponent(shareableUrl)
+
+    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}&title=${encodedTitle}&summary=${encodedCaption}`
+    console.log("LinkedIn Share URL:", linkedInUrl) // Debug log
     window.open(linkedInUrl, "_blank")
   }
 
   const shareToFacebook = () => {
-    const title = `${portfolio?.fullName || "Portfolio"} - Professional Portfolio`
-    const summary =
-      portfolio?.professionalSummary ||
-      "Check out my professional portfolio showcasing my skills, experiences, and achievements!"
+    const title = portfolio?.fullName ? `${portfolio.fullName}'s Professional Portfolio` : "Professional Portfolio"
     const shareableUrl = getShareableUrl()
+    const encodedCaption = encodeURIComponent(caption)
+    const encodedTitle = encodeURIComponent(title)
+    const encodedUrl = encodeURIComponent(shareableUrl)
 
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-      shareableUrl,
-    )}&quote=${encodeURIComponent(summary)}&title=${encodeURIComponent(title)}`
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedCaption}`
+    console.log("Facebook Share URL:", facebookUrl) // Debug log
     window.open(facebookUrl, "_blank")
   }
 
@@ -612,12 +629,10 @@ const ViewPortfolio = () => {
   return (
     <div className="min-h-screen bg-white">
       <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white relative overflow-hidden">
-        {/* Background pattern */}
         <div className="absolute inset-0 bg-white/5 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px] animate-pulse"></div>
 
         <div className="container mx-auto px-6 py-24 relative">
           <div className="flex items-center justify-between max-w-6xl mx-auto gap-16">
-            {/* Profile Image - Left Side */}
             {(graduate?.profilePicture || portfolio?.avatar) && (
               <div className="relative flex-shrink-0 animate-fade-in-up">
                 <div className="absolute inset-0 bg-white/20 blur-xl scale-110 animate-pulse"></div>
@@ -631,7 +646,6 @@ const ViewPortfolio = () => {
               </div>
             )}
 
-            {/* Text Content - Right Side */}
             <div className="flex-1 text-left space-y-8">
               <div className="animate-fade-in-up animation-delay-300">
                 <Typography
@@ -678,7 +692,6 @@ const ViewPortfolio = () => {
           </div>
         </div>
 
-        {/* Bottom wave decoration */}
         <div className="absolute bottom-0 left-0 right-0 animate-wave">
           <svg viewBox="0 0 1200 120" className="w-full h-12 fill-white">
             <path d="M0,60 C300,120 900,0 1200,60 L1200,120 L0,120 Z"></path>
@@ -788,7 +801,6 @@ const ViewPortfolio = () => {
       <div className="container mx-auto px-6 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
           <div className="lg:col-span-1 space-y-8">
-            {/* Contact Information */}
             <div className="bg-white border border-gray-100 rounded-lg p-6">
               <Typography variant="h6" className="font-light text-blue-600 mb-6 text-lg">
                 Contact
@@ -827,7 +839,6 @@ const ViewPortfolio = () => {
               </div>
             </div>
 
-            {/* Skills */}
             <div className="bg-white border border-gray-100 rounded-lg p-6">
               <Typography variant="h6" className="font-light text-blue-600 mb-6 text-lg">
                 Skills
@@ -857,7 +868,6 @@ const ViewPortfolio = () => {
               )}
             </div>
 
-            {/* TESDA Information */}
             <div className="bg-white border border-gray-100 rounded-lg p-6">
               <Typography variant="h6" className="font-light text-blue-600 mb-6 text-lg">
                 TESDA Information
@@ -918,7 +928,6 @@ const ViewPortfolio = () => {
           </div>
 
           <div className="lg:col-span-3 space-y-12">
-            {/* Experience */}
             <div>
               <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
                 Experience
@@ -960,7 +969,6 @@ const ViewPortfolio = () => {
               )}
             </div>
 
-            {/* Projects */}
             <div>
               <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
                 Projects
@@ -1014,7 +1022,6 @@ const ViewPortfolio = () => {
               )}
             </div>
 
-            {/* Certificates */}
             <div>
               <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
                 Certificates
@@ -1059,7 +1066,6 @@ const ViewPortfolio = () => {
               )}
             </div>
 
-            {/* Awards & Recognition */}
             <div>
               <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
                 Awards & Recognition
@@ -1093,74 +1099,75 @@ const ViewPortfolio = () => {
               )}
             </div>
 
-            {/* Education & Memberships */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Continuing Education */}
-              <div>
-                <Typography variant="h5" className="font-light text-blue-600 mb-6">
-                  Continuing Education
-                </Typography>
-                {portfolio.continuingEducations && portfolio.continuingEducations.length > 0 ? (
-                  <div className="space-y-4">
-                    {portfolio.continuingEducations.map((edu, index) => (
-                      <div key={index} className="border-l-2 border-blue-100 pl-4 py-2">
-                        <Typography variant="small" className="font-medium mb-1">
-                          {edu.courseName}
-                        </Typography>
-                        {edu.institution && (
-                          <Typography variant="small" color="gray" className="mb-1">
-                            {edu.institution}
-                          </Typography>
-                        )}
-                        {edu.completionDate && (
-                          <Typography variant="small" color="blue">
-                            {edu.completionDate}
-                          </Typography>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <Typography variant="small" className="text-gray-500 italic">
-                    No continuing education added yet
+            <div>
+              <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
+                Continuing Education & Memberships
+              </Typography>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <Typography variant="h5" className="font-light text-blue-600 mb-6">
+                    Continuing Education
                   </Typography>
-                )}
-              </div>
+                  {portfolio.continuingEducations && portfolio.continuingEducations.length > 0 ? (
+                    <div className="space-y-4">
+                      {portfolio.continuingEducations.map((edu, index) => (
+                        <div key={index} className="border-l-2 border-blue-100 pl-4 py-2">
+                          <Typography variant="small" className="font-medium mb-1">
+                            {edu.courseName}
+                          </Typography>
+                          {edu.institution && (
+                            <Typography variant="small" color="gray" className="mb-1">
+                              {edu.institution}
+                            </Typography>
+                          )}
+                          {edu.completionDate && (
+                            <Typography variant="small" color="blue">
+                              {edu.completionDate}
+                            </Typography>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <Typography variant="small" className="text-gray-500 italic">
+                      No continuing education added yet
+                    </Typography>
+                  )}
+                </div>
 
-              {/* Professional Memberships */}
-              <div>
-                <Typography variant="h5" className="font-light text-blue-600 mb-6">
-                  Professional Memberships
-                </Typography>
-                {portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0 ? (
-                  <div className="space-y-4">
-                    {portfolio.professionalMemberships.map((mem, index) => (
-                      <div key={index} className="border-l-2 border-blue-100 pl-4 py-2">
-                        <Typography variant="small" className="font-medium mb-1">
-                          {mem.organization}
-                        </Typography>
-                        {mem.membershipType && (
-                          <Typography variant="small" color="gray" className="mb-1">
-                            {mem.membershipType}
-                          </Typography>
-                        )}
-                        {mem.startDate && (
-                          <Typography variant="small" color="blue">
-                            Since {mem.startDate}
-                          </Typography>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <Typography variant="small" className="text-gray-500 italic">
-                    No professional memberships added yet
+                <div>
+                  <Typography variant="h5" className="font-light text-blue-600 mb-6">
+                    Professional Memberships
                   </Typography>
-                )}
+                  {portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0 ? (
+                    <div className="space-y-4">
+                      {portfolio.professionalMemberships.map((mem, index) => (
+                        <div key={index} className="border-l-2 border-blue-100 pl-4 py-2">
+                          <Typography variant="small" className="font-medium mb-1">
+                            {mem.organization}
+                          </Typography>
+                          {mem.membershipType && (
+                            <Typography variant="small" color="gray" className="mb-1">
+                              {mem.membershipType}
+                            </Typography>
+                          )}
+                          {mem.startDate && (
+                            <Typography variant="small" color="blue">
+                              Since {mem.startDate}
+                            </Typography>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <Typography variant="small" className="text-gray-500 italic">
+                      No professional memberships added yet
+                    </Typography>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* References */}
             <div>
               <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
                 References
@@ -1215,8 +1222,7 @@ const ViewPortfolio = () => {
                 Share Your Portfolio
               </Typography>
               <Typography color="gray" className="max-w-2xl mx-auto font-light">
-                Share your professional portfolio with potential employers, clients, or collaborators using secure
-                links.
+                Share your professional portfolio with potential employers, clients, or collaborators using secure links.
               </Typography>
             </div>
 
@@ -1224,10 +1230,22 @@ const ViewPortfolio = () => {
               <Button onClick={copyToClipboard} color="blue" size="lg" className="font-light">
                 Copy Secure Link
               </Button>
-              <Button onClick={shareToLinkedIn} color="blue" variant="outlined" size="lg" className="font-light">
+              <Button
+                onClick={() => openCaptionDialog("linkedin")}
+                color="blue"
+                variant="outlined"
+                size="lg"
+                className="font-light"
+              >
                 Share to LinkedIn
               </Button>
-              <Button onClick={shareToFacebook} color="blue" variant="outlined" size="lg" className="font-light">
+              <Button
+                onClick={() => openCaptionDialog("facebook")}
+                color="blue"
+                variant="outlined"
+                size="lg"
+                className="font-light"
+              >
                 Share to Facebook
               </Button>
             </div>
@@ -1255,7 +1273,7 @@ const ViewPortfolio = () => {
               <Button onClick={handleRegenerateToken} color="blue" variant="outlined" size="lg" className="font-light">
                 Generate New Link
               </Button>
-              <Button onClick={handleDelete} color="red" variant="outlined" size="lg" className="font-light">
+              <Button onClick={handleDelete} color="red" variable="outlined" size="lg" className="font-light">
                 Delete Portfolio
               </Button>
             </div>
@@ -1276,8 +1294,7 @@ const ViewPortfolio = () => {
               Secure Portfolio Access
             </Typography>
             <Typography color="blue-gray" className="mb-6 max-w-2xl mx-auto font-light">
-              You've accessed this portfolio through a secure private link. This ensures the portfolio owner's privacy
-              and control over who can view their information.
+              You've accessed this portfolio through a secure private link. This ensures the portfolio owner's privacy and control over who can view their information.
             </Typography>
             <Typography color="blue-gray" className="mb-6 font-light">
               Want to edit this portfolio or view your own?
@@ -1290,8 +1307,7 @@ const ViewPortfolio = () => {
             {!urlShareToken && (
               <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                 <Typography color="amber" className="text-sm font-light">
-                  <strong>Legacy Access:</strong> This portfolio allows public access without a share token (less
-                  secure). Contact the owner to get a secure share link.
+                  <strong>Legacy Access:</strong> This portfolio allows public access without a share token (less secure). Contact the owner to get a secure share link.
                 </Typography>
               </div>
             )}
@@ -1346,6 +1362,34 @@ const ViewPortfolio = () => {
           </DialogFooter>
         </Dialog>
       )}
+
+      <Dialog open={isCaptionDialogOpen} handler={() => setIsCaptionDialogOpen(false)} size="sm">
+        <DialogBody className="p-6">
+          <Typography variant="h6" color="blue-gray" className="mb-4">
+            Add a Caption
+          </Typography>
+          <Input
+            label="Caption"
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            className="mb-4"
+            placeholder="Enter a caption for your post"
+          />
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            variant="text"
+            color="red"
+            onClick={() => setIsCaptionDialogOpen(false)}
+            className="mr-2"
+          >
+            Cancel
+          </Button>
+          <Button color="blue" onClick={handleShareWithCaption}>
+            Share
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   )
 }
