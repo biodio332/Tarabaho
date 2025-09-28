@@ -509,18 +509,14 @@ const ViewPortfolio = () => {
 
   const shareToFacebook = () => {
     const title = `${portfolio?.fullName || "Portfolio"} - Professional Portfolio`
+    const summary =
+      portfolio?.professionalSummary ||
+      "Check out my professional portfolio showcasing my skills, experiences, and achievements!"
     const shareableUrl = getShareableUrl()
-    
-    // Predefined caption encouraging hiring
-    const caption = `I'm ${portfolio?.fullName || "a professional"}, a ${
-      portfolio?.professionalTitle || "dedicated professional"
-    } with a proven track record of success. Explore my portfolio to see my skills, projects, and achievements. Looking for a motivated ${
-      portfolio?.professionalTitle || "team member"
-    } to join your organization? Let's connect and discuss how I can contribute to your success! #HireMe #Portfolio #CareerOpportunity`
 
     const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
       shareableUrl,
-    )}&quote=${encodeURIComponent(caption)}&title=${encodeURIComponent(title)}`
+    )}&quote=${encodeURIComponent(summary)}&title=${encodeURIComponent(title)}`
     window.open(facebookUrl, "_blank")
   }
 
