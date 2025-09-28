@@ -224,7 +224,6 @@ const handleSaveField = async (field) => {
 
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col font-sans">
-      <TrabahadorNavbar activePage="profile" />
 
       <div className="flex-1 p-6 max-w-6xl mx-auto w-full">
         <div className="flex justify-between items-center flex-wrap gap-4 mb-8">
@@ -536,7 +535,6 @@ const handleSaveField = async (field) => {
         <TrabahadorLogoutConfirmation onConfirm={confirmLogout} onCancel={cancelLogout} />
       )}
 
-      <Footer />
     </div>
   );
 };

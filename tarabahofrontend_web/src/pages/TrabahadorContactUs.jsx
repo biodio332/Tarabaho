@@ -51,8 +51,6 @@ const TrabahadorContactUs = () => {
 
   return (
     <div className="admin-contact-page-container">
-      {/* NAVIGATION BAR */}
-      <TrabahadorNavbar />
 
       {/* MAIN CONTENT */}
       <div className="admin-contact-content">
@@ -173,7 +171,6 @@ const TrabahadorContactUs = () => {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   )
 }

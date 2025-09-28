@@ -53,6 +53,16 @@ function App() {
         <Route path="/" element={<HomePageLayout><Homepage /></HomePageLayout>} />
         <Route path="/about" element={<HomePageLayout><AboutUs /></HomePageLayout>} />
         <Route path="/contact" element={<HomePageLayout><ContactUs /></HomePageLayout>} />
+
+        {/* Using GeneralLayout */}
+        <Route path="/graduate-homepage" element={<GeneralLayout><TrabahadorHomepage /></GeneralLayout>} />
+        <Route path="/create-portfolio" element={<GeneralLayout><PortfolioCreation /></GeneralLayout>} />
+        <Route path="/portfolio/:graduateId" element={<GeneralLayout><ViewPortfolio /></GeneralLayout>} />
+        <Route path="/portfolio/edit/:graduateId" element={<GeneralLayout><EditPortfolio /></GeneralLayout>} />
+        <Route path="/graduate-profile" element={<GeneralLayout><TrabahadorProfile /></GeneralLayout>} />
+        <Route path="/graduate-about" element={<GeneralLayout><TrabahadorAboutUs /></GeneralLayout>} />
+        <Route path="/graduate-contact" element={<GeneralLayout><TrabahadorContactUs /></GeneralLayout>} />
+
         
 
         <Route path="/signin" element={<SignIn />} />
@@ -94,12 +104,7 @@ function App() {
         <Route path="/graduate-profile" element={<TrabahadorProfile />} />
         <Route path="/graduate-about" element={<TrabahadorAboutUs />} />
         <Route path="/graduate-profile-detail/:graduateId" element={<WorkerProfileDetail />} />
-
-        {/* Using GeneralLayout */}
-        <Route path="/graduate-homepage" element={<GeneralLayout><TrabahadorHomepage /></GeneralLayout>} />
-        <Route path="/create-portfolio" element={<GeneralLayout><PortfolioCreation /></GeneralLayout>} />
-        <Route path="/portfolio/:graduateId" element={<GeneralLayout><ViewPortfolio /></GeneralLayout>} />
-        <Route path="/portfolio/edit/:graduateId" element={<GeneralLayout><EditPortfolio /></GeneralLayout>} />
+        <Route path="/graduate-profile-detail/:graduateId" element={<WorkerProfileDetail />} />
 
 
         <Route path="/category/:categoryName" element={<UserBrowseCategory />} />
