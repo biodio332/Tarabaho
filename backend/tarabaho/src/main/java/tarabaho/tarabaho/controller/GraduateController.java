@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -68,6 +69,20 @@ public class GraduateController {
     @Autowired
     private PasswordEncoderService passwordEncoderService;
 
+    private String getUsernameFromAuthentication(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof OAuth2User) {
+            OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+            String email = oauthUser.getAttribute("email");
+            System.out.println("GraduateController: OAuth2 authentication detected, using email: " + email);
+            return email;
+        } else {
+            String username = authentication.getName();
+            System.out.println("GraduateController: Default authentication detected, using username: " + username);
+            return username;
+        }
+    }
+    
+
     @Operation(summary = "Get graduate by ID", description = "Retrieve a graduate by their ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Graduate retrieved successfully"),
@@ -112,10 +127,6 @@ public class GraduateController {
         if (graduateService.findByEmail(graduateDTO.getEmail()).isPresent()) {
             return ResponseEntity.badRequest().body("⚠️ Email already exists.");
         }
-        if (graduateDTO.getPhoneNumber() != null && !graduateDTO.getPhoneNumber().isEmpty() &&
-                graduateService.findByPhoneNumber(graduateDTO.getPhoneNumber()).isPresent()) {
-            return ResponseEntity.badRequest().body("⚠️ Phone number already exists.");
-        }
 
         return ResponseEntity.ok().build();
     }
@@ -144,19 +155,14 @@ public class GraduateController {
         if (graduateService.findByEmail(graduateDTO.getEmail()).isPresent()) {
             return ResponseEntity.badRequest().body("⚠️ Email already exists.");
         }
-        if (graduateDTO.getPhoneNumber() != null && !graduateDTO.getPhoneNumber().isEmpty() &&
-                graduateService.findByPhoneNumber(graduateDTO.getPhoneNumber()).isPresent()) {
-            return ResponseEntity.badRequest().body("⚠️ Phone number already exists.");
-        }
+       
         if (graduateDTO.getFirstName() == null || graduateDTO.getFirstName().trim().isEmpty()) {
             return ResponseEntity.badRequest().body("⚠️ First name is required.");
         }
         if (graduateDTO.getLastName() == null || graduateDTO.getLastName().trim().isEmpty()) {
             return ResponseEntity.badRequest().body("⚠️ Last name is required.");
         }
-        if (graduateDTO.getHourly() <= 0) {
-            return ResponseEntity.badRequest().body("⚠️ Hourly rate must be provided and greater than 0.");
-        }
+       
         if (graduateDTO.getPassword() == null || graduateDTO.getPassword().isEmpty()) {
             return ResponseEntity.badRequest().body("⚠️ Password is required.");
         }
@@ -352,20 +358,40 @@ public class GraduateController {
                 System.out.println("GraduateController: getToken failed: Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
             }
-            String username = authentication.getName();
-            System.out.println("GraduateController: getToken for username: " + username);
-            
+
+            String username;
+            if (authentication.getPrincipal() instanceof OAuth2User) {
+                OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+                username = oauthUser.getAttribute("email"); // Use email for OAuth2 users
+                System.out.println("GraduateController: OAuth2 authentication detected, using email: " + username);
+                System.out.println("GraduateController: OAuth2User attributes: " + oauthUser.getAttributes());
+            } else {
+                username = authentication.getName(); // Use username for default login
+                System.out.println("GraduateController: Default authentication detected, using username: " + username);
+            }
+
+            if (username == null || username.isEmpty()) {
+                System.out.println("GraduateController: getToken failed: Username/email is null or empty");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid authentication: No username/email found");
+            }
+
             Optional<Graduate> graduate = graduateService.findByUsername(username);
             if (!graduate.isPresent()) {
                 System.out.println("GraduateController: Graduate not found for username: " + username);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not found");
+                // Fallback to email-based lookup for robustness
+                graduate = graduateService.findByEmail(username);
+                if (!graduate.isPresent()) {
+                    System.out.println("GraduateController: Graduate not found for email: " + username);
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not found");
+                }
             }
-            
+
             String token = jwtUtil.generateToken(username);
             System.out.println("GraduateController: Generated token for graduate: " + username);
             return ResponseEntity.ok(new TokenResponse(token));
         } catch (Exception e) {
             System.err.println("GraduateController: getToken failed: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
     }
@@ -439,11 +465,14 @@ public class GraduateController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
             }
 
-            String username = authentication.getName();
+            String username = getUsernameFromAuthentication(authentication);
             Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
             if (!graduateOpt.isPresent()) {
-                System.out.println("GraduateController: Upload picture failed: Graduate not found for username: " + username);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username: " + username);
+                graduateOpt = graduateService.findByEmail(username); // Fallback for OAuth2 email
+                if (!graduateOpt.isPresent()) {
+                    System.out.println("GraduateController: Upload picture failed: Graduate not found for username/email: " + username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username/email: " + username);
+                }
             }
             Graduate graduate = graduateOpt.get();
 
@@ -630,27 +659,32 @@ public class GraduateController {
 
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("GraduateController: Update failed: Graduate not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
             }
 
-            Graduate existingGraduate = graduateService.findById(id);
-            String authenticatedUsername = authentication.getName();
-            if (!existingGraduate.getUsername().equals(authenticatedUsername)) {
+            String username = getUsernameFromAuthentication(authentication);
+            Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
+            if (!graduateOpt.isPresent()) {
+                graduateOpt = graduateService.findByEmail(username); // Fallback for OAuth2 email
+                if (!graduateOpt.isPresent()) {
+                    System.out.println("GraduateController: Update failed: Graduate not found for username/email: " + username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username/email: " + username);
+                }
+            }
+            Graduate existingGraduate = graduateOpt.get();
+
+            if (!existingGraduate.getId().equals(id)) {
+                System.out.println("GraduateController: Update failed: Unauthorized for graduateId: " + id + ", authenticated graduateId: " + existingGraduate.getId());
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("⚠️ You are not authorized to update this profile.");
             }
 
             if (graduateDTO.getEmail() != null && !graduateDTO.getEmail().equals(existingGraduate.getEmail())) {
                 if (graduateService.findByEmail(graduateDTO.getEmail()).isPresent()) {
+                    System.out.println("GraduateController: Update failed: Email already exists: " + graduateDTO.getEmail());
                     return ResponseEntity.badRequest().body("⚠️ Email already exists.");
                 }
                 existingGraduate.setEmail(graduateDTO.getEmail());
-            }
-
-            if (graduateDTO.getPhoneNumber() != null && !graduateDTO.getPhoneNumber().equals(existingGraduate.getPhoneNumber())) {
-                if (!graduateDTO.getPhoneNumber().isEmpty() && graduateService.findByPhoneNumber(graduateDTO.getPhoneNumber()).isPresent()) {
-                    return ResponseEntity.badRequest().body("⚠️ Phone number already exists.");
-                }
-                existingGraduate.setPhoneNumber(graduateDTO.getPhoneNumber());
             }
 
             if (graduateDTO.getAddress() != null) {
@@ -665,12 +699,6 @@ public class GraduateController {
             if (graduateDTO.getLastName() != null) {
                 existingGraduate.setLastName(graduateDTO.getLastName());
             }
-            if (graduateDTO.getHourly() != null) {
-                if (graduateDTO.getHourly() <= 0) {
-                    return ResponseEntity.badRequest().body("⚠️ Hourly rate must be greater than 0.");
-                }
-                existingGraduate.setHourly(graduateDTO.getHourly());
-            }
             if (graduateDTO.getBirthday() != null && !graduateDTO.getBirthday().isEmpty()) {
                 existingGraduate.setBirthday(LocalDate.parse(graduateDTO.getBirthday()));
             }
@@ -683,8 +711,10 @@ public class GraduateController {
             System.out.println("GraduateController: Graduate updated successfully, ID: " + updatedGraduate.getId());
             return ResponseEntity.ok(updatedGraduate);
         } catch (IllegalArgumentException e) {
+            System.out.println("GraduateController: Update failed: " + e.getMessage());
             return ResponseEntity.badRequest().body("⚠️ " + e.getMessage());
         } catch (Exception e) {
+            System.out.println("GraduateController: Update failed: " + e.getMessage());
             return ResponseEntity.badRequest().body("⚠️ Failed to update profile: " + e.getMessage());
         }
     }

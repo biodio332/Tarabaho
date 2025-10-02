@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, Component } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, Component } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import axios from "axios";
 import logo from "../assets/images/logowhite.png";
 import styles from "../styles/signin.module.css";
@@ -57,7 +57,48 @@ const SignIn = () => {
   const [showGraduatePassword, setShowGraduatePassword] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
   const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
+
+  useEffect(() => {
+    console.log("SignIn component mounted, current loginType:", loginType);
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get("type");
+    const username = urlParams.get("username");
+    const error = urlParams.get("error");
+
+    if (error) {
+      const decodedError = decodeURIComponent(error);
+      console.error(`OAuth2 login failed: ${decodedError}`);
+      setError(`Google Sign-In failed: ${decodedError}`);
+      setIsLoading(false);
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
+    if (type && username) {
+      console.log(`OAuth redirect detected, type: ${type}, username: ${username}`);
+      setIsLoading(true);
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userType", type);
+      localStorage.setItem("username", username);
+      console.log("Stored in localStorage:", {
+        isLoggedIn: "true",
+        userType: type,
+        username: username,
+      });
+      const redirectPath = type === "graduate" ? "/graduate-homepage" : "/user-browse";
+      navigate(redirectPath, { replace: true });
+      setIsLoading(false);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [navigate, loginType]); // Added loginType to dependencies for debugging
+
+  const handleLoginTypeChange = (type) => {
+    console.log(`Switching loginType to: ${type}`);
+    setLoginType(type);
+    setError("");
+  };
 
   const handleUserLogin = async (e) => {
     e.preventDefault();
@@ -134,9 +175,12 @@ const SignIn = () => {
   };
 
   const handleGoogleLogin = () => {
-    console.log("Initiating Google OAuth login");
-    window.location.href = `${backendUrl}/oauth2/authorization/google`;
-  };
+    console.log(`Initiating Google OAuth login with loginType: ${loginType}`);
+    setIsLoading(true);
+    const oauthUrl = `${backendUrl}/oauth2/authorization/google?type=${loginType}`;
+    console.log(`Redirecting to OAuth URL: ${oauthUrl}`);
+    window.location.href = oauthUrl;
+};
 
   const handleBack = () => {
     console.log("Navigating back to home");
@@ -159,7 +203,11 @@ const SignIn = () => {
     <ErrorBoundary>
       <div className={styles.signinPage}>
         {isLoading && (
-          <div className={`${styles.loadingOverlay} ${isLoading ? styles.active : ""}`}>
+          <div
+            className={`${styles.loadingOverlay} ${
+              isLoading ? styles.active : ""
+            }`}
+          >
             <span className={styles.loadingSpinner}></span>
           </div>
         )}
@@ -291,7 +339,7 @@ const SignIn = () => {
                       className={`${styles.tabButton} ${
                         loginType === "user" ? styles.active : ""
                       }`}
-                      onClick={() => setLoginType("user")}
+                      onClick={() => handleLoginTypeChange("user")}
                     >
                       Client
                     </button>
@@ -299,7 +347,7 @@ const SignIn = () => {
                       className={`${styles.tabButton} ${
                         loginType === "graduate" ? styles.active : ""
                       }`}
-                      onClick={() => setLoginType("graduate")}
+                      onClick={() => handleLoginTypeChange("graduate")}
                     >
                       Graduate
                     </button>
@@ -428,19 +476,13 @@ const SignIn = () => {
 
                     <div className={styles.registerPrompt}>
                       <span>Don't have an account?</span>
-                      <Link
-                        to="/register-user"
-                        className={styles.registerLink}
-                      >
+                      <Link to="/register-user" className={styles.registerLink}>
                         Register as Client
                       </Link>
                     </div>
                   </form>
                 ) : (
-                  <form
-                    onSubmit={handleGraduateLogin}
-                    className={styles.loginForm}
-                  >
+                  <form onSubmit={handleGraduateLogin} className={styles.loginForm}>
                     <div className={styles.formGroup}>
                       <label htmlFor="graduate-username">Username</label>
                       <div className={styles.inputWrapper}>
@@ -477,9 +519,7 @@ const SignIn = () => {
                         <button
                           type="button"
                           className={styles.togglePassword}
-                          onClick={() =>
-                            setShowGraduatePassword((prev) => !prev)
-                          }
+                          onClick={() => setShowGraduatePassword((prev) => !prev)}
                           tabIndex={-1}
                         >
                           {showGraduatePassword ? "Hide" : "Show"}
@@ -505,12 +545,44 @@ const SignIn = () => {
                       )}
                     </button>
 
+                    <div className={styles.divider}>
+                      <span>OR</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleGoogleLogin}
+                      className={styles.googleButton}
+                      disabled={isLoading}
+                    >
+                      <svg
+                        className={styles.googleIcon}
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                          fill="#4285F4"
+                        />
+                        <path
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                          fill="#34A853"
+                        />
+                        <path
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                          fill="#FBBC05"
+                        />
+                        <path
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                          fill="#EA4335"
+                        />
+                      </svg>
+                      Continue with Google
+                    </button>
+
                     <div className={styles.registerPrompt}>
                       <span>Don't have an account?</span>
-                      <Link
-                        to="/register-graduate"
-                        className={styles.registerLink}
-                      >
+                      <Link to="/register-graduate" className={styles.registerLink}>
                         Register as Graduate
                       </Link>
                     </div>

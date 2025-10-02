@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +29,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import tarabaho.tarabaho.dto.AuthResponse;
 import tarabaho.tarabaho.entity.User;
 import tarabaho.tarabaho.jwt.JwtUtil;
@@ -53,12 +55,25 @@ public class UserController {
     @Autowired
     private PasswordEncoderService passwordEncoderService;
 
-    @Operation(summary = "Get all users", description = "Retrieve a list of all registered users")
+    private String getUsernameFromAuthentication(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof OAuth2User) {
+            OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+            String email = oauthUser.getAttribute("email");
+            System.out.println("UserController: OAuth2 authentication detected, using email: " + email);
+            return email;
+        } else {
+            String username = authentication.getName();
+            System.out.println("UserController: Default authentication detected, using username: " + username);
+            return username;
+        }
+    }
+
+    /*@Operation(summary = "Get all users", description = "Retrieve a list of all registered users")
     @ApiResponse(responseCode = "200", description = "List of users returned successfully")
     @GetMapping("/all")
     public List<User> getAllUsers() {
         return userService.getAllUsers();
-    }
+    }*/
 
     @Operation(summary = "Register a new user", description = "Registers a new user after checking for uniqueness")
     @ApiResponses({
@@ -155,20 +170,40 @@ public class UserController {
                 System.out.println("UserController: getToken failed: Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
             }
-            String username = authentication.getName();
-            System.out.println("UserController: getToken for username: " + username);
-            
+
+            String username;
+            if (authentication.getPrincipal() instanceof OAuth2User) {
+                OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+                username = oauthUser.getAttribute("email"); // Use email for OAuth2 users
+                System.out.println("UserController: OAuth2 authentication detected, using email: " + username);
+                System.out.println("UserController: OAuth2User attributes: " + oauthUser.getAttributes());
+            } else {
+                username = authentication.getName(); // Use username for default login
+                System.out.println("UserController: Default authentication detected, using username: " + username);
+            }
+
+            if (username == null || username.isEmpty()) {
+                System.out.println("UserController: getToken failed: Username/email is null or empty");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid authentication: No username/email found");
+            }
+
             Optional<User> user = userService.findByUsername(username);
             if (!user.isPresent()) {
                 System.out.println("UserController: User not found for username: " + username);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+                // Fallback to email-based lookup for robustness
+                user = userService.findByEmail(username);
+                if (!user.isPresent()) {
+                    System.out.println("UserController: User not found for email: " + username);
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+                }
             }
-            
+
             String token = jwtUtil.generateToken(username);
             System.out.println("UserController: Generated token for user: " + username);
             return ResponseEntity.ok(new TokenResponse(token));
         } catch (Exception e) {
             System.err.println("UserController: getToken failed: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
     }
@@ -185,11 +220,39 @@ public class UserController {
     @GetMapping("/me")
     public User getCurrentUser(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
+            System.out.println("UserController: getCurrentUser failed: Not authenticated");
             return null;
         }
-        String username = authentication.getName();
+
+        String username;
+        if (authentication.getPrincipal() instanceof OAuth2User) {
+            OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+            username = oauthUser.getAttribute("email"); // Use email for OAuth2 users
+            System.out.println("UserController: OAuth2 authentication detected, using email: " + username);
+            System.out.println("UserController: OAuth2User attributes: " + oauthUser.getAttributes());
+        } else {
+            username = authentication.getName(); // Use username for default login
+            System.out.println("UserController: Default authentication detected, using username: " + username);
+        }
+
+        if (username == null || username.isEmpty()) {
+            System.out.println("UserController: getCurrentUser failed: Username/email is null or empty");
+            return null;
+        }
+
         Optional<User> user = userService.findByUsername(username);
-        return user.orElse(null);
+        if (!user.isPresent()) {
+            System.out.println("UserController: User not found for username: " + username);
+            // Fallback to email-based lookup for robustness
+            user = userService.findByEmail(username);
+            if (!user.isPresent()) {
+                System.out.println("UserController: User not found for email: " + username);
+                return null;
+            }
+        }
+
+        System.out.println("UserController: User retrieved successfully for username: " + username);
+        return user.get();
     }
 
     @Operation(summary = "Update phone number", description = "Updates the phone number for the currently logged-in user")
@@ -204,24 +267,32 @@ public class UserController {
             Authentication authentication,
             @RequestBody PhoneUpdateRequest request
     ) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated.");
-        }
-        String username = authentication.getName();
-        Optional<User> userOpt = userService.findByUsername(username);
-
-        if (!userOpt.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
-        }
-
         try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("UserController: Update phone failed: User not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated.");
+            }
+
+            String username = getUsernameFromAuthentication(authentication);
+            Optional<User> userOpt = userService.findByUsername(username);
+            if (!userOpt.isPresent()) {
+                userOpt = userService.findByEmail(username); // Fallback for OAuth2 email
+                if (!userOpt.isPresent()) {
+                    System.out.println("UserController: Update phone failed: User not found for username/email: " + username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found for username/email: " + username);
+                }
+            }
+
             User user = userOpt.get();
             userService.updateUserPhone(user.getEmail(), request.getPhoneNumber());
+            System.out.println("UserController: Phone number updated successfully for username/email: " + username);
             return ResponseEntity.ok("Phone number updated successfully.");
         } catch (IllegalArgumentException e) {
+            System.out.println("UserController: Update phone failed: " + e.getMessage());
             return ResponseEntity.badRequest().body("⚠️ " + e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
+            System.out.println("UserController: Update phone failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found: " + e.getMessage());
         }
     }
 
@@ -238,19 +309,24 @@ public class UserController {
             Authentication authentication,
             @RequestParam("file") MultipartFile file
     ) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated.");
-        }
-        if (file == null || file.isEmpty()) {
-            return ResponseEntity.badRequest().body("No file uploaded.");
-        }
-
         try {
-            // Validate authentication
-            String username = authentication.getName();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("UserController: Upload picture failed: User not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated.");
+            }
+            if (file == null || file.isEmpty()) {
+                System.out.println("UserController: Upload picture failed: No file uploaded");
+                return ResponseEntity.badRequest().body("No file uploaded.");
+            }
+
+            String username = getUsernameFromAuthentication(authentication);
             Optional<User> userOpt = userService.findByUsername(username);
             if (!userOpt.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
+                userOpt = userService.findByEmail(username); // Fallback for OAuth2 email
+                if (!userOpt.isPresent()) {
+                    System.out.println("UserController: Upload picture failed: User not found for username/email: " + username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found for username/email: " + username);
+                }
             }
 
             User user = userOpt.get();
@@ -261,8 +337,7 @@ public class UserController {
                 try {
                     storageService.deleteFile("profile-picture", existingFileName);
                 } catch (IOException e) {
-                    // Log the error but continue with the upload to avoid blocking the user
-                    System.err.println("Failed to delete old profile picture: " + e.getMessage());
+                    System.err.println("UserController: Failed to delete old profile picture: " + e.getMessage());
                 }
             }
 
@@ -273,15 +348,17 @@ public class UserController {
             user.setProfilePicture(publicUrl);
             userService.saveUser(user);
 
+            System.out.println("UserController: Profile picture uploaded successfully for username/email: " + username);
             return ResponseEntity.ok(user);
         } catch (IllegalArgumentException e) {
+            System.out.println("UserController: Upload picture failed: " + e.getMessage());
             return ResponseEntity.badRequest().body("⚠️ " + e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("UserController: Upload picture failed: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to upload file: " + e.getMessage());
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("UserController: Upload picture failed: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An unexpected error occurred: " + e.getMessage());
         }
@@ -295,65 +372,76 @@ public class UserController {
         @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PutMapping("/update-profile")
-public ResponseEntity<?> updateProfile(
-    Authentication authentication,
-    @RequestBody ProfileUpdateRequest request
-) {
-    if (authentication == null || !authentication.isAuthenticated()) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated.");
-    }
+    public ResponseEntity<?> updateProfile(
+            Authentication authentication,
+            @RequestBody ProfileUpdateRequest request
+    ) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("UserController: Update profile failed: User not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated.");
+            }
 
-    String username = authentication.getName();
-    Optional<User> userOpt = userService.findByUsername(username);
-    if (!userOpt.isPresent()) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
-    }
+            String username = getUsernameFromAuthentication(authentication);
+            Optional<User> userOpt = userService.findByUsername(username);
+            if (!userOpt.isPresent()) {
+                userOpt = userService.findByEmail(username); // Fallback for OAuth2 email
+                if (!userOpt.isPresent()) {
+                    System.out.println("UserController: Update profile failed: User not found for username/email: " + username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found for username/email: " + username);
+                }
+            }
 
-    User user = userOpt.get();
-    try {
-        if (request.getEmail() != null && !request.getEmail().isEmpty()) {
-            if (userService.findByEmail(request.getEmail()).isPresent() && !request.getEmail().equals(user.getEmail())) {
-                return ResponseEntity.badRequest().body("⚠️ Email already exists.");
+            User user = userOpt.get();
+            if (request.getEmail() != null && !request.getEmail().isEmpty()) {
+                if (userService.findByEmail(request.getEmail()).isPresent() && !request.getEmail().equals(user.getEmail())) {
+                    System.out.println("UserController: Update profile failed: Email already exists: " + request.getEmail());
+                    return ResponseEntity.badRequest().body("⚠️ Email already exists.");
+                }
+                user.setEmail(request.getEmail());
             }
-            user.setEmail(request.getEmail());
-        }
-        if (request.getLocation() != null) {
-            user.setLocation(request.getLocation());
-        }
-        if (request.getBirthday() != null && !request.getBirthday().isEmpty()) {
-            try {
-                LocalDate birthday = LocalDate.parse(request.getBirthday());
-                user.setBirthday(birthday);
-            } catch (Exception e) {
-                return ResponseEntity.badRequest().body("Invalid birthday format. Use YYYY-MM-DD.");
+            if (request.getLocation() != null) {
+                user.setLocation(request.getLocation());
             }
-        }
-        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-            if (request.getPassword().length() < 8) {
-                return ResponseEntity.badRequest().body("⚠️ Password must be at least 8 characters long.");
+            if (request.getBirthday() != null && !request.getBirthday().isEmpty()) {
+                try {
+                    LocalDate birthday = LocalDate.parse(request.getBirthday());
+                    user.setBirthday(birthday);
+                } catch (Exception e) {
+                    System.out.println("UserController: Update profile failed: Invalid birthday format");
+                    return ResponseEntity.badRequest().body("Invalid birthday format. Use YYYY-MM-DD.");
+                }
             }
-            String hashedPassword = passwordEncoderService.encodePassword(request.getPassword());
-            user.setPassword(hashedPassword);
-        }
-        if (request.getLatitude() != null) {
-            user.setLatitude(request.getLatitude());
-        }
-        if (request.getLongitude() != null) {
-            user.setLongitude(request.getLongitude());
-        }
-        if (request.getPreferredRadius() != null) {
-            if (request.getPreferredRadius() <= 0) {
-                return ResponseEntity.badRequest().body("⚠️ Preferred radius must be greater than 0.");
+            if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+                if (request.getPassword().length() < 8) {
+                    System.out.println("UserController: Update profile failed: Password too short");
+                    return ResponseEntity.badRequest().body("⚠️ Password must be at least 8 characters long.");
+                }
+                String hashedPassword = passwordEncoderService.encodePassword(request.getPassword());
+                user.setPassword(hashedPassword);
             }
-            user.setPreferredRadius(request.getPreferredRadius());
-        }
+            if (request.getLatitude() != null) {
+                user.setLatitude(request.getLatitude());
+            }
+            if (request.getLongitude() != null) {
+                user.setLongitude(request.getLongitude());
+            }
+            if (request.getPreferredRadius() != null) {
+                if (request.getPreferredRadius() <= 0) {
+                    System.out.println("UserController: Update profile failed: Invalid preferred radius");
+                    return ResponseEntity.badRequest().body("⚠️ Preferred radius must be greater than 0.");
+                }
+                user.setPreferredRadius(request.getPreferredRadius());
+            }
 
-        User updatedUser = userService.saveUser(user);
-        return ResponseEntity.ok(updatedUser);
-    } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Failed to update profile: " + e.getMessage());
+            User updatedUser = userService.saveUser(user);
+            System.out.println("UserController: Profile updated successfully for username/email: " + username);
+            return ResponseEntity.ok(updatedUser);
+        } catch (Exception e) {
+            System.out.println("UserController: Update profile failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Failed to update profile: " + e.getMessage());
+        }
     }
-}
 
     @Operation(summary = "Logout user", description = "Logs out the currently authenticated user")
     @ApiResponses({
@@ -361,30 +449,38 @@ public ResponseEntity<?> updateProfile(
         @ApiResponse(responseCode = "500", description = "Logout failed")
     })
     @PostMapping("/logout")
-public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
-    try {
-        System.out.println("Entering /logout endpoint");
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+        try {
+        System.out.println("UserController: Entering /logout endpoint");
 
         // Clear the JWT cookie
         Cookie tokenCookie = new Cookie("jwtToken", null);
         tokenCookie.setMaxAge(0); // Expire immediately
-        tokenCookie.setPath("/"); // Match the path used during login
-        tokenCookie.setHttpOnly(true); // Match login settings
-        tokenCookie.setSecure(true); // Match login settings (use true for production, false for local dev)
-        tokenCookie.setAttribute("SameSite", "None"); // Match login settings
+        tokenCookie.setPath("/"); // Matches login endpoint
+        tokenCookie.setHttpOnly(true);
+        tokenCookie.setSecure(true); // Match login endpoint's Secure=true
+        tokenCookie.setAttribute("SameSite", "None");
         response.addCookie(tokenCookie);
-        System.out.println("Cookie cleared: jwtToken=; Path=/; Max-Age=0; HttpOnly; SameSite=None");
+        System.out.println("UserController: Cookie cleared: jwtToken=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None");
+        System.out.println("UserController: Set-Cookie header: " + response.getHeader("Set-Cookie"));
 
-        // Invalidate session (optional, if you're not relying on sessions)
-        request.getSession(false).invalidate();
+        // Invalidate session if it exists
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+            System.out.println("UserController: Session invalidated");
+        } else {
+            System.out.println("UserController: No active session found to invalidate");
+        }
 
         return ResponseEntity.ok("User logged out successfully.");
-    } catch (Exception e) {
-        System.err.println("Logout failed: " + e.getMessage());
-        e.printStackTrace();
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Logout failed: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("UserController: Logout failed: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Logout failed: " + e.getMessage());
+        }
     }
-}
+
 
     static class LoginRequest {
         private String username;

@@ -1,6 +1,7 @@
 package tarabaho.tarabaho.controller;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -45,6 +47,20 @@ public class CertificateController {
     @Autowired
     private GraduateService graduateService;
 
+    private String getUsernameFromAuthentication(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof OAuth2User) {
+            OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+            String email = oauthUser.getAttribute("email");
+            logger.debug("OAuth2 authentication detected, using email: {}", email);
+            return email;
+        } else {
+            String username = authentication.getName();
+            logger.debug("Default authentication detected, using username: {}", username);
+            return username;
+        }
+    }
+    
+
     @Operation(summary = "Add a certificate for a graduate", description = "Associates a new TESDA certificate with a graduate, including an optional file upload. Requires JWT authentication.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Certificate added successfully"),
@@ -70,15 +86,20 @@ public class CertificateController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: Invalid or missing token.");
             }
 
-            String username = authentication.getName();
-            Graduate graduate = graduateService.findById(graduateId);
-            if (graduate == null) {
-                logger.warn("Graduate not found for ID: {}", graduateId);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found.");
+            String username = getUsernameFromAuthentication(authentication);
+            Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
+            if (!graduateOpt.isPresent()) {
+                graduateOpt = graduateService.findByEmail(username); // Fallback for OAuth2 email
+                if (!graduateOpt.isPresent()) {
+                    logger.warn("Graduate not found for username/email: {}", username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username/email: " + username);
+                }
             }
-            if (!graduate.getUsername().equals(username)) {
-                logger.warn("Unauthorized - username mismatch: {}", username);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: User does not match graduate.");
+            Graduate graduate = graduateOpt.get();
+
+            if (!graduate.getId().equals(graduateId)) {
+                logger.warn("Unauthorized - graduate ID mismatch: {} for username/email: {}", graduateId, username);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Unauthorized: Cannot add certificate for another graduate.");
             }
 
             Long portfolioId = null;
@@ -128,7 +149,7 @@ public class CertificateController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
             }
 
-            String username = authentication.getName();
+            String username = getUsernameFromAuthentication(authentication);
             Long graduateId;
             try {
                 graduateId = Long.parseLong(graduateIdStr);
@@ -137,13 +158,18 @@ public class CertificateController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid graduateId format.");
             }
 
-            Graduate graduate = graduateService.findById(graduateId);
-            if (graduate == null) {
-                logger.warn("Graduate not found for ID: {}", graduateId);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found.");
+            Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
+            if (!graduateOpt.isPresent()) {
+                graduateOpt = graduateService.findByEmail(username); // Fallback for OAuth2 email
+                if (!graduateOpt.isPresent()) {
+                    logger.warn("Graduate not found for username/email: {}", username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username/email: " + username);
+                }
             }
-            if (!graduate.getUsername().equals(username)) {
-                logger.warn("Unauthorized attempt to update certificate for another graduate: {}", username);
+            Graduate graduate = graduateOpt.get();
+
+            if (!graduate.getId().equals(graduateId)) {
+                logger.warn("Unauthorized attempt to update certificate for another graduate: {}, graduateId: {}", username, graduateId);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("Unauthorized: Cannot update certificate for another graduate.");
             }
@@ -188,9 +214,16 @@ public class CertificateController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
             }
 
-            String username = authentication.getName();
-            Graduate graduate = graduateService.findByUsername(username)
-                    .orElseThrow(() -> new Exception("Graduate not found for username: " + username));
+            String username = getUsernameFromAuthentication(authentication);
+            Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
+            if (!graduateOpt.isPresent()) {
+                graduateOpt = graduateService.findByEmail(username); // Fallback for OAuth2 email
+                if (!graduateOpt.isPresent()) {
+                    logger.warn("Graduate not found for username/email: {}", username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username/email: " + username);
+                }
+            }
+            Graduate graduate = graduateOpt.get();
 
             Certificate certificate = certificateService.getCertificateById(certificateId)
                     .orElseThrow(() -> new Exception("Certificate not found with ID: " + certificateId));
@@ -213,7 +246,7 @@ public class CertificateController {
     @Operation(summary = "Get certificates for a graduate", description = "Retrieves all certificates associated with a graduate")
     @ApiResponse(responseCode = "200", description = "List of certificates returned successfully")
     @GetMapping("/graduate/{graduateId}")
-    public ResponseEntity<List<Certificate>> getCertificatesByGraduateId(
+    public ResponseEntity<?> getCertificatesByGraduateId(
             @PathVariable Long graduateId,
             Authentication authentication
     ) {
@@ -221,17 +254,24 @@ public class CertificateController {
             logger.debug("Fetching certificates for graduate ID: {}", graduateId);
             if (authentication == null || !authentication.isAuthenticated()) {
                 logger.warn("Graduate not authenticated");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
             }
 
-            String username = authentication.getName();
-            Graduate graduate = graduateService.findByUsername(username)
-                    .orElseThrow(() -> new Exception("Graduate not found for username: " + username));
+            String username = getUsernameFromAuthentication(authentication);
+            Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
+            if (!graduateOpt.isPresent()) {
+                graduateOpt = graduateService.findByEmail(username); // Fallback for OAuth2 email
+                if (!graduateOpt.isPresent()) {
+                    logger.warn("Graduate not found for username/email: {}", username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username/email: " + username);
+                }
+            }
+            Graduate graduate = graduateOpt.get();
 
             if (!graduate.getId().equals(graduateId)) {
                 logger.warn("Unauthorized attempt to fetch certificates for another graduate: {}", username);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(null);
+                        .body("Unauthorized: Cannot access certificates for another graduate.");
             }
 
             List<Certificate> certificates = certificateService.getCertificatesByGraduateId(graduateId);
@@ -239,7 +279,7 @@ public class CertificateController {
             return ResponseEntity.ok(certificates);
         } catch (Exception e) {
             logger.error("Failed to fetch certificates: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to fetch certificates: " + e.getMessage());
         }
     }
 
@@ -261,8 +301,27 @@ public class CertificateController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
             }
 
+            String username = getUsernameFromAuthentication(authentication);
+            Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
+            if (!graduateOpt.isPresent()) {
+                graduateOpt = graduateService.findByEmail(username); // Fallback for OAuth2 email
+                if (!graduateOpt.isPresent()) {
+                    logger.warn("Graduate not found for username/email: {}", username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username/email: " + username);
+                }
+            }
+            Graduate graduate = graduateOpt.get();
+
             Certificate certificate = certificateService.getCertificateById(certificateId)
                     .orElseThrow(() -> new Exception("Certificate not found with ID: " + certificateId));
+
+            if (!certificate.getGraduate().getId().equals(graduate.getId())) {
+                logger.warn("Unauthorized attempt to fetch certificate for another graduate: {}", username);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Unauthorized: Cannot access certificate for another graduate.");
+            }
+
+            logger.info("Certificate retrieved, ID: {}", certificateId);
             return ResponseEntity.ok(certificate);
         } catch (Exception e) {
             logger.error("Failed to fetch certificate: {}", e.getMessage(), e);

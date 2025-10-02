@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -48,6 +49,19 @@ public class ProjectController {
     @Autowired
     private PortfolioService portfolioService;
 
+    private String getUsernameFromAuthentication(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof OAuth2User) {
+            OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+            String email = oauthUser.getAttribute("email");
+            logger.debug("ProjectController: OAuth2 authentication detected, using email: {}", email);
+            return email;
+        } else {
+            String username = authentication.getName();
+            logger.debug("ProjectController: Default authentication detected, using username: {}", username);
+            return username;
+        }
+    }
+
     @Operation(summary = "Get projects by portfolio ID", description = "Retrieves all projects for a portfolio")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Projects retrieved successfully"),
@@ -62,12 +76,12 @@ public class ProjectController {
                 logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            
-            String username = authentication.getName();
-            
+
+            String username = getUsernameFromAuthentication(authentication);
+
             // Verify portfolio access - this method should handle graduate lookup internally
             portfolioService.getPortfolio(portfolioId, username);
-            
+
             List<Project> projects = projectService.getProjectsByPortfolioId(portfolioId);
             logger.info("Retrieved {} projects for portfolio ID: {}", projects.size(), portfolioId);
             return ResponseEntity.ok(projects);
@@ -97,7 +111,7 @@ public class ProjectController {
     ) {
         try {
             logger.debug("Adding project for portfolio ID: {}, title: {}", portfolioIdStr, title);
-            
+
             if (authentication == null || !authentication.isAuthenticated()) {
                 logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
@@ -112,15 +126,15 @@ public class ProjectController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid portfolioId format.");
             }
 
-            String username = authentication.getName();
-            
+            String username = getUsernameFromAuthentication(authentication);
+
             // Verify portfolio access - this should validate ownership
             portfolioService.getPortfolio(portfolioId, username);
 
             Project project = projectService.addProject(
                 portfolioId, title, description, imageUrls, startDate, endDate, projectImageFile
             );
-            
+
             logger.info("Project added successfully, ID: {}", project.getId());
             return ResponseEntity.ok(project);
         } catch (Exception e) {
@@ -151,7 +165,7 @@ public class ProjectController {
     ) {
         try {
             logger.debug("Updating project ID: {}, portfolio ID: {}", projectId, portfolioIdStr);
-            
+
             if (authentication == null || !authentication.isAuthenticated()) {
                 logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
@@ -166,8 +180,8 @@ public class ProjectController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid portfolioId format.");
             }
 
-            String username = authentication.getName();
-            
+            String username = getUsernameFromAuthentication(authentication);
+
             // Verify project ownership through portfolio access
             Project existingProject = projectService.getProjectById(projectId);
             portfolioService.getPortfolio(existingProject.getPortfolio().getId(), username);
@@ -175,7 +189,7 @@ public class ProjectController {
             Project updatedProject = projectService.updateProject(
                 projectId, portfolioId, title, description, imageUrls, startDate, endDate, projectImageFile
             );
-            
+
             logger.info("Project updated successfully, ID: {}", updatedProject.getId());
             return ResponseEntity.ok(updatedProject);
         } catch (Exception e) {
@@ -195,13 +209,13 @@ public class ProjectController {
     public ResponseEntity<?> deleteProject(@PathVariable Long id, Authentication authentication) {
         try {
             logger.debug("Deleting project ID: {}", id);
-            
+
             if (authentication == null || !authentication.isAuthenticated()) {
                 logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
 
-            String username = authentication.getName();
+            String username = getUsernameFromAuthentication(authentication);
 
             Project project = projectService.getProjectById(id);
             portfolioService.getPortfolio(project.getPortfolio().getId(), username);
@@ -229,15 +243,15 @@ public class ProjectController {
     ) {
         try {
             logger.debug("Fetching project ID: {}", projectId);
-            
+
             if (authentication == null || !authentication.isAuthenticated()) {
                 logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
 
-            String username = authentication.getName();
+            String username = getUsernameFromAuthentication(authentication);
             Project project = projectService.getProjectById(projectId);
-            
+
             // Verify access through portfolio
             portfolioService.getPortfolio(project.getPortfolio().getId(), username);
 
@@ -262,13 +276,13 @@ public class ProjectController {
     ) {
         try {
             logger.debug("Fetching projects for graduate ID: {}", graduateId);
-            
+
             if (authentication == null || !authentication.isAuthenticated()) {
                 logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
 
-            String username = authentication.getName();
+            String username = getUsernameFromAuthentication(authentication);
             Graduate graduate = graduateService.findByUsername(username)
                     .orElseThrow(() -> new Exception("Graduate not found for username: " + username));
 

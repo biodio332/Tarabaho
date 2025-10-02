@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,6 +46,20 @@ public class TestimonialController {
     @Autowired
     private PortfolioRepository portfolioRepository;
 
+    private String getUsernameFromAuthentication(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof OAuth2User) {
+            OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+            String email = oauthUser.getAttribute("email");
+            System.out.println("TestimonialController: OAuth2 authentication detected, using email: " + email);
+            return email;
+        } else {
+            String username = authentication.getName();
+            System.out.println("TestimonialController: Default authentication detected, using username: " + username);
+            return username;
+        }
+    }
+
+
     @Operation(summary = "Get testimonials by portfolio ID", description = "Retrieves all testimonials for a portfolio")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Testimonials retrieved successfully"),
@@ -55,15 +70,22 @@ public class TestimonialController {
     public ResponseEntity<?> getTestimonials(@PathVariable Long portfolioId, Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("TestimonialController: Get testimonials failed: Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            String username = authentication.getName();
+            String username = getUsernameFromAuthentication(authentication);
             Graduate graduate = graduateService.findByUsername(username)
-                .orElseThrow(() -> new Exception("Graduate not found."));
+                .orElseGet(() -> graduateService.findByEmail(username)
+                    .orElseThrow(() -> new IllegalArgumentException("Graduate not found for username/email: " + username)));
             portfolioService.getPortfolio(portfolioId, username); // Verify portfolio access
             List<Testimonial> testimonials = testimonialService.getTestimonialsByPortfolioId(portfolioId);
+            System.out.println("TestimonialController: Testimonials retrieved successfully for portfolio ID: " + portfolioId);
             return ResponseEntity.ok(testimonials);
+        } catch (IllegalArgumentException e) {
+            System.out.println("TestimonialController: Validation error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("⚠️ " + e.getMessage());
         } catch (Exception e) {
+            System.out.println("TestimonialController: Unexpected error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("⚠️ " + e.getMessage());
         }
     }
@@ -78,22 +100,30 @@ public class TestimonialController {
     public ResponseEntity<?> createTestimonial(@RequestBody Testimonial testimonial, Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("TestimonialController: Create testimonial failed: Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            String username = authentication.getName();
+            String username = getUsernameFromAuthentication(authentication);
             Graduate graduate = graduateService.findByUsername(username)
-                .orElseThrow(() -> new Exception("Graduate not found."));
+                .orElseGet(() -> graduateService.findByEmail(username)
+                    .orElseThrow(() -> new IllegalArgumentException("Graduate not found for username/email: " + username)));
             portfolioService.getPortfolio(testimonial.getPortfolio().getId(), username); // Verify portfolio access
             Portfolio portfolio = portfolioRepository.findById(testimonial.getPortfolio().getId())
-                .orElseThrow(() -> new Exception("Portfolio not found with id: " + testimonial.getPortfolio().getId()));
-            if (!portfolio.getGraduate().getUsername().equals(username)) {
+                .orElseThrow(() -> new IllegalArgumentException("Portfolio not found with id: " + testimonial.getPortfolio().getId()));
+            if (!portfolio.getGraduate().getId().equals(graduate.getId())) {
+                System.out.println("TestimonialController: Access denied to portfolio ID: " + portfolio.getId() + " for username/email: " + username);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied to portfolio.");
             }
             testimonial.setPortfolio(portfolio); // Link to owned portfolio
             Testimonial savedTestimonial = testimonialService.saveTestimonial(testimonial);
+            System.out.println("TestimonialController: Testimonial created successfully for portfolio ID: " + portfolio.getId());
             return ResponseEntity.ok(savedTestimonial);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
+            System.out.println("TestimonialController: Validation error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("TestimonialController: Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("⚠️ Unexpected error: " + e.getMessage());
         }
     }
 
@@ -108,20 +138,28 @@ public class TestimonialController {
     public ResponseEntity<?> deleteTestimonial(@PathVariable Long id, Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("TestimonialController: Delete testimonial failed: Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            String username = authentication.getName();
+            String username = getUsernameFromAuthentication(authentication);
             Graduate graduate = graduateService.findByUsername(username)
-                .orElseThrow(() -> new Exception("Graduate not found."));
+                .orElseGet(() -> graduateService.findByEmail(username)
+                    .orElseThrow(() -> new IllegalArgumentException("Graduate not found for username/email: " + username)));
             Testimonial testimonial = testimonialService.getTestimonialById(id); // Assume method exists
             portfolioService.getPortfolio(testimonial.getPortfolio().getId(), username); // Verify portfolio access
-            if (!testimonial.getPortfolio().getGraduate().getUsername().equals(username)) {
+            if (!testimonial.getPortfolio().getGraduate().getId().equals(graduate.getId())) {
+                System.out.println("TestimonialController: Access denied to delete testimonial ID: " + id + " for username/email: " + username);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied to delete testimonial.");
             }
             testimonialService.deleteTestimonial(id);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
+            System.out.println("TestimonialController: Testimonial deleted successfully, ID: " + id);
+            return ResponseEntity.ok("Testimonial deleted successfully.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("TestimonialController: Validation error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("⚠️ " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("TestimonialController: Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("⚠️ Unexpected error: " + e.getMessage());
         }
     }
 }

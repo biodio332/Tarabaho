@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -63,6 +64,19 @@ public class PortfolioController {
     @Autowired
     private ProjectService projectService;
 
+     private String getUsernameFromAuthentication(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof OAuth2User) {
+            OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+            String email = oauthUser.getAttribute("email");
+            logger.debug("OAuth2 authentication detected, using email: {}", email);
+            return email;
+        } else {
+            String username = authentication.getName();
+            logger.debug("Default authentication detected, using username: {}", username);
+            return username;
+        }
+    }
+
     
 
     @Operation(summary = "Get portfolio by graduate ID", description = "Retrieves the portfolio associated with the given graduate ID if accessible")
@@ -80,15 +94,30 @@ public class PortfolioController {
                 logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            
-            String username = authentication.getName();
+
+            String username = getUsernameFromAuthentication(authentication);
+            Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
+            if (!graduateOpt.isPresent()) {
+                graduateOpt = graduateService.findByEmail(username); // Fallback for OAuth2 email
+                if (!graduateOpt.isPresent()) {
+                    logger.warn("Graduate not found for username/email: {}", username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username/email: " + username);
+                }
+            }
+            Graduate graduate = graduateOpt.get();
+
+            if (!graduate.getId().equals(graduateId)) {
+                logger.warn("Access denied for graduate ID: {} by username/email: {}", graduateId, username);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Cannot access portfolio for another graduate.");
+            }
+
             PortfolioRequest portfolio = portfolioService.getPortfolioByGraduateId(graduateId, username);
             if (portfolio == null) {
                 logger.warn("No portfolio found for graduate ID: {}", graduateId);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("⚠️ No portfolio found for graduate ID: " + graduateId);
             }
-            
+
             logger.info("Portfolio retrieved successfully, ID: {}", portfolio.getId());
             return ResponseEntity.ok(portfolio);
         } catch (IllegalArgumentException e) {
@@ -111,31 +140,32 @@ public class PortfolioController {
     })
     @PostMapping
     public ResponseEntity<?> createPortfolio(@RequestBody PortfolioRequest portfolioRequest, Authentication authentication) {
-        try {
+       try {
             logger.debug("Creating portfolio for graduate ID: {}", portfolioRequest.getGraduateId());
             if (authentication == null || !authentication.isAuthenticated()) {
                 logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            
-            String username = authentication.getName();
+
+            String username = getUsernameFromAuthentication(authentication);
             Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
             if (!graduateOpt.isPresent()) {
-                logger.warn("Graduate not found for username: {}", username);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Graduate not found.");
+                graduateOpt = graduateService.findByEmail(username); // Fallback for OAuth2 email
+                if (!graduateOpt.isPresent()) {
+                    logger.warn("Graduate not found for username/email: {}", username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username/email: " + username);
+                }
             }
-            
+
             Graduate graduate = graduateOpt.get();
             if (portfolioRequest.getGraduateId() == null || !graduate.getId().equals(portfolioRequest.getGraduateId())) {
-                logger.warn("Access denied for graduate ID: {}", portfolioRequest.getGraduateId());
+                logger.warn("Access denied for graduate ID: {} by username/email: {}", portfolioRequest.getGraduateId(), username);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("⚠️ Access denied to create portfolio.");
             }
 
             // Validate PortfolioRequest
             validatePortfolioRequest(portfolioRequest);
-            
-           
 
             PortfolioRequest savedPortfolio = portfolioService.createPortfolio(graduate.getId(), portfolioRequest, username);
             logger.info("Portfolio created successfully, ID: {}", savedPortfolio.getId());
@@ -165,26 +195,29 @@ public class PortfolioController {
                 logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            
-            String username = authentication.getName();
+
+            String username = getUsernameFromAuthentication(authentication);
             Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
             if (!graduateOpt.isPresent()) {
-                logger.warn("Graduate not found for username: {}", username);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Graduate not found for username: " + username);
+                graduateOpt = graduateService.findByEmail(username); // Fallback for OAuth2 email
+                if (!graduateOpt.isPresent()) {
+                    logger.warn("Graduate not found for username/email: {}", username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username/email: " + username);
+                }
             }
-            
+
             Graduate graduate = graduateOpt.get();
             if (!graduate.getId().equals(graduateId)) {
-                logger.warn("Access denied to delete portfolio for graduate ID: {}", graduateId);
+                logger.warn("Access denied to delete portfolio for graduate ID: {} by username/email: {}", graduateId, username);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("⚠️ Access denied to delete portfolio.");
             }
-            
+
             PortfolioRequest portfolio = portfolioService.getPortfolioByGraduateId(graduateId, username);
             if (portfolio == null) {
                 logger.warn("No portfolio found for graduate ID: {}", graduateId);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("⚠️ No portfolio found for graduate ID: " + graduateId);
             }
-            
+
             portfolioService.deletePortfolio(portfolio.getId(), username);
             logger.info("Portfolio deleted successfully, ID: {}", portfolio.getId());
             return ResponseEntity.ok("Portfolio and associated certificates deleted successfully.");
@@ -213,10 +246,10 @@ public class PortfolioController {
                 logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            
-            String username = authentication.getName();
+
+            String username = getUsernameFromAuthentication(authentication);
             PortfolioRequest portfolio = portfolioService.getPortfolio(id, username);
-            
+
             logger.info("Portfolio retrieved successfully, ID: {}", portfolio.getId());
             return ResponseEntity.ok(portfolio);
         } catch (IllegalArgumentException e) {
@@ -245,10 +278,10 @@ public class PortfolioController {
                 logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            
-            String username = authentication.getName();
+
+            String username = getUsernameFromAuthentication(authentication);
             portfolioService.setVisibility(id, visibility, username);
-            
+
             logger.info("Visibility set successfully for portfolio ID: {}", id);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
@@ -280,38 +313,41 @@ public class PortfolioController {
             @RequestParam(value = "endDate", required = false) String endDate,
             @RequestParam(value = "projectImageFile", required = false) MultipartFile projectImageFile,
             Authentication authentication) {
-        try {
+         try {
             logger.debug("Adding project to portfolio ID: {}, graduate ID: {}", portfolioId, graduateId);
             if (authentication == null || !authentication.isAuthenticated()) {
                 logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            
-            String username = authentication.getName();
+
+            String username = getUsernameFromAuthentication(authentication);
             Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
             if (!graduateOpt.isPresent()) {
-                logger.warn("Graduate not found for username: {}", username);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Graduate not found for username: " + username);
+                graduateOpt = graduateService.findByEmail(username); // Fallback for OAuth2 email
+                if (!graduateOpt.isPresent()) {
+                    logger.warn("Graduate not found for username/email: {}", username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username/email: " + username);
+                }
             }
-            
+
             Graduate graduate = graduateOpt.get();
             if (!graduate.getId().equals(graduateId)) {
-                logger.warn("Access denied for graduate ID: {}", graduateId);
+                logger.warn("Access denied for graduate ID: {} by username/email: {}", graduateId, username);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("⚠️ Access denied.");
             }
-            
+
             // Verify portfolio access
             portfolioService.getPortfolio(portfolioId, username);
-            
+
             if (title == null || title.trim().isEmpty()) {
                 logger.warn("Project title is required");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Project title is required.");
             }
-            
+
             Project project = projectService.addProject(
                 portfolioId, title, description, imageUrls, startDate, endDate, projectImageFile
             );
-            
+
             logger.info("Project added to portfolio ID: {}, Project ID: {}", portfolioId, project.getId());
             return ResponseEntity.ok(project);
         } catch (IllegalArgumentException e) {
@@ -334,29 +370,32 @@ public class PortfolioController {
     })
     @PutMapping("/{portfolioId}")
     public ResponseEntity<?> updatePortfolio(@PathVariable Long portfolioId, @RequestBody PortfolioRequest portfolioRequest, Authentication authentication) {
-        try {
+         try {
             logger.debug("Updating portfolio ID: {}", portfolioId);
             if (authentication == null || !authentication.isAuthenticated()) {
                 logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            
-            String username = authentication.getName();
+
+            String username = getUsernameFromAuthentication(authentication);
             Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
             if (!graduateOpt.isPresent()) {
-                logger.warn("Graduate not found for username: {}", username);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Graduate not found.");
+                graduateOpt = graduateService.findByEmail(username); // Fallback for OAuth2 email
+                if (!graduateOpt.isPresent()) {
+                    logger.warn("Graduate not found for username/email: {}", username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username/email: " + username);
+                }
             }
-            
+
             Graduate graduate = graduateOpt.get();
             if (portfolioRequest.getGraduateId() == null || !graduate.getId().equals(portfolioRequest.getGraduateId())) {
-                logger.warn("Access denied for graduate ID: {}", portfolioRequest.getGraduateId());
+                logger.warn("Access denied for graduate ID: {} by username/email: {}", portfolioRequest.getGraduateId(), username);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("⚠️ Access denied to update portfolio.");
             }
 
             // Validate PortfolioRequest
             validatePortfolioRequest(portfolioRequest);
-            
+
             PortfolioRequest updatedPortfolio = portfolioService.updatePortfolio(portfolioId, portfolioRequest, username);
             logger.info("Portfolio updated successfully, ID: {}", updatedPortfolio.getId());
             return ResponseEntity.ok(updatedPortfolio);
@@ -454,30 +493,39 @@ public class PortfolioController {
     })
     @GetMapping("/graduate/{graduateId}/portfolio/share-token")  
     public ResponseEntity<?> getPortfolioShareToken(@PathVariable Long graduateId, Authentication authentication) {
-        try {
+         try {
             logger.debug("Fetching share token for graduate ID: {}", graduateId);
-            
             if (authentication == null || !authentication.isAuthenticated()) {
                 logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            
-            String username = authentication.getName();
-            
-            // ← USE SERVICE: Get portfolio first to verify access
+
+            String username = getUsernameFromAuthentication(authentication);
+            Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
+            if (!graduateOpt.isPresent()) {
+                graduateOpt = graduateService.findByEmail(username); // Fallback for OAuth2 email
+                if (!graduateOpt.isPresent()) {
+                    logger.warn("Graduate not found for username/email: {}", username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username/email: " + username);
+                }
+            }
+
+            Graduate graduate = graduateOpt.get();
+            if (!graduate.getId().equals(graduateId)) {
+                logger.warn("Access denied for graduate ID: {} by username/email: {}", graduateId, username);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Cannot access share token for another graduate.");
+            }
+
             PortfolioRequest portfolio = portfolioService.getPortfolioByGraduateId(graduateId, username);
             if (portfolio == null) {
                 logger.warn("Portfolio not found or access denied for graduate ID: {}", graduateId);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("⚠️ Portfolio not found or access denied.");
             }
-            
-            // ← NEW SERVICE METHOD: Get share info (we'll add this to PortfolioService)
+
             ShareInfo shareInfo = portfolioService.getShareInfo(graduateId, username);
-            
             logger.info("Share token retrieved successfully for portfolio ID: {}", portfolio.getId());
             return ResponseEntity.ok(shareInfo);
-            
         } catch (Exception e) {
             logger.error("Error generating share token: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -573,16 +621,34 @@ public class PortfolioController {
     @PostMapping("/graduate/{graduateId}/portfolio/regenerate-token")
     public ResponseEntity<?> regenerateShareToken(@PathVariable Long graduateId, Authentication authentication) {
         try {
+            logger.debug("Regenerating share token for graduate ID: {}", graduateId);
             if (authentication == null || !authentication.isAuthenticated()) {
+                logger.warn("Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            
-            String username = authentication.getName();
+
+            String username = getUsernameFromAuthentication(authentication);
+            Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
+            if (!graduateOpt.isPresent()) {
+                graduateOpt = graduateService.findByEmail(username); // Fallback for OAuth2 email
+                if (!graduateOpt.isPresent()) {
+                    logger.warn("Graduate not found for username/email: {}", username);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found for username/email: " + username);
+                }
+            }
+
+            Graduate graduate = graduateOpt.get();
+            if (!graduate.getId().equals(graduateId)) {
+                logger.warn("Access denied for graduate ID: {} by username/email: {}", graduateId, username);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Cannot regenerate share token for another graduate.");
+            }
+
             ShareInfo newShareInfo = portfolioService.regenerateShareToken(graduateId, username);
-            
+            logger.info("Share token regenerated successfully for graduate ID: {}", graduateId);
             return ResponseEntity.ok(newShareInfo);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error regenerating token.");
+            logger.error("Error regenerating share token: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error regenerating token: " + e.getMessage());
         }
     }
 

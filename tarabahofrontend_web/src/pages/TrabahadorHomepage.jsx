@@ -17,7 +17,7 @@ import {
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import "../styles/TrabahadorHomepage.css";
-import { FaPlus, FaTimes, FaEye, FaClock, FaCalendarAlt, FaChartLine } from "react-icons/fa";
+import { FaPlus, FaTimes, FaEye, FaClock, FaCalendarAlt, FaChartLine,FaUpload } from "react-icons/fa";
 
 ChartJS.register(
   CategoryScale,

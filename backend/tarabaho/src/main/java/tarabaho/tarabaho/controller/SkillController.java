@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import tarabaho.tarabaho.entity.Skill;
 import tarabaho.tarabaho.service.SkillService;
@@ -22,6 +23,19 @@ public class SkillController {
     @Autowired
     private SkillService skillService;
 
+    private String getUsernameFromAuthentication(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof OAuth2User) {
+            OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+            String email = oauthUser.getAttribute("email");
+            System.out.println("SkillController: OAuth2 authentication detected, using email: " + email);
+            return email;
+        } else {
+            String username = authentication.getName();
+            System.out.println("SkillController: Default authentication detected, using username: " + username);
+            return username;
+        }
+    }
+
     @Operation(summary = "Add a skill to a portfolio", description = "Adds a skill to the specified portfolio")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Skill added successfully"),
@@ -33,12 +47,19 @@ public class SkillController {
     public ResponseEntity<?> addSkill(@PathVariable Long portfolioId, @RequestBody Skill skill, Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("SkillController: Add skill failed: Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            Skill savedSkill = skillService.saveSkill(portfolioId, skill, authentication.getName());
+            String username = getUsernameFromAuthentication(authentication);
+            Skill savedSkill = skillService.saveSkill(portfolioId, skill, username);
+            System.out.println("SkillController: Skill added successfully for portfolio ID: " + portfolioId);
             return ResponseEntity.ok(savedSkill);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
+            System.out.println("SkillController: Validation error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("SkillController: Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("⚠️ Unexpected error: " + e.getMessage());
         }
     }
 
@@ -51,11 +72,16 @@ public class SkillController {
     @GetMapping
     public ResponseEntity<?> getSkills(@PathVariable Long portfolioId, Authentication authentication) {
         try {
-            String username = authentication != null ? authentication.getName() : null;
+            String username = authentication != null ? getUsernameFromAuthentication(authentication) : null;
             List<Skill> skills = skillService.getSkillsByPortfolioId(portfolioId, username);
+            System.out.println("SkillController: Skills retrieved successfully for portfolio ID: " + portfolioId);
             return ResponseEntity.ok(skills);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
+            System.out.println("SkillController: Validation error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("SkillController: Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("⚠️ Unexpected error: " + e.getMessage());
         }
     }
 
@@ -71,12 +97,19 @@ public class SkillController {
     public ResponseEntity<?> updateSkill(@PathVariable Long portfolioId, @PathVariable Long skillId, @RequestBody Skill skill, Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("SkillController: Update skill failed: Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            Skill updatedSkill = skillService.updateSkill(skillId, skill, authentication.getName());
+            String username = getUsernameFromAuthentication(authentication);
+            Skill updatedSkill = skillService.updateSkill(skillId, skill, username);
+            System.out.println("SkillController: Skill updated successfully, ID: " + skillId);
             return ResponseEntity.ok(updatedSkill);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
+            System.out.println("SkillController: Validation error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("SkillController: Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("⚠️ Unexpected error: " + e.getMessage());
         }
     }
 
@@ -91,12 +124,19 @@ public class SkillController {
     public ResponseEntity<?> deleteSkill(@PathVariable Long portfolioId, @PathVariable Long skillId, Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
+                System.out.println("SkillController: Delete skill failed: Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
-            skillService.deleteSkill(skillId, authentication.getName());
+            String username = getUsernameFromAuthentication(authentication);
+            skillService.deleteSkill(skillId, username);
+            System.out.println("SkillController: Skill deleted successfully, ID: " + skillId);
             return ResponseEntity.ok("Skill deleted successfully.");
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
+            System.out.println("SkillController: Validation error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("SkillController: Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("⚠️ Unexpected error: " + e.getMessage());
         }
     }
 
@@ -112,9 +152,10 @@ public class SkillController {
     public ResponseEntity<?> replaceSkills(@PathVariable Long portfolioId, @RequestBody List<Skill> skills, Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
-                System.out.println("SkillController: Not authenticated");
+                System.out.println("SkillController: Replace skills failed: Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
+            String username = getUsernameFromAuthentication(authentication);
             // Validate skills
             for (Skill skill : skills) {
                 if (skill.getName() == null || skill.getName().trim().isEmpty()) {
@@ -126,11 +167,11 @@ public class SkillController {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ Skill type is required.");
                 }
             }
-            List<Skill> updatedSkills = skillService.replaceSkills(portfolioId, skills, authentication.getName());
-            System.out.println("SkillController: Skills replaced for portfolio ID: " + portfolioId);
+            List<Skill> updatedSkills = skillService.replaceSkills(portfolioId, skills, username);
+            System.out.println("SkillController: Skills replaced successfully for portfolio ID: " + portfolioId);
             return ResponseEntity.ok(updatedSkills);
         } catch (IllegalArgumentException e) {
-            System.out.println("SkillController: Error: " + e.getMessage());
+            System.out.println("SkillController: Validation error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
         } catch (Exception e) {
             System.out.println("SkillController: Unexpected error: " + e.getMessage());

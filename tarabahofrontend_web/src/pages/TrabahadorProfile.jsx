@@ -190,7 +190,7 @@ const handleSaveField = async (field) => {
 
   const confirmLogout = async () => {
     try {
-      await axios.post(`${BACKEND_URL}/api/user/logout`, {}, { withCredentials: true });
+      await axios.post(`${BACKEND_URL}/api/graduate/logout`, {}, { withCredentials: true });
       localStorage.removeItem("isLoggedIn");
       localStorage.removeItem("userType");
       localStorage.removeItem("username");

@@ -40,6 +40,14 @@ public class GraduateService {
         return graduateRepository.findByCategoryName(categoryName);
     }
 
+    public Graduate registerOAuth2Graduate(Graduate graduate) {
+        System.out.println("GraduateService: Registering OAuth2 graduate with username: " + graduate.getUsername());
+        if (graduate.getCertificates() != null) {
+            graduate.getCertificates().forEach(certificate -> certificate.setGraduate(graduate));
+        }
+        return graduateRepository.save(graduate); // Rely on @PrePersist for defaults
+    }
+
     public Graduate registerGraduate(Graduate graduate) {
         System.out.println("GraduateService: Registering graduate with username: " + graduate.getUsername());
         // Validate new fields

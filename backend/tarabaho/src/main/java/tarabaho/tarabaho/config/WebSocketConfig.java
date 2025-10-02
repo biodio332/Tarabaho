@@ -43,10 +43,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     // SockJS endpoint for browser clients
     registry.addEndpoint("/chat")
-            .setAllowedOrigins("http://localhost:5173", 
-                               "https://it-342-tarabaho-8q1h-89v462nt1-jilus-projects.vercel.app",
-                               "https://it-342-tarabaho-8q1h-1sjnj79pj-jilus-projects.vercel.app",
-                               "https://it-342-tarabaho-8q1h.vercel.app")
+            .setAllowedOrigins("http://localhost:5173")
             .withSockJS();
     }
 

@@ -436,56 +436,56 @@ const Browse = () => {
         <Footer />
       </div>
 
-      <style jsx>{`
-        @keyframes fade-in-up {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+     <style>{`
+      @keyframes fade-in-up {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
         }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-        @keyframes wave {
-          0%, 100% {
-            transform: translateX(0);
-          }
-          50% {
-            transform: translateX(-10px);
-          }
+      @keyframes wave {
+        0%, 100% {
+          transform: translateX(0);
         }
+        50% {
+          transform: translateX(-10px);
+        }
+      }
 
-        .animate-fade-in-up {
-          animation: fade-in-up 0.8s ease-out forwards;
-        }
+      .animate-fade-in-up {
+        animation: fade-in-up 0.8s ease-out forwards;
+      }
 
-        .animate-wave {
-          animation: wave 4s ease-in-out infinite;
-        }
+      .animate-wave {
+        animation: wave 4s ease-in-out infinite;
+      }
 
-        .animation-delay-300 {
-          animation-delay: 0.3s;
-        }
+      .animation-delay-300 {
+        animation-delay: 0.3s;
+      }
 
-        .animation-delay-600 {
-          animation-delay: 0.6s;
-        }
+      .animation-delay-600 {
+        animation-delay: 0.6s;
+      }
 
-        .line-clamp-3 {
-          display: -webkit-box;
-          -webkit-line-clamp: 3;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
+      .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
 
-        @media (max-width: 768px) {
-          .grid-cols-1.md\\:grid-cols-2.xl\\:grid-cols-3 {
-            grid-template-columns: repeat(1, minmax(0, 1fr));
-          }
+      @media (max-width: 768px) {
+        .grid-cols-1\\.md\\:grid-cols-2\\.xl\\:grid-cols-3 {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
         }
-      `}</style>
+      }
+    `}</style>
     </ErrorBoundary>
   )
 }
