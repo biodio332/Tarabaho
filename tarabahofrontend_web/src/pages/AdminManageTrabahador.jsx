@@ -19,7 +19,7 @@ const AdminManageTrabahador = () => {
   useEffect(() => {
     const fetchTrabahadors = async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/api/admin/workers`, {
+        const res = await axios.get(`${BACKEND_URL}/api/admin/graduates`, {
           withCredentials: true,
         });
         // Map response to include fullName

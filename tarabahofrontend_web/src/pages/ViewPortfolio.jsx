@@ -613,9 +613,24 @@ const ViewPortfolio = () => {
     <div className="min-h-screen bg-white">
       <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white relative overflow-hidden">
         {/* Background pattern */}
+        
         <div className="absolute inset-0 bg-white/5 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px] animate-pulse"></div>
-
         <div className="container mx-auto px-6 py-24 relative">
+          {/* Back Button - Visible only in public view */}
+        {isPublicView && (
+          <div className="mb-6 flex justify-start">
+            <Button
+              onClick={() => navigate("/user-browse")} // Navigate to homepage for reliability
+              color="white"
+              variant="text"
+              size="lg"
+              className="font-light flex items-center gap-2 hover:bg-white/20 rounded-full px-4 py-2 transition-all duration-300"
+              style={{ zIndex: 10 }} // Ensure button is above other elements
+            >
+              ← Back
+            </Button>
+          </div>
+        )}
           <div className="flex items-center justify-between max-w-6xl mx-auto gap-16">
             {/* Profile Image - Left Side */}
             {(graduate?.profilePicture || portfolio?.avatar) && (

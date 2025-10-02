@@ -29,7 +29,7 @@ const AdminHomepage = () => {
         const users = await usersResponse.json();
 
         // Fetch workers
-        const workersResponse = await fetch(`${BACKEND_URL}/api/admin/workers`, {
+        const workersResponse = await fetch(`${BACKEND_URL}/api/admin/graduates`, {
           method: "GET",
           credentials: "include", // Include cookies (for JWT token)
         });
