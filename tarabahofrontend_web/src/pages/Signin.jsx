@@ -60,6 +60,22 @@ const SignIn = () => {
   const location = useLocation();
   const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
+  // Redirect if already logged in
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    const userType = localStorage.getItem("userType");
+
+    if (isLoggedIn === "true") {
+      if (userType === "graduate") {
+        console.log("User is logged in as graduate, redirecting to /graduate-homepage");
+        navigate("/graduate-homepage");
+      } else if (userType === "user") {
+        console.log("User is logged in as user, redirecting to /user-browse");
+        navigate("/user-browse");
+      }
+    }
+  }, [navigate]);
+
   useEffect(() => {
     console.log("SignIn component mounted, current loginType:", loginType);
     const urlParams = new URLSearchParams(window.location.search);
@@ -180,7 +196,7 @@ const SignIn = () => {
     const oauthUrl = `${backendUrl}/oauth2/authorization/google?type=${loginType}`;
     console.log(`Redirecting to OAuth URL: ${oauthUrl}`);
     window.location.href = oauthUrl;
-};
+  };
 
   const handleBack = () => {
     console.log("Navigating back to home");
