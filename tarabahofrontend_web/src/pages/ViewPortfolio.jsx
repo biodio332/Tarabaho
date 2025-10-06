@@ -268,75 +268,67 @@ const ViewPortfolio = () => {
 
   // ← NEW: Fetch public portfolio with share token from URL
   const fetchPublicDataWithToken = async () => {
-  try {
-    if (!urlShareToken) {
-      throw new Error("Share token is required for public access");
-    }
-    
-    console.log("🔄 Fetching complete public portfolio for ID:", graduateId);
-    console.log("🔑 Share token:", urlShareToken.substring(0, 8) + "...");
-    
-    const portfolioResponse = await axios.get(
-      `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio?share=${urlShareToken}`,
-      { 
-        withCredentials: true,  // ← FIXED: Enable cookies for session tracking
+    try {
+      if (!urlShareToken) {
+        throw new Error("Share token is required for public access")
       }
-    );
-    
-    // ← FIXED: Log the ACTUAL response structure
-    console.log("📦 API Response Structure:", {
-      isCompleteResponse: portfolioResponse.data.portfolio !== undefined,
-      hasPortfolio: !!portfolioResponse.data.portfolio,
-      hasGraduate: !!portfolioResponse.data.graduate,
-      certificateCount: (portfolioResponse.data.certificates || []).length,
-      projectCount: (portfolioResponse.data.projects || []).length,
-      directPortfolioKeys: portfolioResponse.data.portfolio ? Object.keys(portfolioResponse.data.portfolio) : Object.keys(portfolioResponse.data)
-    });
-    
-    // ← FIXED: Pass the COMPLETE response to normalizer
-    const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data);
-    
-    // ← FIXED: Set ALL states from the response
-    setPortfolio(normalizedPortfolio);
-    
-    // Graduate (could be Map or object)
-    const graduateData = portfolioResponse.data.graduate || 
-                        (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.graduate : null) ||
-                        { 
-                          id: graduateId, 
-                          fullName: normalizedPortfolio.fullName,
-                          profilePicture: normalizedPortfolio.avatar 
-                        };
-    setGraduate(graduateData);
-    
-    // Certificates
-    const certs = portfolioResponse.data.certificates || 
-                (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.certificates : []);
-    setCertificates(certs);
-    
-    // Projects  
-    const projs = portfolioResponse.data.projects || 
-                (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.projects : []);
-    setProjects(projs);
-    
-    setIsPublicView(true);
-    setIsGraduateView(false);
-    setIsLoading(false);
-    
-    console.log("✅ Public portfolio loaded with:", {
-      graduate: !!graduateData,
-      certificates: certs.length,
-      projects: projs.length,
-      skills: normalizedPortfolio.skills?.length || 0,
-      experiences: normalizedPortfolio.experiences?.length || 0
-    });
-    
-  } catch (err) {
-    console.error("❌ Failed to fetch public data:", err.response?.status, err.message);
-    setError(getErrorMessage(err));
-    setIsLoading(false);
+      
+      console.log("🔄 Fetching complete public portfolio for ID:", graduateId)
+      console.log("🔑 Share token:", urlShareToken.substring(0, 8) + "...")
+      
+      const portfolioResponse = await axios.get(
+        `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio?share=${urlShareToken}`,
+        { withCredentials: true }
+      )
+      
+      console.log("📦 API Response Structure:", {
+        isCompleteResponse: portfolioResponse.data.portfolio !== undefined,
+        hasPortfolio: !!portfolioResponse.data.portfolio,
+        hasGraduate: !!portfolioResponse.data.graduate,
+        certificateCount: (portfolioResponse.data.certificates || []).length,
+        projectCount: (portfolioResponse.data.projects || []).length,
+        directPortfolioKeys: portfolioResponse.data.portfolio ? Object.keys(portfolioResponse.data.portfolio) : Object.keys(portfolioResponse.data)
+      })
+      
+      const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data)
+      
+      setPortfolio(normalizedPortfolio)
+      
+      const graduateData = portfolioResponse.data.graduate || 
+                         (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.graduate : null) ||
+                         { 
+                           id: graduateId, 
+                           fullName: normalizedPortfolio.fullName,
+                           profilePicture: normalizedPortfolio.avatar 
+                         }
+      setGraduate(graduateData)
+      
+      const certs = portfolioResponse.data.certificates || 
+                  (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.certificates : [])
+      setCertificates(certs)
+      
+      const projs = portfolioResponse.data.projects || 
+                  (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.projects : [])
+      setProjects(projs)
+      
+      setIsPublicView(true)
+      setIsGraduateView(false)
+      setIsLoading(false)
+      
+      console.log("✅ Public portfolio loaded with:", {
+        graduate: !!graduateData,
+        certificates: certs.length,
+        projects: projs.length,
+        skills: normalizedPortfolio.skills?.length || 0,
+        experiences: normalizedPortfolio.experiences?.length || 0
+      })
+      
+    } catch (err) {
+      console.error("❌ Failed to fetch public data:", err.response?.status, err.message)
+      setError(getErrorMessage(err))
+      setIsLoading(false)
+    }
   }
-};
 
   const getErrorMessage = (err) => {
     const status = err.response?.status
@@ -388,12 +380,14 @@ const ViewPortfolio = () => {
       const isAuthenticated = await checkAuthStatus()
       if (isAuthenticated) {
         await fetchAuthenticatedData()
-      } else {
+      } else if (urlShareToken) {
         await fetchPublicData()
+      } else {
+        navigate("/signin") // Redirect to signin if not authenticated and no share token
       }
     }
     initializeData()
-  }, [graduateId])
+  }, [graduateId, navigate, urlShareToken])
 
   const generateNewShareToken = async () => {
     if (
@@ -482,7 +476,7 @@ const ViewPortfolio = () => {
       .writeText(shareableUrl)
       .then(() => {
         alert(
-          `✅ Secure share link copied!\n\n` +
+ները          `✅ Secure share link copied!\n\n` +
             `📋 ${displayUrl}\n\n` +
             `🔒 Only people with this exact link can view your portfolio.\n` +
             `💡 Links remain valid until you generate a new one.`,
@@ -613,24 +607,23 @@ const ViewPortfolio = () => {
     <div className="min-h-screen bg-white">
       <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white relative overflow-hidden">
         {/* Background pattern */}
-        
         <div className="absolute inset-0 bg-white/5 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px] animate-pulse"></div>
         <div className="container mx-auto px-6 py-24 relative">
           {/* Back Button - Visible only in public view */}
-        {isPublicView && (
-          <div className="mb-6 flex justify-start">
-            <Button
-              onClick={() => navigate("/user-browse")} // Navigate to homepage for reliability
-              color="white"
-              variant="text"
-              size="lg"
-              className="font-light flex items-center gap-2 hover:bg-white/20 rounded-full px-4 py-2 transition-all duration-300"
-              style={{ zIndex: 10 }} // Ensure button is above other elements
-            >
-              ← Back
-            </Button>
-          </div>
-        )}
+          {isPublicView && (
+            <div className="mb-6 flex justify-start">
+              <Button
+                onClick={() => navigate("/user-browse")} // Navigate to homepage for reliability
+                color="white"
+                variant="text"
+                size="lg"
+                className="font-light flex items-center gap-2 hover:bg-white/20 rounded-full px-4 py-2 transition-all duration-300"
+                style={{ zIndex: 10 }} // Ensure button is above other elements
+              >
+                ← Back
+              </Button>
+            </div>
+          )}
           <div className="flex items-center justify-between max-w-6xl mx-auto gap-16">
             {/* Profile Image - Left Side */}
             {(graduate?.profilePicture || portfolio?.avatar) && (

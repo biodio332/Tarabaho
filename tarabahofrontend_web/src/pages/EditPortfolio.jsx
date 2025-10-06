@@ -195,7 +195,6 @@ const EditPortfolio = () => {
         setIsLoading(false)
       }
     }
-
     fetchPortfolio()
   }, [graduateId, navigate])
 
@@ -1131,11 +1130,11 @@ const EditPortfolio = () => {
                     Training Duration *
                   </Typography>
                   <Input
+                    type="date"
                     size="lg"
                     name="trainingDuration"
                     value={portfolio.trainingDuration}
                     onChange={handlePortfolioChange}
-                    placeholder="Enter training duration"
                     required
                     className="!border-gray-300 focus:!border-blue-500"
                   />
@@ -2025,11 +2024,11 @@ const EditPortfolio = () => {
                         />
                       </div>
                       <div>
-                        <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                        <Typography                         variant="small" className="mb-2 text-gray-700 font-medium">
                           Phone
                         </Typography>
                         <Input
-                                                    size="lg"
+                          size="lg"
                           value={ref.phone || ""}
                           onChange={(e) => handleArrayChange("references", index, "phone", e.target.value)}
                           placeholder="Enter phone number"
@@ -2054,7 +2053,14 @@ const EditPortfolio = () => {
                 <Button
                   variant="outlined"
                   color="blue"
-                  onClick={() => addArrayItem("references", { name: "", relationship: "", email: "", phone: "" })}
+                  onClick={() =>
+                    addArrayItem("references", {
+                      name: "",
+                      relationship: "",
+                      email: "",
+                      phone: "",
+                    })
+                  }
                   className="flex items-center gap-2 w-full"
                 >
                   <FaPlus className="w-4 h-4" />
@@ -2064,7 +2070,6 @@ const EditPortfolio = () => {
             </CardBody>
           </Card>
 
-          {/* Portfolio Settings Section */}
           <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardBody className="p-8">
               <div className="flex items-center gap-3 mb-6">
@@ -2077,7 +2082,25 @@ const EditPortfolio = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                    Visibility *
+                    Design Template
+                  </Typography>
+                  <Select
+                    size="lg"
+                    name="designTemplate"
+                    value={portfolio.designTemplate || ""}
+                    onChange={(val) => handlePortfolioChange({ target: { name: "designTemplate", value: val } })}
+                    className="!border-gray-300 focus:!border-blue-500"
+                  >
+                    <Option value="MODERN">Modern</Option>
+                    <Option value="CLASSIC">Classic</Option>
+                    <Option value="CREATIVE">Creative</Option>
+                    <Option value="MINIMALIST">Minimalist</Option>
+                  </Select>
+                </div>
+
+                <div>
+                  <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                    Visibility
                   </Typography>
                   <Select
                     size="lg"
@@ -2088,51 +2111,39 @@ const EditPortfolio = () => {
                   >
                     <Option value="PUBLIC">Public</Option>
                     <Option value="PRIVATE">Private</Option>
+                    <Option value="RESTRICTED">Restricted</Option>
                   </Select>
-                </div>
-                <div>
-                  <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                    Design Template
-                  </Typography>
-                  <Input
-                    size="lg"
-                    name="designTemplate"
-                    value={portfolio.designTemplate || ""}
-                    onChange={handlePortfolioChange}
-                    placeholder="Enter design template name"
-                    className="!border-gray-300 focus:!border-blue-500"
-                  />
                 </div>
               </div>
             </CardBody>
           </Card>
 
-          {/* Submit Buttons */}
-          <div className="flex justify-center items-center gap-4 mt-8">
+          <div className="flex justify-end gap-4 mt-8">
             <Button
-              size="lg"
               variant="outlined"
               color="gray"
-              className="px-12 py-4 text-lg font-semibold"
               onClick={() => navigate(`/portfolio/${graduateId}`)}
+              className="flex items-center gap-2"
             >
-              Back to View
+              Cancel
             </Button>
             <Button
               type="submit"
               variant="gradient"
               color="blue"
-              size="lg"
-              className="px-8 py-3 text-lg font-semibold"
               disabled={isSubmitting}
+              className="flex items-center gap-2"
             >
               {isSubmitting ? (
                 <>
-                  <Spinner className="h-4 w-4 mr-2" />
+                  <Spinner className="w-4 h-4" />
                   Saving...
                 </>
               ) : (
-                "Save Changes"
+                <>
+                  <FaPlus className="w-4 h-4" />
+                  Save Portfolio
+                </>
               )}
             </Button>
           </div>
