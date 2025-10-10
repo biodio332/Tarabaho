@@ -2,7 +2,10 @@ package tarabaho.tarabaho.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -239,4 +242,26 @@ public class PortfolioViewService {
             return new ArrayList<>();
         }
     }
+
+   /**
+ * Retrieves the total number of views for each professional title.
+ * @return Map with professional titles as keys and their total view counts as values
+ */
+@Transactional(readOnly = true)
+public Map<String, Long> getTotalViewsByProfessionalTitle() {
+    try {
+        List<Object[]> results = portfolioViewRepository.findTotalViewsByProfessionalTitle();
+        return results.stream()
+            .filter(result -> result[0] != null) // Filter out null professionalTitles
+            .collect(Collectors.toMap(
+                result -> (String) result[0],
+                result -> (Long) result[1],
+                (existing, replacement) -> existing,
+                LinkedHashMap::new
+            ));
+    } catch (Exception e) {
+        logger.error("Error fetching total views by professional title: {}", e.getMessage());
+        return new LinkedHashMap<>();
+    }
+}
 }

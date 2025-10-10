@@ -267,68 +267,66 @@ const ViewPortfolio = () => {
   }
 
   // ← NEW: Fetch public portfolio with share token from URL
-  const fetchPublicDataWithToken = async () => {
-    try {
-      if (!urlShareToken) {
-        throw new Error("Share token is required for public access")
-      }
-      
-      console.log("🔄 Fetching complete public portfolio for ID:", graduateId)
-      console.log("🔑 Share token:", urlShareToken.substring(0, 8) + "...")
-      
-      const portfolioResponse = await axios.get(
-        `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio?share=${urlShareToken}`,
-        { withCredentials: true }
-      )
-      
-      console.log("📦 API Response Structure:", {
-        isCompleteResponse: portfolioResponse.data.portfolio !== undefined,
-        hasPortfolio: !!portfolioResponse.data.portfolio,
-        hasGraduate: !!portfolioResponse.data.graduate,
-        certificateCount: (portfolioResponse.data.certificates || []).length,
-        projectCount: (portfolioResponse.data.projects || []).length,
-        directPortfolioKeys: portfolioResponse.data.portfolio ? Object.keys(portfolioResponse.data.portfolio) : Object.keys(portfolioResponse.data)
-      })
-      
-      const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data)
-      
-      setPortfolio(normalizedPortfolio)
-      
-      const graduateData = portfolioResponse.data.graduate || 
-                         (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.graduate : null) ||
-                         { 
-                           id: graduateId, 
-                           fullName: normalizedPortfolio.fullName,
-                           profilePicture: normalizedPortfolio.avatar 
-                         }
-      setGraduate(graduateData)
-      
-      const certs = portfolioResponse.data.certificates || 
-                  (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.certificates : [])
-      setCertificates(certs)
-      
-      const projs = portfolioResponse.data.projects || 
-                  (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.projects : [])
-      setProjects(projs)
-      
-      setIsPublicView(true)
-      setIsGraduateView(false)
-      setIsLoading(false)
-      
-      console.log("✅ Public portfolio loaded with:", {
-        graduate: !!graduateData,
-        certificates: certs.length,
-        projects: projs.length,
-        skills: normalizedPortfolio.skills?.length || 0,
-        experiences: normalizedPortfolio.experiences?.length || 0
-      })
-      
-    } catch (err) {
-      console.error("❌ Failed to fetch public data:", err.response?.status, err.message)
-      setError(getErrorMessage(err))
-      setIsLoading(false)
+const fetchPublicDataWithToken = async () => {
+  try {
+    if (!urlShareToken) {
+      throw new Error("Share token is required for public access");
     }
+    
+    console.log("🔄 Fetching complete public portfolio for ID:", graduateId);
+    console.log("🔑 Share token:", urlShareToken.substring(0, 8) + "...");
+    
+    const portfolioResponse = await axios.get(
+      `${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio?share=${urlShareToken}`,
+      { withCredentials: true }
+    );
+    
+    console.log("📦 API Response Structure:", {
+      isCompleteResponse: portfolioResponse.data.portfolio !== undefined,
+      hasPortfolio: !!portfolioResponse.data.portfolio,
+      hasGraduate: !!portfolioResponse.data.graduate,
+      certificateCount: (portfolioResponse.data.certificates || []).length,
+      projectCount: (portfolioResponse.data.projects || []).length,
+    });
+    
+    const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data);
+    
+    setPortfolio(normalizedPortfolio);
+    
+    const graduateData = portfolioResponse.data.graduate || 
+                       (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.graduate : null) ||
+                       { 
+                         id: graduateId, 
+                         fullName: normalizedPortfolio.fullName,
+                         profilePicture: normalizedPortfolio.avatar 
+                       };
+    setGraduate(graduateData);
+    
+    const certs = portfolioResponse.data.certificates || 
+                (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.certificates : []);
+    setCertificates(certs);
+    
+    const projs = portfolioResponse.data.projects || 
+                (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.projects : []);
+    setProjects(projs);
+    
+    setIsPublicView(true);
+    setIsGraduateView(false);
+    setIsLoading(false);
+    
+    console.log("✅ Public portfolio loaded with:", {
+      graduate: !!graduateData,
+      certificates: certs.length,
+      projects: projs.length,
+      skills: normalizedPortfolio.skills?.length || 0,
+      experiences: normalizedPortfolio.experiences?.length || 0
+    });
+  } catch (err) {
+    console.error("❌ Failed to fetch public data:", err.response?.status, err.message);
+    setError(getErrorMessage(err));
+    setIsLoading(false);
   }
+};
 
   const getErrorMessage = (err) => {
     const status = err.response?.status
@@ -375,19 +373,22 @@ const ViewPortfolio = () => {
   }
 
   useEffect(() => {
-    const initializeData = async () => {
-      setIsLoading(true)
-      const isAuthenticated = await checkAuthStatus()
+  const initializeData = async () => {
+    setIsLoading(true);
+    if (urlShareToken) {
+      await fetchPublicData(); // Prioritize public view for share token
+    } else {
+      const isAuthenticated = await checkAuthStatus();
       if (isAuthenticated) {
-        await fetchAuthenticatedData()
-      } else if (urlShareToken) {
-        await fetchPublicData()
+        await fetchAuthenticatedData();
       } else {
-        navigate("/signin") // Redirect to signin if not authenticated and no share token
+        navigate("/signin");
       }
     }
-    initializeData()
-  }, [graduateId, navigate, urlShareToken])
+    setIsLoading(false);
+  };
+  initializeData();
+}, [graduateId, navigate, urlShareToken]);
 
   const generateNewShareToken = async () => {
     if (

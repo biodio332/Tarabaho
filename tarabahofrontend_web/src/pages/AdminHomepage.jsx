@@ -5,43 +5,48 @@ import Footer from "../components/Footer";
 import "../styles/Admin-homepage.css";
 
 const AdminHomepage = () => {
-  // State to hold dynamic data
   const [dashboardData, setDashboardData] = useState({
     totalUsers: 0,
     totalTrabahadors: 0,
+    topViewedProfessionalTitles: [{ title: "No views recorded", views: 0 }],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
-  // Fetch data when component mounts
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Fetch users
-        const usersResponse = await fetch(`${BACKEND_URL}/api/admin/users`, {
-          method: "GET",
-          credentials: "include", // Include cookies (for JWT token)
-        });
-        if (!usersResponse.ok) {
-          throw new Error("Failed to fetch users");
-        }
+        setLoading(true);
+        setError(null);
+
+        const [usersResponse, workersResponse, titlesResponse] = await Promise.all([
+          fetch(`${BACKEND_URL}/api/admin/users`, { method: "GET", credentials: "include" }),
+          fetch(`${BACKEND_URL}/api/admin/graduates`, { method: "GET", credentials: "include" }),
+          fetch(`${BACKEND_URL}/api/portfolio-view/statistics/total-views-by-title`, { method: "GET", credentials: "include" }),
+        ]);
+
+        if (!usersResponse.ok) throw new Error("Failed to fetch users");
+        if (!workersResponse.ok) throw new Error("Failed to fetch workers");
+        if (!titlesResponse.ok) throw new Error("Failed to fetch total views by title");
+
         const users = await usersResponse.json();
-
-        // Fetch workers
-        const workersResponse = await fetch(`${BACKEND_URL}/api/admin/graduates`, {
-          method: "GET",
-          credentials: "include", // Include cookies (for JWT token)
-        });
-        if (!workersResponse.ok) {
-          throw new Error("Failed to fetch workers");
-        }
         const workers = await workersResponse.json();
+        const titlesResponseData = await titlesResponse.json();
+        const titlesWithCounts = titlesResponseData.status === "success" ? titlesResponseData.data : {};
 
-        // Update state with fetched data
+        let topViewedTitles = [{ title: "No views recorded", views: 0 }];
+        if (titlesWithCounts && Object.keys(titlesWithCounts).length > 0) {
+          topViewedTitles = Object.entries(titlesWithCounts)
+            .map(([title, views]) => ({ title, views: Number(views) }))
+            .sort((a, b) => b.views - a.views)
+            .slice(0, 3); // Get top 3
+        }
+
         setDashboardData({
           totalUsers: users.length,
           totalTrabahadors: workers.length,
+          topViewedProfessionalTitles: topViewedTitles,
         });
         setLoading(false);
       } catch (err) {
@@ -51,24 +56,14 @@ const AdminHomepage = () => {
     };
 
     fetchDashboardData();
-  }, []); // Empty dependency array to run once on mount
+  }, []);
 
-  // Render loading state
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  // Render error state
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="admin-homepage">
-      {/* Navigation Bar */}
       <AdminNavbar activePage="homepage" />
-
-      {/* Main Content */}
       <div className="admin-main-content">
         <div className="admin-content-overlay">
           <div className="admin-welcome-container">
@@ -103,6 +98,16 @@ const AdminHomepage = () => {
               <div className="summary-item">
                 <span className="summary-label">Total Trabahadors:</span>
                 <span className="summary-value">{dashboardData.totalTrabahadors}</span>
+              </div>
+              <div className="summary-item">
+                <span className="summary-label">Top 3 Viewed Professional Titles:</span>
+                <div className="summary-value">
+                  {dashboardData.topViewedProfessionalTitles.map((item, index) => (
+                    <div key={index}>
+                      {index + 1}. {item.title} ({item.views} views)
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 

@@ -43,6 +43,8 @@ import ViewPortfolio from "./pages/ViewPortfolio"
 import EditPortfolio from "./pages/EditPortfolio"
 import GeneralLayout from "./components/GeneralLayout"
 import HomePageLayout from "./components/HomePageLayout"
+import ClientLayout from "./components/ClientLayout"
+import PortfolioRouteWrapper from './components/PortfolioRouteWrapper';
 
 
 function App() {
@@ -57,7 +59,7 @@ function App() {
         {/* Using GeneralLayout */}
         <Route path="/graduate-homepage" element={<GeneralLayout><TrabahadorHomepage /></GeneralLayout>} />
         <Route path="/create-portfolio" element={<GeneralLayout><PortfolioCreation /></GeneralLayout>} />
-        <Route path="/portfolio/:graduateId" element={<GeneralLayout><ViewPortfolio /></GeneralLayout>} />
+        <Route path="/portfolio/:graduateId" element={<PortfolioRouteWrapper />} />
         <Route path="/portfolio/edit/:graduateId" element={<GeneralLayout><EditPortfolio /></GeneralLayout>} />
         <Route path="/graduate-profile" element={<GeneralLayout><TrabahadorProfile /></GeneralLayout>} />
         <Route path="/graduate-about" element={<GeneralLayout><TrabahadorAboutUs /></GeneralLayout>} />

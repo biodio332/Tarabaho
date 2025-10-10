@@ -74,5 +74,8 @@ public interface PortfolioViewRepository extends JpaRepository<PortfolioView, Lo
     default long getYearlyViews(Long portfolioId) {
         return getYearlyViews(portfolioId, LocalDateTime.now().minusDays(365));
     }
+
+    @Query("SELECT p.professionalTitle, COUNT(v) FROM Portfolio p LEFT JOIN p.portfolioViews v WHERE p.professionalTitle IS NOT NULL GROUP BY p.professionalTitle ORDER BY COUNT(v) DESC")
+List<Object[]> findTotalViewsByProfessionalTitle();
     
 }

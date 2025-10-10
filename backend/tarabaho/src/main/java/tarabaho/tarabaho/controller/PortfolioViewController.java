@@ -1,5 +1,6 @@
 package tarabaho.tarabaho.controller;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -150,4 +151,37 @@ public class PortfolioViewController {
                 .body(Map.of("error", "Failed to fetch view trends: " + e.getMessage()));
         }
     }
+
+@Operation(summary = "Get total views by professional title", description = "Retrieves the total number of views for each professional title")
+@ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Total views by title retrieved successfully"),
+    @ApiResponse(responseCode = "401", description = "Not authenticated"),
+    @ApiResponse(responseCode = "500", description = "Internal server error")
+})
+@GetMapping("/statistics/total-views-by-title")
+public ResponseEntity<Map<String, Object>> getTotalViewsByProfessionalTitle(Authentication authentication) {
+    try {
+        logger.info("Fetching total views by professional title at {}", LocalDateTime.now());
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            logger.warn("PortfolioViewController: Unauthorized access attempt to total views by title");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("status", "error", "message", "Not authenticated."));
+        }
+
+        Map<String, Long> viewsByTitle = portfolioViewService.getTotalViewsByProfessionalTitle();
+        if (viewsByTitle.isEmpty()) {
+            logger.info("No views recorded for any professional title");
+            return ResponseEntity.ok(Map.of("status", "success", "data", Map.of("No views recorded", 0L)));
+        }
+
+        logger.info("Successfully retrieved total views by professional title: {}", viewsByTitle);
+        return ResponseEntity.ok(Map.of("status", "success", "data", viewsByTitle));
+    } catch (Exception e) {
+        logger.error("Error fetching total views by professional title: {}", e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(Map.of("status", "error", "message", "Failed to fetch total views by title: " + e.getMessage()));
+    }
 }
+}
+
