@@ -123,24 +123,25 @@ public class SecurityConfig {
                     });
             })
             .logout(logout -> {
-                System.out.println("Configuring logout...");
-                logout
-                    .logoutUrl("/api/user/logout")
-                    .logoutSuccessHandler((request, response, authentication) -> {
-                        Cookie tokenCookie = new Cookie("jwtToken", null);
-                        tokenCookie.setMaxAge(0);
-                        tokenCookie.setPath("/");
-                        tokenCookie.setHttpOnly(true);
-                        tokenCookie.setSecure(false);
-                        tokenCookie.setAttribute("SameSite", "None");
-                        response.addCookie(tokenCookie);
-                        System.out.println("Logout: Sent Set-Cookie - jwtToken=; Path=/; Max-Age=0; HttpOnly; SameSite=None");
-                        response.setStatus(HttpServletResponse.SC_OK);
-                        response.getWriter().write("User logged out successfully.");
-                    })
-                    .invalidateHttpSession(true)
-                    .permitAll();
-            })
+                    System.out.println("Configuring logout...");
+                    logout
+                        .logoutUrl("/api/user/logout")
+                        .logoutUrl("/api/graduate/logout") // Add graduate logout URL
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            Cookie tokenCookie = new Cookie("jwtToken", null);
+                            tokenCookie.setMaxAge(0);
+                            tokenCookie.setPath("/");
+                            tokenCookie.setHttpOnly(true);
+                            tokenCookie.setSecure(true); // Match login's Secure=true for https
+                            tokenCookie.setAttribute("SameSite", "None");
+                            response.addCookie(tokenCookie);
+                            System.out.println("Logout: Sent Set-Cookie - jwtToken=; Path=/; Max-Age=0; HttpOnly; Secure=true; SameSite=None");
+                            response.setStatus(HttpServletResponse.SC_OK);
+                            response.getWriter().write("User logged out successfully.");
+                        })
+                        .invalidateHttpSession(true)
+                        .permitAll();
+                })
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(new StateCaptureFilter(), org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter.class) // Add StateCaptureFilter here
             .exceptionHandling(exceptions -> exceptions

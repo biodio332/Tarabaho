@@ -2,7 +2,6 @@ package tarabaho.tarabaho.controller;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +28,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import tarabaho.tarabaho.dto.AuthResponse;
 import tarabaho.tarabaho.entity.User;
 import tarabaho.tarabaho.jwt.JwtUtil;
@@ -130,7 +128,7 @@ public class UserController {
             response.addCookie(tokenCookie);
             System.out.println("UserController: Token generated and cookie set for username: " + user.getUsername());
 
-            AuthResponse body = new AuthResponse(jwtToken,null);
+            AuthResponse body = new AuthResponse(jwtToken,user.getId());
             return ResponseEntity.ok(body);
         } catch (Exception e) {
             System.out.println("UserController: Login failed: " + e.getMessage());
@@ -451,31 +449,24 @@ public class UserController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         try {
-        System.out.println("UserController: Entering /logout endpoint");
+            System.out.println("GraduateController: Entering /logout endpoint");
 
-        // Clear the JWT cookie
-        Cookie tokenCookie = new Cookie("jwtToken", null);
-        tokenCookie.setMaxAge(0); // Expire immediately
-        tokenCookie.setPath("/"); // Matches login endpoint
-        tokenCookie.setHttpOnly(true);
-        tokenCookie.setSecure(true); // Match login endpoint's Secure=true
-        tokenCookie.setAttribute("SameSite", "None");
-        response.addCookie(tokenCookie);
-        System.out.println("UserController: Cookie cleared: jwtToken=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None");
-        System.out.println("UserController: Set-Cookie header: " + response.getHeader("Set-Cookie"));
+            // Clear theていJWT cookie
+            Cookie tokenCookie = new Cookie("jwtToken", null);
+            tokenCookie.setMaxAge(0);
+            tokenCookie.setPath("/");
+            tokenCookie.setHttpOnly(true);
+            tokenCookie.setSecure(true);
+            tokenCookie.setAttribute("SameSite", "None");
+            response.addCookie(tokenCookie);
+            System.out.println("GraduateController: Cookie cleared: jwtToken=; Path=/; Max-Age=0; HttpOnly; SameSite=None");
 
-        // Invalidate session if it exists
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-            System.out.println("UserController: Session invalidated");
-        } else {
-            System.out.println("UserController: No active session found to invalidate");
-        }
+            // Invalidate session
+            request.getSession(false).invalidate();
 
-        return ResponseEntity.ok("User logged out successfully.");
+            return ResponseEntity.ok("Graduate logged out successfully.");
         } catch (Exception e) {
-            System.err.println("UserController: Logout failed: " + e.getMessage());
+            System.err.println("GraduateController: Logout failed: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Logout failed: " + e.getMessage());
         }

@@ -686,6 +686,13 @@ public class GraduateController {
                 }
                 existingGraduate.setEmail(graduateDTO.getEmail());
             }
+            if (graduateDTO.getPhoneNumber() != null && !graduateDTO.getPhoneNumber().equals(existingGraduate.getPhoneNumber())) {
+                if (graduateService.findByPhoneNumber(graduateDTO.getPhoneNumber()).isPresent()) {
+                    System.out.println("GraduateController: Update failed: Phone number already exists: " + graduateDTO.getPhoneNumber());
+                    return ResponseEntity.badRequest().body("⚠️ Phone number already exists.");
+                }
+                existingGraduate.setPhoneNumber(graduateDTO.getPhoneNumber());
+            }
 
             if (graduateDTO.getAddress() != null) {
                 existingGraduate.setAddress(graduateDTO.getAddress());
