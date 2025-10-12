@@ -1,16 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Navbar from "../components/Navbar"
-import UserNavbar from "../components/UserNavbar"
-import AdminNavbar from "../components/AdminNavbar"
-import TrabahadorNavbar from "../components/TrabahadorNavbar"
+import { useNavigate } from "react-router-dom"
 import Footer from "../components/Footer"
 import "../styles/legal-pages.css"
 
 const Privacy = () => {
   const [showBackToTop, setShowBackToTop] = useState(false)
   const [userType, setUserType] = useState(null)
+  const navigate = useNavigate()
 
   // Check user login status on component mount
   useEffect(() => {
@@ -45,23 +43,21 @@ const Privacy = () => {
     })
   }
 
-  // Render the appropriate navbar based on user type
-  const renderNavbar = () => {
-    switch (userType) {
-      case "user":
-        return <UserNavbar />
-      case "admin":
-        return <AdminNavbar />
-      case "trabahador":
-        return <TrabahadorNavbar activePage="" />
-      default:
-        return <Navbar />
-    }
+  const handleBackClick = () => {
+    navigate(-1)
   }
 
   return (
     <div className="legal-page">
-      {renderNavbar()}
+      {/* Back Button */}
+      <div className="p-5">
+        <button
+          onClick={handleBackClick}
+          className="px-5 py-2.5 text-black bg-white/10 border border-white/30 rounded-lg backdrop-blur-sm hover:bg-white/20 transition-all duration-300"
+        >
+          ← Back to Home
+        </button>
+      </div>
 
       <div className="legal-content">
         <h1 className="legal-title">Privacy Policy</h1>

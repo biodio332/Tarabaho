@@ -26,18 +26,9 @@ import AdminAboutUs from "./pages/AdminAboutUs"
 import UserAboutUs from "./pages/UserAboutUs"
 import TrabahadorAboutUs from "./pages/TrabahadorAboutUs"
 import TrabahadorContactUs from "./pages/TrabahadorContactUs"
-import WorkerProfile from "./pages/WorkerProfile"
-import PaymentPage from "./pages/PaymentPage"
-import BookingRequest from "./pages/BookingRequest"
-import BookingHistory from "./pages/BookingHistory"
 import TrabahadorHistory from "./pages/TrabahadorHistory"
-import UserBookmarks from "./pages/UserBookmarks"
-import ChatPage from "./pages/ChatPage"
-import WorkerProfileDetail from "./pages/WorkerProfileDetail"
 import Terms from "./pages/Terms"
 import Privacy from "./pages/Privacy"
-import SuccessPage from "./pages/SuccessPage"
-import FailedPage from "./pages/FailedPage"
 import PortfolioCreation from "./pages/PortfolioCreation"
 import ViewPortfolio from "./pages/ViewPortfolio"
 import EditPortfolio from "./pages/EditPortfolio"
@@ -94,30 +85,14 @@ function App() {
         <Route path="/user-contact" element={<UserContactUs />} />
         <Route path="/user-profile" element={<UserProfile />} />
         <Route path="/user-about" element={<UserAboutUs />} />
-        <Route path="/booking-history" element={<BookingHistory />} />
-        <Route path="/user-bookmarks" element={<UserBookmarks />} />
 
-        {/* Dynamic category browse route */}
-        <Route path="/user-browse/:categoryName" element={<UserBrowseCategory />} />
 
         {/* Trabahador-specific routes */}
         <Route path="/graduate-contact" element={<TrabahadorContactUs />} />
         <Route path="/graduate-history" element={<TrabahadorHistory />} />
         <Route path="/graduate-profile" element={<TrabahadorProfile />} />
         <Route path="/graduate-about" element={<TrabahadorAboutUs />} />
-        <Route path="/graduate-profile-detail/:graduateId" element={<WorkerProfileDetail />} />
-        <Route path="/graduate-profile-detail/:graduateId" element={<WorkerProfileDetail />} />
 
-
-        <Route path="/category/:categoryName" element={<UserBrowseCategory />} />
-        <Route path="/graduate/:graduateId" element={<WorkerProfile />} />
-        <Route path="/booking/:graduateId/payment" element={<PaymentPage />} />
-        <Route path="/booking/:graduateId/request" element={<BookingRequest />} />
-        <Route path="/chat/:bookingId" element={<ChatPage />} />
-
-        {/* PAYMONGO ROUTES */}
-        <Route path="/booking/:graduateId/success" element={<SuccessPage />} />
-        <Route path="/booking/:graduateId/failed" element={<FailedPage />} /> 
       </Routes>
     </Router>
   )
