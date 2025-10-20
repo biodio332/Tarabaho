@@ -30,24 +30,42 @@ export default function Login() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
+        credentials: "include" // Include cookies like in web version
       })
 
-      if (!res.ok) throw new Error("Invalid username or password")
-      const data = await res.json()
-
-      if (data?.token) {
-        await AsyncStorage.multiSet([
-          ["authToken", data.token],
-          ["isLoggedIn", "true"],
-          ["userType", "user"],
-          ["username", username],
-        ])
-        setSuccessMessage(`Welcome, ${username}!`)
-        setTimeout(() => router.replace("/"), 1000)
-      } else {
-        throw new Error("No token received from server")
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.message || errorData.error || "Invalid username or password")
       }
+
+      const data = await res.json()
+      console.log("User login successful, token received:", data)
+
+      // Store auth data including token in AsyncStorage
+      await AsyncStorage.multiSet([
+        ["isLoggedIn", "true"],
+        ["userType", "user"],
+        ["username", username],
+        ["authToken", data.token], // Store the JWT token
+      ])
+
+      console.log("AsyncStorage data stored successfully with token")
+      setSuccessMessage(`Welcome, ${username}!`)
+      
+      // Navigate to user homepage 
+      setTimeout(() => {
+        console.log("Attempting to navigate to userhomepage...")
+        try {
+          router.push("/userhomepage")
+          console.log("Navigation command executed successfully")
+        } catch (navError) {
+          console.error("Navigation error:", navError)
+          // Fallback - try replace if push fails
+          router.replace("/userhomepage")
+        }
+      }, 500) // Increased delay to ensure AsyncStorage is fully committed
     } catch (err: any) {
+      console.error("User login failed:", err.message)
       setError(err.message)
     } finally {
       setLoading(false)

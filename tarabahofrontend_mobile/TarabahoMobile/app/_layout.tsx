@@ -22,13 +22,13 @@ export default function RootLayout() {
             keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
           >
             <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false }} />
               <Stack.Screen 
                 name="login" 
                 options={{ 
                   title: "Login", 
                   headerShown: false,
-                  gestureEnabled: true,
+                  gestureEnabled: false,
                   keyboardHandlingEnabled: true
                 }} 
               />
@@ -37,19 +37,49 @@ export default function RootLayout() {
                 options={{ 
                   title: "Graduate Login", 
                   headerShown: false,
-                  gestureEnabled: true,
+                  gestureEnabled: false,
                   keyboardHandlingEnabled: true
                 }} 
               />
-              <Stack.Screen name="registeruser" options={{ title: "Register User" }} />
-              <Stack.Screen name="registergraduate" options={{ title: "Register Graduate" }} />
-              <Stack.Screen name="graduatehomepage" options={{ title: "Graduate Home", headerShown: false }} />
-              <Stack.Screen name="graduateprofile" options={{ title: "Graduate Profile" }} />
-              <Stack.Screen name="portfolio" options={{ title: "Portfolio" }} />
-              <Stack.Screen name="createportfolio" options={{ title: "Create Portfolio" }} />
-              <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
+              <Stack.Screen 
+                name="registeruser" 
+                options={{ 
+                  headerShown: false,
+                  gestureEnabled: false,
+                  keyboardHandlingEnabled: true
+                }} 
+              />
+              <Stack.Screen 
+                name="registergraduate" 
+                options={{ 
+                  headerShown: false,
+                  gestureEnabled: false,
+                  keyboardHandlingEnabled: true
+                }} 
+              />
+              <Stack.Screen name="userhomepage" options={{ title: "User Home", headerShown: false, gestureEnabled: false }} />
+              <Stack.Screen name="userprofile" options={{ title: "User Profile", headerShown: false, gestureEnabled: false }} />
+              <Stack.Screen name="graduatehomepage" options={{ title: "Graduate Home", headerShown: false, gestureEnabled: false }} />
+              <Stack.Screen name="graduateprofile" options={{ title: "Graduate Profile", headerShown: false, gestureEnabled: false }} />
+              <Stack.Screen name="portfolio" options={{ 
+                title: "Portfolio", 
+                headerShown: false,
+                gestureEnabled: false // Disable swipe-to-go-back gesture
+              }} />
+              <Stack.Screen name="viewportfolio" options={{ 
+                title: "View Portfolio", 
+                headerShown: false,
+                gestureEnabled: false 
+              }} />
+              <Stack.Screen name="createportfolio" options={{ title: "Create Portfolio", headerShown: false, gestureEnabled: false }} />
+              <Stack.Screen name="editportfolio" options={{ title: "Edit Portfolio", headerShown: false, gestureEnabled: false }} />
+              <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal", gestureEnabled: false }} />
             </Stack>
-            <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+            <StatusBar 
+              style="dark"
+              backgroundColor="transparent"
+              translucent
+            />
           </KeyboardAvoidingView>
         </ThemeProvider>
       </SafeAreaProvider>

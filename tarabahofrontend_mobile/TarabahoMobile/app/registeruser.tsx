@@ -1,17 +1,37 @@
-import React, { useState } from 'react';
-import { View, Text, Alert, ScrollView } from 'react-native';
+import React, { useState, ReactNode } from 'react';
+import { 
+  View, 
+  Text, 
+  Alert, 
+  ScrollView, 
+  KeyboardAvoidingView, 
+  Platform,
+  TouchableOpacity
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import TextField from '@/components/ui/TextField';
 import Button from '@/components/ui/Button';
+import { DatePicker } from '@/components/ui/DatePicker';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8080';
+
+// Utility function to handle date conversion
+const parseDate = (dateString: string | null | undefined): Date => {
+  if (!dateString) return new Date();
+  try {
+    return new Date(dateString);
+  } catch (e) {
+    return new Date();
+  }
+};
 
 function validateEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 export default function RegisterUser() {
-
   const [form, setForm] = useState<{ username: string; password: string; confirmPassword: string; firstName: string; lastName: string; email: string; address: string; contactNo: string; birthday: string; }>(
     { username: '', password: '', confirmPassword: '', firstName: '', lastName: '', email: '', address: '', contactNo: '', birthday: '' }
   );
@@ -74,30 +94,225 @@ export default function RegisterUser() {
     }
   };
 
+  type FormField = {
+    field: keyof typeof form;
+    placeholder: string;
+    icon: ReactNode;
+    halfWidth?: boolean;
+    secureTextEntry?: boolean;
+    keyboardType?: 'default' | 'email-address' | 'phone-pad';
+    autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  };
+
+  type Section = {
+    title: string;
+    fields: FormField[];
+  };
+
+  const sections: Section[] = [
+    {
+      title: 'Account Information',
+      fields: [
+        {
+          field: 'username',
+          placeholder: 'Username',
+          icon: <Ionicons name="person-outline" size={20} color="#6b7280" />,
+          autoCapitalize: 'none'
+        },
+        {
+          field: 'password',
+          placeholder: 'Password',
+          icon: <Ionicons name="lock-closed-outline" size={20} color="#6b7280" />,
+          secureTextEntry: true
+        },
+        {
+          field: 'confirmPassword',
+          placeholder: 'Confirm Password',
+          icon: <Ionicons name="shield-checkmark-outline" size={20} color="#6b7280" />,
+          secureTextEntry: true
+        }
+      ]
+    },
+    {
+      title: 'Personal Information',
+      fields: [
+        {
+          field: 'firstName',
+          placeholder: 'First Name',
+          icon: <Ionicons name="person-outline" size={20} color="#6b7280" />,
+          halfWidth: true
+        },
+        {
+          field: 'lastName',
+          placeholder: 'Last Name',
+          icon: <Ionicons name="person-outline" size={20} color="#6b7280" />,
+          halfWidth: true
+        },
+        {
+          field: 'email',
+          placeholder: 'Email Address',
+          icon: <Ionicons name="mail-outline" size={20} color="#6b7280" />,
+          keyboardType: 'email-address',
+          autoCapitalize: 'none'
+        }
+      ]
+    },
+    {
+      title: 'Contact Information',
+      fields: [
+        {
+          field: 'address',
+          placeholder: 'Address',
+          icon: <Ionicons name="location-outline" size={20} color="#6b7280" />
+        },
+        {
+          field: 'contactNo',
+          placeholder: 'Contact Number',
+          icon: <Ionicons name="call-outline" size={20} color="#6b7280" />,
+          keyboardType: 'phone-pad',
+          halfWidth: true
+        },
+        {
+          field: 'birthday',
+          placeholder: 'Birthday (YYYY-MM-DD)',
+          icon: <Ionicons name="calendar-outline" size={20} color="#6b7280" />,
+          halfWidth: true
+        }
+      ]
+    }
+  ];
+
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="bg-white">
-      <View className="flex-1 px-6 py-10">
-        <Text className="mb-6 text-2xl font-extrabold text-secondary">Register as User</Text>
-        <View className="space-y-4">
-          <TextField placeholder="Username" autoCapitalize="none" value={form.username} onChangeText={v => handleChange('username', v)} />
-          <TextField placeholder="Password" secureTextEntry value={form.password} onChangeText={v => handleChange('password', v)} />
-          <TextField placeholder="Confirm Password" secureTextEntry value={form.confirmPassword} onChangeText={v => handleChange('confirmPassword', v)} />
-          <View className="flex-row gap-4">
-            <View className="flex-1"><TextField placeholder="First Name" value={form.firstName} onChangeText={v => handleChange('firstName', v)} /></View>
-            <View className="flex-1"><TextField placeholder="Last Name" value={form.lastName} onChangeText={v => handleChange('lastName', v)} /></View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top', 'bottom', 'left', 'right']}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="bg-white">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="absolute left-4 top-4 w-10 h-10 rounded-full bg-white/90 shadow-sm items-center justify-center z-50"
+            style={{
+              elevation: 2,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.1,
+              shadowRadius: 2,
+            }}
+          >
+            <Ionicons name="chevron-back" size={24} color="#374151" />
+          </TouchableOpacity>
+          <View className="flex-1 px-6 pt-4 pb-8">
+            <View className="mb-8 mt-14">
+              <Text className="text-3xl font-bold text-gray-900">Create Account</Text>
+              <Text className="mt-2 text-base text-gray-600">Register as a user to find talents</Text>
+            </View>
+
+            {sections.map((section, index) => (
+              <View key={section.title} className="mb-6">
+                <Text className="mb-4 text-lg font-semibold text-gray-700">{section.title}</Text>
+                <View className="space-y-2">
+                  {section.fields.map((field, fieldIndex) => (
+                    <React.Fragment key={field.field}>
+                      {field.halfWidth ? (
+                        fieldIndex % 2 === 0 ? (
+                          <View className="flex-row gap-4">
+                            <View className="flex-1">
+                              {field.field === 'birthday' ? (
+                                <DatePicker
+                                  label={field.placeholder?.replace(' (YYYY-MM-DD)', '')}
+                                  value={parseDate(form[field.field])}
+                                  onChange={(date) => handleChange(field.field, date.toISOString().split('T')[0])}
+                                />
+                              ) : (
+                                <TextField
+                                  leftIcon={field.icon}
+                                  value={form[field.field]}
+                                  onChangeText={v => handleChange(field.field, v)}
+                                  error={error && error.includes(field.field) ? error : ''}
+                                  {...field}
+                                />
+                              )}
+                            </View>
+                            {section.fields[fieldIndex + 1] && (
+                              <View className="flex-1">
+                                {section.fields[fieldIndex + 1].field === 'birthday' ? (
+                                  <DatePicker
+                                    label={section.fields[fieldIndex + 1].placeholder?.replace(' (YYYY-MM-DD)', '')}
+                                    value={parseDate(form[section.fields[fieldIndex + 1].field])}
+                                    onChange={(date) => handleChange(section.fields[fieldIndex + 1].field, date.toISOString().split('T')[0])}
+                                  />
+                                ) : (
+                                  <TextField
+                                    leftIcon={section.fields[fieldIndex + 1].icon}
+                                    value={form[section.fields[fieldIndex + 1].field]}
+                                    onChangeText={v => handleChange(section.fields[fieldIndex + 1].field, v)}
+                                    error={error && error.includes(section.fields[fieldIndex + 1].field) ? error : ''}
+                                    {...section.fields[fieldIndex + 1]}
+                                  />
+                                )}
+                              </View>
+                            )}
+                          </View>
+                        ) : null
+                      ) : (
+                        field.field === 'birthday' ? (
+                          <DatePicker
+                            label={field.placeholder?.replace(' (YYYY-MM-DD)', '')}
+                            value={parseDate(form[field.field])}
+                            onChange={(date) => handleChange(field.field, date.toISOString().split('T')[0])}
+                          />
+                        ) : (
+                          <TextField
+                            leftIcon={field.icon}
+                            value={form[field.field]}
+                            onChangeText={v => handleChange(field.field, v)}
+                            error={error && error.includes(field.field) ? error : ''}
+                            {...field}
+                          />
+                        )
+                      )}
+                    </React.Fragment>
+                  ))}
+                </View>
+              </View>
+            ))}
+
+            {error ? (
+              <View className="mb-4 p-4 bg-red-50 rounded-lg">
+                <Text className="text-sm text-red-600 font-medium">{error}</Text>
+              </View>
+            ) : null}
+
+            <View style={{ 
+              marginTop: 24,
+              paddingHorizontal: 4,
+              paddingBottom: Platform.OS === 'ios' ? 16 : 24
+            }}>
+              <Button
+                title={loading ? 'Creating Account...' : 'Create Account'}
+                onPress={handleSubmit}
+                loading={loading}
+                style={{
+                  marginBottom: 16,
+                  height: 56,
+                  borderRadius: 12
+                }}
+              />
+              <Button
+                title="Back to Login"
+                onPress={() => router.replace('/login')}
+                variant="outline"
+                style={{
+                  height: 56,
+                  borderRadius: 12
+                }}
+              />
+            </View>
           </View>
-          <TextField placeholder="Email" keyboardType="email-address" autoCapitalize="none" value={form.email} onChangeText={v => handleChange('email', v)} />
-          <TextField placeholder="Address" value={form.address} onChangeText={v => handleChange('address', v)} />
-          <View className="flex-row gap-4">
-            <View className="flex-1"><TextField placeholder="Contact Number" keyboardType="phone-pad" value={form.contactNo} onChangeText={v => handleChange('contactNo', v)} /></View>
-            <View className="flex-1"><TextField placeholder="Birthday (YYYY-MM-DD)" value={form.birthday} onChangeText={v => handleChange('birthday', v)} /></View>
-          </View>
-          {error ? <Text className="text-sm text-danger">{error}</Text> : null}
-          <Button title={loading ? 'Registering...' : 'Register'} onPress={handleSubmit} loading={loading} />
-          <Button title="Back to Login" onPress={() => router.replace('/login')} variant="outline" />
-        </View>
-      </View>
-    </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

@@ -7,27 +7,64 @@ type TextFieldProps = {
   helperText?: string
   containerStyle?: any
   inputStyle?: any
+  leftIcon?: React.ReactNode
+  rightIcon?: React.ReactNode
+  variant?: 'outlined' | 'filled'
+  size?: 'small' | 'medium' | 'large'
+  showBorder?: boolean
 } & TextInputProps
 
 const TextField = forwardRef<TextInput, TextFieldProps>(
-  ({ label, error, helperText, containerStyle, inputStyle, onFocus, onBlur, ...props }, ref) => {
+  ({ 
+    label, 
+    error, 
+    helperText, 
+    containerStyle, 
+    inputStyle, 
+    leftIcon, 
+    rightIcon,
+    variant = 'outlined',
+    size = 'medium',
+    showBorder = true,
+    onFocus, 
+    onBlur, 
+    ...props 
+  }, ref) => {
     const [focused, setFocused] = useState(false)
     const hasError = !!(error && error.length > 0)
 
     const getBorderStyle = () => {
-      if (hasError) return styles.borderError
-      if (focused) return styles.borderFocused
-      return styles.borderDefault
+      if (!showBorder) return styles.noBorder;
+      if (hasError) return styles.borderError;
+      if (focused) return styles.borderFocused;
+      if (variant === 'filled') return styles.borderFilled;
+      return styles.borderDefault;
+    }
+
+    const getContainerStyle = () => {
+      return [
+        styles.inputContainer,
+        getBorderStyle(),
+        variant === 'filled' && styles.filledContainer,
+        size === 'small' && styles.smallContainer,
+        size === 'large' && styles.largeContainer
+      ]
     }
 
     return (
       <View style={[styles.container, containerStyle]}>
-        {label ? <Text style={styles.label}>{label}</Text> : null}
+        {label ? <Text style={[styles.label, hasError && styles.labelError]}>{label}</Text> : null}
         <TouchableWithoutFeedback onPress={() => {}}>
-          <View style={[styles.inputContainer, getBorderStyle()]}>
+          <View style={getContainerStyle()}>
+            {leftIcon && <View style={styles.iconContainer}>{leftIcon}</View>}
             <TextInput
               ref={ref}
-              style={[styles.input, inputStyle]}
+              style={[
+                styles.input, 
+                size === 'small' && styles.smallInput,
+                size === 'large' && styles.largeInput,
+                inputStyle
+              ]}
               placeholderTextColor="#9ca3af"
               onFocus={(e) => {
                 setFocused(true)
@@ -38,12 +75,10 @@ const TextField = forwardRef<TextInput, TextFieldProps>(
                 onBlur?.(e)
               }}
               autoCorrect={props.autoCorrect ?? false}
-              // 👇 ensures keyboard shows up
               editable={props.editable ?? true}
               keyboardType={props.keyboardType ?? "default"}
               returnKeyType={props.returnKeyType ?? "done"}
               blurOnSubmit={props.blurOnSubmit ?? true}
-              // Additional keyboard handling props
               autoCapitalize={props.autoCapitalize ?? "none"}
               autoComplete={props.autoComplete ?? "off"}
               textContentType={props.textContentType}
@@ -51,6 +86,7 @@ const TextField = forwardRef<TextInput, TextFieldProps>(
               clearButtonMode="while-editing"
               {...props}
             />
+            {rightIcon && <View style={styles.iconContainer}>{rightIcon}</View>}
           </View>
         </TouchableWithoutFeedback>
         {hasError ? (
@@ -77,6 +113,9 @@ const styles = StyleSheet.create({
     color: "#374151",
     letterSpacing: 0.5,
   },
+  labelError: {
+    color: "#ef4444",
+  },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -85,6 +124,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     minHeight: 56,
     backgroundColor: "#ffffff",
+  },
+  iconContainer: {
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noBorder: {
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+  },
+  filledContainer: {
+    backgroundColor: '#f3f4f6',
+    borderWidth: 0,
+  },
+  smallContainer: {
+    minHeight: 44,
+    paddingHorizontal: 12,
+  },
+  largeContainer: {
+    minHeight: 64,
+    paddingHorizontal: 20,
+  },
+  borderFilled: {
+    borderWidth: 0,
+    backgroundColor: '#f3f4f6',
   },
   borderDefault: {
     borderColor: "#d1d5db",
@@ -119,6 +183,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#111827",
     fontWeight: "500",
+  },
+  smallInput: {
+    paddingVertical: 12,
+    fontSize: 14,
+  },
+  largeInput: {
+    paddingVertical: 18,
+    fontSize: 18,
   },
   errorText: {
     marginTop: 6,
