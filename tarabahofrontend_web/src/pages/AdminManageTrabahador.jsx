@@ -93,7 +93,7 @@ const AdminManageTrabahador = () => {
               aria-label="Search Trabahadors"
             />
           </div>
-          <button onClick={() => navigate("/admin/manage-trabahador/register-worker")} className="add-button">
+          <button onClick={() => navigate("/admin/manage-graduate/register-graduate")} className="add-button">
             Add Trabahador
           </button>
          
@@ -131,7 +131,7 @@ const AdminManageTrabahador = () => {
                     <div className="table-cell birthday-cell">{trabahador.birthday || "N/A"}</div>
                     <div className="table-cell actions-cell">
                       <Link
-                        to={`/admin/trabahador/${trabahador.id}`}
+                        to={`/admin/graduate/${trabahador.id}`}
                         className="view-details-button"
                         aria-label={`View details of ${trabahador.fullName || "worker"}`}
                       >

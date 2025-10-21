@@ -10,7 +10,7 @@ import "../styles/Trabahador-details.css";
 const TrabahadorDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [worker, setWorker] = useState(null);
+  const [graduate, setgraduate] = useState(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCertificateImage, setSelectedCertificateImage] = useState(null);
@@ -31,21 +31,21 @@ const TrabahadorDetails = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
   useEffect(() => {
-    const fetchWorkerData = async () => {
+    const fetchgraduateData = async () => {
       setError("");
       setIsLoading(true);
       try {
-        // Fetch worker details
-        const workerResponse = await axios.get(`${BACKEND_URL}/api/worker/${id}`, {
+        // Fetch graduate details
+        const graduateResponse = await axios.get(`${BACKEND_URL}/api/graduate/${id}`, {
           withCredentials: true,
         });
-        const fetchedWorker = workerResponse.data;
+        const fetchedgraduate = graduateResponse.data;
 
         // Fetch certificates
         let certificates = [];
         try {
           const certificatesResponse = await axios.get(
-            `${BACKEND_URL}/api/admin/certificates/worker/${id}`,
+            `${BACKEND_URL}/api/admin/certificates/graduate/${id}`,
             { withCredentials: true }
           );
           certificates = certificatesResponse.data.map(cert => ({
@@ -72,18 +72,18 @@ const TrabahadorDetails = () => {
           console.error("Failed to fetch categories:", catErr);
         }
 
-        // Fetch pending category requests for this worker
-        let workerPendingRequests = [];
+        // Fetch pending category requests for this graduate
+        let graduatePendingRequests = [];
         try {
           const pendingRequestsResponse = await axios.get(
             `${BACKEND_URL}/api/admin/category-requests/pending`,
             { withCredentials: true }
           );
           console.log("Pending requests response:", pendingRequestsResponse.data);
-          workerPendingRequests = pendingRequestsResponse.data.filter(
-            request => request.worker.id === parseInt(id)
+          graduatePendingRequests = pendingRequestsResponse.data.filter(
+            request => request.graduate.id === parseInt(id)
           );
-          setPendingRequests(workerPendingRequests);
+          setPendingRequests(graduatePendingRequests);
         } catch (reqErr) {
           console.error("Failed to fetch pending requests:", reqErr);
           if (reqErr.response) {
@@ -93,44 +93,44 @@ const TrabahadorDetails = () => {
           }
         }
 
-        const workerData = {
-          id: fetchedWorker.id ?? 0,
-          name: `${fetchedWorker.firstName ?? "Unknown"} ${fetchedWorker.lastName ?? "Worker"}`,
-          fullName: `${fetchedWorker.firstName ?? "Unknown"} ${fetchedWorker.lastName ?? "Worker"}`,
-          email: fetchedWorker.email ?? "N/A",
-          phoneNumber: fetchedWorker.phoneNumber ?? "N/A",
-          birthday: fetchedWorker.birthday ?? "N/A",
-          address: fetchedWorker.address ?? "N/A",
-          description: fetchedWorker.biography ?? "No description available.",
-          hourlyRate: fetchedWorker.hourly ? `₱${fetchedWorker.hourly.toFixed(2)}/hour` : "N/A",
-          rating: fetchedWorker.stars ?? 0,
-          services: fetchedWorker.categories?.map(category => category.name) ?? [],
+        const graduateData = {
+          id: fetchedgraduate.id ?? 0,
+          name: `${fetchedgraduate.firstName ?? "Unknown"} ${fetchedgraduate.lastName ?? "graduate"}`,
+          fullName: `${fetchedgraduate.firstName ?? "Unknown"} ${fetchedgraduate.lastName ?? "graduate"}`,
+          email: fetchedgraduate.email ?? "N/A",
+          phoneNumber: fetchedgraduate.phoneNumber ?? "N/A",
+          birthday: fetchedgraduate.birthday ?? "N/A",
+          address: fetchedgraduate.address ?? "N/A",
+          description: fetchedgraduate.biography ?? "No description available.",
+          hourlyRate: fetchedgraduate.hourly ? `₱${fetchedgraduate.hourly.toFixed(2)}/hour` : "N/A",
+          rating: fetchedgraduate.stars ?? 0,
+          services: fetchedgraduate.categories?.map(category => category.name) ?? [],
           certificates: certificates,
-          profilePicture: fetchedWorker.profilePicture ?? "/placeholder.svg?height=300&width=300",
-          isVerified: fetchedWorker.isVerified ?? false,
+          profilePicture: fetchedgraduate.profilePicture ?? "/placeholder.svg?height=300&width=300",
+          isVerified: fetchedgraduate.isVerified ?? false,
         };
-        setWorker(workerData);
+        setgraduate(graduateData);
         setEditForm({
-          email: workerData.email,
-          phoneNumber: workerData.phoneNumber,
-          birthday: workerData.birthday,
-          address: workerData.address,
-          biography: workerData.description,
-          isVerified: workerData.isVerified,
+          email: graduateData.email,
+          phoneNumber: graduateData.phoneNumber,
+          birthday: graduateData.birthday,
+          address: graduateData.address,
+          biography: graduateData.description,
+          isVerified: graduateData.isVerified,
         });
-      } catch (workerErr) {
-        console.error("Failed to fetch worker:", workerErr);
-        if (workerErr.response) {
-          console.error("Response data:", workerErr.response.data);
-          console.error("Response status:", workerErr.response.status);
-          console.error("Response headers:", workerErr.response.headers);
+      } catch (graduateErr) {
+        console.error("Failed to fetch graduate:", graduateErr);
+        if (graduateErr.response) {
+          console.error("Response data:", graduateErr.response.data);
+          console.error("Response status:", graduateErr.response.status);
+          console.error("Response headers:", graduateErr.response.headers);
         }
         setError(
-          workerErr.response?.status === 401
+          graduateErr.response?.status === 401
             ? "Your session has expired. Please log in again."
-            : workerErr.response?.data?.replace("⚠️ ", "") || "Failed to load worker details. Please try again."
+            : graduateErr.response?.data?.replace("⚠️ ", "") || "Failed to load graduate details. Please try again."
         );
-        if (workerErr.response?.status === 401) {
+        if (graduateErr.response?.status === 401) {
           navigate("/admin-login");
         }
       } finally {
@@ -138,7 +138,7 @@ const TrabahadorDetails = () => {
       }
     };
 
-    fetchWorkerData();
+    fetchgraduateData();
   }, [id, navigate]);
 
   const handleBack = () => {
@@ -170,7 +170,7 @@ const TrabahadorDetails = () => {
 
   const handleEditSubmit = async () => {
     try {
-      const updatedWorker = {
+      const updatedgraduate = {
         email: editForm.email,
         phoneNumber: editForm.phoneNumber,
         birthday: editForm.birthday,
@@ -179,13 +179,13 @@ const TrabahadorDetails = () => {
         isVerified: editForm.isVerified,
       };
       const response = await axios.put(
-        `${BACKEND_URL}/api/admin/workers/edit/${worker.id}`,
-        updatedWorker,
+        `${BACKEND_URL}/api/admin/graduates/edit/${graduate.id}`,
+        updatedgraduate,
         { withCredentials: true }
       );
       const updatedData = response.data;
-      setWorker({
-        ...worker,
+      setgraduate({
+        ...graduate,
         email: updatedData.email ?? "N/A",
         phoneNumber: updatedData.phoneNumber ?? "N/A",
         birthday: updatedData.birthday ?? "N/A",
@@ -196,8 +196,8 @@ const TrabahadorDetails = () => {
       setIsEditing(false);
       setError("");
     } catch (err) {
-      console.error("Failed to update worker:", err);
-      setError(err.response?.data?.replace("⚠️ ", "") || "Failed to update worker. Please try again.");
+      console.error("Failed to update graduate:", err);
+      setError(err.response?.data?.replace("⚠️ ", "") || "Failed to update graduate. Please try again.");
     }
   };
 
@@ -218,13 +218,13 @@ const TrabahadorDetails = () => {
         setError("Please select at least one category to request.");
         return;
       }
-      // For each selected category, send a request to the worker's endpoint
+      // For each selected category, send a request to the graduate's endpoint
       for (const categoryId of selectedCategories) {
         const category = categories.find(cat => cat.id === categoryId);
         if (!category) continue;
         const requestData = { categoryName: category.name };
         await axios.post(
-          `${BACKEND_URL}/api/worker/${worker.id}/request-category`,
+          `${BACKEND_URL}/api/graduate/${graduate.id}/request-category`,
           requestData,
           { withCredentials: true }
         );
@@ -234,10 +234,10 @@ const TrabahadorDetails = () => {
         `${BACKEND_URL}/api/admin/category-requests/pending`,
         { withCredentials: true }
       );
-      const workerPendingRequests = pendingRequestsResponse.data.filter(
-        request => request.worker.id === parseInt(id)
+      const graduatePendingRequests = pendingRequestsResponse.data.filter(
+        request => request.graduate.id === parseInt(id)
       );
-      setPendingRequests(workerPendingRequests);
+      setPendingRequests(graduatePendingRequests);
       setShowCategoryRequestModal(false);
       setError("");
     } catch (err) {
@@ -258,24 +258,24 @@ const TrabahadorDetails = () => {
         {},
         { withCredentials: true }
       );
-      // Refresh worker data to update categories
-      const workerResponse = await axios.get(`${BACKEND_URL}/api/worker/${id}`, {
+      // Refresh graduate data to update categories
+      const graduateResponse = await axios.get(`${BACKEND_URL}/api/graduate/${id}`, {
         withCredentials: true,
       });
-      const updatedWorker = workerResponse.data;
-      setWorker({
-        ...worker,
-        services: updatedWorker.categories?.map(category => category.name) ?? [],
+      const updatedgraduate = graduateResponse.data;
+      setgraduate({
+        ...graduate,
+        services: updatedgraduate.categories?.map(category => category.name) ?? [],
       });
       // Refresh pending requests
       const pendingRequestsResponse = await axios.get(
         `${BACKEND_URL}/api/admin/category-requests/pending`,
         { withCredentials: true }
       );
-      const workerPendingRequests = pendingRequestsResponse.data.filter(
-        request => request.worker.id === parseInt(id)
+      const graduatePendingRequests = pendingRequestsResponse.data.filter(
+        request => request.graduate.id === parseInt(id)
       );
-      setPendingRequests(workerPendingRequests);
+      setPendingRequests(graduatePendingRequests);
       setError("");
     } catch (err) {
       console.error("Failed to approve request:", err);
@@ -295,10 +295,10 @@ const TrabahadorDetails = () => {
         `${BACKEND_URL}/api/admin/category-requests/pending`,
         { withCredentials: true }
       );
-      const workerPendingRequests = pendingRequestsResponse.data.filter(
-        request => request.worker.id === parseInt(id)
+      const graduatePendingRequests = pendingRequestsResponse.data.filter(
+        request => request.graduate.id === parseInt(id)
       );
-      setPendingRequests(workerPendingRequests);
+      setPendingRequests(graduatePendingRequests);
       setError("");
     } catch (err) {
       console.error("Failed to deny request:", err);
@@ -312,14 +312,14 @@ const TrabahadorDetails = () => {
 
   const confirmDelete = async () => {
     try {
-      await axios.delete(`${BACKEND_URL}/api/admin/workers/delete/${worker.id}`, {
+      await axios.delete(`${BACKEND_URL}/api/admin/graduates/delete/${graduate.id}`, {
         withCredentials: true,
       });
       setShowDeleteModal(false);
       navigate("/admin/manage-trabahador");
     } catch (err) {
-      console.error("Failed to delete worker:", err);
-      setError(err.response?.data || "Failed to delete worker. Please try again.");
+      console.error("Failed to delete graduate:", err);
+      setError(err.response?.data || "Failed to delete graduate. Please try again.");
       setShowDeleteModal(false);
     }
   };
@@ -352,12 +352,12 @@ const TrabahadorDetails = () => {
     );
   }
 
-  if (!worker) {
+  if (!graduate) {
     return (
       <div className="trabahador-details-page">
         <AdminNavbar />
         <div className="trabahador-details-container">
-          <div className="error-message">Worker not found.</div>
+          <div className="error-message">graduate not found.</div>
         </div>
         <Footer />
       </div>
@@ -378,31 +378,31 @@ const TrabahadorDetails = () => {
         <div className="profile-section">
           <div className="profile-image-container">
             <img
-              src={worker.profilePicture}
-              alt={worker.name}
+              src={graduate.profilePicture}
+              alt={graduate.name}
               className="profile-image"
             />
           </div>
 
           <div className="profile-info">
-            <h2 className="profile-name">{worker.name}</h2>
-            <p className="profile-description">{worker.description}</p>
+            <h2 className="profile-name">{graduate.name}</h2>
+            <p className="profile-description">{graduate.description}</p>
 
             <div className="rating">
               {[...Array(5)].map((_, i) => (
                 <span
                   key={i}
-                  className={`star ${i < Math.floor(worker.rating) ? "filled" : i < worker.rating ? "half-filled" : ""}`}
+                  className={`star ${i < Math.floor(graduate.rating) ? "filled" : i < graduate.rating ? "half-filled" : ""}`}
                 >
                   ★
                 </span>
               ))}
             </div>
 
-            <div className="hourly-rate">{worker.hourlyRate}</div>
+            <div className="hourly-rate">{graduate.hourlyRate}</div>
 
             <div className="services">
-              {worker.services.map((service, index) => (
+              {graduate.services.map((service, index) => (
                 <span key={index} className="service-tag">
                   {service}
                 </span>
@@ -488,33 +488,33 @@ const TrabahadorDetails = () => {
               <>
                 <div className="detail-item">
                   <span className="detail-label">Full name:</span>
-                  <span className="detail-value">{worker.fullName}</span>
+                  <span className="detail-value">{graduate.fullName}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Email:</span>
-                  <span className="detail-value">{worker.email}</span>
+                  <span className="detail-value">{graduate.email}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Contact no:</span>
-                  <span className="detail-value">{worker.phoneNumber}</span>
+                  <span className="detail-value">{graduate.phoneNumber}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Birthday:</span>
-                  <span className="detail-value">{worker.birthday}</span>
+                  <span className="detail-value">{graduate.birthday}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Address:</span>
-                  <span className="detail-value">{worker.address}</span>
+                  <span className="detail-value">{graduate.address}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Verified:</span>
-                  <span className="detail-value">{worker.isVerified ? "Yes" : "No"}</span>
+                  <span className="detail-value">{graduate.isVerified ? "Yes" : "No"}</span>
                 </div>
                 <div className="action-buttons">
                   <button className="edit-button" onClick={handleEditToggle}>
                     EDIT
                   </button>
-                  {worker.isVerified && (
+                  {graduate.isVerified && (
                     <button className="add-category-button" onClick={handleRequestCategoryClick}>
                       REQUEST CATEGORY
                     </button>
@@ -557,8 +557,8 @@ const TrabahadorDetails = () => {
 
             <h3 className="documents-title">CERTIFICATES:</h3>
             <div className="documents-list">
-              {worker.certificates.length > 0 ? (
-                worker.certificates.map((certificate) => (
+              {graduate.certificates.length > 0 ? (
+                graduate.certificates.map((certificate) => (
                   <div key={certificate.id} className="document-item">
                     <div
                       className="document-name"
@@ -607,7 +607,7 @@ const TrabahadorDetails = () => {
         <div className="modal-overlay">
           <div className="delete-modal">
             <h2 className="delete-modal-title">
-              Are you sure you want to delete {worker.name}'s account?
+              Are you sure you want to delete {graduate.name}'s account?
             </h2>
             <div className="delete-modal-actions">
               <button className="delete-confirm-button" onClick={confirmDelete}>
@@ -624,7 +624,7 @@ const TrabahadorDetails = () => {
       {showCategoryRequestModal && (
         <div className="modal-overlay">
           <div className="category-modal">
-            <h2 className="category-modal-title">Request Categories for {worker.name}</h2>
+            <h2 className="category-modal-title">Request Categories for {graduate.name}</h2>
             {error && <div className="error-message">{error}</div>}
             <div className="category-modal-content">
               <select
@@ -636,7 +636,7 @@ const TrabahadorDetails = () => {
                 {categories
                   .filter(
                     (category) =>
-                      !worker.services.includes(category.name) &&
+                      !graduate.services.includes(category.name) &&
                       !pendingRequests.some((req) => req.category.name === category.name)
                   )
                   .map((category) => (

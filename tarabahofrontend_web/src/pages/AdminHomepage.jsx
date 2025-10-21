@@ -120,7 +120,7 @@ const AdminHomepage = () => {
                 MANAGE CLIENT
               </Link>
               <Link
-                to="/admin/manage-trabahador"
+                to="/admin/manage-graduate"
                 className="admin-action-button"
                 aria-label="Manage Trabahador"
               >

@@ -72,11 +72,11 @@ function App() {
         <Route path="/admin/contact" element={<AdminContactUs />} />
         <Route path="/admin/profile" element={<AdminProfile />} />
         <Route path="/admin/manage-users" element={<AdminManageUsers />} />
-        <Route path="/admin/manage-trabahador" element={<AdminManageTrabahador />} />
+        <Route path="/admin/manage-graduate" element={<AdminManageTrabahador />} />
         <Route path="/admin/graduate/:id" element={<TrabahadorDetails />} />
         <Route path="/admin/client/:id" element={<ClientDetails />} />
         <Route path="/admin/about" element={<AdminAboutUs />} />
-        <Route path="/admin/manage-trabahador/register-graduate" element={<RegisterTrabahador/>}/>
+        <Route path="/admin/manage-graduate/register-graduate" element={<RegisterTrabahador/>}/>
         <Route path="/admin/manage-users/register-user"element={<RegisterUser/>}/>
 
         {/* User-specific routes */}

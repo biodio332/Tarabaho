@@ -10,7 +10,7 @@ import { FaPen, FaCheck, FaTimes } from "react-icons/fa";
 
 const TrabahadorProfile = () => {
   const navigate = useNavigate();
-  const [graduate, setWorker] = useState(null);
+  const [graduate, setgraduate] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [profileImage, setProfileImage] = useState("/placeholder.svg");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -29,7 +29,7 @@ const TrabahadorProfile = () => {
   });
 
   useEffect(() => {
-    const fetchWorker = async () => {
+    const fetchgraduate = async () => {
       try {
         const username = localStorage.getItem("username");
         if (!username) {
@@ -41,7 +41,7 @@ const TrabahadorProfile = () => {
         });
         const graduateData = response.data.find((w) => w.username === username);
         if (graduateData) {
-          setWorker(graduateData);
+          setgraduate(graduateData);
           setEditValues({
             email: graduateData.email || "",
             address: graduateData.address || "",
@@ -51,14 +51,14 @@ const TrabahadorProfile = () => {
           });
           setProfileImage(graduateData.profilePicture || "/placeholder.svg");
         } else {
-          setError("Worker not found.");
+          setError("graduate not found.");
         }
       } catch (err) {
         console.error("Failed to fetch graduate:", err);
         setError("Failed to load profile. Please try again.");
       }
     };
-    fetchWorker();
+    fetchgraduate();
   }, [navigate]);
 
   const handleFileChange = async (e) => {
@@ -90,7 +90,7 @@ const TrabahadorProfile = () => {
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
-      setWorker(response.data);
+      setgraduate(response.data);
       setProfileImage(response.data.profilePicture || profileImage);
       setSelectedFile(null);
       setError("");
@@ -163,7 +163,7 @@ const handleSaveField = async (field) => {
     );
 
     // Update local state with the response
-    setWorker(response.data);
+    setgraduate(response.data);
     if (field === "email") {
       localStorage.setItem("username", response.data.email); // Sync localStorage if email is used for login
       setError(`Your ${field} has been updated.`); // Sync localStorage if email is used for login
