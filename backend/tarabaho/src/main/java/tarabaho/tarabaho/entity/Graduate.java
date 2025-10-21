@@ -14,9 +14,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -78,14 +75,8 @@ public class Graduate{
     @Column(nullable = true)
     private Double averageResponseTime; // Average time to respond to job requests (in minutes)
 
-    @ManyToMany
-    @JoinTable(
-        name = "graduate_categories",
-        joinColumns = @JoinColumn(name = "graduate_id"),
-        inverseJoinColumns = @JoinColumn(name = "category_id")
-    )
+   
     
-    private List<Category> categories = new ArrayList<>();
 
     @OneToMany(mappedBy = "graduate", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("graduate-certificates")
@@ -165,8 +156,6 @@ public class Graduate{
     public void setLongitude(Double longitude) { this.longitude = longitude; }
     public Double getAverageResponseTime() { return averageResponseTime; }
     public void setAverageResponseTime(Double averageResponseTime) { this.averageResponseTime = averageResponseTime; }
-    public List<Category> getCategories() { return categories; }
-    public void setCategories(List<Category> categories) { this.categories = categories; }
     public List<Certificate> getCertificates() { return certificates; }
     public void setCertificates(List<Certificate> certificates) { this.certificates = certificates; }
 }

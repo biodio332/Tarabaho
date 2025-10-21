@@ -1,3 +1,4 @@
+/* 
 package tarabaho.tarabaho.service;
 
 import java.time.LocalDateTime;
@@ -126,4 +127,4 @@ public class MessageService {
         System.out.println("MessageService.getBookingMessages: Retrieved " + messageDTOs.size() + " messages for booking " + bookingId);
         return messageDTOs;
     }
-}
+}*/

@@ -1,25 +1,19 @@
 package tarabaho.tarabaho.service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import jakarta.transaction.Transactional;
 import tarabaho.tarabaho.dto.GraduateUpdateDTO;
 import tarabaho.tarabaho.dto.UserUpdateDTO;
 import tarabaho.tarabaho.entity.Admin;
-import tarabaho.tarabaho.entity.Category;
-import tarabaho.tarabaho.entity.CategoryRequest;
 import tarabaho.tarabaho.entity.Certificate;
 import tarabaho.tarabaho.entity.Graduate;
 import tarabaho.tarabaho.entity.User;
 import tarabaho.tarabaho.repository.AdminRepository;
-import tarabaho.tarabaho.repository.CategoryRepository;
-import tarabaho.tarabaho.repository.CategoryRequestRepository;
 import tarabaho.tarabaho.repository.GraduateRepository;
 import tarabaho.tarabaho.repository.UserRepository;
 
@@ -32,11 +26,7 @@ public class AdminService {
     @Autowired
     private GraduateRepository graduateRepository;
 
-    @Autowired
-    private CategoryRepository categoryRepository;
 
-    @Autowired
-    private CategoryRequestRepository categoryRequestRepository;
 
     @Autowired
     private CertificateService certificateService;
@@ -227,26 +217,7 @@ public class AdminService {
         return updatedGraduate;
     }
 
-    public Graduate addCategoriesToGraduate(Long graduateId, List<Long> categoryIds) throws Exception {
-        Graduate graduate = graduateRepository.findById(graduateId)
-            .orElseThrow(() -> new Exception("Graduate not found with id: " + graduateId));
-
-        List<Category> categories = categoryRepository.findAllById(categoryIds);
-        if (categories.size() != categoryIds.size()) {
-            throw new IllegalArgumentException("One or more category IDs are invalid.");
-        }
-
-        // Add new categories, avoiding duplicates
-        List<Category> currentCategories = graduate.getCategories();
-        for (Category category : categories) {
-            if (!currentCategories.contains(category)) {
-                currentCategories.add(category);
-            }
-        }
-        graduate.setCategories(currentCategories);
-
-        return graduateRepository.save(graduate);
-    }
+    
 
     public List<Certificate> getCertificatesByGraduateId(Long graduateId) {
         return certificateService.getCertificatesByGraduateId(graduateId);
@@ -258,41 +229,7 @@ public class AdminService {
         }
         graduateRepository.deleteById(id);
     }
-    // NEW: Method to retrieve all pending category requests
-    public List<CategoryRequest> getPendingCategoryRequests() {
-        return categoryRequestRepository.findByStatus("PENDING");
-    }
-
-    // NEW: Method to approve a category request, adding the category to the graduate's profile
-    @Transactional
-    public void approveCategoryRequest(Long requestId) {
-        CategoryRequest request = categoryRequestRepository.findById(requestId)
-            .orElseThrow(() -> new IllegalArgumentException("Category request not found with ID: " + requestId));
-        if (!request.getStatus().equals("PENDING")) {
-            throw new IllegalArgumentException("Request is not in PENDING status.");
-        }
-        Graduate graduate = request.getGraduate();
-        Category category = request.getCategory();
-        if (graduate.getCategories() == null) {
-            graduate.setCategories(new ArrayList<>());
-        }
-        graduate.getCategories().add(category);
-        graduateRepository.save(graduate);
-        request.setStatus("APPROVED");
-        categoryRequestRepository.save(request);
-    }
-
-    // NEW: Method to deny a category request
-    @Transactional
-    public void denyCategoryRequest(Long requestId) {
-        CategoryRequest request = categoryRequestRepository.findById(requestId)
-            .orElseThrow(() -> new IllegalArgumentException("Category request not found with ID: " + requestId));
-        if (!request.getStatus().equals("PENDING")) {
-            throw new IllegalArgumentException("Request is not in PENDING status.");
-        }
-        request.setStatus("DENIED");
-        categoryRequestRepository.save(request);
-    }
+    
     public User editUser(Long id, UserUpdateDTO userDTO) throws Exception {
         User existingUser = userRepository.findById(id)
             .orElseThrow(() -> new Exception("User not found with id: " + id));

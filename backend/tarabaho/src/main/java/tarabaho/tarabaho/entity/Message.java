@@ -1,3 +1,4 @@
+/* 
 package tarabaho.tarabaho.entity;
 
 import java.time.LocalDateTime;
@@ -49,4 +50,4 @@ public class Message {
     public void setContent(String content) { this.content = content; }
     public LocalDateTime getSentAt() { return sentAt; }
     public void setSentAt(LocalDateTime sentAt) { this.sentAt = sentAt; }
-}
+}*/

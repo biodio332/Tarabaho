@@ -30,13 +30,11 @@ import tarabaho.tarabaho.dto.AuthResponse;
 import tarabaho.tarabaho.dto.GraduateUpdateDTO;
 import tarabaho.tarabaho.dto.UserUpdateDTO;
 import tarabaho.tarabaho.entity.Admin;
-import tarabaho.tarabaho.entity.CategoryRequest;
 import tarabaho.tarabaho.entity.Certificate;
 import tarabaho.tarabaho.entity.Graduate;
 import tarabaho.tarabaho.entity.User;
 import tarabaho.tarabaho.jwt.JwtUtil;
 import tarabaho.tarabaho.payload.LoginRequest;
-import tarabaho.tarabaho.repository.CategoryRequestRepository;
 import tarabaho.tarabaho.service.AdminService;
 import tarabaho.tarabaho.service.GraduateService;
 import tarabaho.tarabaho.service.SupabaseRestStorageService;
@@ -60,8 +58,7 @@ public class AdminController {
     @Autowired
     private JwtUtil jwtUtil;
 
-    @Autowired
-    private CategoryRequestRepository categoryRequestRepository;
+
 
     @Autowired
     private SupabaseRestStorageService storageService;
@@ -293,28 +290,7 @@ public class AdminController {
         }
     }
 
-    @Operation(summary = "Add categories to a graduate", description = "Add one or more categories to a graduate by ID")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Categories added successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid category IDs or graduate not found"),
-        @ApiResponse(responseCode = "401", description = "Admin not authenticated")
-    })
-    @PostMapping("/graduates/{id}/categories")
-    public ResponseEntity<?> addCategoriesToGraduate(
-            @PathVariable Long id,
-            @RequestBody List<Long> categoryIds,
-            Authentication authentication
-    ) {
-        try {
-            if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated.");
-            }
-            Graduate graduate = adminService.addCategoriesToGraduate(id, categoryIds);
-            return ResponseEntity.ok(graduate);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to add categories: " + e.getMessage());
-        }
-    }
+
 
     @Operation(summary = "Get certificates for a graduate", description = "Retrieve all certificates associated with a graduate")
     @ApiResponses({
@@ -432,83 +408,6 @@ public class AdminController {
         }
     }
 
-    @GetMapping("/category-requests/pending")
-public ResponseEntity<?> getPendingCategoryRequests(
-        @RequestParam(required = false) Long graduateId,
-        Authentication authentication
-) {
-    try {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated.");
-        }
-        List<CategoryRequest> pendingRequests;
-        if (graduateId != null) {
-            pendingRequests = categoryRequestRepository.findByGraduateIdAndStatus(graduateId, "PENDING");
-        } else {
-            pendingRequests = categoryRequestRepository.findByStatus("PENDING");
-        }
-        return ResponseEntity.ok(pendingRequests);
-    } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body("Failed to fetch pending category requests: " + e.getMessage());
-    }
-}
-
-@Operation(summary = "Approve a category request", description = "Approve a pending category request and add the category to the graduate")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Category request approved successfully"),
-        @ApiResponse(responseCode = "401", description = "Admin not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Category request not found"),
-        @ApiResponse(responseCode = "400", description = "Invalid request status"),
-        @ApiResponse(responseCode = "500", description = "Failed to approve category request")
-    })
-    @PostMapping("/category-requests/{requestId}/approve")
-    public ResponseEntity<?> approveCategoryRequest(
-            @PathVariable Long requestId,
-            Authentication authentication
-    ) {
-        try {
-            if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated.");
-            }
-            adminService.approveCategoryRequest(requestId);
-            return ResponseEntity.ok("Category request approved successfully.");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Failed to approve category request: " + e.getMessage());
-        }
-    }
-
-    @Operation(summary = "Deny a category request", description = "Deny a pending category request")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Category request denied successfully"),
-        @ApiResponse(responseCode = "401", description = "Admin not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Category request not found"),
-        @ApiResponse(responseCode = "400", description = "Invalid request status"),
-        @ApiResponse(responseCode = "500", description = "Failed to deny category request")
-    })
-    @PostMapping("/category-requests/{requestId}/deny")
-    public ResponseEntity<?> denyCategoryRequest(
-            @PathVariable Long requestId,
-            Authentication authentication
-    ) {
-        try {
-            if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated.");
-            }
-            adminService.denyCategoryRequest(requestId);
-            return ResponseEntity.ok("Category request denied successfully.");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Failed to deny category request: " + e.getMessage());
-        }
-    }
-   
-    
 
 
     static class TokenResponse {

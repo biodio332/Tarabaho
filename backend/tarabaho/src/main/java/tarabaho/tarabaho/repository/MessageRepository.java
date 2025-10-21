@@ -1,4 +1,4 @@
-package tarabaho.tarabaho.repository;
+/*package tarabaho.tarabaho.repository;
 
 import java.util.List;
 
@@ -12,4 +12,4 @@ import tarabaho.tarabaho.entity.Message;
 public interface MessageRepository extends JpaRepository<Message, Long> {
 
     List<Message> findByBookingOrderBySentAtAsc(Booking booking);
-}
+}*/

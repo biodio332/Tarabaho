@@ -2,7 +2,6 @@ package tarabaho.tarabaho.controller;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,9 +34,7 @@ import tarabaho.tarabaho.dto.AuthResponse;
 import tarabaho.tarabaho.dto.GraduateDuplicateCheckDTO;
 import tarabaho.tarabaho.dto.GraduateRegisterDTO;
 import tarabaho.tarabaho.dto.GraduateUpdateDTO;
-import tarabaho.tarabaho.entity.CategoryRequest;
 import tarabaho.tarabaho.entity.Graduate;
-import tarabaho.tarabaho.entity.User;
 import tarabaho.tarabaho.jwt.JwtUtil;
 import tarabaho.tarabaho.repository.GraduateRepository;
 import tarabaho.tarabaho.service.GraduateService;
@@ -106,11 +103,7 @@ public class GraduateController {
         }
     }
 
-    @GetMapping("/category/{categoryName}/graduates")
-    public ResponseEntity<List<Graduate>> getGraduatesByCategory(@PathVariable String categoryName) {
-        List<Graduate> graduates = graduateService.getGraduatesByCategory(categoryName);
-        return ResponseEntity.ok(graduates);
-    }
+  
 
     @Operation(summary = "Check for duplicate graduate details", description = "Checks if username, email, or phone number already exists")
     @ApiResponses({
@@ -558,93 +551,6 @@ public class GraduateController {
         return ResponseEntity.ok(graduateRepository.findByMaxHourly(maxHourly));
     }
 
-    @Operation(summary = "Rate a graduate", description = "Submit a rating (1.0–5.0) for a graduate")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Rating submitted successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid rating value"),
-        @ApiResponse(responseCode = "404", description = "Graduate not found")
-    })
-    @PostMapping("/{graduateId}/rate")
-    public ResponseEntity<?> rateGraduate(
-            @PathVariable Long graduateId,
-            @RequestBody RatingRequest ratingRequest,
-            Authentication authentication
-    ) {
-        try {
-            if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated.");
-            }
-            User user = userService.findByUsername(authentication.getName())
-                .orElseThrow(() -> new Exception("User not found"));
-            Graduate updatedGraduate = graduateService.updateRating(
-                graduateId,
-                ratingRequest.getBookingId(),
-                ratingRequest.getRating(),
-                user.getId()
-            );
-            return ResponseEntity.ok(updatedGraduate);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("⚠️ " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
-        }
-    }
-
-    @Operation(summary = "Post urgent job", description = "Posts an urgent job and finds nearby graduates in the specified category")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Job posted and graduates found"),
-        @ApiResponse(responseCode = "400", description = "Invalid input"),
-        @ApiResponse(responseCode = "401", description = "User not authenticated or not verified"),
-        @ApiResponse(responseCode = "404", description = "No graduates found")
-    })
-    @PostMapping("/urgent-job")
-    public ResponseEntity<?> postUrgentJob(
-            @RequestBody UrgentJobRequest urgentJobRequest,
-            Authentication authentication
-    ) {
-        try {
-            if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated.");
-            }
-
-            String username = authentication.getName();
-            Optional<User> userOpt = userService.findByUsername(username);
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
-            }
-            User user = userOpt.get();
-            if (!user.getIsVerified()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not verified.");
-            }
-
-            if (urgentJobRequest.getCategoryName() == null || urgentJobRequest.getCategoryName().isEmpty()) {
-                return ResponseEntity.badRequest().body("⚠️ Category name is required.");
-            }
-            if (urgentJobRequest.getLatitude() == null || urgentJobRequest.getLongitude() == null) {
-                return ResponseEntity.badRequest().body("⚠️ Location (latitude and longitude) is required.");
-            }
-            if (urgentJobRequest.getRadius() == null || urgentJobRequest.getRadius() <= 0) {
-                return ResponseEntity.badRequest().body("⚠️ Radius must be greater than 0.");
-            }
-
-            List<Graduate> nearbyGraduates = graduateService.findNearbyGraduatesForUrgentJob(
-                urgentJobRequest.getCategoryName(),
-                urgentJobRequest.getLatitude(),
-                urgentJobRequest.getLongitude(),
-                urgentJobRequest.getRadius()
-            );
-
-            if (nearbyGraduates.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No available graduates found nearby.");
-            }
-
-            System.out.println("Found " + nearbyGraduates.size() + " graduates for urgent job in category: " + urgentJobRequest.getCategoryName());
-            return ResponseEntity.ok(new UrgentJobResponse(nearbyGraduates.size()));
-        } catch (Exception e) {
-            System.out.println("GraduateController: Urgent job posting failed: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to post urgent job: " + e.getMessage());
-        }
-    }
 
     @Operation(summary = "Update graduate profile", description = "Updates profile details for the authenticated graduate")
     @ApiResponses({
@@ -726,68 +632,8 @@ public class GraduateController {
         }
     }
 
-    @Operation(summary = "Get similar graduates", description = "Retrieve a list of graduates similar to the specified graduate based on categories or other criteria")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "List of similar graduates retrieved successfully"),
-        @ApiResponse(responseCode = "404", description = "Graduate not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
-    @GetMapping("/{id}/similar")
-    public ResponseEntity<?> getSimilarGraduates(@PathVariable Long id) {
-        try {
-            System.out.println("GraduateController: Handling GET /api/graduate/" + id + "/similar");
-            List<Graduate> similarGraduates = graduateService.getSimilarGraduates(id);
-            if (similarGraduates.isEmpty()) {
-                System.out.println("GraduateController: No similar graduates found for ID: " + id);
-                return ResponseEntity.status(HttpStatus.OK).body(Collections.emptyList());
-            }
-            System.out.println("GraduateController: Found " + similarGraduates.size() + " similar graduates for ID: " + id);
-            return ResponseEntity.ok(similarGraduates);
-        } catch (IllegalArgumentException e) {
-            System.out.println("GraduateController: Error retrieving similar graduates for ID: " + id + ", error: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found: " + e.getMessage());
-        } catch (Exception e) {
-            System.out.println("GraduateController: Error retrieving similar graduates for ID: " + id + ", error: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Failed to retrieve similar graduates: " + e.getMessage());
-        }
-    }
 
-    @GetMapping("/category/{categoryName}/available")
-    public ResponseEntity<List<Graduate>> getAvailableGraduatesByCategory(@PathVariable String categoryName) {
-        List<Graduate> graduates = graduateService.getAvailableGraduatesByCategory(categoryName);
-        return ResponseEntity.ok(graduates);
-    }
-
-    @GetMapping("/category/{categoryName}/nearby/available")
-    public ResponseEntity<?> getNearbyAvailableGraduatesByCategory(
-            @PathVariable String categoryName,
-            @RequestParam Double latitude,
-            @RequestParam Double longitude,
-            @RequestParam Double radius,
-            Authentication authentication
-    ) {
-        try {
-            if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated.");
-            }
-
-            String username = authentication.getName();
-            Optional<User> userOpt = userService.findByUsername(username);
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
-            }
-            User user = userOpt.get();
-            if (!user.getIsVerified()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not verified.");
-            }
-
-            List<Graduate> graduates = graduateService.getNearbyAvailableGraduatesByCategory(categoryName, latitude, longitude, radius);
-            return ResponseEntity.ok(graduates);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("⚠️ " + e.getMessage());
-        }
-    }
+    
 
     @Operation(summary = "Get graduate by username", description = "Find a graduate by their username")
     @GetMapping("/username/{username}")
@@ -799,86 +645,10 @@ public class GraduateController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found with username: " + username);
         }
     }
-    // NEW: Endpoint for graduates to submit a single category request
-    @Operation(summary = "Request to add category", description = "Allows a graduate to request to be added to a category")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Category request submitted successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid category or request already exists"),
-        @ApiResponse(responseCode = "401", description = "Graduate not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Graduate not found")
-    })
-    @PostMapping("/{graduateId}/request-category")
-    public ResponseEntity<?> requestCategory(
-            @PathVariable Long graduateId,
-            @RequestBody CategoryRequestDTO categoryRequestDTO,
-            Authentication authentication
-    ) {
-        try {
-            if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
-            }
-            String username = authentication.getName();
-            Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
-            if (!graduateOpt.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found.");
-            }
-            Graduate graduate = graduateOpt.get();
-            if (!graduate.getId().equals(graduateId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Unauthorized: Cannot request category for another graduate.");
-            }
-            CategoryRequest request = graduateService.requestCategory(graduateId, categoryRequestDTO.getCategoryName());
-            return ResponseEntity.ok(request);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("⚠️ " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Failed to submit category request: " + e.getMessage());
-        }
-    }
-
-    // NEW: Endpoint to retrieve all category requests for a specific graduate
-    @Operation(summary = "Get category requests for a graduate", description = "Retrieve all category requests for a specific graduate")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "List of category requests returned successfully"),
-        @ApiResponse(responseCode = "401", description = "Graduate not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Graduate not found")
-    })
-    @GetMapping("/{graduateId}/category-requests")
-    public ResponseEntity<?> getCategoryRequests(
-            @PathVariable Long graduateId,
-            Authentication authentication
-    ) {
-        try {
-            if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Graduate not authenticated.");
-            }
-            String username = authentication.getName();
-            Optional<Graduate> graduateOpt = graduateService.findByUsername(username);
-            if (!graduateOpt.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found.");
-            }
-            Graduate graduate = graduateOpt.get();
-            if (!graduate.getId().equals(graduateId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Unauthorized: Cannot view category requests for another graduate.");
-            }
-            List<CategoryRequest> requests = graduateService.getCategoryRequestsByGraduateId(graduateId);
-            return ResponseEntity.ok(requests);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Failed to retrieve category requests: " + e.getMessage());
-        }
-    }
     
 
+    
 
-    // NEW: DTO class for handling single category request payload
-    static class CategoryRequestDTO {
-        private String categoryName;
-        public String getCategoryName() { return categoryName; }
-        public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
-    }
 
     static class LoginRequest {
         private String username;
@@ -890,41 +660,11 @@ public class GraduateController {
         public void setPassword(String password) { this.password = password; }
     }
 
-    static class RatingRequest {
-        private Long bookingId;
-        private Double rating;
-        public Long getBookingId() { return bookingId; }
-        public void setBookingId(Long bookingId) { this.bookingId = bookingId; }
-        public Double getRating() { return rating; }
-        public void setRating(Double rating) { this.rating = rating; }
-    }
+    
 
-    static class UrgentJobRequest {
-        private String categoryName;
-        private Double latitude;
-        private Double longitude;
-        private Double radius;
+   
 
-        public String getCategoryName() { return categoryName; }
-        public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
-        public Double getLatitude() { return latitude; }
-        public void setLatitude(Double latitude) { this.latitude = latitude; }
-        public Double getLongitude() { return longitude; }
-        public void setLongitude(Double longitude) { this.longitude = longitude; }
-        public Double getRadius() { return radius; }
-        public void setRadius(Double radius) { this.radius = radius; }
-    }
-
-    static class UrgentJobResponse {
-        private int graduatesNotified;
-
-        public UrgentJobResponse(int graduatesNotified) {
-            this.graduatesNotified = graduatesNotified;
-        }
-
-        public int getGraduatesNotified() { return graduatesNotified; }
-        public void setGraduatesNotified(int graduatesNotified) { this.graduatesNotified = graduatesNotified; }
-    }
+   
 
     static class TokenResponse {
         private String token;
