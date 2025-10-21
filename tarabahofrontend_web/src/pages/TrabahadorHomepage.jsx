@@ -17,7 +17,7 @@ import {
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import "../styles/TrabahadorHomepage.css";
-import { FaPlus, FaTimes, FaEye, FaClock, FaCalendarAlt, FaChartLine,FaUpload } from "react-icons/fa";
+import { FaPlus, FaTimes, FaEye, FaClock, FaCalendarAlt, FaChartLine, FaUpload } from "react-icons/fa";
 
 ChartJS.register(
   CategoryScale,
@@ -845,8 +845,8 @@ const TrabahadorHomepage = () => {
 
       {/* Certificate Upload Modal */}
       {showCertificateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-md w-full max-h-[90vh] overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-md w-full max-h-[80vh] overflow-y-auto p-4 shadow-2xl z-50">
             <div className="bg-gradient-to-r from-gray-800 to-gray-900 border-b border-gray-700 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-500/20 rounded-lg">
@@ -865,94 +865,92 @@ const TrabahadorHomepage = () => {
               </button>
             </div>
 
-            <div className="p-6 max-h-[calc(90vh-8rem)] overflow-y-auto">
+            <div className="p-6 space-y-4">
               {error && (
                 <div className="bg-red-900/20 border border-red-500/30 text-red-400 p-3 rounded-lg mb-6 text-sm">
                   {error}
                 </div>
               )}
               
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Course Name <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="courseName"
-                    value={newCertificate.courseName}
-                    onChange={handleCertificateInputChange}
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-700 disabled:cursor-not-allowed"
-                    placeholder="e.g., Automotive Servicing NC II"
-                    disabled={isLoading}
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Course Name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="courseName"
+                  value={newCertificate.courseName}
+                  onChange={handleCertificateInputChange}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-700 disabled:cursor-not-allowed"
+                  placeholder="e.g., Automotive Servicing NC II"
+                  disabled={isLoading}
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Certificate Number <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="certificateNumber"
-                    value={newCertificate.certificateNumber}
-                    onChange={handleCertificateInputChange}
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-700 disabled:cursor-not-allowed"
-                    placeholder="e.g., 1234567890"
-                    disabled={isLoading}
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Certificate Number <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="certificateNumber"
+                  value={newCertificate.certificateNumber}
+                  onChange={handleCertificateInputChange}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-700 disabled:cursor-not-allowed"
+                  placeholder="e.g., 1234567890"
+                  disabled={isLoading}
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Issue Date <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    name="issueDate"
-                    value={newCertificate.issueDate}
-                    onChange={handleCertificateInputChange}
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-700 disabled:cursor-not-allowed"
-                    disabled={isLoading}
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Issue Date <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="date"
+                  name="issueDate"
+                  value={newCertificate.issueDate}
+                  onChange={handleCertificateInputChange}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-700 disabled:cursor-not-allowed"
+                  disabled={isLoading}
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Certificate Image <span className="text-red-400">*</span>
-                  </label>
-                  <div className="relative">
-                    <div 
-                      className={`w-full h-32 rounded-lg border-2 border-dashed transition-colors cursor-pointer ${
-                        newCertificate.certificateFile 
-                          ? 'border-green-500 bg-green-500/5' 
-                          : 'border-gray-600 hover:border-blue-500'
-                      }`}
-                      onClick={handleCertificateImageClick}
-                    >
-                      {newCertificate.certificateFile ? (
-                        <img
-                          src={URL.createObjectURL(newCertificate.certificateFile)}
-                          alt="Certificate Preview"
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                          <FaUpload className="w-8 h-8 mb-2" />
-                          <div className="text-sm text-center">Click to upload</div>
-                          <div className="text-xs mt-1">JPG, PNG (max 5MB)</div>
-                        </div>
-                      )}
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleCertificateFileChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      ref={certificateFileInputRef}
-                      disabled={isLoading}
-                    />
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Certificate Image <span className="text-red-400">*</span>
+                </label>
+                <div className="relative">
+                  <div 
+                    className={`w-full h-32 rounded-lg border-2 border-dashed transition-colors cursor-pointer ${
+                      newCertificate.certificateFile 
+                        ? 'border-green-500 bg-green-500/5' 
+                        : 'border-gray-600 hover:border-blue-500'
+                    }`}
+                    onClick={handleCertificateImageClick}
+                  >
+                    {newCertificate.certificateFile ? (
+                      <img
+                        src={URL.createObjectURL(newCertificate.certificateFile)}
+                        alt="Certificate Preview"
+                        className="w-full h-full object-contain rounded-lg"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                        <FaUpload className="w-8 h-8 mb-2" />
+                        <div className="text-sm text-center">Click to upload</div>
+                        <div className="text-xs mt-1">JPG, PNG (max 5MB)</div>
+                      </div>
+                    )}
                   </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCertificateFileChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    ref={certificateFileInputRef}
+                    disabled={isLoading}
+                  />
                 </div>
               </div>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import AdminNavbar from "../components/AdminNavbar";
@@ -28,6 +28,7 @@ const TrabahadorDetails = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
+  const certificateModalRef = useRef(null);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
   useEffect(() => {
@@ -154,6 +155,23 @@ const TrabahadorDetails = () => {
   const handleCloseModal = () => {
     setSelectedCertificateImage(null);
   };
+
+  const handleClickOutside = (event) => {
+    if (certificateModalRef.current && !certificateModalRef.current.contains(event.target)) {
+      handleCloseModal();
+    }
+  };
+
+  useEffect(() => {
+    if (selectedCertificateImage) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [selectedCertificateImage]);
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
@@ -589,16 +607,18 @@ const TrabahadorDetails = () => {
       </div>
 
       {selectedCertificateImage && (
-        <div className="certificate-modal">
-          <div className="certificate-modal-content">
-            <span className="certificate-modal-close" onClick={handleCloseModal}>
-              ×
-            </span>
-            <img
-              src={selectedCertificateImage}
-              alt="Certificate"
-              className="certificate-modal-image"
-            />
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="certificate-modal" ref={certificateModalRef}>
+            <div className="certificate-modal-content">
+              <span className="certificate-modal-close" onClick={handleCloseModal}>
+                ×
+              </span>
+              <img
+                src={selectedCertificateImage}
+                alt="Certificate"
+                className="certificate-modal-image"
+              />
+            </div>
           </div>
         </div>
       )}
