@@ -21,14 +21,7 @@ public interface GraduateRepository extends JpaRepository<Graduate, Long> {
 
  
 
-    @Query("SELECT w FROM Graduate w WHERE w.isAvailable = true")
-    List<Graduate> findAllAvailable();
-
-    @Query("SELECT w FROM Graduate w WHERE w.stars >= :minStars")
-    List<Graduate> findByMinimumStars(@Param("minStars") Double minStars);
-
-    @Query("SELECT w FROM Graduate w WHERE w.hourly <= :maxHourly")
-    List<Graduate> findByMaxHourly(@Param("maxHourly") Double maxHourly);
+  
 
     
 }

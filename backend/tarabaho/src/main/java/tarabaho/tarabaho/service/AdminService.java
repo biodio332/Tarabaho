@@ -161,13 +161,7 @@ public class AdminService {
             System.out.println("AdminService: Updated last name to: " + graduateDTO.getLastName());
         }
 
-        if (graduateDTO.getHourly() != null) {
-            if (graduateDTO.getHourly() <= 0) {
-                throw new IllegalArgumentException("Hourly rate must be greater than 0.");
-            }
-            existingGraduate.setHourly(graduateDTO.getHourly());
-            System.out.println("AdminService: Updated hourly rate to: " + graduateDTO.getHourly());
-        }
+   
 
         if (graduateDTO.getBirthday() != null && !graduateDTO.getBirthday().isEmpty()) {
             try {
@@ -187,10 +181,7 @@ public class AdminService {
             System.out.println("AdminService: Password not updated for graduate ID: " + id);
         }
 
-        if (graduateDTO.getIsAvailable() != null) {
-            existingGraduate.setIsAvailable(graduateDTO.getIsAvailable());
-            System.out.println("AdminService: Updated isAvailable to: " + graduateDTO.getIsAvailable());
-        }
+   
 
         if (graduateDTO.getIsVerified() != null) {
             existingGraduate.setIsVerified(graduateDTO.getIsVerified());

@@ -161,7 +161,7 @@ public class OAuth2Controller {
                     graduate.setBiography("");
                     graduate.setBirthday(null);
                     graduate.setProfilePicture(profilePicture);
-                    graduate.setHourly(100.0); // Set default hourly rate to avoid validation error
+            
                     try {
                         graduate = graduateService.registerOAuth2Graduate(graduate);
                         System.out.println("OAuth2Controller: Graduate saved: ID=" + graduate.getId() + ", Username=" + graduate.getUsername());

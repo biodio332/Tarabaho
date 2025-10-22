@@ -51,18 +51,6 @@ public class Graduate{
 
     private String profilePicture;
 
-    @Column(nullable = false)
-    private Double hourly = 0.0; // Hourly rate for services, default to 0.0
-
-    @Column(name = "stars", nullable = false)
-    private Double stars = 0.0; // Average rating (1.0 to 5.0), default to 0.0
-
-    @Column(name = "rating_count", nullable = false)
-    private Integer ratingCount = 0; // Number of ratings received, default to 0
-
-    @Column(name = "is_available", nullable = false)
-    private Boolean isAvailable = true; // Availability for jobs, default to true
-
     @Column(name = "is_verified", nullable = false)
     private Boolean isVerified = false; // Verification status, default to false
 
@@ -86,18 +74,6 @@ public class Graduate{
     @PrePersist
     @PreUpdate
     private void ensureDefaults() {
-        if (this.hourly == null) {
-            this.hourly = 0.0;
-        }
-        if (this.stars == null) {
-            this.stars = 0.0;
-        }
-        if (this.ratingCount == null) {
-            this.ratingCount = 0;
-        }
-        if (this.isAvailable == null) {
-            this.isAvailable = true;
-        }
         if (this.isVerified == null) {
             this.isVerified = false;
         }
@@ -140,14 +116,6 @@ public class Graduate{
     public void setBirthday(LocalDate birthday) { this.birthday = birthday; }
     public String getProfilePicture() { return profilePicture; }
     public void setProfilePicture(String profilePicture) { this.profilePicture = profilePicture; }
-    public Double getHourly() { return hourly; }
-    public void setHourly(Double hourly) { this.hourly = hourly; }
-    public Double getStars() { return stars; }
-    public void setStars(Double stars) { this.stars = stars; }
-    public Integer getRatingCount() { return ratingCount; }
-    public void setRatingCount(Integer ratingCount) { this.ratingCount = ratingCount; }
-    public Boolean getIsAvailable() { return isAvailable; }
-    public void setIsAvailable(Boolean isAvailable) { this.isAvailable = isAvailable; }
     public Boolean getIsVerified() { return isVerified; }
     public void setIsVerified(Boolean isVerified) { this.isVerified = isVerified; }
     public Double getLatitude() { return latitude; }

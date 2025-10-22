@@ -34,12 +34,7 @@ public class GraduateService {
     public Graduate registerGraduate(Graduate graduate) {
         System.out.println("GraduateService: Registering graduate with username: " + graduate.getUsername());
         // Validate new fields
-        if (graduate.getHourly() == null || graduate.getHourly() <= 0) {
-            throw new IllegalArgumentException("Hourly rate must be provided and greater than 0.");
-        }
-        if (graduate.getStars() != null && (graduate.getStars() < 0 || graduate.getStars() > 5)) {
-            throw new IllegalArgumentException("Initial stars must be between 0 and 5.");
-        }
+      
         // Ensure certificates are properly linked to the graduate
         if (graduate.getCertificates() != null) {
             graduate.getCertificates().forEach(certificate -> certificate.setGraduate(graduate));
@@ -86,15 +81,8 @@ public class GraduateService {
         existingGraduate.setBiography(updatedGraduate.getBiography());
         existingGraduate.setBirthday(updatedGraduate.getBirthday());
         existingGraduate.setProfilePicture(updatedGraduate.getProfilePicture());
-        if (updatedGraduate.getHourly() != null) {
-            if (updatedGraduate.getHourly() <= 0) {
-                throw new IllegalArgumentException("Hourly rate must be greater than 0.");
-            }
-            existingGraduate.setHourly(updatedGraduate.getHourly());
-        }
-        if (updatedGraduate.getIsAvailable() != null) {
-            existingGraduate.setIsAvailable(updatedGraduate.getIsAvailable());
-        }
+      
+      
         if (updatedGraduate.getIsVerified() != null) {
             existingGraduate.setIsVerified(updatedGraduate.getIsVerified());
         }
@@ -143,17 +131,9 @@ public class GraduateService {
         return graduateRepository.save(graduate);
     }
 
-    public List<Graduate> getAvailableGraduates() {
-        return graduateRepository.findAllAvailable();
-    }
+   
 
-    public List<Graduate> getGraduatesByMinimumStars(Double minStars) {
-        return graduateRepository.findByMinimumStars(minStars);
-    }
-
-    public List<Graduate> getGraduatesByMaxHourly(Double maxHourly) {
-        return graduateRepository.findByMaxHourly(maxHourly);
-    }
+  
 
     
 

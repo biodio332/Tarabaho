@@ -173,7 +173,7 @@ public class GraduateController {
             graduate.setEmail(graduateDTO.getEmail());
             graduate.setPhoneNumber(graduateDTO.getPhoneNumber());
             graduate.setAddress(graduateDTO.getAddress());
-            graduate.setHourly(graduateDTO.getHourly());
+            
 
             if (graduateDTO.getBirthday() != null && !graduateDTO.getBirthday().isEmpty()) {
                 graduate.setBirthday(LocalDate.parse(graduateDTO.getBirthday()));
@@ -518,38 +518,8 @@ public class GraduateController {
         return graduateService.getAllGraduates();
     }
 
-    @Operation(summary = "Get available graduates", description = "Retrieve a list of all available graduates")
-    @ApiResponse(responseCode = "200", description = "List of available graduates returned successfully")
-    @GetMapping("/available")
-    public List<Graduate> getAvailableGraduates() {
-        return graduateRepository.findAllAvailable();
-    }
+   
 
-    @Operation(summary = "Get graduates by minimum rating", description = "Retrieve graduates with a minimum star rating")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "List of graduates returned successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid rating value")
-    })
-    @GetMapping("/stars/{minStars}")
-    public ResponseEntity<List<Graduate>> getGraduatesByMinimumStars(@PathVariable Double minStars) {
-        if (minStars < 1.0 || minStars > 5.0) {
-            return ResponseEntity.badRequest().body(null);
-        }
-        return ResponseEntity.ok(graduateRepository.findByMinimumStars(minStars));
-    }
-
-    @Operation(summary = "Get graduates by maximum hourly rate", description = "Retrieve graduates with an hourly rate below a specified value")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "List of graduates returned successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid hourly rate")
-    })
-    @GetMapping("/hourly/{maxHourly}")
-    public ResponseEntity<List<Graduate>> getGraduatesByMaxHourly(@PathVariable Double maxHourly) {
-        if (maxHourly <= 0) {
-            return ResponseEntity.badRequest().body(null);
-        }
-        return ResponseEntity.ok(graduateRepository.findByMaxHourly(maxHourly));
-    }
 
 
     @Operation(summary = "Update graduate profile", description = "Updates profile details for the authenticated graduate")

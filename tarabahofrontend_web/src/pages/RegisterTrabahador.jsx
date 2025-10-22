@@ -17,7 +17,6 @@ const RegisterTrabahador = () => {
     contactNo: "",
     birthday: "",
     address: "",
-    hourly: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -143,7 +142,6 @@ const RegisterTrabahador = () => {
     else if (!validateEmail(formData.email)) newErrors.email = "Invalid email format";
     if (!formData.contactNo.trim()) newErrors.contactNo = "Contact number is required";
     if (!formData.address.trim()) newErrors.address = "Address is required";
-    if (!formData.hourly || formData.hourly <= 0) newErrors.hourly = "Hourly rate must be greater than 0";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -182,7 +180,6 @@ const RegisterTrabahador = () => {
         phoneNumber: formData.contactNo,
         birthday: formData.birthday,
         address: formData.address,
-        hourly: Number.parseFloat(formData.hourly),
       };
 
       console.log("Sending registration request with data:", graduateData);
@@ -486,25 +483,6 @@ const RegisterTrabahador = () => {
                 />
               </div>
               {errors.address && <div className={styles.errorText}>{errors.address}</div>}
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="hourly">
-                Hourly Rate (in PHP) <span className={styles.required}>*</span>
-              </label>
-              <div className={styles.inputWithIcon}>
-                <input
-                  type="number"
-                  id="hourly"
-                  name="hourly"
-                  value={formData.hourly}
-                  onChange={handleInputChange}
-                  className={errors.hourly ? styles.error : ""}
-                  placeholder="Enter hourly rate"
-                  min="1"
-                />
-              </div>
-              {errors.hourly && <div className={styles.errorText}>{errors.hourly}</div>}
             </div>
 
             <div className={styles.formNavigation}>
