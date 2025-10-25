@@ -203,7 +203,7 @@ public class GraduateController {
                 .body("Failed to register graduate: " + e.getMessage());
         }
     }
-
+/* 
     @Operation(summary = "Reset graduate password", description = "Resets the password for a graduate")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Password reset successfully"),
@@ -235,7 +235,7 @@ public class GraduateController {
                 .body("Failed to reset password: " + e.getMessage());
         }
     }
-
+*/
     @Operation(summary = "Test raw JSON input", description = "Logs raw JSON payload to debug deserialization")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Raw JSON received and logged"),
@@ -615,6 +615,70 @@ public class GraduateController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Graduate not found with username: " + username);
         }
     }
+
+    @Operation(summary = "Request password reset OTP for graduate", description = "Sends a reset OTP to the graduate's email")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "OTP sent successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid email or graduate not found"),
+        @ApiResponse(responseCode = "500", description = "Failed to send OTP")
+    })
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        try {
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                System.out.println("GraduateController: Forgot password failed: Email is required");
+                return ResponseEntity.badRequest().body("Email is required");
+            }
+            if (!request.getEmail().matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+                System.out.println("GraduateController: Forgot password failed: Invalid email format");
+                return ResponseEntity.badRequest().body("Invalid email format");
+            }
+            graduateService.sendResetOtp(request.getEmail());
+            System.out.println("GraduateController: OTP sent to email: " + request.getEmail());
+            return ResponseEntity.ok("OTP sent to your email.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("GraduateController: Forgot password failed: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("GraduateController: Forgot password failed: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Reset graduate password with OTP", description = "Verifies OTP and resets the graduate's password")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Password reset successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid OTP, expired OTP, or invalid input"),
+        @ApiResponse(responseCode = "500", description = "Failed to reset password")
+    })
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        try {
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                System.out.println("GraduateController: Reset password failed: Email is required");
+                return ResponseEntity.badRequest().body("Email is required");
+            }
+            if (request.getOtp() == null || request.getOtp().trim().isEmpty()) {
+                System.out.println("GraduateController: Reset password failed: OTP is required");
+                return ResponseEntity.badRequest().body("OTP is required");
+            }
+            if (request.getNewPassword() == null || request.getNewPassword().trim().isEmpty()) {
+                System.out.println("GraduateController: Reset password failed: New password is required");
+                return ResponseEntity.badRequest().body("New password is required");
+            }
+            graduateService.verifyAndReset(request.getEmail(), request.getOtp(), request.getNewPassword());
+            System.out.println("GraduateController: Password reset successfully for email: " + request.getEmail());
+            return ResponseEntity.ok("Password reset successfully.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("GraduateController: Reset password failed: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("GraduateController: Reset password failed: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error: " + e.getMessage());
+        }
+    }
     
 
     
@@ -641,5 +705,23 @@ public class GraduateController {
         public TokenResponse(String token) { this.token = token; }
         public String getToken() { return token; }
         public void setToken(String token) { this.token = token; }
+    }
+
+    static class ForgotPasswordRequest {
+        private String email;
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
+
+    static class ResetPasswordRequest {
+        private String email;
+        private String otp;
+        private String newPassword;
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getOtp() { return otp; }
+        public void setOtp(String otp) { this.otp = otp; }
+        public String getNewPassword() { return newPassword; }
+        public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
     }
 }

@@ -438,7 +438,7 @@ const SignIn = () => {
                     </div>
 
                     <div className={styles.formLinks}>
-                      <Link to="/forgot-password" className={styles.formLink}>
+                      <Link to="/forgot-password?type=user" className={styles.formLink}>
                         Forgot Password?
                       </Link>
                     </div>
@@ -544,7 +544,7 @@ const SignIn = () => {
                     </div>
 
                     <div className={styles.formLinks}>
-                      <Link to="/forgot-password" className={styles.formLink}>
+                      <Link to="/forgot-password?type=graduate" className={styles.formLink}>
                         Forgot Password?
                       </Link>
                     </div>

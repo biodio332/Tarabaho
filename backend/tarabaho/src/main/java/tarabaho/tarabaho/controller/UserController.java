@@ -472,6 +472,46 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Request password reset OTP", description = "Sends a reset OTP to the user's email")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "OTP sent successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid email or user not found"),
+        @ApiResponse(responseCode = "500", description = "Failed to send OTP")
+    })
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+            try {
+            // Validate email
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Email is required");
+            }
+            if (!request.getEmail().matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+                return ResponseEntity.badRequest().body("Invalid email format");
+            }
+            userService.sendResetOtp(request.getEmail());
+            return ResponseEntity.ok("OTP sent to your email.");
+        } catch (Exception e) {
+            System.err.println("UserController: Forgot password failed: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Reset password with OTP", description = "Verifies OTP and resets the password")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Password reset successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid OTP, expired, or invalid input"),
+        @ApiResponse(responseCode = "500", description = "Failed to reset password")
+    })
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        try {
+            userService.verifyAndReset(request.getEmail(), request.getOtp(), request.getNewPassword());
+            return ResponseEntity.ok("Password reset successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 
     static class LoginRequest {
         private String username;
@@ -520,5 +560,23 @@ public class UserController {
         public TokenResponse(String token) { this.token = token; }
         public String getToken() { return token; }
         public void setToken(String token) { this.token = token; }
+    }
+
+    static class ForgotPasswordRequest {
+        private String email;
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
+
+    static class ResetPasswordRequest {
+        private String email;
+        private String otp;
+        private String newPassword;
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getOtp() { return otp; }
+        public void setOtp(String otp) { this.otp = otp; }
+        public String getNewPassword() { return newPassword; }
+        public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
     }
 }

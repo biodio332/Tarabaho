@@ -68,13 +68,16 @@ public class SecurityConfig {
                 System.out.println("Configuring authorization rules...");
                 auth
                     .requestMatchers("/api/admin/register", "/api/admin/login", "/api/admin/logout").permitAll()
-                    .requestMatchers("/api/user/login", "/api/user/register", "/api/user/token").permitAll()
+                    .requestMatchers("/api/user/login", "/api/user/register", "/api/user/token","/api/user/forgot-password",
+                        "/api/user/reset-password").permitAll()
                     .requestMatchers(
                         "/api/graduate/register",
                         "/api/graduate/check-duplicates",
                         "/api/graduate/token",
 						"/api/graduate/get-token",
                         "/api/graduate/login",
+                        "/api/graduate/forgot-password",
+                        "/api/graduate/reset-password",
                         "/api/graduate/{graduateId}/upload-initial-picture",
                         "/swagger-ui/**", 
                         "/v3/api-docs/**",

@@ -36,6 +36,7 @@ import GeneralLayout from "./components/GeneralLayout"
 import HomePageLayout from "./components/HomePageLayout"
 import ClientLayout from "./components/ClientLayout"
 import PortfolioRouteWrapper from './components/PortfolioRouteWrapper';
+import ForgotPassword from "./pages/ForgotPassword";
 
 
 function App() {
@@ -85,7 +86,7 @@ function App() {
         <Route path="/user-contact" element={<UserContactUs />} />
         <Route path="/user-profile" element={<UserProfile />} />
         <Route path="/user-about" element={<UserAboutUs />} />
-
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Trabahador-specific routes */}
         <Route path="/graduate-contact" element={<TrabahadorContactUs />} />

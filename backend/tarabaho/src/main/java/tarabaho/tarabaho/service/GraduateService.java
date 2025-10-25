@@ -1,11 +1,17 @@
 package tarabaho.tarabaho.service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import tarabaho.tarabaho.dto.OtpInfo;
 import tarabaho.tarabaho.entity.Graduate;
 import tarabaho.tarabaho.repository.GraduateRepository;
 
@@ -19,7 +25,11 @@ public class GraduateService {
     @Autowired
     private PasswordEncoderService passwordEncoderService;
 
+    @Autowired
+    private JavaMailSender mailSender;
 
+    private final ConcurrentHashMap<String, OtpInfo> otpMap = new ConcurrentHashMap<>();
+    private static final String GRADUATE_TYPE = "graduate";
 
  
 
@@ -131,15 +141,55 @@ public class GraduateService {
         return graduateRepository.save(graduate);
     }
 
-   
+    public void sendResetOtp(String email) throws Exception {
+        Optional<Graduate> graduateOpt = findByEmail(email);
+        if (graduateOpt.isEmpty()) {
+            throw new IllegalArgumentException("Graduate not found with email: " + email);
+        }
 
-  
+        String otpKey = GRADUATE_TYPE + ":" + email; // "graduate:john@example.com"
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        Instant expiry = Instant.now().plusSeconds(600); // 10 minutes
 
-    
+        otpMap.put(otpKey, new OtpInfo(otp, expiry));
 
-    
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("Password Reset OTP");
+        message.setText("Your OTP for password reset is: " + otp + ". It expires in 10 minutes.");
+        try {
+            mailSender.send(message);
+            System.out.println("GraduateService: OTP email sent to " + email + " (key: " + otpKey + ")");
+        } catch (Exception e) {
+            otpMap.remove(otpKey); // Clean up OTP on failure
+            throw new IllegalArgumentException("Failed to send OTP email: " + e.getMessage(), e);
+        }
+    }
 
+    public void verifyAndReset(String email, String otp, String newPassword) throws Exception {
+        String otpKey = GRADUATE_TYPE + ":" + email; // "graduate:john@example.com"
+        OtpInfo info = otpMap.get(otpKey);
+        if (info == null) {
+            throw new IllegalArgumentException("No OTP found for this graduate email: " + email);
+        }
+        if (Instant.now().isAfter(info.getExpiry())) {
+            otpMap.remove(otpKey);
+            throw new IllegalArgumentException("OTP has expired for graduate: " + email);
+        }
+        if (!otp.equals(info.getOtp())) {
+            throw new IllegalArgumentException("Invalid OTP for graduate: " + email);
+        }
 
+        Graduate graduate = findByEmail(email)
+            .orElseThrow(() -> new IllegalArgumentException("Graduate not found with email: " + email));
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new IllegalArgumentException("New password must be at least 8 characters long.");
+        }
+        graduate.setPassword(passwordEncoderService.encodePassword(newPassword));
+        graduateRepository.save(graduate);
 
-   
+        otpMap.remove(otpKey); // Clean up OTP after successful reset
+        System.out.println("GraduateService: Password reset successfully for graduate: " + email);
+    }
+
 }
