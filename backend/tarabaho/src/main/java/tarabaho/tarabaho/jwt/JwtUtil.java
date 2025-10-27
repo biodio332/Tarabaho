@@ -25,9 +25,10 @@ public class JwtUtil {
         return new SecretKeySpec(keyBytes, SignatureAlgorithm.HS256.getJcaName());
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String username,String userType) {
         return Jwts.builder()
             .setSubject(username)
+            .claim("userType", userType)
             .setIssuedAt(new Date())
             .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
             .signWith(getSigningKey())

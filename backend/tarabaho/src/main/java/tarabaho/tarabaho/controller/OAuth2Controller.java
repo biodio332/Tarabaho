@@ -2,6 +2,8 @@ package tarabaho.tarabaho.controller;
 
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Enumeration;
@@ -30,9 +32,6 @@ import tarabaho.tarabaho.repository.GraduateRepository;
 import tarabaho.tarabaho.repository.UserRepository;
 import tarabaho.tarabaho.service.GraduateService;
 import tarabaho.tarabaho.service.SupabaseRestStorageService;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 @RestController
 public class OAuth2Controller {
@@ -269,7 +268,7 @@ public class OAuth2Controller {
             }
 
             // Set JWT token cookie
-            String jwtToken = jwtUtil.generateToken(username);
+            String jwtToken = jwtUtil.generateToken(username,type.toUpperCase());
             Cookie tokenCookie = new Cookie("jwtToken", jwtToken);
             tokenCookie.setHttpOnly(true);
             tokenCookie.setSecure(false); // Changed to false for local development

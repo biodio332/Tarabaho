@@ -63,6 +63,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             "/profiles/**",
             "/swagger-ui/**",  // Added for Swagger UI
             "/v3/api-docs/**" , // Added for OpenAPI docs
+            "/api/contact/submit",
             "/api/graduate/test-graduate"
     );
 

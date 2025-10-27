@@ -117,7 +117,7 @@ public class UserController {
         try {
             System.out.println("UserController: Attempting login for username: " + loginData.getUsername());
             User user = userService.loginUser(loginData.getUsername(), loginData.getPassword());
-            String jwtToken = jwtUtil.generateToken(user.getUsername());
+            String jwtToken = jwtUtil.generateToken(user.getUsername(),"USER");
 
             Cookie tokenCookie = new Cookie("jwtToken", jwtToken);
             tokenCookie.setHttpOnly(true);
@@ -196,7 +196,7 @@ public class UserController {
                 }
             }
 
-            String token = jwtUtil.generateToken(username);
+            String token = jwtUtil.generateToken(username,"USER");
             System.out.println("UserController: Generated token for user: " + username);
             return ResponseEntity.ok(new TokenResponse(token));
         } catch (Exception e) {

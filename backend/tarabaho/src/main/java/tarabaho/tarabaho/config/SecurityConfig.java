@@ -76,6 +76,7 @@ public class SecurityConfig {
                         "/api/graduate/token",
 						"/api/graduate/get-token",
                         "/api/graduate/login",
+                        "/api/contact/submit",
                         "/api/graduate/forgot-password",
                         "/api/graduate/reset-password",
                         "/api/graduate/{graduateId}/upload-initial-picture",
@@ -89,7 +90,7 @@ public class SecurityConfig {
                     .requestMatchers("/oauth2/**", "/login/**", "/oauth2-success").permitAll()
                     .requestMatchers("/profiles/**").permitAll()
                     .requestMatchers("/chat").permitAll() 
-                    .requestMatchers("/api/admin/**").authenticated()
+                    .requestMatchers("/api/admin/**","/api/contact/inquiries","/api/contact/delete/{id}").authenticated()
                     .requestMatchers("/api/user/me", "/api/user/update-phone").authenticated()
                     .requestMatchers("/api/user/**").authenticated()
                     .requestMatchers("/api/graduate/**").authenticated()

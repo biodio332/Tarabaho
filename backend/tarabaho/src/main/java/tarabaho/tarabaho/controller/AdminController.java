@@ -3,6 +3,8 @@ package tarabaho.tarabaho.controller;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,20 +33,24 @@ import tarabaho.tarabaho.dto.GraduateUpdateDTO;
 import tarabaho.tarabaho.dto.UserUpdateDTO;
 import tarabaho.tarabaho.entity.Admin;
 import tarabaho.tarabaho.entity.Certificate;
+import tarabaho.tarabaho.entity.ContactInquiry;
 import tarabaho.tarabaho.entity.Graduate;
 import tarabaho.tarabaho.entity.User;
 import tarabaho.tarabaho.jwt.JwtUtil;
 import tarabaho.tarabaho.payload.LoginRequest;
 import tarabaho.tarabaho.service.AdminService;
+import tarabaho.tarabaho.service.ContactService;
 import tarabaho.tarabaho.service.GraduateService;
 import tarabaho.tarabaho.service.SupabaseRestStorageService;
 import tarabaho.tarabaho.service.UserService;
 
 @RestController
 @RequestMapping("/api/admin")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
-@Tag(name = "Admin Management", description = "Endpoints for managing admin accounts, graduates, users, and certificates")
+@CrossOrigin(origins = {"http://localhost:5173", "https://tarabaho.vercel.app"}, allowCredentials = "true")
+@Tag(name = "Admin Management", description = "Endpoints for managing admin accounts, graduates, users, certificates, and contact inquiries")
 public class AdminController {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminController.class);
 
     @Autowired
     private AdminService adminService;
@@ -56,9 +62,10 @@ public class AdminController {
     private GraduateService graduateService;
 
     @Autowired
+    private ContactService contactService;
+
+    @Autowired
     private JwtUtil jwtUtil;
-
-
 
     @Autowired
     private SupabaseRestStorageService storageService;
@@ -84,6 +91,7 @@ public class AdminController {
     @GetMapping("/users/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
+            log.warn("Unauthorized access to /users/{}: Not authenticated", id);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
         Optional<User> user = adminService.findUserById(id);
@@ -97,6 +105,82 @@ public class AdminController {
         return ResponseEntity.ok(graduateService.getAllGraduates());
     }
 
+    @Operation(summary = "Get all contact inquiries", description = "Retrieve all contact inquiries (admin only)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Inquiries retrieved successfully"),
+        @ApiResponse(responseCode = "401", description = "Admin not authenticated"),
+        @ApiResponse(responseCode = "400", description = "Failed to retrieve inquiries")
+    })
+    @GetMapping("/contact/inquiries")
+    public ResponseEntity<?> getInquiries(Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                log.warn("Unauthorized access to /contact/inquiries: Not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated");
+            }
+            List<ContactInquiry> inquiries = contactService.findAllInquiries();
+            log.debug("Retrieved {} inquiries", inquiries.size());
+            return ResponseEntity.ok(inquiries);
+        } catch (Exception e) {
+            log.error("Failed to retrieve inquiries: {}", e.getMessage());
+            return ResponseEntity.badRequest().body("Failed to retrieve inquiries: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Get contact inquiry by ID", description = "Retrieve a single contact inquiry by ID (admin only)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Inquiry retrieved successfully"),
+        @ApiResponse(responseCode = "401", description = "Admin not authenticated"),
+        @ApiResponse(responseCode = "404", description = "Inquiry not found"),
+        @ApiResponse(responseCode = "400", description = "Failed to retrieve inquiry")
+    })
+    @GetMapping("/contact/{id}")
+    public ResponseEntity<?> getInquiryById(@PathVariable Long id, Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                log.warn("Unauthorized access to /contact/{}: Not authenticated", id);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated");
+            }
+            Optional<ContactInquiry> inquiry = contactService.findInquiryById(id);
+            if (inquiry.isPresent()) {
+                log.debug("Retrieved inquiry: id={}", id);
+                return ResponseEntity.ok(inquiry.get());
+            } else {
+                log.warn("Inquiry not found: id={}", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Inquiry not found");
+            }
+        } catch (Exception e) {
+            log.error("Failed to retrieve inquiry id={}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body("Failed to retrieve inquiry: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Delete a contact inquiry", description = "Delete a contact inquiry by ID (admin only)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Inquiry deleted successfully"),
+        @ApiResponse(responseCode = "401", description = "Admin not authenticated"),
+        @ApiResponse(responseCode = "404", description = "Inquiry not found"),
+        @ApiResponse(responseCode = "400", description = "Failed to delete inquiry")
+    })
+    @DeleteMapping("/contact/delete/{id}")
+    public ResponseEntity<?> deleteInquiry(@PathVariable Long id, Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                log.warn("Unauthorized access to /contact/delete/{}: Not authenticated", id);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated");
+            }
+            contactService.deleteInquiry(id);
+            log.debug("Deleted inquiry: id={}", id);
+            return ResponseEntity.ok("Inquiry deleted successfully");
+        } catch (IllegalArgumentException e) {
+            log.error("Failed to delete inquiry id={}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Inquiry not found");
+        } catch (Exception e) {
+            log.error("Failed to delete inquiry id={}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body("Failed to delete inquiry: " + e.getMessage());
+        }
+    }
+
     @Operation(summary = "Register a new admin", description = "Create a new admin account")
     @PostMapping("/register")
     public ResponseEntity<?> registerAdmin(@RequestBody Admin admin) {
@@ -104,6 +188,7 @@ public class AdminController {
             Admin registered = adminService.registerAdmin(admin);
             return ResponseEntity.ok(registered);
         } catch (Exception e) {
+            log.error("Failed to register admin: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -115,6 +200,7 @@ public class AdminController {
             User registered = userService.registerUser(user);
             return ResponseEntity.ok(registered);
         } catch (Exception e) {
+            log.error("Failed to register user: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -126,6 +212,7 @@ public class AdminController {
             Graduate registered = graduateService.registerGraduate(graduate);
             return ResponseEntity.ok(registered);
         } catch (Exception e) {
+            log.error("Failed to register graduate: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -141,9 +228,9 @@ public class AdminController {
             HttpServletResponse response
     ) {
         try {
-            System.out.println("AdminController: Attempting login for username: " + loginRequest.getUsername());
+            log.info("Attempting login for username: {}", loginRequest.getUsername());
             Admin admin = adminService.loginAdmin(loginRequest.getUsername(), loginRequest.getPassword());
-            String jwtToken = jwtUtil.generateToken(admin.getUsername());
+            String jwtToken = jwtUtil.generateToken(admin.getUsername(), "ADMIN");
 
             Cookie tokenCookie = new Cookie("jwtToken", jwtToken);
             tokenCookie.setHttpOnly(true);
@@ -152,17 +239,17 @@ public class AdminController {
             tokenCookie.setMaxAge(24 * 60 * 60);
             tokenCookie.setAttribute("SameSite", "None");
             response.addCookie(tokenCookie);
-            System.out.println("AdminController: Token generated and cookie set for username: " + admin.getUsername());
+            log.info("Token generated and cookie set for username: {}", admin.getUsername());
 
             AuthResponse body = new AuthResponse(jwtToken, admin.getId());
             return ResponseEntity.ok(body);
         } catch (Exception e) {
-            System.out.println("AdminController: Login failed: " + e.getMessage());
+            log.error("Login failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new AuthResponse(null, null));
         }
     }
 
-    @Operation(summary = "Get JWT token from cookie", description = "Retrieve the JWT token from the HttpOnly cookie for WebSocket authentication")
+    @Operation(summary = "Get JWT token from cookie", description = "Retrieve the JWT token for WebSocket authentication")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Token retrieved successfully"),
         @ApiResponse(responseCode = "401", description = "No valid token found")
@@ -171,23 +258,23 @@ public class AdminController {
     public ResponseEntity<?> getToken(Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
-                System.out.println("AdminController: getToken failed: Not authenticated");
+                log.warn("getToken failed: Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
             }
             String username = authentication.getName();
-            System.out.println("AdminController: getToken for username: " + username);
+            log.info("getToken for username: {}", username);
             
             Admin admin = adminService.findByUsername(username);
             if (admin == null) {
-                System.out.println("AdminController: Admin not found for username: " + username);
+                log.warn("Admin not found for username: {}", username);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not found");
             }
             
-            String token = jwtUtil.generateToken(username);
-            System.out.println("AdminController: Generated token for admin: " + username);
+            String token = jwtUtil.generateToken(username, "ADMIN");
+            log.info("Generated token for admin: {}", username);
             return ResponseEntity.ok(new TokenResponse(token));
         } catch (Exception e) {
-            System.err.println("AdminController: getToken failed: " + e.getMessage());
+            log.error("getToken failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
     }
@@ -199,6 +286,7 @@ public class AdminController {
             adminService.deleteAdmin(id);
             return ResponseEntity.ok("Admin deleted successfully");
         } catch (Exception e) {
+            log.error("Failed to delete admin id={}: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body("Admin not found or cannot be deleted");
         }
     }
@@ -210,6 +298,7 @@ public class AdminController {
             Admin admin = adminService.editAdmin(id, updatedAdmin);
             return ResponseEntity.ok(admin);
         } catch (Exception e) {
+            log.error("Failed to edit admin id={}: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -221,6 +310,7 @@ public class AdminController {
             userService.deleteUser(id);
             return ResponseEntity.ok("User deleted successfully");
         } catch (Exception e) {
+            log.error("Failed to delete user id={}: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body("User not found or cannot be deleted");
         }
     }
@@ -238,16 +328,16 @@ public class AdminController {
             @RequestBody UserUpdateDTO userDTO,
             Authentication authentication
     ) {
-        System.out.println("AdminController: editUser - Authentication: " + (authentication != null ? authentication.getName() : "null"));
+        log.info("editUser - Authentication: {}", authentication != null ? authentication.getName() : "null");
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
-                System.out.println("AdminController: editUser - Authentication failed");
+                log.warn("editUser - Authentication failed");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated.");
             }
             User user = adminService.editUser(id, userDTO);
             return ResponseEntity.ok(user);
         } catch (Exception e) {
-            System.out.println("AdminController: editUser - Failed to update user: " + e.getMessage());
+            log.error("editUser - Failed to update user id={}: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body("Failed to update user: " + e.getMessage());
         }
     }
@@ -257,11 +347,13 @@ public class AdminController {
     public ResponseEntity<?> deleteGraduate(@PathVariable Long id, Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
+                log.warn("Unauthorized access to /graduates/delete/{}: Not authenticated", id);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated.");
             }
             graduateService.deleteGraduate(id);
             return ResponseEntity.ok("Graduate deleted successfully");
         } catch (Exception e) {
+            log.error("Failed to delete graduate id={}: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body("Graduate not found or cannot be deleted: " + e.getMessage());
         }
     }
@@ -281,16 +373,16 @@ public class AdminController {
     ) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
+                log.warn("Unauthorized access to /graduates/edit/{}: Not authenticated", id);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated.");
             }
             Graduate graduate = adminService.editGraduate(id, graduateDTO);
             return ResponseEntity.ok(graduate);
         } catch (Exception e) {
+            log.error("Failed to edit graduate id={}: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body("Failed to update graduate: " + e.getMessage());
         }
     }
-
-
 
     @Operation(summary = "Get certificates for a graduate", description = "Retrieve all certificates associated with a graduate")
     @ApiResponses({
@@ -305,11 +397,13 @@ public class AdminController {
     ) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
+                log.warn("Unauthorized access to /certificates/graduate/{}: Not authenticated", graduateId);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated.");
             }
             List<Certificate> certificates = adminService.getCertificatesByGraduateId(graduateId);
             return ResponseEntity.ok(certificates);
         } catch (Exception e) {
+            log.error("Failed to fetch certificates for graduateId={}: {}", graduateId, e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to fetch certificates: " + e.getMessage());
         }
     }
@@ -322,9 +416,7 @@ public class AdminController {
     @PostMapping("/logout")
     public ResponseEntity<?> logoutAdmin(HttpServletRequest request, HttpServletResponse response) {
         try {
-            System.out.println("AdminController: Entering /logout endpoint");
-
-            // Clear the JWT cookie
+            log.info("Entering /logout endpoint");
             Cookie tokenCookie = new Cookie("jwtToken", null);
             tokenCookie.setMaxAge(0);
             tokenCookie.setPath("/");
@@ -332,15 +424,12 @@ public class AdminController {
             tokenCookie.setSecure(true);
             tokenCookie.setAttribute("SameSite", "None");
             response.addCookie(tokenCookie);
-            System.out.println("AdminController: Cookie cleared: jwtToken=; Path=/; Max-Age=0; HttpOnly; SameSite=None");
+            log.info("Cookie cleared: jwtToken=; Path=/; Max-Age=0; HttpOnly; SameSite=None");
 
-            // Invalidate session
             request.getSession(false).invalidate();
-
             return ResponseEntity.ok("Admin logged out successfully.");
         } catch (Exception e) {
-            System.err.println("AdminController: Logout failed: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Logout failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Logout failed: " + e.getMessage());
         }
     }
@@ -354,11 +443,13 @@ public class AdminController {
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentAdmin(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
+            log.warn("Unauthorized access to /me: Not authenticated");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated");
         }
         String username = authentication.getName();
         Admin admin = adminService.findByUsername(username);
         if (admin == null) {
+            log.warn("Admin not found for username: {}", username);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Admin not found");
         }
         return ResponseEntity.ok(admin);
@@ -378,37 +469,39 @@ public class AdminController {
     ) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
+                log.warn("Unauthorized access to /upload-picture: Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin not authenticated");
             }
             String username = authentication.getName();
             Admin admin = adminService.findByUsername(username);
             if (admin == null) {
+                log.warn("Admin not found for username: {}", username);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Admin not found");
             }
             if (file == null || file.isEmpty()) {
+                log.warn("No file uploaded for username: {}", username);
                 return ResponseEntity.badRequest().body("No file uploaded");
             }
 
-            // Delete existing profile picture if it exists
             if (admin.getProfilePicture() != null && !admin.getProfilePicture().isEmpty()) {
                 String existingFileName = admin.getProfilePicture().substring(admin.getProfilePicture().lastIndexOf("/") + 1);
                 try {
                     storageService.deleteFile("profile-picture", existingFileName);
+                    log.info("Deleted old profile picture for username: {}", username);
                 } catch (Exception e) {
-                    System.err.println("Failed to delete old profile picture: " + e.getMessage());
+                    log.error("Failed to delete old profile picture for username {}: {}", username, e.getMessage());
                 }
             }
 
-            // Upload to Supabase
             String publicUrl = storageService.uploadFile(file, "profile-picture");
             Admin updatedAdmin = adminService.updateProfilePicture(admin.getId(), publicUrl);
+            log.info("Profile picture uploaded for username: {}", username);
             return ResponseEntity.ok(updatedAdmin);
         } catch (Exception e) {
+            log.error("Failed to upload picture for username {}: {}", authentication.getName(), e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload picture: " + e.getMessage());
         }
     }
-
-
 
     static class TokenResponse {
         private String token;

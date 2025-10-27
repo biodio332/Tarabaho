@@ -37,6 +37,7 @@ import HomePageLayout from "./components/HomePageLayout"
 import ClientLayout from "./components/ClientLayout"
 import PortfolioRouteWrapper from './components/PortfolioRouteWrapper';
 import ForgotPassword from "./pages/ForgotPassword";
+import AdminContactDetail from "./pages/AdminContactDetail"
 
 
 function App() {
@@ -70,7 +71,8 @@ function App() {
 
         {/* Admin routes */}
         <Route path="/admin/homepage" element={<AdminHomepage />} />
-        <Route path="/admin/contact" element={<AdminContactUs />} />
+        <Route path="/admin/contact/:id" element={<AdminContactDetail/>}/>
+        <Route path="/admin/manage-feedback" element={<AdminContactUs />} />
         <Route path="/admin/profile" element={<AdminProfile />} />
         <Route path="/admin/manage-users" element={<AdminManageUsers />} />
         <Route path="/admin/manage-graduate" element={<AdminManageTrabahador />} />

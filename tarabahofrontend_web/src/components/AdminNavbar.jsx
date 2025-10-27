@@ -15,12 +15,6 @@ const AdminNavbar = () => {
         <Link to="/admin/homepage" className={location.pathname === "/admin/homepage" ? "active" : ""}>
           HOME
         </Link>
-        <Link to="/admin/contact" className={location.pathname === "/admin/contact" ? "active" : ""}>
-          CONTACT US
-        </Link>
-        <Link to="/admin/about" className={location.pathname === "/admin/about" ? "active" : ""}>
-          ABOUT US
-        </Link>
         <Link to="/admin/profile" className={location.pathname === "/admin/profile" ? "active" : ""}>
           PROFILE
         </Link>

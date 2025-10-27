@@ -320,7 +320,7 @@ public class GraduateController {
         try {
             System.out.println("GraduateController: Attempting login for username: " + loginData.getUsername());
             Graduate graduate = graduateService.loginGraduate(loginData.getUsername(), loginData.getPassword());
-            String jwtToken = jwtUtil.generateToken(graduate.getUsername());
+            String jwtToken = jwtUtil.generateToken(graduate.getUsername(),"GRADUATE");
 
             Cookie tokenCookie = new Cookie("jwtToken", jwtToken);
             tokenCookie.setHttpOnly(true);
@@ -379,7 +379,7 @@ public class GraduateController {
                 }
             }
 
-            String token = jwtUtil.generateToken(username);
+            String token = jwtUtil.generateToken(username,"GRADUATE");
             System.out.println("GraduateController: Generated token for graduate: " + username);
             return ResponseEntity.ok(new TokenResponse(token));
         } catch (Exception e) {
