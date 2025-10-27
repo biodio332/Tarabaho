@@ -10,11 +10,14 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
-  TouchableOpacity
+  TouchableOpacity,
+  Share,
+  Linking
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 
 import Button from '@/components/ui/Button';
 import Chart from '@/components/ui/Chart';
@@ -60,37 +63,23 @@ export default function GraduateHomepage() {
   const [token, setToken] = useState<string | null>(null);
   
   // Chart controls
-  const [timeRange, setTimeRange] = useState<'3d' | '7d' | '30d' | 'month' | 'year'>('7d');
+  const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('week');
   const [chartType, setChartType] = useState<'line' | 'bar'>('line');
   const [trendsLoading, setTrendsLoading] = useState(false);
   const [showSimplifiedView, setShowSimplifiedView] = useState(false);
+  
+  // Share functionality
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
 
   // Helper function to generate date range with labels
-  const generateDateRange = (range: '3d' | '7d' | '30d' | 'month' | 'year') => {
+  const generateDateRange = (range: 'week' | 'month' | 'year') => {
     const today = new Date();
     const dates: ViewTrend[] = [];
     
     switch (range) {
-      case '3d':
-        // Last 3 days
-        for (let i = 2; i >= 0; i--) {
-          const date = new Date(today);
-          date.setDate(today.getDate() - i);
-          const label = date.toLocaleDateString('en-US', { 
-            weekday: 'short', 
-            month: 'short', 
-            day: 'numeric' 
-          });
-          dates.push({
-            date: date.toISOString().split('T')[0],
-            label: label,
-            views: 0
-          });
-        }
-        break;
-
-      case '7d':
-        // Last 7 days
+      case 'week':
+        // Last 7 days (including today)
         for (let i = 6; i >= 0; i--) {
           const date = new Date(today);
           date.setDate(today.getDate() - i);
@@ -107,29 +96,16 @@ export default function GraduateHomepage() {
         }
         break;
         
-      case '30d':
-        // Last 30 days
-        for (let i = 29; i >= 0; i--) {
+      case 'month':
+        // Last 30 days, but only show last 3 days if no views (similar to web implementation)
+        const hasViews = viewTrends.some(item => parseInt(item.views.toString()) > 0);
+        const daysToShow = hasViews ? 30 : 7; // Show at least 7 days for mobile
+        
+        for (let i = daysToShow - 1; i >= 0; i--) {
           const date = new Date(today);
           date.setDate(today.getDate() - i);
           const label = date.toLocaleDateString('en-US', { 
             month: 'short', 
-            day: 'numeric' 
-          });
-          dates.push({
-            date: date.toISOString().split('T')[0],
-            label: label,
-            views: 0
-          });
-        }
-        break;
-        
-      case 'month':
-        // Current month
-        const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-        for (let i = 0; i < daysInMonth; i++) {
-          const date = new Date(today.getFullYear(), today.getMonth(), i + 1);
-          const label = date.toLocaleDateString('en-US', { 
             day: 'numeric' 
           });
           dates.push({
@@ -145,7 +121,8 @@ export default function GraduateHomepage() {
         for (let i = 11; i >= 0; i--) {
           const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
           const label = date.toLocaleDateString('en-US', { 
-            month: 'short'
+            month: 'short', 
+            year: 'numeric' 
           });
           dates.push({
             date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
@@ -154,6 +131,10 @@ export default function GraduateHomepage() {
           });
         }
         break;
+        
+      default:
+        // Default to week
+        return generateDateRange('week');
     }
     
     return dates;
@@ -169,8 +150,8 @@ export default function GraduateHomepage() {
       };
     });
     
-    // For year/month view - filter out zero views for bar chart only
-    if ((timeRange === 'year' || timeRange === 'month') && chartType === 'bar') {
+    // For year view - filter out zero views for bar chart only
+    if (timeRange === 'year' && chartType === 'bar') {
       return merged.filter(item => item.views > 0);
     }
     
@@ -178,7 +159,7 @@ export default function GraduateHomepage() {
   };
 
   // Fetch view trends
-  const fetchViewTrends = useCallback(async (portfolioId: number, authToken: string, range: '3d' | '7d' | '30d' | 'month' | 'year') => {
+  const fetchViewTrends = useCallback(async (portfolioId: number, authToken: string, range: 'week' | 'month' | 'year') => {
     if (!portfolioId || !authToken) {
       console.warn("Cannot fetch trends: missing portfolioId or token");
       return;
@@ -246,6 +227,137 @@ export default function GraduateHomepage() {
     }
   }, [timeRange, chartType]);
 
+  // Share functionality
+  const fetchShareToken = async () => {
+    if (!token || !graduateData?.id) return null;
+    
+    try {
+      setShareLoading(true);
+      const response = await fetch(`${BACKEND_URL}/api/portfolio/graduate/${graduateData.id}/portfolio/share-token`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch share token');
+      }
+
+      const data = await response.json();
+      setShareToken(data.shareToken);
+      return data.shareToken;
+    } catch (error) {
+      console.error('❌ Error fetching share token:', error);
+      Alert.alert('Error', 'Failed to generate share token. Please try again.');
+      return null;
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
+  const getShareableUrl = (token: string) => {
+    const baseUrl = __DEV__ ? 'http://localhost:3000' : 'https://your-domain.com';
+    return `${baseUrl}/portfolio/${graduateData?.id}?share=${token}`;
+  };
+
+  const copySecureLink = async () => {
+    try {
+      let currentToken = shareToken;
+      if (!currentToken) {
+        currentToken = await fetchShareToken();
+        if (!currentToken) return;
+      }
+
+      const shareableUrl = getShareableUrl(currentToken);
+      await Clipboard.setStringAsync(shareableUrl);
+      
+      Alert.alert(
+        '✅ Link Copied!',
+        `Secure share link copied to clipboard!\n\n🔒 Only people with this exact link can view your portfolio.\n💡 Links remain valid until you generate a new one.`,
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('❌ Error copying link:', error);
+      Alert.alert('Error', 'Failed to copy link. Please try again.');
+    }
+  };
+
+  const shareToLinkedIn = async () => {
+    try {
+      let currentToken = shareToken;
+      if (!currentToken) {
+        currentToken = await fetchShareToken();
+        if (!currentToken) return;
+      }
+
+      const shareableUrl = getShareableUrl(currentToken);
+      const title = `${graduateData?.firstName || 'Portfolio'} - Professional Portfolio`;
+      const summary = 'Check out my professional portfolio showcasing my skills, experiences, and achievements!';
+      
+      const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(summary)}`;
+      
+      const supported = await Linking.canOpenURL(linkedInUrl);
+      if (supported) {
+        await Linking.openURL(linkedInUrl);
+      } else {
+        Alert.alert('Error', 'Unable to open LinkedIn. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Error sharing to LinkedIn:', error);
+      Alert.alert('Error', 'Failed to share to LinkedIn. Please try again.');
+    }
+  };
+
+  const shareToFacebook = async () => {
+    try {
+      let currentToken = shareToken;
+      if (!currentToken) {
+        currentToken = await fetchShareToken();
+        if (!currentToken) return;
+      }
+
+      const shareableUrl = getShareableUrl(currentToken);
+      const title = `${graduateData?.firstName || 'Portfolio'} - Professional Portfolio`;
+      const summary = 'Check out my professional portfolio showcasing my skills, experiences, and achievements!';
+      
+      const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}&quote=${encodeURIComponent(summary)}&title=${encodeURIComponent(title)}`;
+      
+      const supported = await Linking.canOpenURL(facebookUrl);
+      if (supported) {
+        await Linking.openURL(facebookUrl);
+      } else {
+        Alert.alert('Error', 'Unable to open Facebook. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Error sharing to Facebook:', error);
+      Alert.alert('Error', 'Failed to share to Facebook. Please try again.');
+    }
+  };
+
+  const shareViaDevice = async () => {
+    try {
+      let currentToken = shareToken;
+      if (!currentToken) {
+        currentToken = await fetchShareToken();
+        if (!currentToken) return;
+      }
+
+      const shareableUrl = getShareableUrl(currentToken);
+      const title = `${graduateData?.firstName || 'Portfolio'} - Professional Portfolio`;
+      const message = `Check out my professional portfolio: ${shareableUrl}`;
+
+      await Share.share({
+        message: message,
+        url: shareableUrl,
+        title: title,
+      });
+    } catch (error) {
+      console.error('❌ Error sharing via device:', error);
+    }
+  };
+
   // Initial data fetch
   const fetchInitialData = useCallback(async () => {
     setIsLoading(true);
@@ -309,6 +421,28 @@ export default function GraduateHomepage() {
             portfolioData = await portfolioResponse.json();
             console.log("✅ Portfolio data received:", portfolioData);
             setPortfolio(portfolioData);
+            
+            // Fetch share token for portfolio if it exists
+            try {
+              const shareTokenResponse = await fetch(
+                `${BACKEND_URL}/api/portfolio/graduate/${graduateData.id}/portfolio/share-token`,
+                {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': `Bearer ${storedToken}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+
+              if (shareTokenResponse.ok) {
+                const shareTokenData = await shareTokenResponse.json();
+                console.log("✅ Share token received");
+                setShareToken(shareTokenData.shareToken);
+              }
+            } catch (shareTokenErr: any) {
+              console.error("⚠️ Share token fetch error:", shareTokenErr.message);
+            }
           } else if (portfolioResponse.status === 404) {
             console.log("ℹ️ No portfolio found for graduate ID:", graduateData.id);
             setPortfolio(null);
@@ -404,17 +538,15 @@ export default function GraduateHomepage() {
 
   // Time range options
   const timeRangeOptions = [
-    { value: '3d', label: '3 Days', icon: <Ionicons name="time-outline" size={16} color="#6b7280" /> },
-    { value: '7d', label: '7 Days', icon: <Ionicons name="calendar-outline" size={16} color="#6b7280" /> },
-    { value: '30d', label: '30 Days', icon: <Ionicons name="calendar-outline" size={16} color="#6b7280" /> },
-    { value: 'month', label: 'This Month', icon: <Ionicons name="calendar-outline" size={16} color="#6b7280" /> },
-    { value: 'year', label: 'Last Year', icon: <Ionicons name="calendar-outline" size={16} color="#6b7280" /> },
+    { value: 'week', label: 'Last 7 Days', icon: <Ionicons name="time-outline" size={18} color="#6b7280" /> },
+    { value: 'month', label: 'This Month', icon: <Ionicons name="calendar-outline" size={18} color="#6b7280" /> },
+    { value: 'year', label: 'This Year', icon: <Ionicons name="stats-chart-outline" size={18} color="#6b7280" /> },
   ];
 
   // Chart type options
   const chartTypeOptions = [
-    { value: 'line', label: 'Line', icon: <Ionicons name="trending-up-outline" size={16} color="#6b7280" /> },
-    { value: 'bar', label: 'Bar', icon: <Ionicons name="bar-chart-outline" size={16} color="#6b7280" /> },
+    { value: 'line', label: 'Line Chart', icon: <Ionicons name="trending-up-outline" size={18} color="#6b7280" /> },
+    { value: 'bar', label: 'Bar Chart', icon: <Ionicons name="bar-chart-outline" size={18} color="#6b7280" /> },
   ];
 
   if (isLoading) {
@@ -441,6 +573,7 @@ export default function GraduateHomepage() {
       <SafeAreaView style={viewStyles.safeArea}>
         <ScrollView
           style={viewStyles.container}
+          contentContainerStyle={{ paddingBottom: 160 }} // Space for sticky button + bottom nav
           refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
           }>
@@ -465,144 +598,208 @@ export default function GraduateHomepage() {
 
         {portfolio ? (
           <View style={viewStyles.dashboard}>
-            {/* Statistics Cards - Modern grid layout */}
-            <View style={viewStyles.statsGrid}>
-              <View style={[viewStyles.statCard, viewStyles.statCardHighlight]}>
-                <View style={viewStyles.statHeader}>
-                  <Text style={textStyles.statTitle}>Last 7 days</Text>
-                  <View style={[viewStyles.statIconWrapper, { backgroundColor: '#dcfce7' }]}>
-                    <Ionicons name="time-outline" size={24} color="#16a34a" />
+            {/* Statistics Cards - Mobile-optimized grid */}
+            <View style={viewStyles.statsSection}>
+              <Text style={textStyles.sectionTitle}>Portfolio Analytics</Text>
+              
+              <View style={viewStyles.statsGrid}>
+                <View style={[viewStyles.statCard, viewStyles.statCardPrimary]}>
+                  <View style={viewStyles.statIconContainer}>
+                    <Ionicons name="time-outline" size={28} color="#ffffff" />
+                  </View>
+                  <View style={viewStyles.statContent}>
+                    <Text style={textStyles.statValue}>{viewStats?.weeklyViews ?? 0}</Text>
+                    <Text style={textStyles.statLabel}>Last 7 Days</Text>
+                    <Text style={textStyles.statDescription}>
+                      {(viewStats?.weeklyViews ?? 0) > 0 ? 'Recent activity' : 'No recent views'}
+                    </Text>
                   </View>
                 </View>
-                <Text style={textStyles.statValue}>{viewStats?.weeklyViews ?? 0}</Text>
-                <Text style={textStyles.statSubtitle}>
-                  {(viewStats?.weeklyViews ?? 0) > 0 
-                    ? 'Active visitors this week' 
-                    : 'Share your portfolio to get noticed'}
-                </Text>
-                {(viewStats?.weeklyViews ?? 0) > 0 && (
-                  <View style={viewStyles.trendIndicator}>
-                    <Ionicons name="trending-up" size={16} color="#16a34a" />
-                    <Text style={textStyles.trendText}>Active Week</Text>
+
+                <View style={[viewStyles.statCard, viewStyles.statCardSecondary]}>
+                  <View style={[viewStyles.statIconContainer, { backgroundColor: '#3b82f6' }]}>
+                    <Ionicons name="calendar-outline" size={28} color="#ffffff" />
+                  </View>
+                  <View style={viewStyles.statContent}>
+                    <Text style={[textStyles.statValue, { color: '#3b82f6' }]}>
+                      {viewStats?.monthlyViews ?? 0}
+                    </Text>
+                    <Text style={textStyles.statLabel}>This Month</Text>
+                    <Text style={textStyles.statDescription}>
+                      {(viewStats?.monthlyViews ?? 0) > 0 ? 'Monthly total' : 'Start sharing'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={[viewStyles.statCard, viewStyles.statCardSecondary]}>
+                  <View style={[viewStyles.statIconContainer, { backgroundColor: '#8b5cf6' }]}>
+                    <Ionicons name="eye-outline" size={28} color="#ffffff" />
+                  </View>
+                  <View style={viewStyles.statContent}>
+                    <Text style={[textStyles.statValue, { color: '#8b5cf6' }]}>
+                      {viewStats?.yearlyViews ?? 0}
+                    </Text>
+                    <Text style={textStyles.statLabel}>All Time</Text>
+                    <Text style={textStyles.statDescription}>
+                      {(viewStats?.yearlyViews ?? 0) > 0 ? 'Total views' : 'Build presence'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Chart Section - Clean Single Card */}
+            <View style={viewStyles.chartCard}>
+              {/* Header with Period Badge */}
+              <View style={viewStyles.chartHeader}>
+                <Text style={textStyles.sectionTitle}>Portfolio Views</Text>
+                <View style={viewStyles.periodBadge}>
+                  <Text style={textStyles.periodBadgeText}>
+                    {timeRangeOptions.find(option => option.value === timeRange)?.label}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Quick Stats Row */}
+              <View style={viewStyles.quickStats}>
+                <View style={viewStyles.quickStatItem}>
+                  <Text style={textStyles.quickStatValue}>{viewTrends.length}</Text>
+                  <Text style={textStyles.quickStatLabel}>Points</Text>
+                </View>
+                <View style={viewStyles.quickStatItem}>
+                  <Text style={textStyles.quickStatValue}>
+                    {viewTrends.reduce((sum, item) => sum + item.views, 0)}
+                  </Text>
+                  <Text style={textStyles.quickStatLabel}>Total Views</Text>
+                </View>
+                {trendsLoading && (
+                  <View style={viewStyles.quickStatItem}>
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <Text style={textStyles.quickStatLabel}>Loading</Text>
                   </View>
                 )}
               </View>
 
-              <View style={[viewStyles.statCard, viewStyles.statCardSecondary]}>
-                <View style={viewStyles.statHeader}>
-                  <Text style={textStyles.statTitle}>This month</Text>
-                  <View style={[viewStyles.statIconWrapper, { backgroundColor: '#dbeafe' }]}>
-                    <Ionicons name="calendar-outline" size={24} color="#2563eb" />
-                  </View>
-                </View>
-                <Text style={[textStyles.statValue, { color: theme.colors.primary }]}>
-                  {viewStats?.monthlyViews ?? 0}
-                </Text>
-                <Text style={textStyles.statSubtitle}>
-                  {(viewStats?.monthlyViews ?? 0) > 0 
-                    ? 'Total monthly engagement' 
-                    : 'Start building your presence'}
-                </Text>
-              </View>
-
-              <View style={[viewStyles.statCard, viewStyles.statCardSecondary]}>
-                <View style={viewStyles.statHeader}>
-                  <Text style={textStyles.statTitle}>All time</Text>
-                  <View style={[viewStyles.statIconWrapper, { backgroundColor: '#f3e8ff' }]}>
-                    <Ionicons name="eye-outline" size={24} color="#9333ea" />
-                  </View>
-                </View>
-                <Text style={[textStyles.statValue, { color: '#9333ea' }]}>
-                  {viewStats?.yearlyViews ?? 0}
-                </Text>
-                <Text style={textStyles.statSubtitle}>
-                  {(viewStats?.yearlyViews ?? 0) > 0 
-                    ? 'Career profile views' 
-                    : 'Time to shine — create content!'}
-                </Text>
-              </View>
-            </View>
-
-            {/* Chart Section - Clean, modern card */}
-            <View style={viewStyles.chartCard}>
-              <View style={viewStyles.chartHeader}>
-                <Text style={textStyles.chartTitle}>Portfolio View Trends</Text>
-                <Text style={textStyles.chartSubtitle}>
-                  {viewTrends.length} data points • {viewTrends.reduce((sum, item) => sum + item.views, 0)} total views
-                  {trendsLoading && ' • updating...'}
-                </Text>
-                
-                <View style={viewStyles.chartControls}>
-                  <ScrollView 
-                    horizontal 
-                    showsHorizontalScrollIndicator={false}
-                  >
-                    <ToggleGroup
-                      options={timeRangeOptions}
-                      value={timeRange}
-                      onValueChange={(value) => setTimeRange(value as '3d' | '7d' | '30d' | 'month' | 'year')}
-                      variant="compact"
-                    />
-                  </ScrollView>
-                  
-                  <ToggleGroup
-                    options={chartTypeOptions}
-                    value={chartType}
-                    onValueChange={(value) => setChartType(value as 'line' | 'bar')}
-                    variant="compact"
-                  />
-                </View>
-              </View>
-
-              {/* Chart with empty state handling */}
-              <View style={viewStyles.chartWrapper}>
-                {chartData ? (
-                  viewTrends.some(trend => trend.views > 0) ? (
+              {/* Chart Display Area */}
+              {chartData ? (
+                viewTrends.some(trend => trend.views > 0) ? (
+                  <View style={viewStyles.chartDisplay}>
                     <Chart
                       data={{
                         labels: (() => {
-                          const step = timeRange === 'year' ? 1 : timeRange === 'month' ? 3 : timeRange === '30d' ? 3 : 2;
-                          return chartData.labels.map((label, idx) => (idx % step === 0 ? label : ''));
+                          // Smart label formatting and limiting for mobile
+                          const labels = chartData.labels;
+                          let step = 1;
+                          let maxLabels = 6;
+                          
+                          if (timeRange === 'year') {
+                            step = 1;
+                            maxLabels = 6;
+                          } else if (timeRange === 'month') {
+                            step = Math.ceil(labels.length / maxLabels);
+                          } else {
+                            step = Math.ceil(labels.length / maxLabels);
+                          }
+                          
+                          return labels.map((label, idx) => {
+                            if (idx % step !== 0) return '';
+                            
+                            // Format labels for mobile readability
+                            if (timeRange === 'year') {
+                              // Format: "Jan '25"
+                              const parts = label.split(' ');
+                              if (parts.length >= 2) {
+                                const month = parts[0];
+                                const year = parts[1].slice(-2);
+                                return `${month} '${year}`;
+                              }
+                              return label;
+                            } else {
+                              // Format: "Aug 15" -> "Aug 15"
+                              const parts = label.split(' ');
+                              if (parts.length >= 3) {
+                                return `${parts[1]} ${parts[2]}`;
+                              }
+                              return label.length > 8 ? label.split(' ')[0] : label;
+                            }
+                          });
                         })(),
                         datasets: chartData.datasets,
                       }}
                       type={chartType}
-                      height={240}
+                      height={260}
                       loading={trendsLoading}
-                      rotateLabels={timeRange !== '3d'}
-                      formatXLabel={(label) => label.split(' ').join('\n')}
+                      rotateLabels={true}
+                      formatXLabel={(label) => label}
                     />
-                  ) : (
-                    <View style={viewStyles.chartEmptyState}>
-                      <Ionicons name="analytics-outline" size={48} color={theme.colors.text.tertiary} />
-                      <Text style={textStyles.chartEmptyTitle}>No Portfolio Views Yet</Text>
-                      <Text style={textStyles.chartEmptyText}>
-                        Share your portfolio with potential employers to start tracking engagement.
-                        Keep your profile updated to increase visibility!
-                      </Text>
-                      <View style={viewStyles.chartEmptyActions}>
-                        <Button
-                          title="Share Portfolio"
-                          onPress={() => router.push('/portfolio')}
-                          variant="outline"
-                        />
-                      </View>
-                    </View>
-                  )
+                  </View>
                 ) : (
+                  <View style={viewStyles.chartEmptyState}>
+                    <View style={viewStyles.emptyIconContainer}>
+                      <Ionicons name="analytics-outline" size={48} color={theme.colors.primary} />
+                    </View>
+                    <Text style={textStyles.emptyTitle}>No Views Yet</Text>
+                    <Text style={textStyles.emptyMessage}>
+                      Share your portfolio to start tracking engagement
+                    </Text>
+                    <TouchableOpacity 
+                      style={viewStyles.emptyActionButton}
+                      onPress={() => router.push('/portfolio')}
+                    >
+                      <Ionicons name="share-outline" size={18} color="#ffffff" />
+                      <Text style={textStyles.emptyActionText}>Share Portfolio</Text>
+                    </TouchableOpacity>
+                  </View>
+                )
+              ) : (
+                <View style={viewStyles.chartLoadingState}>
                   <ActivityIndicator size="large" color={theme.colors.primary} />
-                )}
-              </View>
+                  <Text style={textStyles.loadingText}>Loading chart...</Text>
+                </View>
+              )}
 
-              {/* Action Button */}
-              <View style={viewStyles.actionButtonsRow}>
-                <Button
-                  title="View Portfolio"
-                  onPress={() => router.push('/portfolio')}
-                  variant="primary"
-                  style={viewStyles.primaryButton}
-                  textStyle={textStyles.buttonTextPrimary}
-                />
+              {/* Controls Section */}
+              <View style={viewStyles.controlsSection}>
+                <View style={viewStyles.controlRow}>
+                  <Text style={textStyles.controlTitle}>Time Period</Text>
+                  <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false}
+                    style={viewStyles.controlScroll}
+                  >
+                    <ToggleGroup
+                      options={timeRangeOptions}
+                      value={timeRange}
+                      onValueChange={(value) => setTimeRange(value as 'week' | 'month' | 'year')}
+                      variant="compact"
+                    />
+                  </ScrollView>
+                </View>
+                
+                {/* Full-width segmented control for chart type */}
+                <View style={viewStyles.chartTypeContainer}>
+                  <Text style={textStyles.controlTitle}>Chart Type</Text>
+                  <View style={viewStyles.segmentedControl}>
+                    {chartTypeOptions.map((option) => (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={[
+                          viewStyles.segmentedOption,
+                          chartType === option.value && viewStyles.segmentedOptionActive
+                        ]}
+                        onPress={() => setChartType(option.value as 'line' | 'bar')}
+                      >
+                        {option.icon}
+                        <Text style={[
+                          textStyles.segmentedOptionText,
+                          chartType === option.value && textStyles.segmentedOptionTextActive
+                        ]}>
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
               </View>
             </View>
           </View>
@@ -623,8 +820,98 @@ export default function GraduateHomepage() {
             </View>
           </View>
         )}
+
+        {/* Share Portfolio Section */}
+        {portfolio && (
+          <View style={viewStyles.shareSection}>
+            <Text style={textStyles.shareSectionTitle}>Share Your Portfolio</Text>
+            <Text style={textStyles.shareSectionSubtitle}>
+              Share your professional portfolio with potential employers and collaborators using secure links.
+            </Text>
+            
+            <View style={viewStyles.shareButtonsContainer}>
+              <TouchableOpacity 
+                style={[viewStyles.shareButton, viewStyles.shareButtonPrimary]}
+                onPress={copySecureLink}
+                disabled={shareLoading}
+              >
+                {shareLoading ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Ionicons name="link-outline" size={20} color="#ffffff" />
+                )}
+                <Text style={textStyles.shareButtonText}>Copy Secure Link</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[viewStyles.shareButton, viewStyles.shareButtonSecondary]}
+                onPress={shareToLinkedIn}
+                disabled={shareLoading}
+              >
+                <Ionicons name="logo-linkedin" size={20} color="#2563eb" />
+                <Text style={textStyles.shareButtonTextSecondary}>Share to LinkedIn</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[viewStyles.shareButton, viewStyles.shareButtonSecondary]}
+                onPress={shareToFacebook}
+                disabled={shareLoading}
+              >
+                <Ionicons name="logo-facebook" size={20} color="#2563eb" />
+                <Text style={textStyles.shareButtonTextSecondary}>Share to Facebook</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[viewStyles.shareButton, viewStyles.shareButtonSecondary]}
+                onPress={shareViaDevice}
+                disabled={shareLoading}
+              >
+                <Ionicons name="share-outline" size={20} color="#2563eb" />
+                <Text style={textStyles.shareButtonTextSecondary}>More Options</Text>
+              </TouchableOpacity>
+            </View>
+
+            {shareToken && (
+              <View style={viewStyles.shareTokenContainer}>
+                <View style={viewStyles.shareTokenHeader}>
+                  <Text style={textStyles.shareTokenTitle}>Your Secure Token</Text>
+                  <TouchableOpacity 
+                    style={viewStyles.regenerateTokenButton}
+                    onPress={fetchShareToken}
+                    disabled={shareLoading}
+                  >
+                    <Ionicons name="refresh-outline" size={16} color={theme.colors.primary} />
+                    <Text style={textStyles.regenerateTokenText}>Regenerate</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={textStyles.shareTokenText}>
+                  {shareToken.substring(0, 8)}...{shareToken.slice(-4)}
+                </Text>
+                <Text style={textStyles.shareTokenNote}>
+                  This token is used to authenticate secure access to your portfolio. Regenerating will invalidate old links.
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
         </ScrollView>
       </SafeAreaView>
+      
+      {/* Sticky View Portfolio Button */}
+      {portfolio && (
+        <View style={viewStyles.stickyButtonContainer}>
+          <SafeAreaView style={viewStyles.stickyButtonSafeArea}>
+            <TouchableOpacity 
+              style={viewStyles.stickyActionButton}
+              onPress={() => router.push('/portfolio')}
+            >
+              <Ionicons name="eye-outline" size={24} color="#ffffff" />
+              <Text style={textStyles.stickyButtonText}>View Portfolio</Text>
+              <Ionicons name="chevron-forward" size={20} color="#ffffff" />
+            </TouchableOpacity>
+          </SafeAreaView>
+        </View>
+      )}
       
       {/* Bottom Navigation - Fixed at bottom */}
       <View style={viewStyles.bottomNavContainer}>
@@ -760,8 +1047,8 @@ const viewStyles = StyleSheet.create<Record<string, ViewStyle>>({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    // Add padding to account for the bottom navigation bar plus safe area
-    paddingBottom: Platform.OS === 'ios' ? 90 : 70,
+    // Add extra padding for sticky button and bottom navigation
+    paddingBottom: Platform.OS === 'ios' ? 140 : 120,
   },
   
   // Loading State
@@ -844,89 +1131,160 @@ const viewStyles = StyleSheet.create<Record<string, ViewStyle>>({
 
   // Dashboard
   dashboard: {
-    padding: theme.spacing.lg,
-    paddingTop: theme.spacing.xl,
+    flex: 1,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.xl,
+  },
+  
+  // Statistics Section
+  statsSection: {
+    marginBottom: theme.spacing.xxl,
   },
   statsGrid: {
-    marginBottom: theme.spacing.xxl,
     gap: theme.spacing.lg,
   },
   statCard: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radii.xl,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border.light,
+    padding: theme.spacing.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
     ...theme.shadows.md,
+    minHeight: 100,
   },
-  statCardHighlight: {
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.primary,
-    borderWidth: 2,
+  statCardPrimary: {
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.primary,
   },
   statCardSecondary: {
-    backgroundColor: theme.colors.surface,
+    borderLeftWidth: 4,
+    borderLeftColor: '#e5e7eb',
   },
-  statHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  statIconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: theme.radii.lg,
+  statIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: theme.spacing.lg,
   },
-  trendIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#dcfce7',
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: theme.radii.full,
-    alignSelf: 'flex-start',
-    marginTop: theme.spacing.sm,
+  statContent: {
+    flex: 1,
   },
 
-  // Chart Card
+  // Chart Card - Single Clean Container
   chartCard: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radii.xl,
     padding: theme.spacing.xl,
     marginBottom: theme.spacing.xxl,
-    ...theme.shadows.lg,
+    ...theme.shadows.md,
   },
   chartHeader: {
-    marginBottom: theme.spacing.xl,
-  },
-  chartControls: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
   },
-  chartWrapper: {
-    marginTop: theme.spacing.lg,
-    marginBottom: theme.spacing.md,
-    minHeight: 240,
+  periodBadge: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radii.full,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
   },
-  chartEmptyState: {
-    flex: 1,
+  quickStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: theme.spacing.xl,
+    paddingVertical: theme.spacing.md,
+    marginBottom: theme.spacing.xl,
     backgroundColor: theme.colors.background,
     borderRadius: theme.radii.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border.light,
-    borderStyle: 'dashed',
   },
-  chartEmptyActions: {
+  quickStatItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  chartDisplay: {
+    marginVertical: theme.spacing.md,
+    minHeight: 280,
+    // Remove extra padding to make chart more responsive
+    marginHorizontal: -theme.spacing.sm,
+  },
+  controlsSection: {
     marginTop: theme.spacing.lg,
+    paddingTop: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border.light,
+    gap: theme.spacing.md,
+  },
+  controlRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    minHeight: 44,
+  },
+  controlScroll: {
+    flex: 1,
+    marginLeft: theme.spacing.md,
+  },
+  chartTypeContainer: {
+    gap: theme.spacing.sm,
+  },
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.radii.lg,
+    padding: 4,
+  },
+  segmentedOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+    borderRadius: theme.radii.md,
+    gap: theme.spacing.xs,
+    minHeight: 44,
+  },
+  segmentedOptionActive: {
+    backgroundColor: theme.colors.primary,
+    ...theme.shadows.sm,
+  },
+  chartEmptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.xxl,
+    paddingHorizontal: theme.spacing.lg,
+    minHeight: 300,
+  },
+  emptyIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  emptyActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radii.lg,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
+  chartLoadingState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.xxl,
+    minHeight: 300,
+    gap: theme.spacing.md,
   },
 
   // Empty States
@@ -955,11 +1313,113 @@ const viewStyles = StyleSheet.create<Record<string, ViewStyle>>({
     ...theme.shadows.md,
   },
 
-  // Action Buttons
-  actionButtonsRow: {
+  // Sticky Action Button
+  stickyButtonContainer: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 95 : 85, // Above bottom navigation
+    left: 0,
+    right: 0,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border.light,
+    ...theme.shadows.lg,
+    shadowOffset: { width: 0, height: -3 },
+    elevation: 10,
+  },
+  stickyButtonSafeArea: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? theme.spacing.sm : theme.spacing.md,
+  },
+  stickyActionButton: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radii.xl,
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
     gap: theme.spacing.md,
+    ...theme.shadows.md,
+    minHeight: 56,
+  },
+
+  // Share Portfolio Section
+  shareSection: {
     marginTop: theme.spacing.xl,
+    marginHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radii.lg,
+    padding: theme.spacing.lg,
+    ...theme.shadows.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border.light,
+  },
+  shareButtonsContainer: {
+    marginTop: theme.spacing.lg,
+    gap: theme.spacing.md,
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.radii.lg,
+    gap: theme.spacing.md,
+    minHeight: 50,
+    ...theme.shadows.sm,
+  },
+  shareButtonPrimary: {
+    backgroundColor: theme.colors.primary,
+  },
+  shareButtonSecondary: {
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  shareTokenContainer: {
+    marginTop: theme.spacing.lg,
+    padding: theme.spacing.lg,
+    backgroundColor: '#f0f9ff',
+    borderRadius: theme.radii.md,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  shareTokenHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  regenerateTokenButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
+    borderRadius: theme.radii.sm,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    gap: theme.spacing.xs,
+  },
+
+  // Action Section (legacy)
+  actionSection: {
+    marginTop: theme.spacing.lg,
+  },
+  primaryActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radii.xl,
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
+    gap: theme.spacing.md,
+    ...theme.shadows.lg,
+    minHeight: 56,
   },
   primaryButton: {
     backgroundColor: theme.colors.primary,
@@ -1085,75 +1545,116 @@ const textStyles = StyleSheet.create<Record<string, TextStyle>>({
     letterSpacing: 0.1,
   },
 
-  // Stats
-  statTitle: {
-    fontSize: theme.typography.body2.fontSize,
-    lineHeight: theme.typography.body2.lineHeight,
-    fontWeight: '600' as TextStyle['fontWeight'],
-    color: theme.colors.text.secondary,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
-  },
-  statValue: {
-    fontSize: 36,
-    lineHeight: 40,
+  // Section Titles
+  sectionTitle: {
+    fontSize: 20,
+    lineHeight: 28,
     fontWeight: '700' as TextStyle['fontWeight'],
     color: theme.colors.text.primary,
-    marginVertical: theme.spacing.xs,
+    marginBottom: theme.spacing.lg,
   },
-  statSubtitle: {
-    fontSize: theme.typography.body2.fontSize,
-    lineHeight: theme.typography.body2.lineHeight,
-    fontWeight: 'normal' as const,
-    color: theme.colors.text.secondary,
+  
+  // Stats
+  statValue: {
+    fontSize: 28,
+    lineHeight: 32,
+    fontWeight: '700' as TextStyle['fontWeight'],
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.xs,
   },
-  trendText: {
-    fontSize: theme.typography.caption.fontSize,
-    fontWeight: '600' as TextStyle['fontWeight'],
-    color: '#16a34a',
-    marginLeft: theme.spacing.xs,
-  },
-
-  // Chart
-  chartTitle: {
-    fontSize: theme.typography.heading3.fontSize,
-    lineHeight: theme.typography.heading3.lineHeight,
+  statLabel: {
+    fontSize: 14,
+    lineHeight: 18,
     fontWeight: '600' as TextStyle['fontWeight'],
     color: theme.colors.text.primary,
     marginBottom: theme.spacing.xs,
   },
-  chartSubtitle: {
-    fontSize: theme.typography.body2.fontSize,
-    lineHeight: theme.typography.body2.lineHeight,
-    fontWeight: 'normal' as const,
+  statDescription: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '400' as TextStyle['fontWeight'],
     color: theme.colors.text.secondary,
-  },
-  chartEmptyTitle: {
-    fontSize: theme.typography.heading3.fontSize,
-    lineHeight: theme.typography.heading3.lineHeight,
-    fontWeight: '600' as TextStyle['fontWeight'],
-    color: theme.colors.text.primary,
-    marginTop: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-    textAlign: 'center',
-  },
-  chartEmptyText: {
-    fontSize: theme.typography.body2.fontSize,
-    lineHeight: theme.typography.body2.lineHeight * 1.2,
-    color: theme.colors.text.secondary,
-    textAlign: 'center',
-    marginHorizontal: theme.spacing.lg,
   },
 
-  // Empty States
-  emptyStateTitle: {
-    fontSize: theme.typography.heading3.fontSize,
-    lineHeight: theme.typography.heading3.lineHeight,
+  // Chart Text Styles
+  periodBadgeText: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '600' as TextStyle['fontWeight'],
+    color: '#ffffff',
+  },
+  quickStatValue: {
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '700' as TextStyle['fontWeight'],
+    color: theme.colors.text.primary,
+  },
+  quickStatLabel: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '500' as TextStyle['fontWeight'],
+    color: theme.colors.text.secondary,
+    marginTop: 2,
+  },
+  controlTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '600' as TextStyle['fontWeight'],
+    color: theme.colors.text.primary,
+    minWidth: 80,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    lineHeight: 20,
     fontWeight: '600' as TextStyle['fontWeight'],
     color: theme.colors.text.primary,
     marginBottom: theme.spacing.sm,
     textAlign: 'center',
   },
+  emptyMessage: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '400' as TextStyle['fontWeight'],
+    color: theme.colors.text.secondary,
+    textAlign: 'center',
+    maxWidth: 200,
+  },
+  emptyActionText: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '600' as TextStyle['fontWeight'],
+    color: '#ffffff',
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '600' as TextStyle['fontWeight'],
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+  },
+  emptyStateMessage: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '400' as TextStyle['fontWeight'],
+    color: theme.colors.text.secondary,
+    textAlign: 'center',
+  },
+  emptyStateButtonText: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '600' as TextStyle['fontWeight'],
+    color: '#ffffff',
+  },
+
+  primaryActionText: {
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '600' as TextStyle['fontWeight'],
+    color: '#ffffff',
+  },
+
+  // Empty States (legacy - for create portfolio section)
   emptyStateText: {
     fontSize: theme.typography.body1.fontSize,
     lineHeight: theme.typography.body1.lineHeight,
@@ -1200,6 +1701,69 @@ const textStyles = StyleSheet.create<Record<string, TextStyle>>({
     fontWeight: '500' as TextStyle['fontWeight'],
     color: theme.colors.text.secondary,
     marginTop: theme.spacing.xs,
+  },
+
+  // Text Styles
+  segmentedOptionText: {
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.body2.fontSize,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  segmentedOptionTextActive: {
+    color: theme.colors.surface,
+    fontWeight: '600',
+  },
+  stickyButtonText: {
+    color: theme.colors.surface,
+    fontSize: theme.typography.body1.fontSize,
+    fontWeight: '600',
+  },
+
+  // Share Section Text Styles
+  shareSectionTitle: {
+    fontSize: theme.typography.heading3.fontSize,
+    fontWeight: theme.typography.heading3.fontWeight,
+    color: theme.colors.primary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  shareSectionSubtitle: {
+    fontSize: theme.typography.body2.fontSize,
+    color: theme.colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: theme.typography.body2.lineHeight,
+  },
+  shareButtonText: {
+    color: theme.colors.surface,
+    fontSize: theme.typography.body2.fontSize,
+    fontWeight: '600',
+  },
+  shareButtonTextSecondary: {
+    color: theme.colors.primary,
+    fontSize: theme.typography.body2.fontSize,
+    fontWeight: '600',
+  },
+  shareTokenTitle: {
+    fontSize: theme.typography.body1.fontSize,
+    fontWeight: '600',
+    color: theme.colors.primary,
+  },
+  regenerateTokenText: {
+    fontSize: theme.typography.caption.fontSize,
+    color: theme.colors.primary,
+    fontWeight: '500',
+  },
+  shareTokenText: {
+    fontSize: theme.typography.body2.fontSize,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.xs,
+  },
+  shareTokenNote: {
+    fontSize: theme.typography.caption.fontSize,
+    color: theme.colors.text.secondary,
+    fontStyle: 'italic',
   },
 });
 
