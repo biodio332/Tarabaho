@@ -1,5 +1,7 @@
 package tarabaho.tarabaho.service;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +30,8 @@ public class UserService {
     private JavaMailSender mailSender;
     
     private final ConcurrentHashMap<String, OtpInfo> otpMap = new ConcurrentHashMap<>();
+    
+
     private static final String USER_TYPE = "user";
 
     public List<User> getAllUsers() {
@@ -182,4 +186,79 @@ public class UserService {
         System.out.println("UserService: Password reset successfully for user: " + email);
     }
     
+    public void sendVerificationEmail(String email) throws Exception {
+        Optional<User> userOpt = findByEmail(email);
+        if (userOpt.isEmpty()) {
+            throw new IllegalArgumentException("User not found with email: " + email);
+        }
+        User user = userOpt.get();
+        if (user.isEmailVerified()) {
+            throw new IllegalArgumentException("Email is already verified.");
+        }
+
+        String otp = generateRandomToken();
+        Instant expiry = Instant.now().plusSeconds(600); // 10 min
+
+        // Use consistent key: "user:email"
+        String otpKey = USER_TYPE + ":" + email;
+        otpMap.put(otpKey, new OtpInfo(otp, expiry));
+
+        String verificationLink = "http://localhost:8080/api/user/verify-email?token=" + otp + "&email=" + 
+            URLEncoder.encode(email, StandardCharsets.UTF_8);
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("Verify Your Email - Tarabaho");
+        message.setText(
+            "Use this 6-digit code: \n\n" + 
+            otp + 
+            "\n\nOr Click the link to verify your email (expires in 10 minutes):" + verificationLink    
+        );
+        try {
+            mailSender.send(message);
+            System.out.println("Verification email + OTP sent to: " + email + " (key: " + otpKey + ")");
+        } catch (Exception e) {
+            otpMap.remove(otpKey);
+            throw new IllegalArgumentException("Failed to send verification email: " + e.getMessage());
+        }
+    }
+    public void verifyEmailToken(String token, String email) throws Exception {
+        String otpKey = USER_TYPE + ":" + email;
+        OtpInfo info = otpMap.get(otpKey);
+        if (info == null || !info.getOtp().equals(token)) {
+            throw new IllegalArgumentException("Invalid or missing verification token.");
+        }
+        if (Instant.now().isAfter(info.getExpiry())) {
+            otpMap.remove(otpKey);
+            throw new IllegalArgumentException("Verification link has expired.");
+        }
+
+        User user = findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found."));
+        user.setEmailVerified(true);
+        userRepository.save(user);
+        otpMap.remove(otpKey);
+        System.out.println("Email verified via link for: " + email);
+    }
+
+    public void verifyEmailOtp(String otp, String email) throws Exception {
+        String otpKey = USER_TYPE + ":" + email;  // "user:john@example.com"
+        OtpInfo info = otpMap.get(otpKey);
+        if (info == null || !info.getOtp().equals(otp)) {
+            throw new IllegalArgumentException("Invalid OTP.");
+        }
+        if (Instant.now().isAfter(info.getExpiry())) {
+            otpMap.remove(otpKey);
+            throw new IllegalArgumentException("OTP expired.");
+        }
+
+        User user = findByEmail(email)
+            .orElseThrow(() -> new IllegalArgumentException("User not found."));
+        user.setEmailVerified(true);
+        userRepository.save(user);
+        otpMap.remove(otpKey);
+    }
+
+    private String generateRandomToken() {
+        return String.format("%06d", new Random().nextInt(999999));
+    }
 }

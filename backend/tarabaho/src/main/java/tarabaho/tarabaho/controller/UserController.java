@@ -1,7 +1,10 @@
 package tarabaho.tarabaho.controller;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -509,6 +512,59 @@ public class UserController {
             return ResponseEntity.ok("Password reset successfully.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Send email verification", description = "Sends a verification email to the user")
+    @PostMapping("/send-verification")
+    public ResponseEntity<?> sendVerification(@RequestBody Map<String, String> body, Authentication auth) {
+        try {
+            String username = getUsernameFromAuthentication(auth);
+            Optional<User> userOpt = userService.findByUsername(username);
+            if (!userOpt.isPresent()) {
+                userOpt = userService.findByEmail(username);
+            }
+            String email = userOpt.map(User::getEmail).orElseThrow(() -> new IllegalArgumentException("User not found"));
+            userService.sendVerificationEmail(email);
+            return ResponseEntity.ok("Verification email sent.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Verify email with token", description = "Verifies email using token from email link")
+    @GetMapping("/verify-email")
+    public ResponseEntity<?> verifyEmail(
+            @RequestParam String token,
+            @RequestParam String email,
+            HttpServletResponse response) throws IOException {
+
+        try {
+            userService.verifyEmailToken(token, email);
+            // ----- NEW: redirect to the profile page -----
+            response.sendRedirect("http://localhost:5173/user-profile?verified=true");
+            return null;   // response is already committed
+        } catch (Exception e) {
+            // keep the old error page (or redirect with error)
+            response.sendRedirect(
+                "http://localhost:5173/user-profile?error=" + 
+                URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8)
+            );
+            return null;
+        }
+    }
+
+    @Operation(summary = "Verify OTP for email")
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
+        String otp = body.get("otp");
+        String email = body.get("email");
+
+        try {
+            userService.verifyEmailOtp(otp, email);
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of("success", false, "error", e.getMessage()));
         }
     }
 

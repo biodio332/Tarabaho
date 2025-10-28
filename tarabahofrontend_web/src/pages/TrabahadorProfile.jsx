@@ -3,14 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import TrabahadorNavbar from "../components/TrabahadorNavbar";
 import TrabahadorLogoutConfirmation from "../components/TrabahadorLogoutConfirmation";
-import Footer from "../components/Footer";
-import { FaPen, FaCheck, FaTimes } from "react-icons/fa";
+import { FaPen, FaCheck, FaTimes, FaShieldAlt } from "react-icons/fa";
 
 const TrabahadorProfile = () => {
   const navigate = useNavigate();
-  const [graduate, setgraduate] = useState(null);
+  const [graduate, setGraduate] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [profileImage, setProfileImage] = useState("/placeholder.svg");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -18,7 +16,7 @@ const TrabahadorProfile = () => {
   const fileInputRef = useRef(null);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
-  // Inline editing states
+  // Inline editing
   const [editingField, setEditingField] = useState(null);
   const [editValues, setEditValues] = useState({
     email: "",
@@ -28,89 +26,102 @@ const TrabahadorProfile = () => {
     phoneNumber: "",
   });
 
+  // Email verification modal
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verifyStep, setVerifyStep] = useState(1); // 1=confirm, 2=sent, 3=otp
+  const [otp, setOtp] = useState("");
+
+  // -----------------------------------------------------------------
+  // 1. FETCH GRADUATE
+  // -----------------------------------------------------------------
   useEffect(() => {
-    const fetchgraduate = async () => {
+    const fetchGraduate = async () => {
       try {
         const username = localStorage.getItem("username");
         if (!username) {
           navigate("/signin");
           return;
         }
-        const response = await axios.get(`${BACKEND_URL}/api/graduate/all`, {
+        const resp = await axios.get(`${BACKEND_URL}/api/graduate/all`, {
           withCredentials: true,
         });
-        const graduateData = response.data.find((w) => w.username === username);
-        if (graduateData) {
-          setgraduate(graduateData);
-          setEditValues({
-            email: graduateData.email || "",
-            address: graduateData.address || "",
-            birthday: graduateData.birthday || "",
-            password: "",
-            phoneNumber: graduateData.phoneNumber || "",
-          });
-          setProfileImage(graduateData.profilePicture || "/placeholder.svg");
-        } else {
-          setError("graduate not found.");
-        }
+        const grad = resp.data.find((g) => g.username === username);
+        if (!grad) throw new Error("Graduate not found");
+
+        setGraduate(grad);
+        setEditValues({
+          email: grad.email || "",
+          address: grad.address || "",
+          birthday: grad.birthday || "",
+          password: "",
+          phoneNumber: grad.phoneNumber || "",
+        });
+        setProfileImage(grad.profilePicture || "/placeholder.svg");
       } catch (err) {
-        console.error("Failed to fetch graduate:", err);
-        setError("Failed to load profile. Please try again.");
+        console.error(err);
+        setError("Failed to load profile.");
       }
     };
-    fetchgraduate();
+    fetchGraduate();
   }, [navigate]);
 
+  // -----------------------------------------------------------------
+  // 2. REDIRECT AFTER VERIFICATION
+  // -----------------------------------------------------------------
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("verified") === "true") {
+      window.history.replaceState({}, "", "/graduate-profile");
+      window.location.reload();
+    } else if (params.get("error")) {
+      const msg = decodeURIComponent(params.get("error")||"");
+      setError(msg);
+      window.history.replaceState({}, "", "/graduate-profile");
+    }
+  }, []);
+
+  // -----------------------------------------------------------------
+  // 3. PROFILE PICTURE
+  // -----------------------------------------------------------------
   const handleFileChange = async (e) => {
-    if (!graduate) {
-      setError("Profile not loaded yet. Please wait.");
-      return;
-    }
-
+    if (!graduate) return setError("Profile not loaded.");
     const file = e.target.files[0];
-    if (!file) {
-      setError("No file selected.");
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      setError("Please select an image file.");
-      return;
-    }
-    setSelectedFile(file);
+    if (!file) return setError("No file selected.");
+    if (!file.type.startsWith("image/")) return setError("Select an image.");
 
-    const uploadData = new FormData();
-    uploadData.append("file", file);
+    const form = new FormData();
+    form.append("file", file);
 
     try {
-      const response = await axios.post(
+      const resp = await axios.post(
         `${BACKEND_URL}/api/graduate/${graduate.id}/upload-picture`,
-        uploadData,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "multipart/form-data" },
-        }
+        form,
+        { withCredentials: true, headers: { "Content-Type": "multipart/form-data" } }
       );
-      setgraduate(response.data);
-      setProfileImage(response.data.profilePicture || profileImage);
-      setSelectedFile(null);
+      setGraduate(resp.data);
+      setProfileImage(resp.data.profilePicture || profileImage);
       setError("");
     } catch (err) {
-      console.error("Failed to upload picture:", err);
-      setError(err.response?.data?.message || "Failed to upload picture. Please try again.");
+      setError(err.response?.data?.message || "Upload failed.");
     }
   };
+  const handleImageClick = () => fileInputRef.current?.click();
 
-  const handleImageClick = () => {
-    fileInputRef.current?.click();
-  };
-
+  // -----------------------------------------------------------------
+  // 4. INLINE EDITING
+  // -----------------------------------------------------------------
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditValues((prev) => ({ ...prev, [name]: value }));
+    setEditValues((p) => ({ ...p, [name]: value }));
   };
 
   const handleEditField = (field) => {
+    if (field === "email" && graduate?.emailVerified) {
+      setError("Verified email cannot be changed.");
+      return;
+    }
     setEditingField(field);
+    setError("");
   };
 
   const handleCancelEdit = () => {
@@ -126,134 +137,167 @@ const TrabahadorProfile = () => {
     }
   };
 
-const handleSaveField = async (field) => {
-  // Validate inputs
-  if (!editValues[field] && field !== "password") {
-    setError(`Please enter a valid ${field}.`);
-    return;
-  }
-  if (field === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editValues.email)) {
-    setError("Please enter a valid email address.");
-    return;
-  }
-  if (field === "phoneNumber" && !/^\+?\d{10,15}$/.test(editValues.phoneNumber)) {
-    setError("Please enter a valid phone number.");
-    return;
-  }
-
-  try {
-    // Create an object with only the field being updated
-    const updatedField = {
-      [field]: editValues[field],
-    };
-
-    // If password is empty, skip it (optional field)
-    if (field === "password" && !editValues.password) {
-      setEditingField(null);
-      setError("");
+  const handleSaveField = async (field) => {
+    if (!editValues[field] && field !== "password") {
+      setError(`Please enter a ${field}.`);
+      return;
+    }
+    if (field === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editValues.email)) {
+      setError("Invalid email.");
+      return;
+    }
+    if (field === "phoneNumber" && !/^\+?\d{10,15}$/.test(editValues.phoneNumber)) {
+      setError("Invalid phone number.");
       return;
     }
 
-    const response = await axios.put(
-      `${BACKEND_URL}/api/graduate/${graduate.id}`,
-      updatedField, // Send only the changed field
-      {
-        withCredentials: true,
+    try {
+      const payload = { [field]: editValues[field] };
+      if (field === "password" && !editValues.password) {
+        setEditingField(null);
+        return;
       }
-    );
 
-    // Update local state with the response
-    setgraduate(response.data);
-    if (field === "email") {
-      localStorage.setItem("username", response.data.email); // Sync localStorage if email is used for login
-      setError(`Your ${field} has been updated.`); // Sync localStorage if email is used for login
-    }
-    if (field === "password") {
-      setError(`Your ${field} has been updated. Please log in again.`);
-      await confirmLogout();
-    } else {
-      setEditingField(null);
-      setError("");
-    }
-  } catch (err) {
-    console.error(`Failed to update ${field}:`, err);
-    if (err.response?.status === 401 || err.response?.status === 403) {
-      setError("Session expired. Please log in again.");
-      localStorage.clear();
-      navigate("/signin");
-    } else {
-      setError(err.response?.data?.message || `Failed to update ${field}. Please try again.`);
-    }
-  }
-};
+      const resp = await axios.put(
+        `${BACKEND_URL}/api/graduate/${graduate.id}`,
+        payload,
+        { withCredentials: true }
+      );
 
+      setGraduate(resp.data);
+      if (field === "email") {
+        localStorage.setItem("username", resp.data.email);
+        setError("Email updated.");
+      }
+      if (field === "password") {
+        setError("Password changed – logging out…");
+        await confirmLogout();
+      } else {
+        setEditingField(null);
+        setError("");
+      }
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        setError("Session expired.");
+        localStorage.clear();
+        navigate("/signin");
+      } else {
+        setError(err.response?.data?.message || `Failed to update ${field}.`);
+      }
+    }
+  };
 
+  // -----------------------------------------------------------------
+  // 5. LOGOUT
+  // -----------------------------------------------------------------
   const confirmLogout = async () => {
     try {
       await axios.post(`${BACKEND_URL}/api/graduate/logout`, {}, { withCredentials: true });
-      localStorage.removeItem("isLoggedIn");
-      localStorage.removeItem("userType");
-      localStorage.removeItem("username");
-      // Clear all cookies
+      localStorage.clear();
       document.cookie.split(";").forEach((c) => {
-        document.cookie = c
-          .replace(/^ +/, "")
-          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/");
       });
       setShowLogoutModal(false);
       navigate("/signin");
-    } catch (err) {
-      console.error("Logout failed:", err);
-      setError("Logout failed. Please try again.");
+    } catch (e) {
+      setError("Logout failed.");
+    }
+  };
+  const cancelLogout = () => setShowLogoutModal(false);
+
+  // -----------------------------------------------------------------
+  // 6. EMAIL VERIFICATION FLOW
+  // -----------------------------------------------------------------
+  const startVerification = () => {
+    setShowVerifyModal(true);
+    setVerifyStep(1);
+    setOtp("");
+  };
+
+  const confirmEmail = async () => {
+    try {
+      await axios.post(`${BACKEND_URL}/api/graduate/send-verification`, {}, { withCredentials: true });
+      setVerifyStep(2); // show "email sent"
+    } catch (e) {
+      setError(e.response?.data?.error || "Failed to send email.");
+      setShowVerifyModal(false);
     }
   };
 
-  const cancelLogout = () => {
-    setShowLogoutModal(false);
+  const submitOtp = async () => {
+    if (otp.length !== 6 || !/^\d+$/.test(otp)) {
+      setError("Enter a valid 6-digit OTP.");
+      return;
+    }
+
+    try {
+      await axios.post(
+        `${BACKEND_URL}/api/graduate/verify-otp`,
+        { otp, email: graduate.email },
+        { withCredentials: true }
+      );
+
+      // Success → manual navigation
+      window.location.href = "/graduate-profile?verified=true";
+    } catch (e) {
+      setError(e.response?.data?.error || "Invalid or expired OTP.");
+    }
   };
 
-  // Determine verification status
-  const getVerificationStatus = () => {
+  // -----------------------------------------------------------------
+  // 7. TESDA VERIFICATION (unchanged)
+  // -----------------------------------------------------------------
+  const getTesdaVerificationStatus = () => {
     if (graduate?.isVerified) {
       return { text: "Verified", className: "text-green-500 font-semibold" };
     }
     return { text: "Not Verified", className: "text-red-500 font-semibold" };
   };
+  const tesdaStatus = getTesdaVerificationStatus();
 
-  const verificationStatus = getVerificationStatus();
+  // -----------------------------------------------------------------
+  // 8. RENDER
+  // -----------------------------------------------------------------
+  if (!graduate) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-600">Loading…</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      {/* ---- EMAIL VERIFICATION BANNER ---- */}
+      {!graduate.emailVerified && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mx-6 mt-6 rounded-r-lg shadow-md">
+          <div className="flex items-center justify-between">
+            <p className="text-yellow-800 font-medium">
+              Verify your email to unlock all features.
+            </p>
+            <button
+              onClick={startVerification}
+              className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-semibold"
+            >
+              Verify Email
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 p-6 max-w-6xl mx-auto w-full">
         <div className="flex justify-between items-center flex-wrap gap-4 mb-8">
-          <h1 className="text-4xl font-bold text-blue-600 drop-shadow-sm">GRADUATE PROFILE</h1>
+          <h1 className="text-4xl font-bold text-blue-600 drop-shadow-sm">
+            GRADUATE PROFILE
+          </h1>
           <button
-            className="flex items-center gap-2 text-red-500 border border-red-200/50 px-4 py-2 rounded-lg hover:bg-red-50 hover:shadow-sm transition-transform hover:-translate-y-0.5 text-sm font-semibold"
             onClick={() => setShowLogoutModal(true)}
+            className="flex items-center gap-2 text-red-500 border border-red-200/50 px-4 py-2 rounded-lg hover:bg-red-50 hover:shadow-sm transition-transform hover:-translate-y-0.5 text-sm font-semibold"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M16 17L21 12L16 7"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M21 12H9"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M16 17L21 12L16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             LOG OUT
           </button>
@@ -265,276 +309,342 @@ const handleSaveField = async (field) => {
           </div>
         )}
 
-        <div className="w-full">
-          <div className="bg-white rounded-xl shadow-2xl overflow-hidden relative">
-            {/* Header section */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-900 p-10 text-white relative">
-              {/* Floating profile image */}
-              <div className="absolute -bottom-20 left-10 w-40 h-40 group">
-                <img
-                  src={profileImage || "/placeholder.svg"}
-                  alt="Profile"
-                  className="w-full h-full rounded-full object-cover cursor-pointer border-4 border-white shadow-xl hover:border-blue-200 hover:scale-105 transition-all duration-300"
-                  onClick={handleImageClick}
-                />
-                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs text-center py-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-b-full">
-                  Change Photo
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  ref={fileInputRef}
-                />
+        <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-900 p-10 text-white relative">
+            <div className="absolute -bottom-20 left-10 w-40 h-40 group">
+              <img
+                src={profileImage}
+                alt="Profile"
+                className="w-full h-full rounded-full object-cover cursor-pointer border-4 border-white shadow-xl hover:border-blue-200 hover:scale-105 transition-all duration-300"
+                onClick={handleImageClick}
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-xs text-center py-1 opacity-0 group-hover:opacity-100 rounded-b-full">
+                Change Photo
               </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+                ref={fileInputRef}
+              />
+            </div>
 
-              {/* Name and status */}
-              <div className="ml-56">
-                <h3 className="text-3xl font-bold text-white drop-shadow-md">
-                  {graduate ? `${graduate.firstName} ${graduate.lastName}` : "Loading..."}
-                  <span className={`${verificationStatus.className} text-base ml-2 drop-shadow-sm`}>
-                    ({verificationStatus.text})
-                  </span>
-                </h3>
+            <div className="ml-56">
+              <h3 className="text-3xl font-bold drop-shadow-md">
+                {graduate.firstName} {graduate.lastName}
+                <span className={`${tesdaStatus.className} text-base ml-2`}>
+                  ({tesdaStatus.text})
+                </span>
+              </h3>
+            </div>
+          </div>
+
+          {/* Fields */}
+          <div className="p-6 mt-20 space-y-0">
+            {/* Full Name */}
+            <div className="flex items-center p-4 border-b border-gray-100">
+              <div className="w-44 font-semibold text-gray-600">Full Name:</div>
+              <div className="flex-1 text-gray-900">
+                {graduate.firstName} {graduate.lastName}
               </div>
             </div>
 
-            {/* Editable fields */}
-            <div className="p-6 mt-20">
-              {/* Full name */}
-              <div className="flex items-center p-4 border-b border-gray-100">
-                <div className="w-44 font-semibold text-gray-600">Full Name:</div>
-                <div className="flex-1 text-gray-900">
-                  {graduate ? `${graduate.firstName} ${graduate.lastName}` : "Loading..."}
-                </div>
-              </div>
-
-              {/* Email */}
-              <div className="flex items-center p-4 border-b border-gray-100 group">
-                <div className="w-44 font-semibold text-gray-600">Email:</div>
-                <div className="flex-1 flex items-center min-h-[40px]">
-                  {editingField === "email" ? (
-                    <>
-                      <input
-                        type="email"
-                        name="email"
-                        value={editValues.email}
-                        onChange={handleInputChange}
-                        className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
-                        autoFocus
-                      />
-                      <div className="flex gap-2 ml-4">
-                        <button
-                          className="bg-green-500 text-white p-2 rounded-lg"
-                          onClick={() => handleSaveField("email")}
-                        >
-                          <FaCheck />
-                        </button>
-                        <button
-                          className="bg-gray-500 text-white p-2 rounded-lg"
-                          onClick={handleCancelEdit}
-                        >
-                          <FaTimes />
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex-1">{graduate?.email || "N/A"}</div>
+            {/* Email */}
+            <div className="flex items-center p-4 border-b border-gray-100 group">
+              <div className="w-44 font-semibold text-gray-600">Email:</div>
+              <div className="flex-1 flex items-center gap-2 min-h-[40px]">
+                {editingField === "email" ? (
+                  <>
+                    <input
+                      type="email"
+                      name="email"
+                      value={editValues.email}
+                      onChange={handleInputChange}
+                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
+                      <button className="bg-green-500 text-white p-2 rounded-lg" onClick={() => handleSaveField("email")}>
+                        <FaCheck />
+                      </button>
+                      <button className="bg-gray-500 text-white p-2 rounded-lg" onClick={handleCancelEdit}>
+                        <FaTimes />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-1">{graduate.email || "N/A"}</div>
+                    {graduate.emailVerified ? (
+                      <span className="flex items-center gap-1 text-green-600 font-medium text-sm">
+                        <FaShieldAlt /> Verified
+                      </span>
+                    ) : (
+                      <span className="text-red-500 text-sm">Not verified</span>
+                    )}
+                    {!graduate.emailVerified && (
                       <button
                         className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
                         onClick={() => handleEditField("email")}
                       >
                         <FaPen />
                       </button>
-                    </>
-                  )}
-                </div>
+                    )}
+                  </>
+                )}
               </div>
+            </div>
 
-              {/* Phone */}
-              <div className="flex items-center p-4 border-b border-gray-100 group">
-                <div className="w-44 font-semibold text-gray-600">Contact no.:</div>
-                <div className="flex-1 flex items-center min-h-[40px]">
-                  {editingField === "phoneNumber" ? (
-                    <>
-                      <input
-                        type="text"
-                        name="phoneNumber"
-                        value={editValues.phoneNumber}
-                        onChange={handleInputChange}
-                        className="flex-1 p-3 border border-gray-300 rounded-lg"
-                        placeholder="Enter phone number"
-                        autoFocus
-                      />
-                      <div className="flex gap-2 ml-4">
-                        <button
-                          className="bg-green-500 text-white p-2 rounded-lg"
-                          onClick={() => handleSaveField("phoneNumber")}
-                        >
-                          <FaCheck />
-                        </button>
-                        <button
-                          className="bg-gray-500 text-white p-2 rounded-lg"
-                          onClick={handleCancelEdit}
-                        >
-                          <FaTimes />
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex-1">{graduate?.phoneNumber || "N/A"}</div>
-                      <button
-                        className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
-                        onClick={() => handleEditField("phoneNumber")}
-                      >
-                        <FaPen />
+            {/* Phone */}
+            <div className="flex items-center p-4 border-b border-gray-100 group">
+              <div className="w-44 font-semibold text-gray-600">Contact no.:</div>
+              <div className="flex-1 flex items-center min-h-[40px]">
+                {editingField === "phoneNumber" ? (
+                  <>
+                    <input
+                      type="text"
+                      name="phoneNumber"
+                      value={editValues.phoneNumber}
+                      onChange={handleInputChange}
+                      className="flex-1 p-3 border border-gray-300 rounded-lg"
+                      placeholder="Enter phone"
+                      autoFocus
+                    />
+                    <div className="flex gap-2 ml-4">
+                      <button className="bg-green-500 text-white p-2 rounded-lg" onClick={() => handleSaveField("phoneNumber")}>
+                        <FaCheck />
                       </button>
-                    </>
-                  )}
-                </div>
+                      <button className="bg-gray-500 text-white p-2 rounded-lg" onClick={handleCancelEdit}>
+                        <FaTimes />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-1">{graduate.phoneNumber || "N/A"}</div>
+                    <button
+                      className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
+                      onClick={() => handleEditField("phoneNumber")}
+                    >
+                      <FaPen />
+                    </button>
+                  </>
+                )}
               </div>
+            </div>
 
-              {/* Address */}
-              <div className="flex items-center p-4 border-b border-gray-100 group">
-                <div className="w-44 font-semibold text-gray-600">Address:</div>
-                <div className="flex-1 flex items-center min-h-[40px]">
-                  {editingField === "address" ? (
-                    <>
-                      <input
-                        type="text"
-                        name="address"
-                        value={editValues.address}
-                        onChange={handleInputChange}
-                        className="flex-1 p-3 border border-gray-300 rounded-lg"
-                        autoFocus
-                      />
-                      <div className="flex gap-2 ml-4">
-                        <button
-                          className="bg-green-500 text-white p-2 rounded-lg"
-                          onClick={() => handleSaveField("address")}
-                        >
-                          <FaCheck />
-                        </button>
-                        <button
-                          className="bg-gray-500 text-white p-2 rounded-lg"
-                          onClick={handleCancelEdit}
-                        >
-                          <FaTimes />
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex-1">{graduate?.address || "N/A"}</div>
-                      <button
-                        className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
-                        onClick={() => handleEditField("address")}
-                      >
-                        <FaPen />
+            {/* Address */}
+            <div className="flex items-center p-4 border-b border-gray-100 group">
+              <div className="w-44 font-semibold text-gray-600">Address:</div>
+              <div className="flex-1 flex items-center min-h-[40px]">
+                {editingField === "address" ? (
+                  <>
+                    <input
+                      type="text"
+                      name="address"
+                      value={editValues.address}
+                      onChange={handleInputChange}
+                      className="flex-1 p-3 border border-gray-300 rounded-lg"
+                      autoFocus
+                    />
+                    <div className="flex gap-2 ml-4">
+                      <button className="bg-green-500 text-white p-2 rounded-lg" onClick={() => handleSaveField("address")}>
+                        <FaCheck />
                       </button>
-                    </>
-                  )}
-                </div>
+                      <button className="bg-gray-500 text-white p-2 rounded-lg" onClick={handleCancelEdit}>
+                        <FaTimes />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-1">{graduate.address || "N/A"}</div>
+                    <button
+                      className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
+                      onClick={() => handleEditField("address")}
+                    >
+                      <FaPen />
+                    </button>
+                  </>
+                )}
               </div>
+            </div>
 
-              {/* Birthday */}
-              <div className="flex items-center p-4 border-b border-gray-100 group">
-                <div className="w-44 font-semibold text-gray-600">Birthday:</div>
-                <div className="flex-1 flex items-center min-h-[40px]">
-                  {editingField === "birthday" ? (
-                    <>
-                      <input
-                        type="date"
-                        name="birthday"
-                        value={editValues.birthday}
-                        onChange={handleInputChange}
-                        className="flex-1 p-3 border border-gray-300 rounded-lg"
-                        autoFocus
-                      />
-                      <div className="flex gap-2 ml-4">
-                        <button
-                          className="bg-green-500 text-white p-2 rounded-lg"
-                          onClick={() => handleSaveField("birthday")}
-                        >
-                          <FaCheck />
-                        </button>
-                        <button
-                          className="bg-gray-500 text-white p-2 rounded-lg"
-                          onClick={handleCancelEdit}
-                        >
-                          <FaTimes />
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex-1">{graduate?.birthday || "N/A"}</div>
-                      <button
-                        className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
-                        onClick={() => handleEditField("birthday")}
-                      >
-                        <FaPen />
+            {/* Birthday */}
+            <div className="flex items-center p-4 border-b border-gray-100 group">
+              <div className="w-44 font-semibold text-gray-600">Birthday:</div>
+              <div className="flex-1 flex items-center min-h-[40px]">
+                {editingField === "birthday" ? (
+                  <>
+                    <input
+                      type="date"
+                      name="birthday"
+                      value={editValues.birthday}
+                      onChange={handleInputChange}
+                      className="flex-1 p-3 border border-gray-300 rounded-lg"
+                      autoFocus
+                    />
+                    <div className="flex gap-2 ml-4">
+                      <button className="bg-green-500 text-white p-2 rounded-lg" onClick={() => handleSaveField("birthday")}>
+                        <FaCheck />
                       </button>
-                    </>
-                  )}
-                </div>
+                      <button className="bg-gray-500 text-white p-2 rounded-lg" onClick={handleCancelEdit}>
+                        <FaTimes />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-1">{graduate.birthday || "N/A"}</div>
+                    <button
+                      className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
+                      onClick={() => handleEditField("birthday")}
+                    >
+                      <FaPen />
+                    </button>
+                  </>
+                )}
               </div>
+            </div>
 
-              {/* Password */}
-              <div className="flex items-center p-4 group">
-                <div className="w-44 font-semibold text-gray-600">Password:</div>
-                <div className="flex-1 flex items-center min-h-[40px]">
-                  {editingField === "password" ? (
-                    <>
-                      <input
-                        type="password"
-                        name="password"
-                        value={editValues.password}
-                        onChange={handleInputChange}
-                        className="flex-1 p-3 border border-gray-300 rounded-lg"
-                        placeholder="Enter new password"
-                        autoFocus
-                      />
-                      <div className="flex gap-2 ml-4">
-                        <button
-                          className="bg-green-500 text-white p-2 rounded-lg"
-                          onClick={() => handleSaveField("password")}
-                        >
-                          <FaCheck />
-                        </button>
-                        <button
-                          className="bg-gray-500 text-white p-2 rounded-lg"
-                          onClick={handleCancelEdit}
-                        >
-                          <FaTimes />
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex-1">••••••••</div>
-                      <button
-                        className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
-                        onClick={() => handleEditField("password")}
-                      >
-                        <FaPen />
+            {/* Password */}
+            <div className="flex items-center p-4 group">
+              <div className="w-44 font-semibold text-gray-600">Password:</div>
+              <div className="flex-1 flex items-center min-h-[40px]">
+                {editingField === "password" ? (
+                  <>
+                    <input
+                      type="password"
+                      name="password"
+                      value={editValues.password}
+                      onChange={handleInputChange}
+                      className="flex-1 p-3 border border-gray-300 rounded-lg"
+                      placeholder="New password"
+                      autoFocus
+                    />
+                    <div className="flex gap-2 ml-4">
+                      <button className="bg-green-500 text-white p-2 rounded-lg" onClick={() => handleSaveField("password")}>
+                        <FaCheck />
                       </button>
-                    </>
-                  )}
-                </div>
+                      <button className="bg-gray-500 text-white p-2 rounded-lg" onClick={handleCancelEdit}>
+                        <FaTimes />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-1">••••••••</div>
+                    <button
+                      className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
+                      onClick={() => handleEditField("password")}
+                    >
+                      <FaPen />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
 
+      {/* ---------- EMAIL VERIFICATION MODAL ---------- */}
+      {showVerifyModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+            {/* STEP 1: Confirm Email */}
+            {verifyStep === 1 && (
+              <>
+                <h3 className="text-xl font-bold mb-4">Verify Your Email</h3>
+                <p className="text-gray-600 mb-6">
+                  Is <strong>{graduate.email}</strong> correct?
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setShowVerifyModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    No
+                  </button>
+                  <button
+                    onClick={confirmEmail}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Yes, Send Email
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 2: Email Sent */}
+            {verifyStep === 2 && (
+              <>
+                <h3 className="text-xl font-bold mb-4 text-green-600">Email Sent!</h3>
+                <p className="text-gray-600 mb-4">
+                  A verification link and 6-digit code were sent to <strong>{graduate.email}</strong>.
+                </p>
+                <p className="text-sm text-gray-500 mb-6">
+                  Click the link or enter the code below.
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setVerifyStep(3)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Enter Code
+                  </button>
+                  <button
+                    onClick={() => setShowVerifyModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 3: Enter OTP */}
+            {verifyStep === 3 && (
+              <>
+                <h3 className="text-xl font-bold mb-4">Enter Verification Code</h3>
+                <p className="text-gray-600 mb-4">
+                  Check your email for the 6-digit code.
+                </p>
+                <input
+                  type="text"
+                  maxLength={6}
+
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  className="w-full p-3 text-center text-2xl tracking-widest border border-gray-300 rounded-lg mb-6"
+                  placeholder="000000"
+                  autoFocus
+                />
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setVerifyStep(2)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={submitOtp}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Verify
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {showLogoutModal && (
         <TrabahadorLogoutConfirmation onConfirm={confirmLogout} onCancel={cancelLogout} />
       )}
-
     </div>
   );
 };

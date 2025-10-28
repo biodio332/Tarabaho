@@ -52,6 +52,9 @@ public class User {
     @Column(nullable = false)
     private Boolean isVerified = false;
 
+    @Column(nullable = false)
+    private boolean emailVerified = false;
+
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -81,6 +84,8 @@ public class User {
     public void setPreferredRadius(Double preferredRadius) { this.preferredRadius = preferredRadius; }
     public Boolean getIsVerified() { return isVerified; }
     public void setIsVerified(Boolean isVerified) { this.isVerified = isVerified; }
+    public boolean isEmailVerified() { return emailVerified; }
+    public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
 
     // Override equals and hashCode
     @Override

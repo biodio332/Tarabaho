@@ -160,6 +160,7 @@ public class OAuth2Controller {
                     graduate.setBiography("");
                     graduate.setBirthday(null);
                     graduate.setProfilePicture(profilePicture);
+                    graduate.setEmailVerified(true);
             
                     try {
                         graduate = graduateService.registerOAuth2Graduate(graduate);
@@ -222,6 +223,7 @@ public class OAuth2Controller {
                     user.setBirthday(null);
                     user.setLocation("");
                     user.setProfilePicture(profilePicture);
+                    user.setEmailVerified(true);
                     try {
                         user = userRepository.saveAndFlush(user);
                         System.out.println("OAuth2Controller: User saved: ID=" + user.getId() + ", Username=" + user.getUsername());

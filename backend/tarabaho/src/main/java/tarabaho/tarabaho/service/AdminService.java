@@ -188,20 +188,7 @@ public class AdminService {
             System.out.println("AdminService: Updated isVerified to: " + graduateDTO.getIsVerified());
         }
 
-        if (graduateDTO.getLatitude() != null) {
-            existingGraduate.setLatitude(graduateDTO.getLatitude());
-            System.out.println("AdminService: Updated latitude to: " + graduateDTO.getLatitude());
-        }
-
-        if (graduateDTO.getLongitude() != null) {
-            existingGraduate.setLongitude(graduateDTO.getLongitude());
-            System.out.println("AdminService: Updated longitude to: " + graduateDTO.getLongitude());
-        }
-
-        if (graduateDTO.getAverageResponseTime() != null) {
-            existingGraduate.setAverageResponseTime(graduateDTO.getAverageResponseTime());
-            System.out.println("AdminService: Updated averageResponseTime to: " + graduateDTO.getAverageResponseTime());
-        }
+      
 
         Graduate updatedGraduate = graduateRepository.save(existingGraduate);
         System.out.println("AdminService: Graduate ID: " + id + " saved successfully");

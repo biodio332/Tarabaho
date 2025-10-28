@@ -1,6 +1,8 @@
 package tarabaho.tarabaho.controller;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -680,9 +682,59 @@ public class GraduateController {
         }
     }
     
+    @Operation(summary = "Send verification email to graduate")
+    @PostMapping("/send-verification")
+    public ResponseEntity<?> sendVerificationEmail(Authentication auth) {
+        try {
+            String username = getUsernameFromAuthentication(auth);
+            Optional<Graduate> gradOpt = graduateService.findByUsername(username);
+            if (!gradOpt.isPresent()) {
+                gradOpt = graduateService.findByEmail(username);
+            }
+            Graduate graduate = gradOpt.orElseThrow(() -> new IllegalArgumentException("Graduate not found"));
+            graduateService.sendVerificationEmail(graduate.getEmail());
+            return ResponseEntity.ok().body(Map.of("message", "Verification email sent"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 
-    
+    @Operation(summary = "Verify email with token (called from email link)")
+    @GetMapping("/verify-email")
+    public void verifyEmail(
+            @RequestParam String token,
+            @RequestParam String email,
+            HttpServletResponse response) throws IOException {
 
+        try {
+            graduateService.verifyEmailToken(token, email);
+            // ---- REDIRECT BACK TO GRADUATE PROFILE ----
+            response.sendRedirect("http://localhost:5173/graduate-profile?verified=true");
+        } catch (Exception e) {
+            String err = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
+            response.sendRedirect("http://localhost:5173/graduate-profile?error=" + err);
+        }
+    }
+
+    @Operation(summary = "Verify OTP for email")
+    @PostMapping("/verify-otp")
+    public ResponseEntity<Map<String, Object>> verifyOtp(@RequestBody Map<String, String> body) {
+        String otp = body.get("otp");
+        String email = body.get("email");
+
+        try {
+            graduateService.verifyOtp(otp, email);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Email verified successfully"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
 
     static class LoginRequest {
         private String username;
@@ -693,12 +745,6 @@ public class GraduateController {
         public String getPassword() { return password; }
         public void setPassword(String password) { this.password = password; }
     }
-
-    
-
-   
-
-   
 
     static class TokenResponse {
         private String token;

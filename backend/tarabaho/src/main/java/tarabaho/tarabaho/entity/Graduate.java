@@ -54,14 +54,9 @@ public class Graduate{
     @Column(name = "is_verified", nullable = false)
     private Boolean isVerified = false; // Verification status, default to false
 
-    @Column(nullable = true)
-    private Double latitude; // For geolocation-based urgent job notifications
+    @Column(nullable = false)
+    private boolean emailVerified = false;
 
-    @Column(nullable = true)
-    private Double longitude; // For geolocation-based urgent job notifications
-
-    @Column(nullable = true)
-    private Double averageResponseTime; // Average time to respond to job requests (in minutes)
 
    
     
@@ -118,12 +113,8 @@ public class Graduate{
     public void setProfilePicture(String profilePicture) { this.profilePicture = profilePicture; }
     public Boolean getIsVerified() { return isVerified; }
     public void setIsVerified(Boolean isVerified) { this.isVerified = isVerified; }
-    public Double getLatitude() { return latitude; }
-    public void setLatitude(Double latitude) { this.latitude = latitude; }
-    public Double getLongitude() { return longitude; }
-    public void setLongitude(Double longitude) { this.longitude = longitude; }
-    public Double getAverageResponseTime() { return averageResponseTime; }
-    public void setAverageResponseTime(Double averageResponseTime) { this.averageResponseTime = averageResponseTime; }
     public List<Certificate> getCertificates() { return certificates; }
     public void setCertificates(List<Certificate> certificates) { this.certificates = certificates; }
+    public boolean isEmailVerified() { return emailVerified; }
+    public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
 }

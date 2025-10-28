@@ -18,6 +18,7 @@ import {
   FaPen,
   FaCheck,
   FaTimes,
+  FaShieldAlt,
 } from "react-icons/fa";
 
 const UserProfile = () => {
@@ -35,16 +36,32 @@ const UserProfile = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [profileImage, setProfileImage] = useState("/placeholder.svg");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [connectedAccounts, setConnectedAccounts] = useState({
-    facebook: false,
-    instagram: false,
-    tiktok: false,
-  });
   const [error, setError] = useState("");
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verifyStep, setVerifyStep] = useState(1); // 1=confirm, 2=sent, 3=otp
+  const [otp, setOtp] = useState(""); // <-- NEW
   const fileInputRef = useRef(null);
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
+  // -----------------------------------------------------------------
+  // 1. Auto-reload on ?verified=true
+  // -----------------------------------------------------------------
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("verified") === "true") {
+      window.history.replaceState({}, "", "/user-profile");
+      window.location.reload();
+    } else if (urlParams.get("error")) {
+      const msg = decodeURIComponent(urlParams.get("error") || "");
+      setError(msg);
+      window.history.replaceState({}, "", "/user-profile");
+    }
+  }, []);
+
+  // -----------------------------------------------------------------
+  // 2. FETCH USER
+  // -----------------------------------------------------------------
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -55,22 +72,21 @@ const UserProfile = () => {
           navigate("/signin");
           return;
         }
+
         const response = await axios.get(`${BACKEND_URL}/api/user/me`, {
           withCredentials: true,
         });
-        if (response.data) {
-          setUser(response.data);
-          setEditValues({
-            email: response.data.email || "",
-            location: response.data.location || "",
-            birthday: response.data.birthday || "",
-            password: "",
-            phoneNumber: response.data.phoneNumber || "",
-          });
-          setProfileImage(response.data.profilePicture || "/placeholder.svg");
-        } else {
-          setError("No user data received.");
-        }
+
+        const userData = response.data;
+        setUser(userData);
+        setEditValues({
+          email: userData.email || "",
+          location: userData.location || "",
+          birthday: userData.birthday || "",
+          password: "",
+          phoneNumber: userData.phoneNumber || "",
+        });
+        setProfileImage(userData.profilePicture || "/placeholder.svg");
       } catch (err) {
         console.error("Failed to fetch user:", err);
         if (err.response?.status === 401 || err.response?.status === 403) {
@@ -87,6 +103,9 @@ const UserProfile = () => {
     fetchUser();
   }, [navigate]);
 
+  // -----------------------------------------------------------------
+  // 3. SOCIAL CONNECT
+  // -----------------------------------------------------------------
   const handleConnectToggle = (platform) => {
     setConnectedAccounts((prev) => ({
       ...prev,
@@ -94,6 +113,9 @@ const UserProfile = () => {
     }));
   };
 
+  // -----------------------------------------------------------------
+  // 4. PROFILE PICTURE
+  // -----------------------------------------------------------------
   const handleFileChange = async (e) => {
     if (!user) {
       setError("Profile not loaded yet. Please wait.");
@@ -132,12 +154,19 @@ const UserProfile = () => {
     fileInputRef.current?.click();
   };
 
+  // -----------------------------------------------------------------
+  // 5. INLINE EDIT
+  // -----------------------------------------------------------------
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditValues((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEditField = (field) => {
+    if (field === "email" && user?.emailVerified) {
+      setError("Cannot edit verified email.");
+      return;
+    }
     setEditingField(field);
     setError("");
   };
@@ -174,11 +203,9 @@ const UserProfile = () => {
         return;
       }
 
-      const updateData = {
-        [field]: editValues[field],
-      };
-
+      const updateData = { [field]: editValues[field] };
       let response;
+
       if (field === "phoneNumber") {
         response = await axios.put(`${BACKEND_URL}/api/user/update-phone`, updateData, {
           withCredentials: true,
@@ -194,10 +221,7 @@ const UserProfile = () => {
         });
       }
 
-      setUser((prevUser) => ({
-        ...prevUser,
-        [field]: editValues[field],
-      }));
+      setUser((prevUser) => ({ ...prevUser, [field]: editValues[field] }));
 
       if (field === "email") {
         localStorage.setItem("username", editValues.email);
@@ -222,6 +246,9 @@ const UserProfile = () => {
     }
   };
 
+  // -----------------------------------------------------------------
+  // 6. LOGOUT
+  // -----------------------------------------------------------------
   const confirmLogout = async () => {
     try {
       await axios.post(`${BACKEND_URL}/api/user/logout`, {}, { withCredentials: true });
@@ -245,15 +272,46 @@ const UserProfile = () => {
     setShowLogoutModal(false);
   };
 
-  const getVerificationStatus = () => {
-    if (user?.isVerified) {
-      return { text: "Verified", className: "text-green-500 font-semibold" };
-    }
-    return { text: "Not Verified", className: "text-red-500 font-semibold" };
+  // -----------------------------------------------------------------
+  // 7. EMAIL VERIFICATION FLOW (with OTP)
+  // -----------------------------------------------------------------
+  const startVerification = () => {
+    setShowVerifyModal(true);
+    setVerifyStep(1);
+    setOtp("");
   };
 
-  const verificationStatus = getVerificationStatus();
+  const confirmEmail = async () => {
+    try {
+      await axios.post(`${BACKEND_URL}/api/user/send-verification`, {}, { withCredentials: true });
+      setVerifyStep(2);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to send verification email.");
+      setShowVerifyModal(false);
+    }
+  };
 
+  const submitOtp = async () => {
+    if (otp.length !== 6 || !/^\d+$/.test(otp)) {
+      setError("Please enter a valid 6-digit OTP.");
+      return;
+    }
+    try {
+      await axios.post(
+        `${BACKEND_URL}/api/user/verify-otp`,
+        { otp, email: user.email },
+        { withCredentials: true }
+      );
+      // Success → redirect with flag
+      window.location.href = "/user-profile?verified=true";
+    } catch (err) {
+      setError(err.response?.data?.error || "Invalid or expired OTP.");
+    }
+  };
+
+  // -----------------------------------------------------------------
+  // 8. RENDER
+  // -----------------------------------------------------------------
   if (loading) {
     return (
       <div className="min-h-screen w-full bg-gray-50 flex flex-col font-sans">
@@ -270,6 +328,23 @@ const UserProfile = () => {
     <div className="min-h-screen w-full bg-gray-50 flex flex-col font-sans">
       <UserNavbar activePage="user-profile" />
 
+      {/* VERIFICATION BANNER */}
+      {!user?.emailVerified && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mx-6 mt-6 rounded-r-lg shadow-md">
+          <div className="flex items-center justify-between">
+            <p className="text-yellow-800 font-medium">
+              Please verify your email to unlock all features.
+            </p>
+            <button
+              onClick={startVerification}
+              className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-semibold transition"
+            >
+              Verify Now
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 p-6 max-w-6xl mx-auto w-full">
         <div className="flex justify-between items-center flex-wrap gap-4 mb-8">
           <h1 className="text-4xl font-bold text-blue-600 drop-shadow-sm">MY PROFILE</h1>
@@ -278,27 +353,9 @@ const UserProfile = () => {
             onClick={() => setShowLogoutModal(true)}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M16 17L21 12L16 7"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M21 12H9"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M16 17L21 12L16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             LOG OUT
           </button>
@@ -334,24 +391,28 @@ const UserProfile = () => {
               <div className="ml-56">
                 <h3 className="text-3xl font-bold text-white drop-shadow-md">
                   {user ? `${user.firstname || "N/A"} ${user.lastname || "N/A"}` : "Loading..."}
-                  <span className={`${verificationStatus.className} text-base ml-2 drop-shadow-sm`}>
-                    ({verificationStatus.text})
-                  </span>
+                  {user?.emailVerified && (
+                    <span className="text-green-300 text-base ml-2 drop-shadow-sm">
+                      (Verified)
+                    </span>
+                  )}
                 </h3>
               </div>
             </div>
 
             <div className="p-6 mt-20">
+              {/* Full Name */}
               <div className="flex items-center p-4 border-b border-gray-100">
                 <div className="w-44 font-semibold text-gray-600">Full Name:</div>
                 <div className="flex-1 text-gray-900">
-                  {user ? `${user.firstname || "N/A"} ${user.lastname || "N/A"}` : "Loading..."}
+                  {user ? `${user.firstname || "N/A"} ${user.lastname}` : "Loading..."}
                 </div>
               </div>
 
+              {/* EMAIL FIELD */}
               <div className="flex items-center p-4 border-b border-gray-100 group">
                 <div className="w-44 font-semibold text-gray-600">Email:</div>
-                <div className="flex-1 flex items-center min-h-[40px]">
+                <div className="flex-1 flex items-center min-h-[40px] gap-2">
                   {editingField === "email" ? (
                     <>
                       <input
@@ -362,7 +423,7 @@ const UserProfile = () => {
                         className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
                         autoFocus
                       />
-                      <div className="flex gap-2 ml-4">
+                      <div className="flex gap-2">
                         <button
                           className="bg-green-500 text-white p-2 rounded-lg"
                           onClick={() => handleSaveField("email")}
@@ -380,12 +441,21 @@ const UserProfile = () => {
                   ) : (
                     <>
                       <div className="flex-1">{user?.email || "N/A"}</div>
-                      <button
-                        className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100"
-                        onClick={() => handleEditField("email")}
-                      >
-                        <FaPen />
-                      </button>
+                      {user?.emailVerified ? (
+                        <span className="flex items-center gap-1 text-green-600 font-medium text-sm">
+                          <FaShieldAlt /> Verified
+                        </span>
+                      ) : (
+                        <span className="text-red-500 text-sm">Not verified</span>
+                      )}
+                      {!user?.emailVerified && (
+                        <button
+                          className="text-blue-600 p-2 rounded-full hover:bg-blue-100 opacity-0 group-hover:opacity-100 transition"
+                          onClick={() => handleEditField("email")}
+                        >
+                          <FaPen />
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
@@ -561,57 +631,103 @@ const UserProfile = () => {
                 </div>
               </div>
 
-              <div className="flex items-center p-4 border-b border-gray-100">
-                <div className="w-44 font-semibold text-gray-600">Username:</div>
-                <div className="flex-1 text-gray-900">{user?.username || "N/A"}</div>
-              </div>
+          
 
-              <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">CONNECTED ACCOUNTS</h3>
-                <div className="border-t border-gray-100 mb-4"></div>
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center">
-                    <FaFacebook className="text-blue-600 mr-2" />
-                    <button
-                      className={`flex-1 text-left p-2 rounded-lg ${
-                        connectedAccounts.facebook ? "bg-green-100 text-green-600" : "bg-gray-100"
-                      }`}
-                      onClick={() => handleConnectToggle("facebook")}
-                      aria-label={connectedAccounts.facebook ? "Disconnect Facebook" : "Connect Facebook"}
-                    >
-                      {connectedAccounts.facebook ? "Disconnect" : "Connect"} Facebook
-                    </button>
-                  </div>
-                  <div className="flex items-center">
-                    <FaInstagram className="text-pink-600 mr-2" />
-                    <button
-                      className={`flex-1 text-left p-2 rounded-lg ${
-                        connectedAccounts.instagram ? "bg-green-100 text-green-600" : "bg-gray-100"
-                      }`}
-                      onClick={() => handleConnectToggle("instagram")}
-                      aria-label={connectedAccounts.instagram ? "Disconnect Instagram" : "Connect Instagram"}
-                    >
-                      {connectedAccounts.instagram ? "Disconnect" : "Connect"} Instagram
-                    </button>
-                  </div>
-                  <div className="flex items-center">
-                    <FaTiktok className="text-black mr-2" />
-                    <button
-                      className={`flex-1 text-left p-2 rounded-lg ${
-                        connectedAccounts.tiktok ? "bg-green-100 text-green-600" : "bg-gray-100"
-                      }`}
-                      onClick={() => handleConnectToggle("tiktok")}
-                      aria-label={connectedAccounts.tiktok ? "Disconnect TikTok" : "Connect TikTok"}
-                    >
-                      {connectedAccounts.tiktok ? "Disconnect" : "Connect"} TikTok
-                    </button>
-                  </div>
-                </div>
-              </div>
+             
             </div>
           </div>
         </div>
       </div>
+
+    
+      {showVerifyModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+            {/* STEP 1: Confirm Email */}
+            {verifyStep === 1 && (
+              <>
+                <h3 className="text-xl font-bold mb-4">Verify Your Email</h3>
+                <p className="text-gray-600 mb-6">
+                  Is <strong>{user?.email}</strong> correct?
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setShowVerifyModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    No
+                  </button>
+                  <button
+                    onClick={confirmEmail}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Yes, Send Email
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 2: Email Sent + Enter Code */}
+            {verifyStep === 2 && (
+              <>
+                <h3 className="text-xl font-bold mb-4 text-green-600">Email Sent!</h3>
+                <p className="text-gray-600 mb-4">
+                  A verification link and 6-digit code were sent to <strong>{user?.email}</strong>.
+                </p>
+                <p className="text-sm text-gray-500 mb-6">
+                  Click the link or enter the code below.
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setVerifyStep(3)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Enter Code
+                  </button>
+                  <button
+                    onClick={() => setShowVerifyModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 3: OTP Input */}
+            {verifyStep === 3 && (
+              <>
+                <h3 className="text-xl font-bold mb-4">Enter Verification Code</h3>
+                <p className="text-gray-600 mb-4">
+                  Check your email for the 6-digit code.
+                </p>
+                <input
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  className="w-full p-3 text-center text-2xl tracking-widest border border-gray-300 rounded-lg mb-6"
+                  placeholder="000000"
+                  autoFocus
+                />
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setVerifyStep(2)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={submitOtp}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Verify
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {showLogoutModal && (
         <LogoutConfirmation onConfirm={confirmLogout} onCancel={cancelLogout} />

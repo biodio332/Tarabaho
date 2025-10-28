@@ -1,5 +1,7 @@
 package tarabaho.tarabaho.service;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +31,8 @@ public class GraduateService {
     private JavaMailSender mailSender;
 
     private final ConcurrentHashMap<String, OtpInfo> otpMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, VerificationToken> verificationMap = new ConcurrentHashMap<>();
+
     private static final String GRADUATE_TYPE = "graduate";
 
  
@@ -96,15 +100,7 @@ public class GraduateService {
         if (updatedGraduate.getIsVerified() != null) {
             existingGraduate.setIsVerified(updatedGraduate.getIsVerified());
         }
-        if (updatedGraduate.getLatitude() != null) {
-            existingGraduate.setLatitude(updatedGraduate.getLatitude());
-        }
-        if (updatedGraduate.getLongitude() != null) {
-            existingGraduate.setLongitude(updatedGraduate.getLongitude());
-        }
-        if (updatedGraduate.getAverageResponseTime() != null) {
-            existingGraduate.setAverageResponseTime(updatedGraduate.getAverageResponseTime());
-        }
+ 
         return graduateRepository.save(existingGraduate);
     }
 
@@ -192,4 +188,79 @@ public class GraduateService {
         System.out.println("GraduateService: Password reset successfully for graduate: " + email);
     }
 
+    public void sendVerificationEmail(String email) throws Exception {
+    Optional<Graduate> gradOpt = findByEmail(email);
+    if (gradOpt.isEmpty()) {
+        throw new IllegalArgumentException("Graduate not found with email: " + email);
+    }
+    Graduate graduate = gradOpt.get();
+
+    String token = String.format("%06d", new Random().nextInt(999999));
+    Instant expiry = Instant.now().plusSeconds(600); // 10 min
+    verificationMap.put(email, new VerificationToken(token, expiry));
+
+    SimpleMailMessage msg = new SimpleMailMessage();
+    msg.setTo(email);
+    msg.setSubject("Verify your Tarabaho Graduate account");
+    msg.setText(
+        "Hi " + graduate.getFirstName() + ",\n\n" +
+        "Your verification code is: " + token + "\n" +
+        "Or click the link below (expires in 10 minutes):\n" +
+        "http://localhost:8080/api/graduate/verify-email?token=" + token + "&email=" + URLEncoder.encode(email, StandardCharsets.UTF_8) +
+        "\n\nThank you!"
+    );
+    mailSender.send(msg);
 }
+
+ 
+    public void verifyEmailToken(String token, String email) throws Exception {
+        VerificationToken vt = verificationMap.get(email);
+        if (vt == null) {
+            throw new IllegalArgumentException("No verification request found for this email.");
+        }
+        if (Instant.now().isAfter(vt.getExpiry())) {
+            verificationMap.remove(email);
+            throw new IllegalArgumentException("Verification link has expired.");
+        }
+        if (!vt.getToken().equals(token)) {
+            throw new IllegalArgumentException("Invalid verification token.");
+        }
+
+        Graduate graduate = findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Graduate not found."));
+        graduate.setEmailVerified(true);
+        graduateRepository.save(graduate);
+        verificationMap.remove(email);
+    }
+
+    public void verifyOtp(String otp, String email) throws Exception {
+        VerificationToken vt = verificationMap.get(email);
+        if (vt == null) throw new IllegalArgumentException("No verification in progress.");
+        if (Instant.now().isAfter(vt.getExpiry())) {
+            verificationMap.remove(email);
+            throw new IllegalArgumentException("OTP expired.");
+        }
+        if (!vt.getToken().equals(otp)) {
+            throw new IllegalArgumentException("Invalid OTP.");
+        }
+
+        Graduate g = findByEmail(email).orElseThrow(() -> new IllegalArgumentException("Graduate not found."));
+        g.setEmailVerified(true);
+        graduateRepository.save(g);
+        verificationMap.remove(email);
+    }
+
+    
+
+    private static class VerificationToken {
+        private final String token;
+        private final Instant expiry;
+
+        VerificationToken(String token, Instant expiry) {
+            this.token = token;
+            this.expiry = expiry;
+        }
+        public String getToken() { return token; }
+        public Instant getExpiry() { return expiry; }
+    }
+}   
