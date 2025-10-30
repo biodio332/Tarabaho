@@ -1,44 +1,85 @@
 // components/PortfolioRouteWrapper.jsx
-import { useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import GeneralLayout from './GeneralLayout';
-import ClientLayout from './ClientLayout';
-import ViewPortfolio from '../pages/ViewPortfolio'; // Adjust path
+import { useState, useEffect } from "react";
+import axios from "axios";
+
+import GeneralLayout   from "./GeneralLayout";
+import ClientLayout    from "./ClientLayout";
+import HomePageLayout  from "./HomePageLayout";
+import ViewPortfolio   from "../pages/ViewPortfolio";
 
 const PortfolioRouteWrapper = () => {
-  const location = useLocation();
-  const urlParams = new URLSearchParams(location.search);
-  const urlShareToken = urlParams.get('share');
-  const [isAuthenticatedGraduate, setIsAuthenticatedGraduate] = useState(false);
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+  const [auth, setAuth] = useState({
+    isGraduate: false,
+    isUser: false,
+    loading: true,
+  });
 
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
+
+  /* --------------------------------------------------------------
+   * 1. Check authentication tokens (in order of priority)
+   * -------------------------------------------------------------- */
   useEffect(() => {
-    const checkGraduateStatus = async () => {
+    const checkAuth = async () => {
       try {
-        const tokenResponse = await axios.get(`${BACKEND_URL}/api/graduate/get-token`, {
+        // 1. Check if logged in as GRADUATE
+        const gradResp = await axios.get(`${BACKEND_URL}/api/graduate/get-token`, {
           withCredentials: true,
         });
-        if (tokenResponse.data.token) {
-          setIsAuthenticatedGraduate(true);
-        } else {
-          setIsAuthenticatedGraduate(false);
+        if (gradResp.data?.token) {
+          setAuth({ isGraduate: true, isUser: false, loading: false });
+          return;
         }
-      } catch (err) {
-        setIsAuthenticatedGraduate(false);
+      } catch {
+        // Not a graduate
       }
+
+      try {
+        // 2. Check if logged in as USER
+        const userResp = await axios.get(`${BACKEND_URL}/api/user/get-token`, {
+          withCredentials: true,
+        });
+        if (userResp.data?.token) {
+          setAuth({ isGraduate: false, isUser: true, loading: false });
+          return;
+        }
+      } catch {
+        // Not a user
+      }
+
+      // 3. No valid token → public view
+      setAuth({ isGraduate: false, isUser: false, loading: false });
     };
 
-    // Only check graduate status if no share token
-    if (!urlShareToken) {
-      checkGraduateStatus();
-    }
-  }, [urlShareToken]);
+    checkAuth();
+  }, []);
 
-  // Use ClientLayout for share token or non-graduates, GeneralLayout for authenticated graduates
-  const Layout = urlShareToken || !isAuthenticatedGraduate ? ClientLayout : GeneralLayout;
+  /* --------------------------------------------------------------
+   * 2. Choose layout based on token only
+   * -------------------------------------------------------------- */
+  if (auth.loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <p className="text-gray-600 animate-pulse">Loading...</p>
+      </div>
+    );
+  }
 
-  console.log('PortfolioRouteWrapper state:', { urlShareToken, isAuthenticatedGraduate, Layout: Layout.name });
+  let Layout;
+
+  if (auth.isGraduate) {
+    Layout = GeneralLayout;     // Owner view
+  } else if (auth.isUser) {
+    Layout = ClientLayout;      // Logged-in user (non-graduate)
+  } else {
+    Layout = HomePageLayout;    // Public / no session
+  }
+
+  console.log("PortfolioRouteWrapper →", {
+    isGraduate: auth.isGraduate,
+    isUser: auth.isUser,
+    Layout: Layout.name,
+  });
 
   return (
     <Layout>

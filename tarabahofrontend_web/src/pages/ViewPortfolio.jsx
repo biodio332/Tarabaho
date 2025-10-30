@@ -37,7 +37,7 @@ const ViewPortfolio = () => {
   const urlShareToken = urlParams.get("share")
 
   const getShareableUrl = () => {
-    const baseUrl = import.meta.env.PROD ? window.location.origin : `http://localhost:3000`
+    const baseUrl = import.meta.env.PROD ? window.location.origin : `http://localhost:5173`
     const currentToken = shareToken || localStorage.getItem(`portfolio_${graduateId}_shareToken`)
     if (currentToken) {
       return `${baseUrl}/portfolio/${graduateId}?share=${currentToken}`
@@ -467,27 +467,33 @@ const fetchPublicDataWithToken = async () => {
     setSelectedCertificate(selectedCertificate?.id === certificate.id ? null : certificate)
   }
 
-  const copyToClipboard = () => {
-    const shareableUrl = getShareableUrl()
-    const displayUrl = shareableUrl.includes("?share=")
-      ? `${window.location.origin}/portfolio/${graduateId}?share=${shareToken?.substring(0, 8)}...`
-      : shareableUrl
+  const copyToClipboard = async () => {
+  const shareableUrl = getShareableUrl();
+  const displayUrl = shareableUrl.includes("?share=")
+    ? `${window.location.origin}/portfolio/${graduateId}?share=${shareToken?.substring(0, 8)}...`
+    : shareableUrl;
 
-    navigator.clipboard
-      .writeText(shareableUrl)
-      .then(() => {
-        alert(
-ները          `✅ Secure share link copied!\n\n` +
-            `📋 ${displayUrl}\n\n` +
-            `🔒 Only people with this exact link can view your portfolio.\n` +
-            `💡 Links remain valid until you generate a new one.`,
-        )
-      })
-      .catch((err) => {
-        console.error("Failed to copy:", err)
-        alert("Failed to copy link. Please try again.")
-      })
+  try {
+    await navigator.clipboard.writeText(shareableUrl);
+    alert(
+      `Secure share link copied!\n\n` +
+      `Link: ${displayUrl}\n\n` +
+      `Only people with this exact link can view your portfolio.\n` +
+      `Links remain valid until you generate a new one.`
+    );
+  } catch (err) {
+    console.error("Failed to copy:", err);
+    // Fallback: let user copy manually
+    const userConfirmed = window.confirm(
+      `Failed to copy automatically.\n\n` +
+      `Your link:\n${shareableUrl}\n\n` +
+      `Click OK to copy manually.`
+    );
+    if (userConfirmed) {
+      prompt("Copy this link:", shareableUrl);
+    }
   }
+};
 
   const shareToLinkedIn = () => {
     const title = `${portfolio?.fullName || "Portfolio"} - Professional Portfolio`
@@ -611,20 +617,7 @@ const fetchPublicDataWithToken = async () => {
         <div className="absolute inset-0 bg-white/5 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px] animate-pulse"></div>
         <div className="container mx-auto px-6 py-24 relative">
           {/* Back Button - Visible only in public view */}
-          {isPublicView && (
-            <div className="mb-6 flex justify-start">
-              <Button
-                onClick={() => navigate("/user-browse")} // Navigate to homepage for reliability
-                color="white"
-                variant="text"
-                size="lg"
-                className="font-light flex items-center gap-2 hover:bg-white/20 rounded-full px-4 py-2 transition-all duration-300"
-                style={{ zIndex: 10 }} // Ensure button is above other elements
-              >
-                ← Back
-              </Button>
-            </div>
-          )}
+          
           <div className="flex items-center justify-between max-w-6xl mx-auto gap-16">
             {/* Profile Image - Left Side */}
             {(graduate?.profilePicture || portfolio?.avatar) && (
@@ -1279,33 +1272,6 @@ const fetchPublicDataWithToken = async () => {
           </div>
         )}
 
-        {isPublicView && (
-          <div className="mt-16 bg-blue-50 border border-blue-100 rounded-lg p-8 text-center">
-            <Typography variant="h5" color="blue" className="mb-4 font-light">
-              Secure Portfolio Access
-            </Typography>
-            <Typography color="blue-gray" className="mb-6 max-w-2xl mx-auto font-light">
-              You've accessed this portfolio through a secure private link. This ensures the portfolio owner's privacy
-              and control over who can view their information.
-            </Typography>
-            <Typography color="blue-gray" className="mb-6 font-light">
-              Want to edit this portfolio or view your own?
-            </Typography>
-            <Link to="/signin">
-              <Button color="blue" size="lg" className="font-light">
-                Sign in here
-              </Button>
-            </Link>
-            {!urlShareToken && (
-              <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                <Typography color="amber" className="text-sm font-light">
-                  <strong>Legacy Access:</strong> This portfolio allows public access without a share token (less
-                  secure). Contact the owner to get a secure share link.
-                </Typography>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {selectedCertificate && (
