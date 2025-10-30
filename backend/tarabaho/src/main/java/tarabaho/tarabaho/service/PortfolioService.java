@@ -699,9 +699,30 @@ public class PortfolioService {
         if (query == null || query.trim().isEmpty()) {
             return Collections.emptyList();
         }
-        List<Portfolio> portfolios = portfolioRepository.searchPublicPortfolios(query);
-        return portfolios.stream()
-                .map(PublicPortfolioSearchResult::new)
+
+        String clean = query.trim().replaceAll("\\s+", " ");
+        List<Object[]> results = portfolioRepository.searchPublicPortfoliosRaw(clean);
+
+        return results.stream()
+                .map(row -> {
+                    PublicPortfolioSearchResult dto = new PublicPortfolioSearchResult();
+                    
+                    dto.setGraduateId(((Number) row[7]).longValue()); // graduate_id
+                    dto.setFullName((String) row[1]);                 // full_name
+                    dto.setAvatar((String) row[2]);                   // avatar
+                    dto.setProfessionalTitle((String) row[3]);        // professional_title
+                    dto.setPrimaryCourseType((String) row[4]);        // primary_course_type
+                    
+                    String summary = (String) row[5];
+                    if (summary != null && summary.length() > 150) {
+                        summary = summary.substring(0, 150) + "...";
+                    }
+                    dto.setProfessionalSummary(summary);
+                    
+                    dto.setShareToken((String) row[6]);                // share_token
+                    
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 }

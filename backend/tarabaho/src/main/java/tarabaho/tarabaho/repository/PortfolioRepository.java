@@ -29,37 +29,62 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
     @Query("SELECT COUNT(v) > 0 FROM PortfolioView v WHERE v.portfolio.id = :portfolioId AND v.viewDate > :cutoffTime")
     boolean hasRecentView(@Param("portfolioId") Long portfolioId, @Param("cutoffTime") LocalDateTime cutoffTime);
 
-    @Query("SELECT DISTINCT p FROM Portfolio p " +
-       "LEFT JOIN p.skills s " +
-       "LEFT JOIN p.experiences e " +
-       "LEFT JOIN p.projects pr " +
-       "LEFT JOIN p.awardsRecognitions a " +
-       "LEFT JOIN p.continuingEducations ce " +
-       "LEFT JOIN p.professionalMemberships pm " +
-       "WHERE p.visibility = Visibility.PUBLIC " +
-       "AND (LOWER(p.fullName) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(p.professionalSummary) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(p.professionalTitle) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(p.primaryCourseType) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(p.scholarScheme) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(p.ncLevel) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(p.trainingCenter) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(p.scholarshipType) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(p.portfolioCategory) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(p.preferredWorkLocation) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(p.workScheduleAvailability) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(p.salaryExpectations) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(s.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(e.jobTitle) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(e.employer) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(e.description) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(pr.title) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(pr.description) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(a.title) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(a.issuer) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(ce.courseName) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(ce.institution) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(pm.organization) LIKE LOWER(CONCAT('%', :query, '%')) " +
-       "OR LOWER(pm.membershipType) LIKE LOWER(CONCAT('%', :query, '%')))")
-    List<Portfolio> searchPublicPortfolios(@Param("query") String query);
+    @Query(value = """
+    WITH q AS (SELECT websearch_to_tsquery('english', :query) AS tsq),
+         search_data AS (
+             SELECT 
+                 p.id,
+                 p.full_name,
+                 p.avatar,
+                 p.professional_title,
+                 p.primary_course_type,
+                 p.professional_summary,
+                 p.share_token,
+                 g.id AS graduate_id,
+                 to_tsvector('english',
+                     COALESCE(p.full_name,'') || ' ' ||
+                     COALESCE(p.professional_summary,'') || ' ' ||
+                     COALESCE(p.professional_title,'') || ' ' ||
+                     COALESCE(p.primary_course_type,'') || ' ' ||
+                     COALESCE(p.scholar_scheme,'') || ' ' ||
+                     COALESCE(p.nc_level,'') || ' ' ||
+                     COALESCE(p.training_center,'') || ' ' ||
+                     COALESCE(p.scholarship_type,'') || ' ' ||
+                     COALESCE(p.portfolio_category,'') || ' ' ||
+                     COALESCE(p.preferred_work_location,'') || ' ' ||
+                     COALESCE(p.work_schedule_availability,'') || ' ' ||
+                     COALESCE(p.salary_expectations,'') || ' ' ||
+                     COALESCE(' ' || string_agg(COALESCE(s.name, ''), ' '), '') || ' ' ||
+                     COALESCE(' ' || string_agg(COALESCE(e.job_title, '') || ' ' || COALESCE(e.employer, '') || ' ' || COALESCE(e.description, ''), ' '), '') || ' ' ||
+                     COALESCE(' ' || string_agg(COALESCE(pr.title, '') || ' ' || COALESCE(pr.description, ''), ' '), '') || ' ' ||
+                     COALESCE(' ' || string_agg(COALESCE(a.title, '') || ' ' || COALESCE(a.issuer, ''), ' '), '') || ' ' ||
+                     COALESCE(' ' || string_agg(COALESCE(ce.course_name, '') || ' ' || COALESCE(ce.institution, ''), ' '), '') || ' ' ||
+                     COALESCE(' ' || string_agg(COALESCE(pm.organization, '') || ' ' || COALESCE(pm.membership_type, ''), ' '), '')
+                 ) AS full_text
+             FROM portfolios p
+             JOIN graduates g ON p.graduate_id = g.id
+             LEFT JOIN skills s                    ON s.portfolio_id = p.id
+             LEFT JOIN experiences e               ON e.portfolio_id = p.id
+             LEFT JOIN projects pr                 ON pr.portfolio_id = p.id
+             LEFT JOIN awards_recognitions a       ON a.portfolio_id = p.id
+             LEFT JOIN continuing_educations ce    ON ce.portfolio_id = p.id
+             LEFT JOIN professional_memberships pm ON pm.portfolio_id = p.id
+             WHERE p.visibility = 'PUBLIC'
+             GROUP BY p.id, g.id
+         )
+    SELECT
+        id,
+        full_name,
+        avatar,
+        professional_title,
+        primary_course_type,
+        professional_summary,
+        share_token,
+        graduate_id,
+        ts_rank(full_text, q.tsq) AS relevance_score
+    FROM search_data, q
+    WHERE full_text @@ q.tsq
+    ORDER BY relevance_score DESC
+    """, nativeQuery = true)
+    List<Object[]> searchPublicPortfoliosRaw(@Param("query") String query);
 }

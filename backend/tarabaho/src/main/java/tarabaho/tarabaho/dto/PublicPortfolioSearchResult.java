@@ -14,6 +14,7 @@ public class PublicPortfolioSearchResult {
 
     public PublicPortfolioSearchResult() {}
 
+    // Optional: keep constructor from Portfolio for other uses
     public PublicPortfolioSearchResult(Portfolio portfolio) {
         this.graduateId = portfolio.getGraduate().getId();
         this.fullName = portfolio.getFullName();
