@@ -17,6 +17,7 @@ import { useRouter } from "expo-router"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { Ionicons } from "@expo/vector-icons"
 import * as ImagePicker from "expo-image-picker"
+import { DatePicker } from "../components/ui/DatePicker"
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:8080"
 
@@ -42,6 +43,7 @@ export default function GraduateProfile() {
   const [error, setError] = useState("")
   const [graduate, setGraduate] = useState<Graduate | null>(null)
   const [form, setForm] = useState({ email: "", address: "", birthday: "", biography: "", password: "" })
+  const [birthdayDate, setBirthdayDate] = useState<Date>(new Date())
   const [uploadAttempts, setUploadAttempts] = useState(0) // Track upload attempts
   
   // Handle profile picture selection
@@ -399,6 +401,14 @@ export default function GraduateProfile() {
           biography: (data as any).biography || "",
           password: "",
         })
+        
+        // Set birthday date if available
+        if (data.birthday) {
+          const parsedDate = new Date(data.birthday)
+          if (!isNaN(parsedDate.getTime())) {
+            setBirthdayDate(parsedDate)
+          }
+        }
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : "Unknown error";
         console.error("Error fetching profile:", errorMessage);
@@ -417,6 +427,14 @@ export default function GraduateProfile() {
 
   const handleChange = (key: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }))
+    setError("")
+  }
+
+  const handleBirthdayChange = (date: Date) => {
+    setBirthdayDate(date)
+    // Format date as YYYY-MM-DD for the form
+    const formattedDate = date.toISOString().split('T')[0]
+    setForm((prev) => ({ ...prev, birthday: formattedDate }))
     setError("")
   }
 
@@ -548,12 +566,12 @@ export default function GraduateProfile() {
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 16 }}>
           <View className="bg-white mx-4 mt-10 mb-4 rounded-2xl shadow-sm p-6 items-center">
             <TouchableOpacity 
-              className="relative mb-4" 
+              className="relative mb-6" 
               onPress={pickImage}
               disabled={imageUploading}
             >
               {imageUploading ? (
-                <View className="w-28 h-28 rounded-full bg-blue-100 items-center justify-center">
+                <View className="w-32 h-32 rounded-full bg-blue-100 items-center justify-center">
                   <ActivityIndicator size="small" color="#3b82f6" />
                 </View>
               ) : graduate?.profilePicture ? (
@@ -563,7 +581,7 @@ export default function GraduateProfile() {
                       ? graduate.profilePicture 
                       : `${BACKEND_URL}${graduate.profilePicture}` 
                   }} 
-                  style={{ width: 112, height: 112, borderRadius: 56 }}
+                  style={{ width: 128, height: 128, borderRadius: 64 }}
                   resizeMode="cover"
                   // Add a cache-busting parameter to prevent cached images
                   key={`profile-${Date.now()}`}
@@ -573,32 +591,62 @@ export default function GraduateProfile() {
                   onError={(e) => console.log("Image load error:", e.nativeEvent.error)}
                 />
               ) : (
-                <View className="w-28 h-28 rounded-full bg-blue-100 items-center justify-center">
-                  <Ionicons name="person" size={48} color="#3b82f6" />
+                <View className="w-32 h-32 rounded-full bg-blue-100 items-center justify-center">
+                  <Ionicons name="person" size={56} color="#3b82f6" />
                 </View>
               )}
-              <View className="absolute bottom-0 right-0 w-9 h-9 bg-blue-600 rounded-full items-center justify-center border-4 border-white">
-                <Ionicons name="camera" size={16} color="white" />
+              <View className="absolute bottom-0 right-0 w-10 h-10 bg-blue-600 rounded-full items-center justify-center border-4 border-white">
+                <Ionicons name="camera" size={18} color="white" />
               </View>
             </TouchableOpacity>
             
-            <View className="flex-row items-center mb-1">
-              <Text className="text-2xl font-bold text-gray-900">
-                {graduate?.firstName || ""} {graduate?.lastName || ""}
-              </Text>
-              <View className={`ml-2 px-2 py-0.5 rounded-full ${getVerificationStatus().bgColor} ${getVerificationStatus().borderColor} border`}>
-                <Text className={`text-xs font-semibold ${getVerificationStatus().textColor}`}>
+            {/* Name */}
+            <Text className="text-2xl font-bold text-gray-900 text-center mb-3">
+              {graduate?.firstName || ""} {graduate?.lastName || ""}
+            </Text>
+            
+            {/* Status - Bigger and more prominent */}
+            <View className={`px-4 py-2.5 rounded-xl mb-4 ${getVerificationStatus().bgColor} ${getVerificationStatus().borderColor} border-2`}>
+              <View className="flex-row items-center">
+                <Ionicons 
+                  name={graduate?.isVerified ? "checkmark-circle" : "alert-circle"} 
+                  size={18} 
+                  color={graduate?.isVerified ? "#059669" : "#DC2626"} 
+                />
+                <Text className={`ml-2 text-base font-bold ${getVerificationStatus().textColor}`}>
                   {getVerificationStatus().text}
                 </Text>
               </View>
             </View>
             
-            <Text className="text-base text-gray-500 mb-1">@{graduate?.username || ""}</Text>
-            {graduate?.phoneNumber && <Text className="text-sm text-gray-600">{graduate.phoneNumber}</Text>}
           </View>
 
           <View className="bg-white mx-4 mb-4 rounded-2xl shadow-sm p-6">
             <Text className="text-lg font-semibold text-gray-900 mb-4">Contact Information</Text>
+
+            {/* Username */}
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-gray-700 mb-2">Username</Text>
+              <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
+                <Ionicons name="at" size={20} color="#3B82F6" />
+                <Text className="flex-1 ml-3 text-lg text-gray-900 font-medium">
+                  {graduate?.username || ""}
+                </Text>
+              </View>
+            </View>
+
+            {/* Phone Number */}
+            {graduate?.phoneNumber && (
+              <View className="mb-4">
+                <Text className="text-sm font-medium text-gray-700 mb-2">Phone Number</Text>
+                <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
+                  <Ionicons name="call" size={20} color="#3B82F6" />
+                  <Text className="flex-1 ml-3 text-lg text-gray-900 font-medium">
+                    {graduate.phoneNumber}
+                  </Text>
+                </View>
+              </View>
+            )}
 
             {/* Email Input */}
             <View className="mb-4">
@@ -613,6 +661,7 @@ export default function GraduateProfile() {
                   placeholder="Enter your email"
                   placeholderTextColor="#9ca3af"
                   className="flex-1 ml-3 text-base text-gray-900"
+                  style={{ textAlignVertical: 'center' }}
                 />
               </View>
             </View>
@@ -628,23 +677,20 @@ export default function GraduateProfile() {
                   placeholder="Enter your address"
                   placeholderTextColor="#9ca3af"
                   className="flex-1 ml-3 text-base text-gray-900"
+                  style={{ textAlignVertical: 'center' }}
                 />
               </View>
             </View>
 
-            {/* Birthday Input */}
+            {/* Birthday DatePicker */}
             <View className="mb-0">
-              <Text className="text-sm font-medium text-gray-700 mb-2">Birthday</Text>
-              <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-                <Ionicons name="calendar-outline" size={20} color="#6b7280" />
-                <TextInput
-                  value={form.birthday}
-                  onChangeText={(t) => handleChange("birthday", t)}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#9ca3af"
-                  className="flex-1 ml-3 text-base text-gray-900"
-                />
-              </View>
+              <DatePicker
+                label="Birthday"
+                value={birthdayDate}
+                onChange={handleBirthdayChange}
+                placeholder="Select your birthday"
+                maximumDate={new Date()} // Can't select future dates
+              />
             </View>
           </View>
 
@@ -677,6 +723,7 @@ export default function GraduateProfile() {
                   placeholder="Enter new password (optional)"
                   placeholderTextColor="#9ca3af"
                   className="flex-1 ml-3 text-base text-gray-900"
+                  style={{ textAlignVertical: 'center' }}
                 />
               </View>
             </View>

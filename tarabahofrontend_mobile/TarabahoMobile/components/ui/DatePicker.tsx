@@ -85,10 +85,12 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         ]}
       >
         <View style={styles.inputContainer}>
-          <Text style={value ? styles.dateText : styles.placeholderText}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="calendar-outline" size={20} color="#6b7280" />
+          </View>
+          <Text style={[value ? styles.dateText : styles.placeholderText, styles.dateTextContent]}>
             {formattedDate}
           </Text>
-          <Ionicons name="calendar-outline" size={20} color="#6b7280" />
         </View>
       </TouchableOpacity>
       
@@ -154,33 +156,42 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 15,
+    marginBottom: 0,
   },
   label: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
     marginBottom: 8,
-    color: '#333',
+    color: '#374151',
   },
   dateButton: {
-    padding: 15,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#e5e7eb',
   },
   inputContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  iconContainer: {
+    width: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateTextContent: {
+    flex: 1,
+    marginLeft: 12,
   },
   dateText: {
     fontSize: 16,
-    color: '#333',
+    color: '#111827',
   },
   placeholderText: {
     fontSize: 16,
-    color: '#999',
+    color: '#9ca3af',
   },
   errorInput: {
     borderColor: '#ff3b30',

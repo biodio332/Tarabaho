@@ -742,13 +742,6 @@ export default function GraduateHomepage() {
                     <Text style={textStyles.emptyMessage}>
                       Share your portfolio to start tracking engagement
                     </Text>
-                    <TouchableOpacity 
-                      style={viewStyles.emptyActionButton}
-                      onPress={() => router.push('/portfolio')}
-                    >
-                      <Ionicons name="share-outline" size={18} color="#ffffff" />
-                      <Text style={textStyles.emptyActionText}>Share Portfolio</Text>
-                    </TouchableOpacity>
                   </View>
                 )
               ) : (
@@ -1178,7 +1171,7 @@ const viewStyles = StyleSheet.create<Record<string, ViewStyle>>({
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radii.xl,
     padding: theme.spacing.xl,
-    marginBottom: theme.spacing.xxl,
+    marginBottom: theme.spacing.lg,
     ...theme.shadows.md,
   },
   chartHeader: {
@@ -1346,29 +1339,29 @@ const viewStyles = StyleSheet.create<Record<string, ViewStyle>>({
 
   // Share Portfolio Section
   shareSection: {
-    marginTop: theme.spacing.xl,
+    marginTop: 0,
     marginHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radii.lg,
-    padding: theme.spacing.lg,
+    padding: theme.spacing.md,
     ...theme.shadows.md,
     borderWidth: 1,
     borderColor: theme.colors.border.light,
   },
   shareButtonsContainer: {
-    marginTop: theme.spacing.lg,
-    gap: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
   shareButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
     borderRadius: theme.radii.lg,
-    gap: theme.spacing.md,
-    minHeight: 50,
+    gap: theme.spacing.sm,
+    minHeight: 44,
     ...theme.shadows.sm,
   },
   shareButtonPrimary: {

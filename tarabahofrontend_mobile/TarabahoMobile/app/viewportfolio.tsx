@@ -815,7 +815,7 @@ export default function ViewPortfolio() {
           </TouchableOpacity>
           
           <Text style={{ fontSize: 12, color: '#9ca3af', marginTop: 16, textAlign: 'center' }}>
-            Graduate ID: {graduateId}
+            Graduate ID: {String(graduateId)}
           </Text>
         </View>
       </SafeAreaView>

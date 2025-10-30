@@ -1434,7 +1434,7 @@ export default function EditPortfolioScreen() {
             )}
           </TouchableOpacity>
           
-          <View className="flex-row justify-end space-x-3 mt-2">
+          <View className="flex-row justify-end mt-4" style={{ gap: 8 }}>
             <Button
               title="Cancel"
               onPress={() => {
@@ -1463,6 +1463,16 @@ export default function EditPortfolioScreen() {
       )}
       
       {/* Project List */}
+      {projects.length === 0 && !isAddingProject && (
+        <View className="bg-gray-50 rounded-lg p-8 mb-4 items-center">
+          <View className="w-16 h-16 rounded-full bg-gray-200 items-center justify-center mb-3">
+            <Ionicons name="briefcase-outline" size={32} color="#9CA3AF" />
+          </View>
+          <Text className="text-gray-500 text-center font-medium mb-2">No projects added yet</Text>
+          <Text className="text-gray-400 text-center text-sm">Add your projects to showcase your work</Text>
+        </View>
+      )}
+      
       {projects.map((project, index) => (
         <View key={`project-${index}`} className="bg-gray-50 rounded-lg p-4 mb-3">
           <View className="flex-row items-center">
@@ -1482,19 +1492,19 @@ export default function EditPortfolioScreen() {
             </View>
           </View>
           
-          <View className="flex-row justify-end space-x-3 mt-3">
+          <View className="flex-row justify-end mt-3" style={{ gap: 8 }}>
             <TouchableOpacity
               onPress={() => handleEditProject(project)}
               className="px-4 py-2 bg-blue-100 rounded-lg"
             >
-              <Text className="text-blue-700">Edit</Text>
+              <Text className="text-blue-700 text-sm font-medium">Edit</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
               onPress={() => handleRemoveProject(project.id)}
               className="px-4 py-2 bg-red-100 rounded-lg"
             >
-              <Text className="text-red-700">Remove</Text>
+              <Text className="text-red-700 text-sm font-medium">Remove</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1592,7 +1602,7 @@ export default function EditPortfolioScreen() {
             )}
           </TouchableOpacity>
           
-          <View className="flex-row justify-end space-x-3 mt-2">
+          <View className="flex-row justify-end mt-4" style={{ gap: 8 }}>
             <Button
               title="Cancel"
               onPress={() => {
@@ -1620,6 +1630,16 @@ export default function EditPortfolioScreen() {
       )}
       
       {/* Certificate List */}
+      {certificates.length === 0 && !isAddingCertificate && (
+        <View className="bg-gray-50 rounded-lg p-8 mb-4 items-center">
+          <View className="w-16 h-16 rounded-full bg-gray-200 items-center justify-center mb-3">
+            <Ionicons name="document-outline" size={32} color="#9CA3AF" />
+          </View>
+          <Text className="text-gray-500 text-center font-medium mb-2">No certificates added yet</Text>
+          <Text className="text-gray-400 text-center text-sm">Add your certificates to showcase your qualifications</Text>
+        </View>
+      )}
+      
       {certificates.map((certificate, index) => (
         <View key={`certificate-${index}`} className="bg-gray-50 rounded-lg p-4 mb-3">
           <View className="flex-row items-center">
@@ -1638,19 +1658,19 @@ export default function EditPortfolioScreen() {
             </View>
           </View>
           
-          <View className="flex-row justify-end space-x-3 mt-3">
+          <View className="flex-row justify-end mt-3" style={{ gap: 8 }}>
             <TouchableOpacity
               onPress={() => handleEditCertificate(certificate)}
               className="px-4 py-2 bg-blue-100 rounded-lg"
             >
-              <Text className="text-blue-700">Edit</Text>
+              <Text className="text-blue-700 text-sm font-medium">Edit</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
               onPress={() => handleRemoveCertificate(certificate.id)}
               className="px-4 py-2 bg-red-100 rounded-lg"
             >
-              <Text className="text-red-700">Remove</Text>
+              <Text className="text-red-700 text-sm font-medium">Remove</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1803,15 +1823,18 @@ export default function EditPortfolioScreen() {
         <ScrollView 
           className="flex-1 bg-white" 
           contentContainerStyle={{ 
-            paddingBottom: 30,
-            paddingTop: insets.top + 10, // Add padding for safe area
+            paddingBottom: insets.bottom + 20,
+            paddingTop: insets.top + 10,
+            flexGrow: 1,
           }}
           showsVerticalScrollIndicator={false}
+          bounces={false}
+          scrollEventThrottle={16}
         >
-          <View className="p-4 bg-white">
+          <View className="px-4 bg-white" style={{ minHeight: '100%' }}>
             <TouchableOpacity 
               onPress={() => router.back()}
-              className="mb-4 flex-row items-center"
+              className="mb-4 flex-row items-center pt-2"
             >
               <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-2">
                 <Ionicons name="chevron-back" size={18} color="#2563EB" />
@@ -1843,25 +1866,22 @@ export default function EditPortfolioScreen() {
             {renderPortfolioSettingsSection()}
             
             {/* Submit Buttons */}
-            <View className="flex-row justify-between mb-32 mt-4">
+            <View className="flex-row justify-between mt-6 mb-4" style={{ gap: 12 }}>
               <Button
                 title="Cancel"
                 onPress={() => router.back()}
                 variant="secondary"
-                style={{ flex: 1, marginRight: 6 }}
+                style={{ flex: 1 }}
               />
               <Button
                 title={submitting ? "Saving..." : "Save Changes"}
                 onPress={handleSubmit}
                 variant="primary"
-                style={{ flex: 1, marginLeft: 6 }}
+                style={{ flex: 1 }}
                 disabled={submitting}
                 loading={submitting}
               />
             </View>
-            
-            {/* Bottom spacing for iOS devices */}
-            {Platform.OS === 'ios' && <View style={{ height: insets.bottom }} />}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

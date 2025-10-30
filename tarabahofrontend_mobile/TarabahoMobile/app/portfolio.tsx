@@ -373,23 +373,23 @@ export default function PortfolioScreen() {
           )}
         </View>
         
-        <View className="items-center mb-3">
-          <Text className="text-xl font-bold text-gray-800 text-center" style={{ fontFamily: "Roboto" }}>
+        <View className="items-center mb-4">
+          <Text className="text-2xl font-bold text-gray-900 text-center mb-2" style={{ fontFamily: "Roboto" }}>
             {portfolio?.fullName || graduateName}
           </Text>
           
           {portfolio?.professionalTitle && (
-            <View className="bg-blue-50 px-3 py-1 rounded-full mt-1.5 border border-blue-100/80">
-              <Text className="text-blue-700 font-medium text-sm" style={{ fontFamily: "Roboto" }}>
+            <View className="bg-blue-50 px-4 py-2 rounded-full mt-1 border border-blue-100/80">
+              <Text className="text-blue-700 font-semibold text-base" style={{ fontFamily: "Roboto" }}>
                 {portfolio?.professionalTitle}
               </Text>
             </View>
           )}
           
           {portfolio?.preferredWorkLocation && (
-            <View className="flex-row items-center mt-2">
-              <Ionicons name="location-outline" size={14} color="#3B82F6" />
-              <Text className="text-gray-600 ml-1 text-xs" style={{ fontFamily: "Roboto" }}>{portfolio.preferredWorkLocation}</Text>
+            <View className="flex-row items-center mt-3">
+              <Ionicons name="location-outline" size={18} color="#3B82F6" />
+              <Text className="text-gray-600 ml-2 text-base font-medium" style={{ fontFamily: "Roboto" }}>{portfolio.preferredWorkLocation}</Text>
             </View>
           )}
         </View>
@@ -399,20 +399,20 @@ export default function PortfolioScreen() {
             {portfolio?.email && (
               <TouchableOpacity 
                 onPress={() => Linking.openURL(`mailto:${portfolio.email}`)}
-                className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full mr-2 mb-2"
+                className="flex-row items-center bg-blue-50 px-4 py-2.5 rounded-full mr-3 mb-2 border border-blue-100"
               >
-                <Ionicons name="mail-outline" size={14} color="#2563EB" />
-                <Text className="text-blue-700 ml-1.5 font-medium text-xs" style={{ fontFamily: "Roboto" }}>Email</Text>
+                <Ionicons name="mail-outline" size={16} color="#2563EB" />
+                <Text className="text-blue-700 ml-2 font-semibold text-sm" style={{ fontFamily: "Roboto" }}>Email</Text>
               </TouchableOpacity>
             )}
             
             {portfolio?.phone && (
               <TouchableOpacity 
                 onPress={() => Linking.openURL(`tel:${portfolio.phone}`)}
-                className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full mr-2 mb-2"
+                className="flex-row items-center bg-blue-50 px-4 py-2.5 rounded-full mr-3 mb-2 border border-blue-100"
               >
-                <Ionicons name="call-outline" size={14} color="#2563EB" />
-                <Text className="text-blue-700 ml-1.5 font-medium text-xs" style={{ fontFamily: "Roboto" }}>Call</Text>
+                <Ionicons name="call-outline" size={16} color="#2563EB" />
+                <Text className="text-blue-700 ml-2 font-semibold text-sm" style={{ fontFamily: "Roboto" }}>Call</Text>
               </TouchableOpacity>
             )}
             
@@ -423,10 +423,10 @@ export default function PortfolioScreen() {
                     Linking.openURL(portfolio.website.startsWith('http') ? portfolio.website : `https://${portfolio.website}`)
                   }
                 }}
-                className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full mb-2"
+                className="flex-row items-center bg-blue-50 px-4 py-2.5 rounded-full mb-2 border border-blue-100"
               >
-                <Ionicons name="globe-outline" size={14} color="#2563EB" />
-                <Text className="text-blue-700 ml-1.5 font-medium text-xs" style={{ fontFamily: "Roboto" }}>Website</Text>
+                <Ionicons name="globe-outline" size={16} color="#2563EB" />
+                <Text className="text-blue-700 ml-2 font-semibold text-sm" style={{ fontFamily: "Roboto" }}>Website</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -495,11 +495,11 @@ export default function PortfolioScreen() {
         } else {
           const data: Portfolio = await portRes.json()
           console.log("Portfolio data received:", JSON.stringify(data, null, 2))
-          console.log("Projects in portfolio:", data.projects ? data.projects.length : 0)
+          // console.log("Projects in portfolio:", data.projects ? data.projects.length : 0)
           if (data.projects && data.projects.length > 0) {
             console.log("First project details:", JSON.stringify(data.projects[0], null, 2))
           }
-          console.log("References in portfolio:", data.references ? data.references.length : 0)
+          // console.log("References in portfolio:", data.references ? data.references.length : 0)
           if (data.references && data.references.length > 0) {
             console.log("First reference details:", JSON.stringify(data.references[0], null, 2))
             
@@ -659,26 +659,26 @@ export default function PortfolioScreen() {
           <ScrollView
             className="flex-1 bg-gray-50"
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingTop: 20, paddingBottom: 40 }}
+            contentContainerStyle={{ paddingTop: 20, paddingBottom: 20 }}
           >
             {renderProfileHeader()}
 
               <View className="px-4">
                 {/* About Section */}
                 <View className="mb-4 bg-white rounded-lg shadow-sm border border-gray-200">
-                  <View className="px-4 py-3 border-b border-gray-100">
+                  <View className="px-5 py-4 border-b border-gray-100">
                     <View className="flex-row items-center">
-                      <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center mr-2">
-                        <Ionicons name="person-outline" size={18} color="#2563EB" />
+                      <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3">
+                        <Ionicons name="person-outline" size={20} color="#2563EB" />
                       </View>
-                      <Text className="text-base font-bold text-gray-800" style={{ fontFamily: "Roboto" }}>
+                      <Text className="text-lg font-bold text-gray-900" style={{ fontFamily: "Roboto" }}>
                         About Me
                       </Text>
                     </View>
                   </View>
                   
-                  <View className="p-4">
-                    <Text className="text-gray-700 leading-5 text-sm" style={{ fontFamily: "Roboto" }}>
+                  <View className="p-5">
+                    <Text className="text-gray-700 leading-6 text-base" style={{ fontFamily: "Roboto" }}>
                       {portfolio.professionalSummary ? 
                         portfolio.professionalSummary : 
                         <Text className="text-gray-500 italic">No summary provided</Text>
@@ -686,13 +686,13 @@ export default function PortfolioScreen() {
                     </Text>
                       
                     {portfolio.ncLevel && (
-                      <View className="mt-3 pt-3 border-t border-gray-100">
+                      <View className="mt-4 pt-4 border-t border-gray-100">
                         <View className="flex-row items-center">
-                          <View className="w-6 h-6 rounded-full bg-blue-100 items-center justify-center">
-                            <Ionicons name="school-outline" size={14} color="#2563EB" />
+                          <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center">
+                            <Ionicons name="school-outline" size={16} color="#2563EB" />
                           </View>
-                          <Text className="font-medium text-blue-800 text-xs ml-2" style={{ fontFamily: "Roboto" }}>
-                            {portfolio.ncLevel}
+                          <Text className="font-semibold text-blue-800 text-sm ml-3" style={{ fontFamily: "Roboto" }}>
+                            {String(portfolio.ncLevel)}
                             {portfolio.trainingCenter ? ` at ${portfolio.trainingCenter}` : ''}
                           </Text>
                         </View>
@@ -702,56 +702,69 @@ export default function PortfolioScreen() {
                 </View>              {/* Skills Section */}
               {portfolio.skills?.length > 0 && (
                 <View className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200">
-                  <View className="px-4 py-4 border-b border-gray-100">
+                  <View className="px-5 py-4 border-b border-gray-100">
                     <View className="flex-row items-center">
-                      <View className="w-9 h-9 rounded-full bg-blue-100 items-center justify-center mr-2">
-                        <Ionicons name="hammer-outline" size={18} color="#2563EB" />
+                      <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3">
+                        <Ionicons name="hammer-outline" size={20} color="#2563EB" />
                       </View>
-                      <Text className="text-base font-bold text-gray-800" style={{ fontFamily: "Roboto" }}>
+                      <Text className="text-lg font-bold text-gray-900" style={{ fontFamily: "Roboto" }}>
                         Professional Skills
                       </Text>
                     </View>
                   </View>
                   
-                  <View className="px-4 py-5">
-                    <View className="space-y-5">
+                  <View className="p-5">
+                    <View className="space-y-4">
                       {portfolio.skills.map((skill, index) => (
                         <View 
                           key={index} 
-                          className="bg-white rounded-xl border border-blue-100/60 p-5 shadow-sm mb-4"
+                          className="bg-gradient-to-r from-blue-50/50 to-blue-50/30 rounded-xl border border-blue-100 p-5 mb-3"
+                          style={{
+                            backgroundColor: '#f8fafc',
+                            borderColor: '#e2e8f0',
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.08,
+                            shadowRadius: 3,
+                            elevation: 2,
+                          }}
                         >
-                          <View className="flex-row justify-between mb-1.5">
-                            {/* Skill name at the top */}
+                          {/* Main skill name - larger and more prominent */}
+                          <View className="mb-4">
                             <Text 
-                              className="text-gray-800 font-bold text-base flex-1 mr-3" 
+                              className="text-gray-900 font-bold text-xl" 
                               style={{ fontFamily: "Roboto" }}
                             >
                               {skill.name}
                             </Text>
-                            
-                            {/* Skill type tag */}
+                          </View>
+                          
+                          {/* Bottom row with type and proficiency */}
+                          <View className="flex-row justify-between items-center">
+                            {/* Skill type */}
                             {skill.type && (
-                              <View className="bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200 self-start">
-                                <Text className="text-blue-700 text-xs font-medium" style={{ fontFamily: "Roboto" }}>
-                                  {skill.type.replace(/_/g, ' ')}
+                              <View className="bg-blue-600 px-4 py-2 rounded-full">
+                                <Text className="text-white text-sm font-bold" style={{ fontFamily: "Roboto" }}>
+                                  {skill.type.replace(/_/g, ' ').toUpperCase()}
+                                </Text>
+                              </View>
+                            )}
+                            
+                            {/* Proficiency level with colored indicator */}
+                            {skill.proficiencyLevel && (
+                              <View className="flex-row items-center">
+                                <View className={`w-4 h-4 rounded-full mr-3 ${
+                                  skill.proficiencyLevel.toLowerCase().includes('beginner') ? 'bg-yellow-500' : 
+                                  skill.proficiencyLevel.toLowerCase().includes('intermediate') ? 'bg-orange-500' : 
+                                  skill.proficiencyLevel.toLowerCase().includes('advanced') ? 'bg-green-500' :
+                                  'bg-blue-500'
+                                }`} />
+                                <Text className="text-gray-800 text-base font-semibold" style={{ fontFamily: "Roboto" }}>
+                                  {skill.proficiencyLevel}
                                 </Text>
                               </View>
                             )}
                           </View>
-                          
-                          {/* Proficiency level */}
-                          {skill.proficiencyLevel && (
-                            <View className="flex-row items-center mt-2">
-                              <View className={`w-2.5 h-2.5 rounded-full mr-1.5 ${
-                                skill.proficiencyLevel.toLowerCase().includes('beginner') ? 'bg-blue-400' : 
-                                skill.proficiencyLevel.toLowerCase().includes('intermediate') ? 'bg-blue-600' : 
-                                'bg-blue-800'
-                              }`} />
-                              <Text className="text-gray-600 text-xs" style={{ fontFamily: "Roboto" }}>
-                                {skill.proficiencyLevel}
-                              </Text>
-                            </View>
-                          )}
                         </View>
                       ))}
                     </View>
@@ -762,41 +775,41 @@ export default function PortfolioScreen() {
               {/* Experience Section */}
               {portfolio.experiences?.length > 0 && (
                 <View className="mb-4 bg-white rounded-lg shadow-sm border border-gray-200">
-                  <View className="px-4 py-3 border-b border-gray-100">
+                  <View className="px-5 py-4 border-b border-gray-100">
                     <View className="flex-row items-center">
-                      <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center mr-2">
-                        <Ionicons name="briefcase-outline" size={18} color="#2563EB" />
+                      <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3">
+                        <Ionicons name="briefcase-outline" size={20} color="#2563EB" />
                       </View>
-                      <Text className="text-base font-bold text-gray-800" style={{ fontFamily: "Roboto" }}>
+                      <Text className="text-lg font-bold text-gray-900" style={{ fontFamily: "Roboto" }}>
                         Work Experience
                       </Text>
                     </View>
                   </View>
                   
-                  <View className="p-4">
+                  <View className="p-5">
                     {portfolio.experiences.map((experience, index) => (
                       <View
                         key={index}
                         className={`${
-                          index < portfolio.experiences.length - 1 ? "mb-4 pb-4 border-b border-gray-100" : ""
+                          index < portfolio.experiences.length - 1 ? "mb-5 pb-5 border-b border-gray-100" : ""
                         }`}
                       >
                         <View className="flex-row items-start">
-                          <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center mr-3">
-                            <Ionicons name="business-outline" size={16} color="#2563EB" />
+                          <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-4">
+                            <Ionicons name="business-outline" size={18} color="#2563EB" />
                           </View>
                           <View className="flex-1">
-                            <Text className="text-base font-medium text-gray-800" style={{ fontFamily: "Roboto" }}>{experience.jobTitle}</Text>
-                            <Text className="text-sm text-blue-600" style={{ fontFamily: "Roboto" }}>{experience.employer}</Text>
-                            <View className="flex-row items-center mt-1 mb-2">
-                              <Ionicons name="calendar-outline" size={12} color="#6B7280" />
-                              <Text className="text-xs text-gray-500 ml-1" style={{ fontFamily: "Roboto" }}>
+                            <Text className="text-lg font-bold text-gray-900 mb-1" style={{ fontFamily: "Roboto" }}>{experience.jobTitle}</Text>
+                            <Text className="text-base text-blue-600 font-semibold mb-2" style={{ fontFamily: "Roboto" }}>{experience.employer}</Text>
+                            <View className="flex-row items-center mt-1 mb-3">
+                              <Ionicons name="calendar-outline" size={14} color="#6B7280" />
+                              <Text className="text-sm text-gray-600 ml-2 font-medium" style={{ fontFamily: "Roboto" }}>
                                 {experience.startDate} - {experience.endDate || "Present"}
                               </Text>
                             </View>
                             {experience.description && (
-                              <View className="bg-gray-50 rounded p-3 mt-1">
-                                <Text className="text-gray-700 text-xs leading-5" style={{ fontFamily: "Roboto" }}>{experience.description}</Text>
+                              <View className="bg-gray-50 rounded-lg p-4 mt-2">
+                                <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: "Roboto" }}>{experience.description}</Text>
                               </View>
                             )}
                           </View>
@@ -809,42 +822,42 @@ export default function PortfolioScreen() {
 
               {/* Awards Section */}
               {portfolio.awardsRecognitions?.length > 0 && (
-                <View className="mb-4 bg-white rounded-lg shadow-sm border border-gray-200">
-                  <View className="px-4 py-3 border-b border-gray-100">
+                <View className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200">
+                  <View className="px-5 py-4 border-b border-gray-100">
                     <View className="flex-row items-center">
-                      <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center mr-2">
-                        <Ionicons name="trophy-outline" size={18} color="#2563EB" />
+                      <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3">
+                        <Ionicons name="trophy-outline" size={20} color="#2563EB" />
                       </View>
-                      <Text className="text-base font-bold text-gray-800" style={{ fontFamily: "Roboto" }}>
+                      <Text className="text-lg font-bold text-gray-900" style={{ fontFamily: "Roboto" }}>
                         Awards & Recognitions
                       </Text>
                     </View>
                   </View>
                   
-                  <View className="p-4">
+                  <View className="p-5">
                     {portfolio.awardsRecognitions.map((award, index) => (
                       <View
                         key={index}
                         className={`${
-                          index < portfolio.awardsRecognitions.length - 1 ? "mb-4 pb-4 border-b border-gray-100" : ""
+                          index < portfolio.awardsRecognitions.length - 1 ? "mb-5 pb-5 border-b border-gray-100" : ""
                         }`}
                       >
                         <View className="flex-row items-start">
-                          <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center mr-3">
-                            <Ionicons name="medal-outline" size={16} color="#2563EB" />
+                          <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-4">
+                            <Ionicons name="medal-outline" size={18} color="#2563EB" />
                           </View>
                           <View className="flex-1">
-                            <Text className="text-base font-medium text-gray-800" style={{ fontFamily: "Roboto" }}>{award.title}</Text>
-                            <Text className="text-sm text-blue-600" style={{ fontFamily: "Roboto" }}>{award.issuer}</Text>
+                            <Text className="text-lg font-bold text-gray-900 mb-1" style={{ fontFamily: "Roboto" }}>{award.title}</Text>
+                            <Text className="text-base text-blue-600 font-semibold mb-2" style={{ fontFamily: "Roboto" }}>{award.issuer}</Text>
                             {award.dateReceived && (
-                              <View className="flex-row items-center mt-1 mb-1">
-                                <Ionicons name="calendar-outline" size={12} color="#6B7280" />
-                                <Text className="text-xs text-gray-500 ml-1" style={{ fontFamily: "Roboto" }}>{award.dateReceived}</Text>
+                              <View className="flex-row items-center mt-1 mb-3">
+                                <Ionicons name="calendar-outline" size={14} color="#6B7280" />
+                                <Text className="text-sm text-gray-600 ml-2 font-medium" style={{ fontFamily: "Roboto" }}>{award.dateReceived}</Text>
                               </View>
                             )}
                             {award.description && (
-                              <View className="bg-gray-50 rounded p-3 mt-1">
-                                <Text className="text-gray-700 text-xs leading-5" style={{ fontFamily: "Roboto" }}>{award.description}</Text>
+                              <View className="bg-gray-50 rounded-lg p-4 mt-2">
+                                <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: "Roboto" }}>{award.description}</Text>
                               </View>
                             )}
                           </View>
@@ -1048,68 +1061,68 @@ export default function PortfolioScreen() {
               {portfolio.ncLevel && (
                 <View className="mb-6 overflow-hidden">
                   <View className="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <View className="px-4 py-3 border-b border-gray-100">
+                    <View className="px-5 py-4 border-b border-gray-100">
                       <View className="flex-row items-center">
-                        <View className="w-9 h-9 rounded-full bg-blue-100 items-center justify-center shadow-sm">
-                          <Ionicons name="medal-outline" size={18} color="#3B82F6" />
+                        <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center shadow-sm mr-3">
+                          <Ionicons name="medal-outline" size={20} color="#3B82F6" />
                         </View>
-                        <Text className="text-base font-bold text-gray-900 ml-3" style={{ fontFamily: "Roboto" }}>
+                        <Text className="text-lg font-bold text-gray-900" style={{ fontFamily: "Roboto" }}>
                           TESDA Certification
                         </Text>
                       </View>
                     </View>
                     
-                    <View className="p-4">
+                    <View className="p-5">
                       <View className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
-                        <View className="p-3 flex-row">
+                        <View className="p-4 flex-row">
                           <View className="w-1/3">
-                            <Text className="text-blue-600 text-xs font-medium" style={{ fontFamily: "Roboto" }}>NC Level</Text>
+                            <Text className="text-blue-600 text-sm font-semibold" style={{ fontFamily: "Roboto" }}>NC Level</Text>
                           </View>
                           <View className="flex-1">
-                            <Text className="text-gray-800 font-medium text-sm" style={{ fontFamily: "Roboto" }}>{portfolio.ncLevel}</Text>
+                            <Text className="text-gray-900 font-bold text-base" style={{ fontFamily: "Roboto" }}>{String(portfolio.ncLevel)}</Text>
                           </View>
                         </View>
                         
                         {portfolio.trainingCenter && (
-                          <View className="p-3 flex-row">
+                          <View className="p-4 flex-row">
                             <View className="w-1/3">
-                              <Text className="text-blue-600 text-xs font-medium" style={{ fontFamily: "Roboto" }}>Training Center</Text>
+                              <Text className="text-blue-600 text-sm font-semibold" style={{ fontFamily: "Roboto" }}>Training Center</Text>
                             </View>
                             <View className="flex-1">
-                              <Text className="text-gray-800 font-medium text-sm" style={{ fontFamily: "Roboto" }}>{portfolio.trainingCenter}</Text>
+                              <Text className="text-gray-900 font-bold text-base" style={{ fontFamily: "Roboto" }}>{portfolio.trainingCenter}</Text>
                             </View>
                           </View>
                         )}
                         
                         {portfolio.scholarshipType && (
-                          <View className="p-3 flex-row">
+                          <View className="p-4 flex-row">
                             <View className="w-1/3">
-                              <Text className="text-blue-600 text-xs font-medium" style={{ fontFamily: "Roboto" }}>Scholarship</Text>
+                              <Text className="text-blue-600 text-sm font-semibold" style={{ fontFamily: "Roboto" }}>Scholarship</Text>
                             </View>
                             <View className="flex-1">
-                              <Text className="text-gray-800 font-medium text-sm" style={{ fontFamily: "Roboto" }}>{portfolio.scholarshipType}</Text>
+                              <Text className="text-gray-900 font-bold text-base" style={{ fontFamily: "Roboto" }}>{portfolio.scholarshipType}</Text>
                             </View>
                           </View>
                         )}
                         
                         {portfolio.trainingDuration && (
-                          <View className="p-3 flex-row">
+                          <View className="p-4 flex-row">
                             <View className="w-1/3">
-                              <Text className="text-blue-600 text-xs font-medium" style={{ fontFamily: "Roboto" }}>Duration</Text>
+                              <Text className="text-blue-600 text-sm font-semibold" style={{ fontFamily: "Roboto" }}>Duration</Text>
                             </View>
                             <View className="flex-1">
-                              <Text className="text-gray-800 font-medium text-sm" style={{ fontFamily: "Roboto" }}>{portfolio.trainingDuration}</Text>
+                              <Text className="text-gray-900 font-bold text-base" style={{ fontFamily: "Roboto" }}>{portfolio.trainingDuration}</Text>
                             </View>
                           </View>
                         )}
                         
                         {portfolio.tesdaRegistrationNumber && (
-                          <View className="p-3 flex-row">
+                          <View className="p-4 flex-row">
                             <View className="w-1/3">
-                              <Text className="text-blue-600 text-xs font-medium" style={{ fontFamily: "Roboto" }}>Registration No.</Text>
+                              <Text className="text-blue-600 text-sm font-semibold" style={{ fontFamily: "Roboto" }}>Registration No.</Text>
                             </View>
                             <View className="flex-1">
-                              <Text className="text-gray-800 font-medium text-sm" style={{ fontFamily: "Roboto" }}>{portfolio.tesdaRegistrationNumber}</Text>
+                              <Text className="text-gray-900 font-bold text-base" style={{ fontFamily: "Roboto" }}>{String(portfolio.tesdaRegistrationNumber)}</Text>
                             </View>
                           </View>
                         )}
@@ -1121,14 +1134,14 @@ export default function PortfolioScreen() {
 
               {/* References Section */}
               {portfolio.references?.length > 0 && (
-                <View className="mb-6 overflow-hidden">
+                <View className="mb-6">
                   <View className="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <View className="px-4 py-3 border-b border-gray-100">
+                    <View className="px-5 py-4 border-b border-gray-100">
                       <View className="flex-row items-center">
-                        <View className="w-9 h-9 rounded-full bg-blue-100 items-center justify-center shadow-sm">
-                          <Ionicons name="people-outline" size={18} color="#3B82F6" />
+                        <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3">
+                          <Ionicons name="people-outline" size={20} color="#2563EB" />
                         </View>
-                        <Text className="text-base font-bold text-gray-900 ml-3" style={{ fontFamily: "Roboto" }}>
+                        <Text className="text-lg font-bold text-gray-900" style={{ fontFamily: "Roboto" }}>
                           Professional References
                         </Text>
                       </View>
@@ -1138,57 +1151,52 @@ export default function PortfolioScreen() {
                       {portfolio.references.map((reference, index) => (
                         <View
                           key={index}
-                          className={`bg-white rounded-lg border border-gray-200 p-4 shadow-sm ${
-                            index < portfolio.references.length - 1 ? "mb-5" : ""
+                          className={`${
+                            index < portfolio.references.length - 1 ? "mb-6 pb-6 border-b border-gray-100" : ""
                           }`}
                         >
                           <View className="flex-row items-start">
-                            <View className="w-11 h-11 rounded-full bg-blue-100 items-center justify-center mr-3.5 border border-blue-200/50">
-                              <Ionicons name="person-outline" size={18} color="#3B82F6" />
+                            <View className="w-12 h-12 rounded-full bg-blue-100 items-center justify-center mr-4">
+                              <Ionicons name="person-outline" size={20} color="#2563EB" />
                             </View>
                             <View className="flex-1">
-                              <Text className="text-base font-bold text-gray-800" style={{ fontFamily: "Roboto" }}>
+                              <Text className="text-lg font-bold text-gray-900 mb-1" style={{ fontFamily: "Roboto" }}>
                                 {reference.name || "No name provided"}
                               </Text>
-                              <View className="mt-1 mb-2">
-                                {reference.position ? (
-                                  <Text className="text-base text-gray-900 font-medium" style={{ fontFamily: "Roboto" }}>
-                                    {reference.position}
-                                  </Text>
-                                ) : null}
-                                
-                                {reference.company ? (
-                                  <Text className="text-sm text-blue-700 mt-1" style={{ fontFamily: "Roboto" }}>
-                                    {reference.company}
-                                  </Text>
-                                ) : null}
-                              </View>
                               
-                              <View className="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                {reference.contact && reference.contact.trim() !== '' && (
+                              {reference.position && (
+                                <Text className="text-base text-gray-700 font-medium mb-1" style={{ fontFamily: "Roboto" }}>
+                                  {reference.position}
+                                </Text>
+                              )}
+                              
+                              {reference.company && (
+                                <Text className="text-sm text-blue-600 font-medium mb-3" style={{ fontFamily: "Roboto" }}>
+                                  {reference.company}
+                                </Text>
+                              )}
+                              
+                              <View className="mt-2">
+                                {reference.email && reference.email.trim() !== '' && (
                                   <TouchableOpacity 
-                                    onPress={() => Linking.openURL(`tel:${reference.contact}`)}
-                                    className="flex-row items-center mb-2.5"
+                                    onPress={() => Linking.openURL(`mailto:${reference.email}`)}
+                                    className="flex-row items-center mb-2"
                                   >
-                                    <View className="w-7 h-7 rounded-full bg-blue-100 items-center justify-center mr-3 border border-blue-200">
-                                      <Ionicons name="call-outline" size={16} color="#2563EB" />
-                                    </View>
-                                    <Text className="text-gray-900 text-base font-medium" style={{ fontFamily: "Roboto" }}>
-                                      {reference.contact}
+                                    <Ionicons name="mail-outline" size={16} color="#2563EB" />
+                                    <Text className="text-gray-700 text-sm font-medium ml-2" style={{ fontFamily: "Roboto" }}>
+                                      {reference.email}
                                     </Text>
                                   </TouchableOpacity>
                                 )}
                                 
-                                {reference.email && reference.email.trim() !== '' && (
+                                {reference.contact && reference.contact.trim() !== '' && (
                                   <TouchableOpacity 
-                                    onPress={() => Linking.openURL(`mailto:${reference.email}`)}
+                                    onPress={() => Linking.openURL(`tel:${reference.contact}`)}
                                     className="flex-row items-center"
                                   >
-                                    <View className="w-7 h-7 rounded-full bg-blue-100 items-center justify-center mr-3 border border-blue-200">
-                                      <Ionicons name="mail-outline" size={16} color="#2563EB" />
-                                    </View>
-                                    <Text className="text-gray-900 text-base font-medium" style={{ fontFamily: "Roboto" }}>
-                                      {reference.email}
+                                    <Ionicons name="call-outline" size={16} color="#2563EB" />
+                                    <Text className="text-gray-700 text-sm font-medium ml-2" style={{ fontFamily: "Roboto" }}>
+                                      {reference.contact}
                                     </Text>
                                   </TouchableOpacity>
                                 )}
@@ -1203,7 +1211,7 @@ export default function PortfolioScreen() {
               )}
               
               {/* Profile Action Buttons */}
-              <View className="mb-24 mt-8 px-2">
+              <View className="mb-8 mt-4 px-2">
                 <View className="flex-row gap-4">
                   <TouchableOpacity
                     onPress={handleDeletePortfolio}
