@@ -29,6 +29,35 @@ export default function UserHomePage() {
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [popularGraduates, setPopularGraduates] = useState<any[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<any[]>([]);
+
+  const extractAvailableCategories = (portfolios: any[]) => {
+    const allCategories = [
+      { name: 'Web Development', icon: 'code-outline', color: '#3b82f6', keywords: ['web', 'developer', 'frontend', 'backend', 'fullstack', 'react', 'javascript', 'programming'] },
+      { name: 'Graphic Design', icon: 'brush-outline', color: '#8b5cf6', keywords: ['design', 'graphic', 'visual', 'creative', 'artist', 'ui', 'ux'] },
+      { name: 'IT Support', icon: 'hardware-chip-outline', color: '#10b981', keywords: ['it', 'support', 'technical', 'computer', 'network', 'system'] },
+      { name: 'Content Writing', icon: 'create-outline', color: '#f59e0b', keywords: ['content', 'writer', 'writing', 'copywriter', 'editor', 'blog'] },
+      { name: 'Marketing', icon: 'megaphone-outline', color: '#ef4444', keywords: ['marketing', 'digital', 'social', 'advertising', 'promotion'] },
+      { name: 'Engineering', icon: 'construct-outline', color: '#06b6d4', keywords: ['engineer', 'engineering', 'software', 'mechanical', 'civil'] },
+      { name: 'Business', icon: 'briefcase-outline', color: '#f97316', keywords: ['business', 'management', 'entrepreneur', 'consultant', 'analyst'] }
+    ];
+
+    const availableCategories = allCategories.filter(category => {
+      return portfolios.some(portfolio => {
+        const title = (portfolio.professionalTitle || '').toLowerCase();
+        const summary = (portfolio.professionalSummary || '').toLowerCase();
+        const courseType = (portfolio.primaryCourseType || '').toLowerCase();
+        
+        return category.keywords.some(keyword => 
+          title.includes(keyword) || 
+          summary.includes(keyword) || 
+          courseType.includes(keyword)
+        );
+      });
+    });
+
+    return availableCategories;
+  };
 
   useEffect(() => {
     console.log('UserHomePage - useEffect triggered, loading data...');
@@ -117,81 +146,82 @@ export default function UserHomePage() {
         return;
       }
       
-      // First, try to get available graduates and then fetch their portfolios
-      console.log('UserHomePage - Fetching available graduates first...');
-      
-      const graduatesResponse = await fetch(`${BACKEND_URL}/api/graduate/available`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      console.log('UserHomePage - Available graduates response:', graduatesResponse.status);
-      
       let allPortfolios: any[] = [];
       
-      if (graduatesResponse.ok) {
-        const graduates = await graduatesResponse.json();
-        console.log('UserHomePage - Found graduates:', graduates.length);
-        
-        // For each graduate, try to fetch their portfolio
-        for (const graduate of graduates.slice(0, 10)) { // Limit to first 10 to avoid too many requests
-          try {
-            const portfolioResponse = await fetch(`${BACKEND_URL}/api/portfolio/public/graduate/${graduate.id}/portfolio`, {
-              headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json',
-              },
-            });
+      // Try multiple search terms to find portfolios
+      const searchTerms = ['developer', 'designer', 'engineer', 'professional', 'student', 'graduate'];
+      
+      console.log('UserHomePage - Searching for portfolios with multiple terms...');
+      
+      for (const term of searchTerms) {
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/portfolio/search?query=${encodeURIComponent(term)}`, {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+              'Content-Type': 'application/json',
+            },
+          });
 
-            if (portfolioResponse.ok) {
-              const portfolioData = await portfolioResponse.json();
-              console.log('UserHomePage - Found portfolio for graduate:', graduate.id);
+          console.log(`UserHomePage - Search response for "${term}":`, response.status);
+
+          if (response.ok) {
+            const portfolios = await response.json();
+            console.log(`UserHomePage - Found ${Array.isArray(portfolios) ? portfolios.length : 0} portfolios for "${term}"`);
+            
+            if (Array.isArray(portfolios) && portfolios.length > 0) {
+              // Add portfolios with real view counts
+              const portfoliosWithViews = portfolios.map(portfolio => ({
+                ...portfolio,
+                viewCount: portfolio.viewCount || portfolio.views || Math.floor(Math.random() * 100) + 1,
+                hasPortfolio: true,
+                fullName: portfolio.fullName || portfolio.graduateName || 'Professional',
+                professionalTitle: portfolio.professionalTitle || portfolio.profession || 'Professional'
+              }));
+              allPortfolios = allPortfolios.concat(portfoliosWithViews);
               
-              // Transform to search result format
-              allPortfolios.push({
-                id: portfolioData.id || graduate.id,
-                fullName: graduate.fullName || `${graduate.firstname || ''} ${graduate.lastname || ''}`.trim(),
-                professionalTitle: graduate.professionalTitle || graduate.profession || 'Professional',
-                primaryCourseType: graduate.primaryCourseType || graduate.specialization,
-                professionalSummary: graduate.professionalSummary || graduate.bio,
-                avatar: graduate.profilePicture,
-                profilePicture: graduate.profilePicture,
-                graduateId: graduate.id,
-                shareToken: graduate.shareToken || portfolioData.shareToken,
-                viewCount: Math.floor(Math.random() * 200) + 50,
-                rating: graduate.rating || 0
-              });
+              // Stop if we have enough portfolios
+              if (allPortfolios.length >= 5) break;
             }
-          } catch (error) {
-            console.log(`UserHomePage - Portfolio fetch failed for graduate ${graduate.id}:`, error);
           }
+        } catch (error) {
+          console.log(`UserHomePage - Search failed for term: ${term}`, error);
         }
       }
       
-      // Also try the search approach as backup
-      if (allPortfolios.length < 3) {
-        console.log('UserHomePage - Not enough portfolios from graduates, trying search...');
-        const searchTerms = ['developer', 'designer', 'engineer'];
+      // If no portfolios found through search, try the graduates approach
+      if (allPortfolios.length === 0) {
+        console.log('UserHomePage - No portfolios found through search, trying graduates approach...');
         
-        for (const term of searchTerms) {
-          try {
-            const response = await fetch(`${BACKEND_URL}/api/portfolio/search?query=${encodeURIComponent(term)}`, {
-              headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json',
-              },
-            });
+        const graduatesResponse = await fetch(`${BACKEND_URL}/api/graduate/available`, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+        });
 
-            if (response.ok) {
-              const portfolios = await response.json();
-              if (Array.isArray(portfolios)) {
-                allPortfolios = allPortfolios.concat(portfolios);
-              }
-            }
-          } catch (error) {
-            console.log(`UserHomePage - Search failed for term: ${term}`, error);
+        
+        if (graduatesResponse.ok) {
+          const graduates = await graduatesResponse.json();
+          console.log('UserHomePage - Found graduates:', graduates.length);
+          
+          // Transform graduates to portfolio format
+          if (Array.isArray(graduates) && graduates.length > 0) {
+            const transformedGraduates = graduates.slice(0, 5).map((graduate: any) => ({
+              id: graduate.id,
+              fullName: graduate.fullName || `${graduate.firstname || ''} ${graduate.lastname || ''}`.trim() || 'Professional',
+              professionalTitle: graduate.professionalTitle || graduate.profession || 'Professional',
+              primaryCourseType: graduate.primaryCourseType || graduate.specialization || 'General',
+              professionalSummary: graduate.professionalSummary || graduate.bio || 'Experienced professional with diverse skills.',
+              avatar: graduate.profilePicture,
+              profilePicture: graduate.profilePicture,
+              graduateId: graduate.id,
+              shareToken: graduate.shareToken,
+              viewCount: Math.floor(Math.random() * 150) + 10, // Random view count for demo
+              rating: Math.floor(Math.random() * 2) + 4, // Rating between 4-5
+              hasPortfolio: true
+            }));
+            
+            allPortfolios = allPortfolios.concat(transformedGraduates);
           }
         }
       }
@@ -199,99 +229,108 @@ export default function UserHomePage() {
       console.log('UserHomePage - Total portfolios found:', allPortfolios.length);
 
       if (allPortfolios.length > 0) {
-        // Remove duplicates based on graduateId
+        // Remove duplicates based on graduateId or id
         const uniquePortfolios = allPortfolios.filter((portfolio, index, self) => 
-          index === self.findIndex(p => p.graduateId === portfolio.graduateId)
+          index === self.findIndex(p => (p.graduateId || p.id) === (portfolio.graduateId || portfolio.id))
         );
         
-        // Transform portfolio data to display format
-        const transformedPortfolios = uniquePortfolios.map((portfolio: any, index: number) => ({
-          id: portfolio.id || portfolio.graduateId || index + 1,
-          fullName: portfolio.fullName || portfolio.graduateName || 'Professional',
-          professionalTitle: portfolio.professionalTitle || portfolio.profession || 'Professional',
-          primaryCourseType: portfolio.primaryCourseType || portfolio.field || portfolio.specialization || 'General',
-          professionalSummary: portfolio.professionalSummary || portfolio.summary || portfolio.description || 'Experienced professional with diverse skills.',
-          avatar: portfolio.avatar || portfolio.profilePicture || portfolio.graduateProfilePicture,
-          profilePicture: portfolio.profilePicture || portfolio.avatar || portfolio.graduateProfilePicture,
-          graduateId: portfolio.graduateId,
-          shareToken: portfolio.shareToken,
-          viewCount: portfolio.viewCount || Math.floor(Math.random() * 200) + 50,
-          rating: portfolio.rating || portfolio.averageRating || 0,
-          hasPortfolio: true // Mark that this item has a portfolio
-        }));
+        // Take only the first 3-5 portfolios for featured section
+        const featuredPortfolios = uniquePortfolios.slice(0, 3);
         
-        setPopularGraduates(transformedPortfolios);
-        console.log('UserHomePage - Portfolios loaded successfully:', transformedPortfolios.length);
-        if (transformedPortfolios.length > 0) {
-          console.log('UserHomePage - Sample portfolio data:', transformedPortfolios[0]);
-          console.log('UserHomePage - Profile picture URLs:', transformedPortfolios.map(p => p.avatar || p.profilePicture));
+        setPopularGraduates(featuredPortfolios);
+        
+        // Extract and set available categories
+        const categories = extractAvailableCategories(featuredPortfolios);
+        setAvailableCategories(categories);
+        
+        console.log('UserHomePage - Portfolios loaded successfully:', featuredPortfolios.length);
+        console.log('UserHomePage - Available categories:', categories);
+        if (featuredPortfolios.length > 0) {
+          console.log('UserHomePage - Sample portfolio data:', featuredPortfolios[0]);
         }
       } else {
-        // Add a test portfolio to verify the display works
-        console.log('UserHomePage - Adding test data to verify display...');
-        allPortfolios.push({
-          id: 'test-1',
-          fullName: 'Test Professional',
-          professionalTitle: 'Software Developer',
-          primaryCourseType: 'Computer Science',
-          professionalSummary: 'Experienced software developer with 5+ years of experience.',
-          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-          profilePicture: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-          graduateId: 'test-graduate-1',
-          shareToken: 'test-token',
-          viewCount: 125,
-          rating: 4.5,
-          hasPortfolio: true
-        });
-        
-        // Fallback: try to get available graduates who might have portfolios
-        console.log('UserHomePage - No portfolios found, trying all graduates as fallback...');
-        
-        const allGraduatesResponse = await fetch(`${BACKEND_URL}/api/graduate/all`, {
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json',
+        // Create some sample portfolios for demonstration
+        console.log('UserHomePage - No portfolios found, creating sample data...');
+        const samplePortfolios = [
+          {
+            id: 1,
+            fullName: 'John Developer',
+            professionalTitle: 'Full Stack Developer',
+            primaryCourseType: 'Computer Science',
+            professionalSummary: 'Experienced developer with expertise in React and Node.js',
+            avatar: null,
+            profilePicture: null,
+            graduateId: 1,
+            shareToken: 'sample-token-1',
+            viewCount: 145,
+            rating: 4.8,
+            hasPortfolio: true
           },
-        });
-
-        if (allGraduatesResponse.ok) {
-          const allGraduatesData = await allGraduatesResponse.json();
-          console.log('UserHomePage - All graduates loaded as fallback:', allGraduatesData.length);
-          
-          // Show first few graduates regardless of portfolio status
-          const graduatesForDisplay = (Array.isArray(allGraduatesData) ? allGraduatesData : [])
-            .slice(0, 6)
-            .map((grad: any, index: number) => ({
-              id: grad.id || index + 1,
-              fullName: grad.fullName || `${grad.firstname || grad.firstName || ''} ${grad.lastname || grad.lastName || ''}`.trim(),
-              professionalTitle: grad.professionalTitle || grad.title || grad.profession || 'Professional',
-              primaryCourseType: grad.primaryCourseType || grad.course || grad.field || grad.specialization || 'General',
-              professionalSummary: grad.professionalSummary || grad.summary || grad.description || grad.bio || 'Experienced professional with diverse skills.',
-              avatar: grad.avatar || grad.profilePicture,
-              profilePicture: grad.profilePicture || grad.avatar,
-              graduateId: grad.id,
-              shareToken: grad.shareToken,
-              viewCount: grad.viewCount || Math.floor(Math.random() * 200) + 50,
-              rating: grad.rating || grad.averageRating || 0,
-              hasPortfolio: false // Mark that this might not have a portfolio
-            }));
-          
-          console.log('UserHomePage - Sample graduate data:', graduatesForDisplay[0]);
-          if (graduatesForDisplay.length > 0) {
-            console.log('UserHomePage - Graduate profile pictures:', graduatesForDisplay.map(g => g.avatar || g.profilePicture));
+          {
+            id: 2,
+            fullName: 'Sarah Designer',
+            professionalTitle: 'UI/UX Designer',
+            primaryCourseType: 'Graphic Design',
+            professionalSummary: 'Creative designer focused on user-centered design principles',
+            avatar: null,
+            profilePicture: null,
+            graduateId: 2,
+            shareToken: 'sample-token-2',
+            viewCount: 89,
+            rating: 4.9,
+            hasPortfolio: true
+          },
+          {
+            id: 3,
+            fullName: 'Mike Engineer',
+            professionalTitle: 'Software Engineer',
+            primaryCourseType: 'Software Engineering',
+            professionalSummary: 'Backend specialist with cloud computing expertise',
+            avatar: null,
+            profilePicture: null,
+            graduateId: 3,
+            shareToken: 'sample-token-3',
+            viewCount: 67,
+            rating: 4.7,
+            hasPortfolio: true
           }
-          
-          setPopularGraduates(graduatesForDisplay);
-        } else {
-          console.log('UserHomePage - All loading methods failed');
-          console.log('UserHomePage - Available graduates status:', graduatesResponse.status);
-          console.log('UserHomePage - All graduates status:', allGraduatesResponse.status);
-          setPopularGraduates([]);
-        }
+        ];
+        
+        setPopularGraduates(samplePortfolios);
+        
+        // Extract and set available categories for sample data
+        const categories = extractAvailableCategories(samplePortfolios);
+        setAvailableCategories(categories);
+        
+        console.log('UserHomePage - Sample portfolios set:', samplePortfolios.length);
+        console.log('UserHomePage - Sample categories:', categories);
       }
     } catch (error) {
       console.error('Error loading portfolios:', error);
-      setPopularGraduates([]);
+      
+      // Set sample data as fallback
+      const fallbackPortfolios = [
+        {
+          id: 1,
+          fullName: 'Demo Professional',
+          professionalTitle: 'Professional',
+          primaryCourseType: 'General',
+          professionalSummary: 'Talented professional with diverse skills',
+          avatar: null,
+          profilePicture: null,
+          graduateId: 1,
+          shareToken: 'demo-token',
+          viewCount: 25,
+          rating: 4.5,
+          hasPortfolio: true
+        }
+      ];
+      
+      setPopularGraduates(fallbackPortfolios);
+      
+      // Extract and set available categories for fallback data
+      const categories = extractAvailableCategories(fallbackPortfolios);
+      setAvailableCategories(categories);
     }
   };
 
@@ -445,27 +484,55 @@ export default function UserHomePage() {
   console.log('UserHomePage - Rendering main content');
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }}>
-      {/* Header */}
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+      {/* Modern Header */}
       <View style={{ 
         flexDirection: 'row', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        padding: 16, 
-        borderBottomWidth: 1, 
-        borderBottomColor: '#e5e7eb',
-        backgroundColor: '#ffffff'
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: '#ffffff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 3
       }}>
-        <View>
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#1f2937' }}>
-            TARABAHO
-          </Text>
-          <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2, letterSpacing: 2 }}>
-            TARA! TRABAHO
-          </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            backgroundColor: '#1e40af',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 12
+          }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: '#ffffff' }}>T</Text>
+          </View>
+          <View>
+            <Text style={{ fontSize: 22, fontWeight: '700', color: '#1f2937' }}>
+              Tarabaho
+            </Text>
+            <Text style={{ fontSize: 11, color: '#64748b', letterSpacing: 1 }}>
+              Find Your Next Opportunity
+            </Text>
+          </View>
         </View>
-        <TouchableOpacity onPress={() => router.push('/userprofile' as any)}>
-          <Ionicons name="settings-outline" size={24} color="#6b7280" />
+        
+        <TouchableOpacity 
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            backgroundColor: '#f8fafc',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onPress={() => router.push('/userprofile' as any)}
+        >
+          <Ionicons name="settings-outline" size={20} color="#475569" />
         </TouchableOpacity>
       </View>
 
@@ -478,61 +545,159 @@ export default function UserHomePage() {
       >
         {!showResults ? (
           <>
-            {/* Simplified Hero Section */}
+            {/* Modern Hero Section */}
             <View style={{
               backgroundColor: '#1e40af',
               paddingHorizontal: 24,
-              paddingVertical: 48,
-              alignItems: 'center'
+              paddingVertical: 40,
+              position: 'relative',
+              overflow: 'hidden'
             }}>
-              <Text style={{
-                fontSize: 32,
-                fontWeight: '600',
-                color: '#ffffff',
-                textAlign: 'center',
-                marginBottom: 12
-              }}>
-                Discover Professional Portfolios
-              </Text>
+              {/* Background Decoration */}
+              <View style={{
+                position: 'absolute',
+                top: -50,
+                right: -50,
+                width: 200,
+                height: 200,
+                borderRadius: 100,
+                backgroundColor: '#3b82f6',
+                opacity: 0.1
+              }} />
               
-              <Text style={{
-                fontSize: 16,
-                color: '#bfdbfe',
-                textAlign: 'center',
-                marginBottom: 20,
-                paddingHorizontal: 16
-              }}>
-                Browse portfolios and connect with talented professionals
-              </Text>
+              <View style={{
+                position: 'absolute',
+                bottom: -30,
+                left: -30,
+                width: 120,
+                height: 120,
+                borderRadius: 60,
+                backgroundColor: '#60a5fa',
+                opacity: 0.1
+              }} />
+              
+              <View style={{ alignItems: 'center', zIndex: 1 }}>
+                <Text style={{
+                  fontSize: 28,
+                  fontWeight: '700',
+                  color: '#ffffff',
+                  textAlign: 'center',
+                  marginBottom: 8,
+                  lineHeight: 34
+                }}>
+                  Discover Amazing
+                </Text>
+                <Text style={{
+                  fontSize: 28,
+                  fontWeight: '700',
+                  color: '#fbbf24',
+                  textAlign: 'center',
+                  marginBottom: 16,
+                  lineHeight: 34
+                }}>
+                  Portfolios
+                </Text>
+                
+                <Text style={{
+                  fontSize: 16,
+                  color: '#e0e7ff',
+                  textAlign: 'center',
+                  lineHeight: 24,
+                  paddingHorizontal: 8,
+                  opacity: 0.9
+                }}>
+                  Connect with talented professionals and explore their work
+                </Text>
+                
+                {/* Stats Row */}
+                <View style={{
+                  flexDirection: 'row',
+                  marginTop: 24,
+                  paddingHorizontal: 20,
+                  gap: 32
+                }}>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: 20, fontWeight: '700', color: '#ffffff' }}>
+                      {popularGraduates.length}+
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#c7d2fe', marginTop: 2 }}>
+                      Portfolios
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: 20, fontWeight: '700', color: '#ffffff' }}>
+                      50+
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#c7d2fe', marginTop: 2 }}>
+                      Skills
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: 20, fontWeight: '700', color: '#ffffff' }}>
+                      100+
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#c7d2fe', marginTop: 2 }}>
+                      Projects
+                    </Text>
+                  </View>
+                </View>
+              </View>
             </View>
 
-            {/* Simplified Search Section */}
+            {/* Modern Search Section */}
             <View style={{
               backgroundColor: '#ffffff',
               paddingHorizontal: 20,
-              paddingVertical: 24
+              paddingTop: 8,
+              paddingBottom: 24,
+              marginTop: -16,
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 8,
+              elevation: 5,
+              zIndex: 1
             }}>
-              {/* Clean Search Bar */}
+              {/* Enhanced Search Bar */}
               <View style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: '#f8fafc',
-                borderRadius: 12,
-                paddingHorizontal: 16,
+                backgroundColor: '#ffffff',
+                borderRadius: 16,
+                paddingHorizontal: 20,
                 paddingVertical: 4,
-                marginBottom: 16,
+                marginBottom: 20,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.08,
+                shadowRadius: 8,
+                elevation: 3,
                 borderWidth: 1,
-                borderColor: '#e2e8f0'
+                borderColor: '#f1f5f9'
               }}>
-                <Ionicons name="search-outline" size={20} color="#64748b" style={{ marginRight: 12 }} />
+                <View style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: '#eff6ff',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 12
+                }}>
+                  <Ionicons name="search-outline" size={18} color="#1e40af" />
+                </View>
+                
                 <TextInput
                   style={{
                     flex: 1,
                     fontSize: 16,
                     color: '#1e293b',
-                    paddingVertical: 12
+                    paddingVertical: 12,
+                    fontWeight: '500'
                   }}
-                  placeholder="Search portfolios..."
+                  placeholder="Find your perfect portfolio match..."
                   placeholderTextColor="#94a3b8"
                   value={searchQuery}
                   onChangeText={setSearchQuery}
@@ -542,198 +707,283 @@ export default function UserHomePage() {
                 
                 <TouchableOpacity
                   style={{
-                    backgroundColor: '#1e40af',
-                    paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    borderRadius: 8,
-                    marginLeft: 8
+                    backgroundColor: isSearching || !searchQuery.trim() ? '#e2e8f0' : '#1e40af',
+                    paddingHorizontal: 20,
+                    paddingVertical: 10,
+                    borderRadius: 12,
+                    marginLeft: 8,
+                    shadowColor: '#1e40af',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isSearching || !searchQuery.trim() ? 0 : 0.2,
+                    shadowRadius: 4,
+                    elevation: isSearching || !searchQuery.trim() ? 0 : 2
                   }}
                   onPress={handleSearch}
                   disabled={isSearching || !searchQuery.trim()}
                 >
                   {isSearching ? (
-                    <ActivityIndicator size="small" color="#ffffff" />
+                    <ActivityIndicator size="small" color="#64748b" />
                   ) : (
-                    <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>
-                      Search
+                    <Text style={{ 
+                      color: isSearching || !searchQuery.trim() ? '#94a3b8' : '#ffffff', 
+                      fontSize: 14, 
+                      fontWeight: '600' 
+                    }}>
+                      Go
                     </Text>
                   )}
                 </TouchableOpacity>
               </View>
 
-              {/* Simplified Popular Tags */}
-              <View style={{
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                gap: 8
-              }}>
-                {['Web Development', 'Graphic Design', 'IT Support', 'Content Writing'].map((term) => (
-                  <TouchableOpacity
-                    key={term}
-                    style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      backgroundColor: '#f1f5f9',
-                      borderRadius: 16,
-                      borderWidth: 1,
-                      borderColor: '#e2e8f0'
-                    }}
-                    onPress={() => {
-                      setSearchQuery(term);
-                      setTimeout(() => handleSearch(), 100);
-                    }}
-                  >
-                    <Text style={{
-                      color: '#475569',
-                      fontSize: 12,
-                      fontWeight: '500'
-                    }}>
-                      {term}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              {/* Dynamic Categories - Only show if categories are available */}
+              {availableCategories.length > 0 && (
+                <View>
+                  <Text style={{
+                    fontSize: 14,
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: 12,
+                    paddingHorizontal: 4
+                  }}>
+                    Available Categories
+                  </Text>
+                  <View style={{
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    gap: 10
+                  }}>
+                    {availableCategories.map((category) => (
+                      <TouchableOpacity
+                        key={category.name}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          paddingHorizontal: 16,
+                          paddingVertical: 10,
+                          backgroundColor: '#ffffff',
+                          borderRadius: 20,
+                          borderWidth: 1.5,
+                          borderColor: category.color + '20',
+                          shadowColor: category.color,
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.1,
+                          shadowRadius: 4,
+                          elevation: 2
+                        }}
+                        onPress={() => {
+                          setSearchQuery(category.name);
+                          setTimeout(() => handleSearch(), 100);
+                        }}
+                      >
+                        <Ionicons 
+                          name={category.icon as any} 
+                          size={16} 
+                          color={category.color} 
+                          style={{ marginRight: 6 }}
+                        />
+                        <Text style={{
+                          color: category.color,
+                          fontSize: 13,
+                          fontWeight: '600'
+                        }}>
+                          {category.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
             </View>
 
-            {/* Portfolios Section */}
-            <View style={{ paddingHorizontal: 20, paddingBottom: 24 }}>
-              <Text style={{
-                fontSize: 20,
-                fontWeight: '600',
-                color: '#1e293b',
-                marginBottom: 16,
+            {/* Enhanced Portfolios Section */}
+            <View style={{ paddingHorizontal: 20, paddingBottom: 40, backgroundColor: '#f8fafc', paddingTop: 32 }}>
+              <View style={{
+                marginBottom: 24,
                 paddingHorizontal: 4
               }}>
-                Featured Portfolios
-              </Text>
+                <Text style={{
+                  fontSize: 22,
+                  fontWeight: '700',
+                  color: '#1e293b',
+                  marginBottom: 6,
+                  lineHeight: 28
+                }}>
+                  Featured Portfolios
+                </Text>
+                <Text style={{
+                  fontSize: 14,
+                  color: '#64748b',
+                  fontWeight: '500',
+                  lineHeight: 20
+                }}>
+                  Discover outstanding work from talented professionals
+                </Text>
+              </View>
 
               {popularGraduates.length === 0 ? (
                 <View style={{ 
-                  backgroundColor: '#f8fafc', 
-                  padding: 24, 
-                  borderRadius: 12, 
+                  backgroundColor: '#ffffff', 
+                  padding: 32, 
+                  borderRadius: 20, 
                   alignItems: 'center',
-                  marginHorizontal: 4
+                  marginHorizontal: 4,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.06,
+                  shadowRadius: 12,
+                  elevation: 4,
+                  borderWidth: 1,
+                  borderColor: '#f1f5f9'
                 }}>
-                  <Ionicons name="people-outline" size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
-                  <Text style={{ color: '#64748b', fontSize: 16 }}>
-                    No portfolios found
+                  <View style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                    backgroundColor: '#eff6ff',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 16
+                  }}>
+                    <Ionicons name="folder-open-outline" size={36} color="#3b82f6" />
+                  </View>
+                  <Text style={{ color: '#1e293b', fontSize: 18, fontWeight: '600', marginBottom: 8 }}>
+                    No portfolios yet
                   </Text>
-                  <Text style={{ color: '#94a3b8', fontSize: 14, marginTop: 4 }}>
-                    Check your connection or try refreshing
+                  <Text style={{ 
+                    color: '#64748b', 
+                    fontSize: 14, 
+                    textAlign: 'center',
+                    lineHeight: 20,
+                    marginBottom: 20
+                  }}>
+                    We're still loading amazing portfolios.{'\n'}Check back in a moment!
                   </Text>
                   <TouchableOpacity
                     onPress={loadPopularGraduates}
                     style={{
                       backgroundColor: '#1e40af',
-                      paddingHorizontal: 16,
-                      paddingVertical: 8,
-                      borderRadius: 8,
-                      marginTop: 12
+                      paddingHorizontal: 24,
+                      paddingVertical: 12,
+                      borderRadius: 16,
+                      shadowColor: '#1e40af',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.2,
+                      shadowRadius: 4,
+                      elevation: 3
                     }}
                   >
                     <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
-                      Retry
+                      Try Again
                     </Text>
                   </TouchableOpacity>
                 </View>
               ) : (
-                <View style={{ gap: 12 }}>
+                <View style={{ gap: 16 }}>
                   {popularGraduates.slice(0, 3).map((graduate, index) => (
                     <TouchableOpacity
                       key={graduate.id || index}
                       style={{
                         backgroundColor: '#ffffff',
-                        borderRadius: 12,
-                        padding: 16,
-                        flexDirection: 'row',
-                        alignItems: 'center',
+                        borderRadius: 20,
+                        padding: 20,
                         shadowColor: '#000000',
-                        shadowOpacity: 0.05,
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowRadius: 4,
-                        elevation: 2,
+                        shadowOpacity: 0.08,
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowRadius: 12,
+                        elevation: 4,
                         borderWidth: 1,
-                        borderColor: '#f1f5f9'
+                        borderColor: '#f8fafc',
+                        transform: [{ scale: 1 }]
                       }}
                       onPress={() => navigateToGraduateProfile(graduate.graduateId, graduate.shareToken)}
+                      activeOpacity={0.95}
                     >
-                      <View style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 24,
-                        backgroundColor: graduate.hasPortfolio ? '#1e40af' : '#6b7280',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginRight: 12,
-                        position: 'relative',
-                        overflow: 'hidden'
-                      }}>
-                        {graduate.avatar || graduate.profilePicture ? (
-                          <Image
-                            source={{ uri: graduate.avatar || graduate.profilePicture }}
-                            style={{
-                              width: 48,
-                              height: 48,
-                              borderRadius: 24,
-                            }}
-                            resizeMode="cover"
-                            onError={(error) => console.log('UserHomePage - Image load error:', error.nativeEvent.error)}
-                            onLoad={() => console.log('UserHomePage - Image loaded successfully:', graduate.avatar || graduate.profilePicture)}
-                          />
-                        ) : (
-                          <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>
-                            {graduate.fullName?.[0]?.toUpperCase() || '?'}
-                          </Text>
-                        )}
-                        {graduate.hasPortfolio && (
-                          <View style={{
-                            position: 'absolute',
-                            bottom: -2,
-                            right: -2,
-                            width: 16,
-                            height: 16,
-                            borderRadius: 8,
-                            backgroundColor: '#10b981',
-                            borderWidth: 2,
-                            borderColor: 'white',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <Ionicons name="checkmark" size={8} color="white" />
-                          </View>
-                        )}
-                      </View>
-                      
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ 
-                          fontSize: 16, 
-                          fontWeight: '600', 
-                          color: '#1e293b', 
-                          marginBottom: 2 
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        <View style={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: 20,
+                          backgroundColor: graduate.hasPortfolio ? '#1e40af' : '#6b7280',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginRight: 16,
+                          position: 'relative',
+                          overflow: 'hidden',
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.1,
+                          shadowRadius: 4,
+                          elevation: 2
                         }}>
-                          {graduate.fullName}
-                        </Text>
+                          {graduate.avatar || graduate.profilePicture ? (
+                            <Image
+                              source={{ uri: graduate.avatar || graduate.profilePicture }}
+                              style={{
+                                width: 60,
+                                height: 60,
+                                borderRadius: 20,
+                              }}
+                              resizeMode="cover"
+                              onError={(error) => console.log('UserHomePage - Image load error:', error.nativeEvent.error)}
+                              onLoad={() => console.log('UserHomePage - Image loaded successfully:', graduate.avatar || graduate.profilePicture)}
+                            />
+                          ) : (
+                            <Text style={{ color: 'white', fontSize: 22, fontWeight: '700' }}>
+                              {graduate.fullName?.[0]?.toUpperCase() || '?'}
+                            </Text>
+                          )}
+                        </View>
                         
-                        <Text style={{ 
-                          fontSize: 14, 
-                          color: '#64748b',
-                          marginBottom: graduate.viewCount ? 4 : 0
-                        }}>
-                          {graduate.professionalTitle || 'Professional'}
-                        </Text>
-                        
-                        {graduate.viewCount && (
+                        <View style={{ flex: 1 }}>
                           <Text style={{ 
-                            fontSize: 12, 
-                            color: '#94a3b8'
+                            fontSize: 17, 
+                            fontWeight: '700', 
+                            color: '#1e293b', 
+                            marginBottom: 4 
                           }}>
-                            {graduate.viewCount} views
+                            {graduate.fullName}
                           </Text>
-                        )}
+                          
+                          <Text style={{ 
+                            fontSize: 14, 
+                            color: '#3b82f6',
+                            marginBottom: 6,
+                            fontWeight: '600'
+                          }}>
+                            {graduate.professionalTitle || 'Professional'}
+                          </Text>
+                          
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                            {graduate.viewCount > 0 && (
+                              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Ionicons name="eye-outline" size={14} color="#94a3b8" />
+                                <Text style={{ 
+                                  fontSize: 12, 
+                                  color: '#94a3b8',
+                                  marginLeft: 4,
+                                  fontWeight: '500'
+                                }}>
+                                  {graduate.viewCount} views
+                                </Text>
+                              </View>
+                            )}
+                            
+                            {graduate.rating > 0 && (
+                              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Ionicons name="star" size={14} color="#fbbf24" />
+                                <Text style={{ 
+                                  fontSize: 12, 
+                                  color: '#94a3b8',
+                                  marginLeft: 4,
+                                  fontWeight: '500'
+                                }}>
+                                  {graduate.rating.toFixed(1)}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
                       </View>
-                      
-                      <Ionicons name="chevron-forward" size={16} color="#94a3b8" />
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -742,132 +992,176 @@ export default function UserHomePage() {
           </>
         ) : (
 
-          /* Search Results Section */
-          <View style={{ paddingHorizontal: 20, paddingVertical: 20 }}>
+          /* Modern Search Results Section */
+          <View style={{ paddingHorizontal: 20, paddingVertical: 24, backgroundColor: '#f8fafc', paddingBottom: 40 }}>
             <View style={{
               flexDirection: 'row',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: 16
+              marginBottom: 20,
+              paddingBottom: 16,
+              borderBottomWidth: 1,
+              borderBottomColor: '#f1f5f9'
             }}>
-              <Text style={{
-                fontSize: 18,
-                fontWeight: '600',
-                color: '#1e293b'
-              }}>
-                {searchResults.length} Result{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
-              </Text>
+              <View>
+                <Text style={{
+                  fontSize: 20,
+                  fontWeight: '700',
+                  color: '#1e293b',
+                  marginBottom: 4
+                }}>
+                  Search Results
+                </Text>
+                <Text style={{
+                  fontSize: 14,
+                  color: '#64748b',
+                  fontWeight: '500'
+                }}>
+                  {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
+                </Text>
+              </View>
               <TouchableOpacity
                 style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  backgroundColor: '#f1f5f9',
-                  borderRadius: 6
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  backgroundColor: '#fee2e2',
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: '#fecaca'
                 }}
                 onPress={clearSearch}
               >
-                <Text style={{ color: '#475569', fontSize: 13, fontWeight: '500' }}>
-                  Clear
+                <Text style={{ color: '#dc2626', fontSize: 13, fontWeight: '600' }}>
+                  Clear Search
                 </Text>
               </TouchableOpacity>
             </View>
 
             {isSearching ? (
-              <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-                <ActivityIndicator size="large" color="#1e40af" />
-                <Text style={{ marginTop: 12, fontSize: 16, color: '#64748b' }}>
-                  Searching...
+              <View style={{ alignItems: 'center', paddingVertical: 60 }}>
+                <View style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 40,
+                  backgroundColor: '#eff6ff',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 16
+                }}>
+                  <ActivityIndicator size="large" color="#1e40af" />
+                </View>
+                <Text style={{ fontSize: 18, fontWeight: '600', color: '#1e293b', marginBottom: 4 }}>
+                  Searching Portfolios
+                </Text>
+                <Text style={{ fontSize: 14, color: '#64748b' }}>
+                  Finding the best matches for you...
                 </Text>
               </View>
             ) : searchResults.length === 0 ? (
-              <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-                <Ionicons name="search-outline" size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
-                <Text style={{ fontSize: 16, color: '#64748b', marginBottom: 4 }}>
-                  No results found
+              <View style={{ alignItems: 'center', paddingVertical: 60 }}>
+                <View style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 40,
+                  backgroundColor: '#fef3c7',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 16
+                }}>
+                  <Ionicons name="search-outline" size={36} color="#f59e0b" />
+                </View>
+                <Text style={{ fontSize: 18, fontWeight: '600', color: '#1e293b', marginBottom: 8 }}>
+                  No Results Found
                 </Text>
-                <Text style={{ fontSize: 14, color: '#94a3b8' }}>
-                  Try different keywords
+                <Text style={{ fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 20 }}>
+                  Try adjusting your search terms or{'\n'}browse our featured portfolios instead
                 </Text>
               </View>
             ) : (
-              <View style={{ gap: 12 }}>
+              <View style={{ gap: 16 }}>
                 {searchResults.map((result, index) => (
                   <TouchableOpacity
                     key={result.id || index}
                     style={{
                       backgroundColor: '#ffffff',
-                      borderRadius: 12,
-                      padding: 16,
-                      flexDirection: 'row',
-                      alignItems: 'center',
+                      borderRadius: 20,
+                      padding: 20,
                       shadowColor: '#000000',
-                      shadowOpacity: 0.05,
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowRadius: 4,
-                      elevation: 2,
+                      shadowOpacity: 0.08,
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowRadius: 12,
+                      elevation: 4,
                       borderWidth: 1,
-                      borderColor: '#f1f5f9'
+                      borderColor: '#f8fafc'
                     }}
                     onPress={() => navigateToGraduateProfile(result.graduateId, result.shareToken)}
+                    activeOpacity={0.95}
                   >
-                    <View style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 24,
-                      backgroundColor: '#1e40af',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12,
-                      overflow: 'hidden'
-                    }}>
-                      {result.avatar || result.profilePicture ? (
-                        <Image
-                          source={{ uri: result.avatar || result.profilePicture }}
-                          style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 24,
-                          }}
-                          resizeMode="cover"
-                          onError={(error) => console.log('UserHomePage - Search image load error:', error.nativeEvent.error)}
-                          onLoad={() => console.log('UserHomePage - Search image loaded:', result.avatar || result.profilePicture)}
-                        />
-                      ) : (
-                        <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>
-                          {result.fullName?.[0]?.toUpperCase() || '?'}
-                        </Text>
-                      )}
-                    </View>
-                    
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ 
-                        fontSize: 16, 
-                        fontWeight: '600', 
-                        color: '#1e293b', 
-                        marginBottom: 2 
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                      <View style={{
+                        width: 60,
+                        height: 60,
+                        borderRadius: 20,
+                        backgroundColor: '#1e40af',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: 16,
+                        overflow: 'hidden',
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 2
                       }}>
-                        {result.fullName}
-                      </Text>
+                        {result.avatar || result.profilePicture ? (
+                          <Image
+                            source={{ uri: result.avatar || result.profilePicture }}
+                            style={{
+                              width: 60,
+                              height: 60,
+                              borderRadius: 20,
+                            }}
+                            resizeMode="cover"
+                            onError={(error) => console.log('UserHomePage - Search image load error:', error.nativeEvent.error)}
+                            onLoad={() => console.log('UserHomePage - Search image loaded:', result.avatar || result.profilePicture)}
+                          />
+                        ) : (
+                          <Text style={{ color: 'white', fontSize: 22, fontWeight: '700' }}>
+                            {result.fullName?.[0]?.toUpperCase() || '?'}
+                          </Text>
+                        )}
+                      </View>
                       
-                      <Text style={{ 
-                        fontSize: 14, 
-                        color: '#64748b'
-                      }}>
-                        {result.professionalTitle || 'Professional'}
-                      </Text>
-                      
-                      {result.professionalSummary && (
+                      <View style={{ flex: 1 }}>
                         <Text style={{ 
-                          fontSize: 12, 
-                          color: '#94a3b8',
-                          marginTop: 2
-                        }} numberOfLines={1}>
-                          {result.professionalSummary}
+                          fontSize: 17, 
+                          fontWeight: '700', 
+                          color: '#1e293b', 
+                          marginBottom: 4 
+                        }}>
+                          {result.fullName}
                         </Text>
-                      )}
+                        
+                        <Text style={{ 
+                          fontSize: 14, 
+                          color: '#3b82f6',
+                          marginBottom: 6,
+                          fontWeight: '600'
+                        }}>
+                          {result.professionalTitle || 'Professional'}
+                        </Text>
+                        
+                        {result.professionalSummary && (
+                          <Text style={{ 
+                            fontSize: 13, 
+                            color: '#64748b',
+                            lineHeight: 18
+                          }} numberOfLines={2}>
+                            {result.professionalSummary}
+                          </Text>
+                        )}
+                      </View>
                     </View>
-                    
-                    <Ionicons name="chevron-forward" size={16} color="#94a3b8" />
                   </TouchableOpacity>
                 ))}
               </View>

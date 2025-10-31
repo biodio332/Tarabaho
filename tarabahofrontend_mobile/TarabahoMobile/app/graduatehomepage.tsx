@@ -257,20 +257,80 @@ export default function GraduateHomepage() {
     }
   };
 
+  // NEW: Regenerate share token function
+  const regenerateShareToken = async () => {
+    if (!token || !graduateData?.id) return null;
+    
+    Alert.alert(
+      'Regenerate Share Token',
+      'This will create a NEW share link and INVALIDATE ALL EXISTING LINKS!\n\nAnyone with old links will see "Portfolio not found" errors.\n\nAre you sure you want to continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Yes, Regenerate',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setShareLoading(true);
+              console.log('🔄 Regenerating share token for graduate ID:', graduateData.id);
+              
+              const response = await fetch(`${BACKEND_URL}/api/portfolio/graduate/${graduateData.id}/portfolio/regenerate-token`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+
+              if (!response.ok) {
+                throw new Error('Failed to regenerate share token');
+              }
+
+              const data = await response.json();
+              console.log('✅ New token generated:', data.shareToken.substring(0, 8) + '...');
+              setShareToken(data.shareToken);
+              
+              Alert.alert(
+                '✅ New Share Link Created!',
+                `New secure share link generated successfully!\n\n⚠️ All previous share links are now invalid.`,
+                [{ text: 'OK' }]
+              );
+              
+              return data.shareToken;
+            } catch (error) {
+              console.error('❌ Error regenerating share token:', error);
+              Alert.alert('Error', 'Failed to generate new share token. Please try again.');
+              return null;
+            } finally {
+              setShareLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const getShareableUrl = (token: string) => {
     const baseUrl = __DEV__ ? 'http://localhost:3000' : 'https://your-domain.com';
     return `${baseUrl}/portfolio/${graduateData?.id}?share=${token}`;
   };
 
-  const copySecureLink = async () => {
+  const copySecureLink = useCallback(async () => {
     try {
+      console.log('🔗 Current shareToken in state:', shareToken);
+      
+      // Always fetch the latest token to ensure we have the most current one
       let currentToken = shareToken;
       if (!currentToken) {
+        console.log('⚠️ No token in state, fetching new one...');
         currentToken = await fetchShareToken();
         if (!currentToken) return;
       }
 
+      console.log('🔗 Using token for copy:', currentToken);
       const shareableUrl = getShareableUrl(currentToken);
+      console.log('🔗 Generated URL:', shareableUrl);
+      
       await Clipboard.setStringAsync(shareableUrl);
       
       Alert.alert(
@@ -282,10 +342,11 @@ export default function GraduateHomepage() {
       console.error('❌ Error copying link:', error);
       Alert.alert('Error', 'Failed to copy link. Please try again.');
     }
-  };
+  }, [shareToken, graduateData?.id]);
 
-  const shareToLinkedIn = async () => {
+  const shareToLinkedIn = useCallback(async () => {
     try {
+      // Always use the current shareToken from state
       let currentToken = shareToken;
       if (!currentToken) {
         currentToken = await fetchShareToken();
@@ -308,10 +369,11 @@ export default function GraduateHomepage() {
       console.error('❌ Error sharing to LinkedIn:', error);
       Alert.alert('Error', 'Failed to share to LinkedIn. Please try again.');
     }
-  };
+  }, [shareToken, graduateData?.firstName, graduateData?.id]);
 
-  const shareToFacebook = async () => {
+  const shareToFacebook = useCallback(async () => {
     try {
+      // Always use the current shareToken from state
       let currentToken = shareToken;
       if (!currentToken) {
         currentToken = await fetchShareToken();
@@ -334,10 +396,11 @@ export default function GraduateHomepage() {
       console.error('❌ Error sharing to Facebook:', error);
       Alert.alert('Error', 'Failed to share to Facebook. Please try again.');
     }
-  };
+  }, [shareToken, graduateData?.firstName, graduateData?.id]);
 
-  const shareViaDevice = async () => {
+  const shareViaDevice = useCallback(async () => {
     try {
+      // Always use the current shareToken from state
       let currentToken = shareToken;
       if (!currentToken) {
         currentToken = await fetchShareToken();
@@ -356,7 +419,7 @@ export default function GraduateHomepage() {
     } catch (error) {
       console.error('❌ Error sharing via device:', error);
     }
-  };
+  }, [shareToken, graduateData?.firstName, graduateData?.id]);
 
   // Initial data fetch
   const fetchInitialData = useCallback(async () => {
@@ -870,7 +933,7 @@ export default function GraduateHomepage() {
                   <Text style={textStyles.shareTokenTitle}>Your Secure Token</Text>
                   <TouchableOpacity 
                     style={viewStyles.regenerateTokenButton}
-                    onPress={fetchShareToken}
+                    onPress={regenerateShareToken}
                     disabled={shareLoading}
                   >
                     <Ionicons name="refresh-outline" size={16} color={theme.colors.primary} />

@@ -493,63 +493,83 @@ export default function ViewPortfolio() {
 
   const renderHeader = () => (
     <View style={{ position: 'relative' }}>
-      {/* Hero Background */}
+      {/* Modern Hero Background */}
       <View style={{
-        height: 200,
-        backgroundColor: '#667eea',
+        height: 220,
+        backgroundColor: '#1e40af',
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* Background Pattern */}
+        {/* Enhanced Background Pattern */}
         <View style={{
           position: 'absolute',
-          top: -50,
-          right: -50,
-          width: 150,
-          height: 150,
-          borderRadius: 75,
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          top: -60,
+          right: -60,
+          width: 180,
+          height: 180,
+          borderRadius: 90,
+          backgroundColor: 'rgba(59, 130, 246, 0.15)',
         }} />
         <View style={{
           position: 'absolute',
-          bottom: -30,
-          left: -30,
-          width: 100,
-          height: 100,
-          borderRadius: 50,
-          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          top: -20,
+          right: 20,
+          width: 120,
+          height: 120,
+          borderRadius: 60,
+          backgroundColor: 'rgba(96, 165, 250, 0.1)',
+        }} />
+        <View style={{
+          position: 'absolute',
+          bottom: -40,
+          left: -40,
+          width: 140,
+          height: 140,
+          borderRadius: 70,
+          backgroundColor: 'rgba(147, 197, 253, 0.12)',
+        }} />
+        <View style={{
+          position: 'absolute',
+          bottom: 20,
+          right: -20,
+          width: 80,
+          height: 80,
+          borderRadius: 40,
+          backgroundColor: 'rgba(191, 219, 254, 0.08)',
         }} />
       </View>
 
-      {/* Profile Card */}
+      {/* Enhanced Profile Card */}
       <View style={{
         backgroundColor: 'white',
-        marginHorizontal: 20,
-        marginTop: -80,
-        borderRadius: 20,
+        marginHorizontal: 16,
+        marginTop: -70,
+        borderRadius: 16,
         padding: 20,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.08,
         shadowRadius: 12,
         elevation: 8,
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#f1f5f9',
       }}>
-        {/* Profile Image */}
+        {/* Enhanced Profile Image */}
         <View style={{
           width: 120,
           height: 120,
           borderRadius: 60,
           marginTop: -60,
-          marginBottom: 16,
-          backgroundColor: '#f3f4f6',
+          marginBottom: 20,
+          backgroundColor: '#f8fafc',
           borderWidth: 4,
           borderColor: 'white',
-          shadowColor: '#000',
+          shadowColor: '#1e40af',
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.1,
+          shadowOpacity: 0.12,
           shadowRadius: 8,
-          elevation: 4,
+          elevation: 6,
         }}>
           {graduate?.profilePicture || portfolio?.avatar ? (
             <Image
@@ -559,46 +579,78 @@ export default function ViewPortfolio() {
                 height: 112,
                 borderRadius: 56,
               }}
+              resizeMode="cover"
             />
           ) : (
             <View style={{
               width: 112,
               height: 112,
               borderRadius: 56,
-              backgroundColor: '#e5e7eb',
+              backgroundColor: '#1e40af',
               alignItems: 'center',
               justifyContent: 'center',
             }}>
-              <Ionicons name="person" size={48} color="#9ca3af" />
+              <Text style={{
+                fontSize: 40,
+                fontWeight: '700',
+                color: 'white'
+              }}>
+                {(portfolio?.fullName || graduate?.fullName || 'U')[0].toUpperCase()}
+              </Text>
             </View>
           )}
         </View>
 
-        {/* Name and Title */}
+        {/* Enhanced Name and Title */}
         <Text style={{
-          fontSize: 24,
-          fontWeight: '700',
-          color: '#1f2937',
+          fontSize: 26,
+          fontWeight: '800',
+          color: '#1e293b',
           textAlign: 'center',
-          marginBottom: 4,
+          marginBottom: 8,
+          lineHeight: 32,
         }}>
           {portfolio?.fullName || graduate?.fullName || 'Unknown User'}
         </Text>
 
         {portfolio?.professionalTitle && (
           <View style={{
-            backgroundColor: '#dbeafe',
+            backgroundColor: '#eff6ff',
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            borderRadius: 24,
+            marginBottom: 12,
+            borderWidth: 1,
+            borderColor: '#dbeafe',
+          }}>
+            <Text style={{
+              fontSize: 14,
+              fontWeight: '700',
+              color: '#1e40af',
+              textAlign: 'center',
+            }}>
+              {portfolio.professionalTitle}
+            </Text>
+          </View>
+        )}
+
+        {portfolio?.primaryCourseType && (
+          <View style={{
+            backgroundColor: '#f0fdf4',
             paddingHorizontal: 16,
             paddingVertical: 6,
             borderRadius: 20,
             marginBottom: 8,
+            borderWidth: 1,
+            borderColor: '#bbf7d0',
           }}>
             <Text style={{
               fontSize: 14,
               fontWeight: '600',
-              color: '#1e40af',
+              color: '#16a34a',
+              textAlign: 'center',
             }}>
-              {portfolio.professionalTitle}
+              {portfolio.primaryCourseType}
             </Text>
           </View>
         )}
@@ -621,12 +673,13 @@ export default function ViewPortfolio() {
           </View>
         )}
 
-        {/* Contact Buttons */}
+        {/* Enhanced Contact Buttons */}
         <View style={{
           flexDirection: 'row',
           flexWrap: 'wrap',
           justifyContent: 'center',
-          gap: 8,
+          gap: 12,
+          marginTop: 8,
         }}>
           {(portfolio?.email || graduate?.email) && (
             <TouchableOpacity
@@ -634,18 +687,25 @@ export default function ViewPortfolio() {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: '#f3f4f6',
+                backgroundColor: '#1e40af',
                 paddingHorizontal: 12,
                 paddingVertical: 8,
-                borderRadius: 20,
+                borderRadius: 16,
+                shadowColor: '#1e40af',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 3,
+                elevation: 2,
+                minWidth: 70,
+                justifyContent: 'center',
               }}
             >
-              <Ionicons name="mail" size={16} color="#4f46e5" />
+              <Ionicons name="mail" size={16} color="white" />
               <Text style={{
                 fontSize: 12,
-                fontWeight: '600',
-                color: '#4f46e5',
-                marginLeft: 4,
+                fontWeight: '700',
+                color: 'white',
+                marginLeft: 6,
               }}>
                 Email
               </Text>
@@ -658,18 +718,25 @@ export default function ViewPortfolio() {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: '#f3f4f6',
+                backgroundColor: '#10b981',
                 paddingHorizontal: 12,
                 paddingVertical: 8,
-                borderRadius: 20,
+                borderRadius: 16,
+                shadowColor: '#10b981',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 3,
+                elevation: 2,
+                minWidth: 70,
+                justifyContent: 'center',
               }}
             >
-              <Ionicons name="call" size={16} color="#059669" />
+              <Ionicons name="call" size={16} color="white" />
               <Text style={{
                 fontSize: 12,
-                fontWeight: '600',
-                color: '#059669',
-                marginLeft: 4,
+                fontWeight: '700',
+                color: 'white',
+                marginLeft: 6,
               }}>
                 Call
               </Text>
@@ -687,18 +754,25 @@ export default function ViewPortfolio() {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: '#f3f4f6',
+                backgroundColor: '#f59e0b',
                 paddingHorizontal: 12,
                 paddingVertical: 8,
-                borderRadius: 20,
+                borderRadius: 16,
+                shadowColor: '#f59e0b',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 3,
+                elevation: 2,
+                minWidth: 70,
+                justifyContent: 'center',
               }}
             >
-              <Ionicons name="globe" size={16} color="#7c2d12" />
+              <Ionicons name="globe" size={16} color="white" />
               <Text style={{
                 fontSize: 12,
-                fontWeight: '600',
-                color: '#7c2d12',
-                marginLeft: 4,
+                fontWeight: '700',
+                color: 'white',
+                marginLeft: 6,
               }}>
                 Website
               </Text>
@@ -712,37 +786,45 @@ export default function ViewPortfolio() {
   const renderSection = (title: string, icon: string, children: React.ReactNode) => (
     <View style={{
       backgroundColor: 'white',
-      marginHorizontal: 20,
+      marginHorizontal: 16,
       marginBottom: 16,
       borderRadius: 16,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 4,
+      borderWidth: 1,
+      borderColor: '#f8fafc',
     }}>
       <View style={{
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6',
+        borderBottomColor: '#f1f5f9',
       }}>
         <View style={{
-          width: 32,
-          height: 32,
+          width: 44,
+          height: 44,
           borderRadius: 16,
-          backgroundColor: '#dbeafe',
+          backgroundColor: '#eff6ff',
           alignItems: 'center',
           justifyContent: 'center',
-          marginRight: 12,
+          marginRight: 16,
+          shadowColor: '#1e40af',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 2,
         }}>
-          <Ionicons name={icon as any} size={18} color="#1e40af" />
+          <Ionicons name={icon as any} size={20} color="#1e40af" />
         </View>
         <Text style={{
           fontSize: 18,
-          fontWeight: '700',
-          color: '#1f2937',
+          fontWeight: '800',
+          color: '#1e293b',
+          letterSpacing: -0.5,
         }}>
           {title}
         </Text>
@@ -823,28 +905,30 @@ export default function ViewPortfolio() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f9fafb' }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
       
-      {/* Back Button */}
+      {/* Enhanced Back Button */}
       <View style={{ position: 'absolute', top: 60, left: 20, zIndex: 10 }}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            width: 44,
+            height: 44,
+            borderRadius: 16,
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
             alignItems: 'center',
             justifyContent: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 3,
+            shadowColor: '#1e40af',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 8,
+            elevation: 6,
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.3)',
           }}
         >
-          <Ionicons name="chevron-back" size={24} color="#1f2937" />
+          <Ionicons name="chevron-back" size={26} color="#1e40af" />
         </TouchableOpacity>
       </View>
 
@@ -855,21 +939,31 @@ export default function ViewPortfolio() {
       >
         {renderHeader()}
 
-        <View style={{ marginTop: 20 }}>
-          {/* About Section */}
+        <View style={{ marginTop: 32, backgroundColor: '#f8fafc' }}>
+          {/* Enhanced About Section */}
           {portfolio?.professionalSummary && renderSection(
-            'About',
+            'About Me',
             'person-circle-outline',
-            <Text style={{
-              fontSize: 14,
-              lineHeight: 22,
-              color: '#4b5563',
+            <View style={{
+              backgroundColor: '#f8fafc',
+              padding: 20,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: '#e2e8f0',
             }}>
-              {portfolio.professionalSummary}
-            </Text>
+              <Text style={{
+                fontSize: 14,
+                lineHeight: 24,
+                color: '#334155',
+                fontWeight: '500',
+                textAlign: 'left',
+              }}>
+                {portfolio.professionalSummary}
+              </Text>
+            </View>
           )}
 
-          {/* Skills Section */}
+          {/* Enhanced Skills Section */}
           {portfolio?.skills && portfolio.skills.length > 0 && renderSection(
             'Skills & Expertise',
             'construct-outline',
@@ -879,86 +973,154 @@ export default function ViewPortfolio() {
                   key={index}
                   style={{
                     backgroundColor: '#f8fafc',
-                    padding: 12,
-                    borderRadius: 12,
-                    borderWidth: 1,
                     borderColor: '#e2e8f0',
+                    borderWidth: 1,
+                    borderRadius: 12,
+                    padding: 16,
+                    marginBottom: 8,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 3,
+                    elevation: 2,
                   }}
                 >
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  {/* Main skill name */}
+                  <View style={{ marginBottom: 12 }}>
                     <Text style={{
                       fontSize: 16,
-                      fontWeight: '600',
-                      color: '#1f2937',
+                      fontWeight: '700',
+                      color: '#1e293b',
                     }}>
                       {skill.name}
                     </Text>
-                    {skill.proficiencyLevel && (
+                  </View>
+                  
+                  {/* Bottom row with type and proficiency */}
+                  <View style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}>
+                    {/* Skill type */}
+                    {skill.type && (
                       <View style={{
-                        backgroundColor: '#dbeafe',
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 8,
+                        backgroundColor: '#1e40af',
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 20,
                       }}>
                         <Text style={{
-                          fontSize: 12,
-                          fontWeight: '500',
-                          color: '#1e40af',
+                          color: 'white',
+                          fontSize: 11,
+                          fontWeight: '700',
+                        }}>
+                          {skill.type.replace(/_/g, ' ').toUpperCase()}
+                        </Text>
+                      </View>
+                    )}
+                    
+                    {/* Proficiency level with colored indicator */}
+                    {skill.proficiencyLevel && (
+                      <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                      }}>
+                        <View style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: 6,
+                          marginRight: 8,
+                          backgroundColor: 
+                            skill.proficiencyLevel.toLowerCase().includes('beginner') ? '#eab308' : 
+                            skill.proficiencyLevel.toLowerCase().includes('intermediate') ? '#ea580c' : 
+                            skill.proficiencyLevel.toLowerCase().includes('advanced') ? '#16a34a' :
+                            '#3b82f6',
+                        }} />
+                        <Text style={{
+                          color: '#374151',
+                          fontSize: 13,
+                          fontWeight: '600',
                         }}>
                           {skill.proficiencyLevel}
                         </Text>
                       </View>
                     )}
                   </View>
-                  {skill.type && (
-                    <Text style={{
-                      fontSize: 12,
-                      color: '#6b7280',
-                      marginTop: 4,
-                    }}>
-                      {skill.type.replace(/_/g, ' ')}
-                    </Text>
-                  )}
                 </View>
               ))}
             </View>
           )}
 
-          {/* Experience Section */}
+          {/* Enhanced Experience Section */}
           {portfolio?.experiences && portfolio.experiences.length > 0 && renderSection(
             'Work Experience',
             'briefcase-outline',
-            <View style={{ gap: 16 }}>
+            <View style={{ gap: 20 }}>
               {portfolio.experiences.map((experience, index) => (
-                <View key={index} style={{ paddingBottom: index < portfolio.experiences.length - 1 ? 16 : 0, borderBottomWidth: index < portfolio.experiences.length - 1 ? 1 : 0, borderBottomColor: '#f3f4f6' }}>
-                  <Text style={{
-                    fontSize: 16,
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: 4,
-                  }}>
-                    {experience.jobTitle}
-                  </Text>
-                  <Text style={{
-                    fontSize: 14,
-                    fontWeight: '500',
-                    color: '#4f46e5',
-                    marginBottom: 4,
-                  }}>
-                    {experience.employer}
-                  </Text>
-                  <Text style={{
-                    fontSize: 12,
-                    color: '#6b7280',
-                    marginBottom: 8,
-                  }}>
-                    {experience.startDate} - {experience.endDate || 'Present'}
-                  </Text>
+                <View 
+                  key={index} 
+                  style={{ 
+                    backgroundColor: '#ffffff',
+                    padding: 20,
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: '#e2e8f0',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.04,
+                    shadowRadius: 6,
+                    elevation: 2,
+                  }}
+                >
+                  <View style={{ marginBottom: 12 }}>
+                    <Text style={{
+                      fontSize: 16,
+                      fontWeight: '800',
+                      color: '#1e293b',
+                      marginBottom: 6,
+                      lineHeight: 22,
+                    }}>
+                      {experience.jobTitle}
+                    </Text>
+                    <View style={{
+                      backgroundColor: '#eff6ff',
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 12,
+                      alignSelf: 'flex-start',
+                      marginBottom: 8,
+                    }}>
+                      <Text style={{
+                        fontSize: 13,
+                        fontWeight: '700',
+                        color: '#1e40af',
+                      }}>
+                        {experience.employer}
+                      </Text>
+                    </View>
+                    <View style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      marginBottom: 12,
+                    }}>
+                      <Ionicons name="calendar-outline" size={16} color="#64748b" />
+                      <Text style={{
+                        fontSize: 12,
+                        color: '#64748b',
+                        marginLeft: 6,
+                        fontWeight: '600',
+                      }}>
+                        {experience.startDate} - {experience.endDate || 'Present'}
+                      </Text>
+                    </View>
+                  </View>
                   {experience.description && (
                     <Text style={{
-                      fontSize: 14,
-                      lineHeight: 20,
-                      color: '#4b5563',
+                      fontSize: 13,
+                      lineHeight: 22,
+                      color: '#475569',
+                      fontWeight: '500',
                     }}>
                       {experience.description}
                     </Text>
@@ -968,27 +1130,31 @@ export default function ViewPortfolio() {
             </View>
           )}
 
-          {/* Projects Section */}
+          {/* Enhanced Projects Section */}
           {portfolio?.projects && portfolio.projects.length > 0 && renderSection(
             'Featured Projects',
             'code-slash-outline',
-            <View style={{ gap: 20 }}>
+            <View style={{ gap: 24 }}>
               {portfolio.projects.map((project, index) => (
-                <View key={index} style={{ paddingBottom: index < portfolio.projects.length - 1 ? 20 : 0, borderBottomWidth: index < portfolio.projects.length - 1 ? 1 : 0, borderBottomColor: '#f3f4f6' }}>
-                  <Text style={{
-                    fontSize: 16,
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: 8,
-                  }}>
-                    {project.name}
-                  </Text>
-                  
+                <View 
+                  key={index} 
+                  style={{ 
+                    backgroundColor: '#ffffff',
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: '#e2e8f0',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.06,
+                    shadowRadius: 8,
+                    elevation: 3,
+                    overflow: 'hidden',
+                  }}
+                >
                   {project.projectImageFilePath && (
                     <View style={{
-                      borderRadius: 12,
                       overflow: 'hidden',
-                      marginBottom: 12,
+                      marginBottom: 0,
                     }}>
                       <Image
                         source={{ uri: project.projectImageFilePath }}
@@ -1001,44 +1167,69 @@ export default function ViewPortfolio() {
                     </View>
                   )}
                   
-                  {project.description && (
+                  <View style={{ padding: 20 }}>
                     <Text style={{
-                      fontSize: 14,
-                      lineHeight: 20,
-                      color: '#4b5563',
+                      fontSize: 18,
+                      fontWeight: '800',
+                      color: '#1e293b',
                       marginBottom: 12,
+                      lineHeight: 24,
                     }}>
-                      {project.description}
+                      {project.name}
                     </Text>
-                  )}
-                  
-                  {project.technologies && project.technologies.length > 0 && (
-                    <View style={{
-                      flexDirection: 'row',
-                      flexWrap: 'wrap',
-                      gap: 6,
-                    }}>
-                      {project.technologies.map((tech, techIndex) => (
-                        <View
-                          key={techIndex}
-                          style={{
-                            backgroundColor: '#dbeafe',
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 12,
-                          }}
-                        >
-                          <Text style={{
-                            fontSize: 12,
-                            fontWeight: '500',
-                            color: '#1e40af',
-                          }}>
-                            {tech}
-                          </Text>
+                    
+                    {project.description && (
+                      <Text style={{
+                        fontSize: 13,
+                        lineHeight: 22,
+                        color: '#475569',
+                        marginBottom: 16,
+                        fontWeight: '500',
+                      }}>
+                        {project.description}
+                      </Text>
+                    )}
+                    
+                    {project.technologies && project.technologies.length > 0 && (
+                      <View>
+                        <Text style={{
+                          fontSize: 12,
+                          fontWeight: '700',
+                          color: '#64748b',
+                          marginBottom: 8,
+                        }}>
+                          Technologies Used:
+                        </Text>
+                        <View style={{
+                          flexDirection: 'row',
+                          flexWrap: 'wrap',
+                          gap: 8,
+                        }}>
+                          {project.technologies.map((tech, techIndex) => (
+                            <View
+                              key={techIndex}
+                              style={{
+                                backgroundColor: '#eff6ff',
+                                paddingHorizontal: 12,
+                                paddingVertical: 6,
+                                borderRadius: 16,
+                                borderWidth: 1,
+                                borderColor: '#dbeafe',
+                              }}
+                            >
+                              <Text style={{
+                                fontSize: 11,
+                                fontWeight: '700',
+                                color: '#1e40af',
+                              }}>
+                                {tech}
+                              </Text>
+                            </View>
+                          ))}
                         </View>
-                      ))}
-                    </View>
-                  )}
+                      </View>
+                    )}
+                  </View>
                 </View>
               ))}
             </View>
@@ -1242,36 +1433,64 @@ export default function ViewPortfolio() {
           {!portfolio && (
             <View style={{
               alignItems: 'center',
-              paddingVertical: 60,
-              paddingHorizontal: 20,
+              paddingVertical: 80,
+              paddingHorizontal: 24,
+              backgroundColor: '#ffffff',
+              borderRadius: 16,
+              marginHorizontal: 16,
+              marginVertical: 20,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+              elevation: 4,
             }}>
-              <Ionicons name="document-outline" size={64} color="#9ca3af" />
+              <View style={{
+                width: 80,
+                height: 80,
+                borderRadius: 40,
+                backgroundColor: '#f3f4f6',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginBottom: 20,
+              }}>
+                <Ionicons name="document-outline" size={36} color="#6b7280" />
+              </View>
               <Text style={{
-                fontSize: 18,
-                fontWeight: '600',
+                fontSize: 20,
+                fontWeight: '700',
                 color: '#1f2937',
-                marginTop: 16,
+                marginBottom: 8,
                 textAlign: 'center',
               }}>
                 No Portfolio Available
               </Text>
               <Text style={{
-                fontSize: 14,
+                fontSize: 16,
                 color: '#6b7280',
-                marginTop: 8,
+                marginBottom: 16,
                 textAlign: 'center',
+                lineHeight: 24,
               }}>
-                This professional hasn't created their portfolio yet.
+                This professional hasn't shared their portfolio yet.
               </Text>
               {graduate && (
-                <Text style={{
-                  fontSize: 12,
-                  color: '#9ca3af',
-                  marginTop: 16,
-                  textAlign: 'center',
+                <View style={{
+                  backgroundColor: '#f8fafc',
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  borderRadius: 12,
+                  marginTop: 8,
                 }}>
-                  Viewing: {graduate.fullName || graduate.username || 'Unknown User'}
-                </Text>
+                  <Text style={{
+                    fontSize: 14,
+                    color: '#475569',
+                    textAlign: 'center',
+                    fontWeight: '500',
+                  }}>
+                    {graduate.fullName || graduate.username || 'Unknown User'}
+                  </Text>
+                </View>
               )}
             </View>
           )}

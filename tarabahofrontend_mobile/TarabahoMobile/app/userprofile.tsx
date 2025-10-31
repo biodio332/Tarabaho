@@ -923,6 +923,7 @@ export default function UserProfile() {
                   color: '#1f2937',
                 }}
                 placeholder="Enter current password"
+                placeholderTextColor="#9ca3af"
               />
             </View>
 
@@ -951,6 +952,7 @@ export default function UserProfile() {
                   color: '#1f2937',
                 }}
                 placeholder="Enter new password (min 8 characters)"
+                placeholderTextColor="#9ca3af"
               />
             </View>
 
@@ -979,6 +981,7 @@ export default function UserProfile() {
                   color: '#1f2937',
                 }}
                 placeholder="Confirm new password"
+                placeholderTextColor="#9ca3af"
               />
             </View>
 
