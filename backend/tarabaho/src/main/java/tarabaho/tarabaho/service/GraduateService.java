@@ -9,6 +9,7 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -156,7 +157,7 @@ public class GraduateService {
         try {
             mailSender.send(message);
             System.out.println("GraduateService: OTP email sent to " + email + " (key: " + otpKey + ")");
-        } catch (Exception e) {
+        } catch (MailException e) {
             otpMap.remove(otpKey); // Clean up OTP on failure
             throw new IllegalArgumentException("Failed to send OTP email: " + e.getMessage(), e);
         }

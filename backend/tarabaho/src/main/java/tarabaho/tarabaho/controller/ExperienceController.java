@@ -59,6 +59,7 @@ public class ExperienceController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
             String username = authentication.getName();
+            @SuppressWarnings("unused")
             Graduate graduate = graduateService.findByUsername(username)
                 .orElseThrow(() -> new Exception("Graduate not found."));
             portfolioService.getPortfolio(portfolioId, username); // Verify portfolio access
@@ -82,6 +83,7 @@ public class ExperienceController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
             String username = authentication.getName();
+            @SuppressWarnings("unused")
             Graduate graduate = graduateService.findByUsername(username)
                 .orElseThrow(() -> new Exception("Graduate not found."));
             portfolioService.getPortfolio(experience.getPortfolio().getId(), username); // Verify portfolio access
@@ -112,6 +114,7 @@ public class ExperienceController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
             String username = authentication.getName();
+            @SuppressWarnings("unused")
             Graduate graduate = graduateService.findByUsername(username)
                 .orElseThrow(() -> new Exception("Graduate not found."));
             Experience experience = experienceService.getExperienceById(id); // Assume method exists
@@ -141,6 +144,7 @@ public class ExperienceController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
             String username = authentication.getName();
+            @SuppressWarnings("unused")
             Graduate graduate = graduateService.findByUsername(username)
                 .orElseThrow(() -> new Exception("Graduate not found."));
             Experience existingExperience = experienceService.getExperienceById(id);
@@ -180,6 +184,7 @@ public class ExperienceController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
             String username = authentication.getName();
+            @SuppressWarnings("unused")
             Graduate graduate = graduateService.findByUsername(username)
                 .orElseThrow(() -> new Exception("Graduate not found."));
             portfolioService.getPortfolio(portfolioId, username); // Verify portfolio access

@@ -46,8 +46,7 @@ public class PortfolioViewController {
     private PortfolioService portfolioService;
 
     private String getUsernameFromAuthentication(Authentication authentication) {
-        if (authentication.getPrincipal() instanceof OAuth2User) {
-            OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+        if (authentication.getPrincipal() instanceof OAuth2User oauthUser) {
             String email = oauthUser.getAttribute("email");
             logger.debug("PortfolioViewController: OAuth2 authentication detected, using email: {}", email);
             return email;
@@ -77,6 +76,7 @@ public class PortfolioViewController {
             String username = getUsernameFromAuthentication(authentication);
             logger.debug("Authenticated user: {}", username);
             
+            @SuppressWarnings("unused")
             Graduate graduate = graduateService.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Graduate not found."));
             
@@ -129,6 +129,7 @@ public class PortfolioViewController {
             String username = getUsernameFromAuthentication(authentication);
             logger.debug("Authenticated user: {}", username);
             
+            @SuppressWarnings("unused")
             Graduate graduate = graduateService.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Graduate not found."));
             

@@ -1,5 +1,6 @@
 package tarabaho.tarabaho.service;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -15,7 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import tarabaho.tarabaho.entity.Portfolio;
 import tarabaho.tarabaho.entity.Project;
-import tarabaho.tarabaho.repository.GraduateRepository;
+
 import tarabaho.tarabaho.repository.PortfolioRepository;
 import tarabaho.tarabaho.repository.ProjectRepository;
 
@@ -30,8 +31,6 @@ public class ProjectService {
     @Autowired
     private PortfolioRepository portfolioRepository;
 
-    @Autowired
-    private GraduateRepository graduateRepository;
 
     @Autowired
     private SupabaseRestStorageService storageService;
@@ -201,7 +200,7 @@ public class ProjectService {
                     } else {
                         logger.error("Failed to delete old project image from Supabase: {}", e.getMessage());
                     }
-                } catch (Exception e) {
+                } catch (IOException e) {
                     logger.error("Unexpected error deleting old project image from Supabase: {}", e.getMessage());
                 }
             }
@@ -306,7 +305,7 @@ public class ProjectService {
                 } else {
                     logger.warn("Failed to delete project image from Supabase but entity was deleted: {}", e.getMessage());
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 logger.warn("Unexpected error deleting project image from Supabase but entity was deleted: {}", e.getMessage());
             }
         }
@@ -367,7 +366,7 @@ public class ProjectService {
                 } else {
                     logger.warn("Failed to delete project image from Supabase: {}", e.getMessage());
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 logger.warn("Unexpected error deleting project image: {}", e.getMessage());
             }
         }

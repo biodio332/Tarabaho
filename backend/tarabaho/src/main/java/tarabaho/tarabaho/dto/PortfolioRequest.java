@@ -3,6 +3,7 @@ package tarabaho.tarabaho.dto;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.validation.constraints.Size;
 import tarabaho.tarabaho.entity.AwardRecognition;
 import tarabaho.tarabaho.entity.Certificate;
 import tarabaho.tarabaho.entity.ContinuingEducation;
@@ -17,7 +18,10 @@ import tarabaho.tarabaho.entity.Visibility;
 public class PortfolioRequest {
     private Long id; // Added for response DTO
     private Long graduateId; // Added for response DTO
+
+    @Size(max = 1000, message = "Professional summary must not exceed 1000 characters.")
     private String professionalSummary;
+    
     private String primaryCourseType;
     private String scholarScheme;
     private String designTemplate;

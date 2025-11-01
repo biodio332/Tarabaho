@@ -30,15 +30,12 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import tarabaho.tarabaho.jwt.JwtAuthFilter;
-import tarabaho.tarabaho.jwt.JwtUtil;
 import tarabaho.tarabaho.service.CustomOAuth2UserService;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private JwtUtil jwtUtil;
 
     @Autowired
     private JwtAuthFilter jwtAuthenticationFilter;
@@ -50,6 +47,7 @@ public class SecurityConfig {
     private AuthorizationRequestRepository<OAuth2AuthorizationRequest> customAuthorizationRequestRepository;
 
     @Bean
+    @SuppressWarnings("CallToPrintStackTrace")
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         System.out.println("Applying SecurityFilterChain configuration...");
 
@@ -195,14 +193,13 @@ public class SecurityConfig {
     }
 
     @Bean
-    public HttpSessionOAuth2AuthorizationRequestRepository customAuthorizationRequestRepository() {
-        return (HttpSessionOAuth2AuthorizationRequestRepository) customAuthorizationRequestRepository;
+    public AuthorizationRequestRepository<OAuth2AuthorizationRequest> customAuthorizationRequestRepository() {
+        return customAuthorizationRequestRepository;
     }
 }
 
 class CustomOAuth2AuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
     private final OAuth2AuthorizationRequestResolver delegate;
-    private static final String TYPE_ATTRIBUTE = "type";
 
     public CustomOAuth2AuthorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository) {
         this.delegate = new DefaultOAuth2AuthorizationRequestResolver(

@@ -9,6 +9,7 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -155,7 +156,7 @@ public class UserService {
         try {
             mailSender.send(message);
             System.out.println("UserService: OTP email sent to " + email + " (key: " + otpKey + ")");
-        } catch (Exception e) {
+        } catch (MailException e) {
             otpMap.remove(otpKey); // Clean up OTP on failure
             throw new IllegalArgumentException("Failed to send OTP email: " + e.getMessage(), e);
         }
@@ -217,7 +218,7 @@ public class UserService {
         try {
             mailSender.send(message);
             System.out.println("Verification email + OTP sent to: " + email + " (key: " + otpKey + ")");
-        } catch (Exception e) {
+        } catch (MailException e) {
             otpMap.remove(otpKey);
             throw new IllegalArgumentException("Failed to send verification email: " + e.getMessage());
         }

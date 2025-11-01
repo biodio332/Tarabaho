@@ -47,8 +47,7 @@ public class TestimonialController {
     private PortfolioRepository portfolioRepository;
 
     private String getUsernameFromAuthentication(Authentication authentication) {
-        if (authentication.getPrincipal() instanceof OAuth2User) {
-            OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+        if (authentication.getPrincipal() instanceof OAuth2User oauthUser) {
             String email = oauthUser.getAttribute("email");
             System.out.println("TestimonialController: OAuth2 authentication detected, using email: " + email);
             return email;
@@ -74,6 +73,7 @@ public class TestimonialController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated.");
             }
             String username = getUsernameFromAuthentication(authentication);
+            @SuppressWarnings("unused")
             Graduate graduate = graduateService.findByUsername(username)
                 .orElseGet(() -> graduateService.findByEmail(username)
                     .orElseThrow(() -> new IllegalArgumentException("Graduate not found for username/email: " + username)));

@@ -511,6 +511,13 @@ const PortfolioCreation = () => {
         certificateIds.push(certResponse.data.id)
       }
 
+            // Validate professional summary length
+      if (formData.professionalSummary.length > 1000) {
+        setError("Professional summary cannot exceed 1000 characters.")
+        setIsLoading(false)
+        return
+      }
+
       const payload = {
         graduateId: graduateId,
         professionalSummary: formData.professionalSummary,
@@ -746,21 +753,32 @@ const PortfolioCreation = () => {
               </div>
 
               <div className="mt-6">
-                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                  Professional Summary *
+              <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                Professional Summary *
+              </Typography>
+              <Textarea
+                size="lg"
+                value={formData.professionalSummary}
+                onChange={handleInputChange}
+                name="professionalSummary"
+                placeholder="Brief summary of your professional background"
+                required
+                disabled={isLoading}
+                className="!border-gray-300 focus:!border-blue-500"
+                rows={4}
+                maxLength={1000} // Enforces max input length
+              />
+              <div className="flex justify-between items-center mt-1">
+                <Typography variant="small" className="text-gray-500">
+                  {formData.professionalSummary.length}/1000 characters
                 </Typography>
-                <Textarea
-                  size="lg"
-                  value={formData.professionalSummary}
-                  onChange={handleInputChange}
-                  name="professionalSummary"
-                  placeholder="Brief summary of your professional background"
-                  required
-                  disabled={isLoading}
-                  className="!border-gray-300 focus:!border-blue-500"
-                  rows={4}
-                />
+                {formData.professionalSummary.length > 1000 && (
+                  <Typography variant="small" color="red">
+                    Summary cannot exceed 1000 characters.
+                  </Typography>
+                )}
               </div>
+            </div>
             </CardBody>
           </Card>
 

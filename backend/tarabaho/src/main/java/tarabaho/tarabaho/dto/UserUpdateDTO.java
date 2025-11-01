@@ -1,11 +1,24 @@
 package tarabaho.tarabaho.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
+
 public class UserUpdateDTO {
+
+    @Size(max = 255)
     private String firstname;
+
+    @Size(max = 255)
     private String lastname;
     private String username;
+
+    @Size(min = 8)
     private String password;
+
+    @Email @Size(max = 255)
     private String email;
+
+    @Size(max = 20)
     private String phoneNumber;
     private String location;
     private String birthday;

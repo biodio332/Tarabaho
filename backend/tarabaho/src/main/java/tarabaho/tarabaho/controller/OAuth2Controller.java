@@ -51,6 +51,7 @@ public class OAuth2Controller {
     @Autowired
     private SupabaseRestStorageService storageService;
 
+    @SuppressWarnings({ "unused", "deprecation" })
     @GetMapping("/oauth2-success")
     @Transactional
     public void oauth2Success(
@@ -61,11 +62,7 @@ public class OAuth2Controller {
         System.out.println("OAuth2Controller: Reached /oauth2-success");
         System.out.println("OAuth2Controller: Principal name: " + oauthUser.getName());
         
-        if (oauthUser == null) {
-            System.out.println("OAuth2Controller: ⚠️ OAuth2User is null");
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed");
-            return;
-        }
+        
 
         Map<String, Object> attributes = oauthUser.getAttributes();
         if (attributes == null) {
@@ -134,7 +131,7 @@ public class OAuth2Controller {
                     profilePicture = storageService.uploadFile(multipartFile, "profile-picture");
                     System.out.println("OAuth2Controller: Uploaded profile picture: " + profilePicture);
                     Files.delete(tempFile);
-                } catch (Exception e) {
+                } catch (IOException e) {
                     System.out.println("OAuth2Controller: ⚠️ Failed to upload profile picture: " + e.getMessage());
                     profilePicture = picture; // Fallback to original picture URL
                 }
@@ -296,7 +293,6 @@ public class OAuth2Controller {
             response.sendRedirect("http://localhost:5173/sign-in?error=invalid_hourly_rate");
         } catch (Exception e) {
             System.out.println("OAuth2Controller: ⚠️ Error in oauth2Success: " + e.getMessage());
-            e.printStackTrace();
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "OAuth2 processing failed: " + e.getMessage());
         }
     }

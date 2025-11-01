@@ -1,5 +1,6 @@
 package tarabaho.tarabaho.controller;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -455,6 +456,7 @@ public class AdminController {
         return ResponseEntity.ok(admin);
     }
 
+    @SuppressWarnings("null")
     @Operation(summary = "Upload admin profile picture", description = "Upload a profile picture for the authenticated admin")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Profile picture uploaded successfully"),
@@ -488,7 +490,7 @@ public class AdminController {
                 try {
                     storageService.deleteFile("profile-picture", existingFileName);
                     log.info("Deleted old profile picture for username: {}", username);
-                } catch (Exception e) {
+                } catch (IOException e) {
                     log.error("Failed to delete old profile picture for username {}: {}", username, e.getMessage());
                 }
             }

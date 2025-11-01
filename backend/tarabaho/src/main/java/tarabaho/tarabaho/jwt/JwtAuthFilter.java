@@ -69,6 +69,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
+    @SuppressWarnings("null")
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
@@ -85,6 +86,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         return shouldNotFilter;
     }
 
+    @SuppressWarnings("null")
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {

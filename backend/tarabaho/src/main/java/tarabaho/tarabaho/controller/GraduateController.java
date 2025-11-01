@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,7 +43,7 @@ import tarabaho.tarabaho.repository.GraduateRepository;
 import tarabaho.tarabaho.service.GraduateService;
 import tarabaho.tarabaho.service.PasswordEncoderService;
 import tarabaho.tarabaho.service.SupabaseRestStorageService;
-import tarabaho.tarabaho.service.UserService;
+
 
 @RestController
 @RequestMapping("/api/graduate")
@@ -59,8 +60,6 @@ public class GraduateController {
     @Autowired
     private JwtUtil jwtUtil;
 
-    @Autowired
-    private UserService userService;
 
     @Autowired
     private SupabaseRestStorageService storageService;
@@ -69,8 +68,7 @@ public class GraduateController {
     private PasswordEncoderService passwordEncoderService;
 
     private String getUsernameFromAuthentication(Authentication authentication) {
-        if (authentication.getPrincipal() instanceof OAuth2User) {
-            OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+        if (authentication.getPrincipal() instanceof OAuth2User oauthUser) {
             String email = oauthUser.getAttribute("email");
             System.out.println("GraduateController: OAuth2 authentication detected, using email: " + email);
             return email;
@@ -122,6 +120,9 @@ public class GraduateController {
         if (graduateService.findByEmail(graduateDTO.getEmail()).isPresent()) {
             return ResponseEntity.badRequest().body("⚠️ Email already exists.");
         }
+        if (graduateService.findByPhoneNumber(graduateDTO.getPhoneNumber()).isPresent()) {
+            return ResponseEntity.badRequest().body("⚠️ Phone number already exists.");
+        }
 
         return ResponseEntity.ok().build();
     }
@@ -133,7 +134,15 @@ public class GraduateController {
         @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @PostMapping("/register")
-    public ResponseEntity<?> registerGraduate(@RequestBody GraduateRegisterDTO graduateDTO, HttpServletResponse response) {
+    public ResponseEntity<?> registerGraduate(@RequestBody GraduateRegisterDTO graduateDTO,BindingResult bindingResult, HttpServletResponse response) {
+            if (bindingResult.hasErrors()) {
+            List<String> errors = bindingResult.getFieldErrors()
+                .stream()
+                .map(err -> err.getDefaultMessage())
+                .toList();
+            return ResponseEntity.badRequest().body(errors);
+        }
+        
         System.out.println("GraduateController: Received registration request for username: " + graduateDTO.getUsername());
         System.out.println("GraduateController: Received raw password: " + graduateDTO.getPassword());
 
@@ -347,6 +356,7 @@ public class GraduateController {
         @ApiResponse(responseCode = "401", description = "No valid token found")
     })
     @GetMapping("/get-token")
+    @SuppressWarnings("CallToPrintStackTrace")
     public ResponseEntity<?> getToken(Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
@@ -355,8 +365,7 @@ public class GraduateController {
             }
 
             String username;
-            if (authentication.getPrincipal() instanceof OAuth2User) {
-                OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+            if (authentication.getPrincipal() instanceof OAuth2User oauthUser) {
                 username = oauthUser.getAttribute("email"); // Use email for OAuth2 users
                 System.out.println("GraduateController: OAuth2 authentication detected, using email: " + username);
                 System.out.println("GraduateController: OAuth2User attributes: " + oauthUser.getAttributes());
@@ -397,6 +406,7 @@ public class GraduateController {
         @ApiResponse(responseCode = "500", description = "Logout failed")
     })
     @PostMapping("/logout")
+    @SuppressWarnings("CallToPrintStackTrace")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         try {
             System.out.println("GraduateController: Entering /logout endpoint");
@@ -532,7 +542,14 @@ public class GraduateController {
         @ApiResponse(responseCode = "404", description = "Graduate not found")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateGraduate(@PathVariable Long id, @RequestBody GraduateUpdateDTO graduateDTO, Authentication authentication) {
+    public ResponseEntity<?> updateGraduate(@PathVariable Long id,@RequestBody GraduateUpdateDTO graduateDTO,BindingResult bindingResult, Authentication authentication) {
+            if (bindingResult.hasErrors()) {
+            List<String> errors = bindingResult.getFieldErrors()
+                .stream()
+                .map(err -> err.getDefaultMessage())
+                .toList();
+            return ResponseEntity.badRequest().body(errors);
+        }
         System.out.println("GraduateController: Received update request for graduate ID: " + id);
 
         try {
@@ -560,14 +577,14 @@ public class GraduateController {
             if (graduateDTO.getEmail() != null && !graduateDTO.getEmail().equals(existingGraduate.getEmail())) {
                 if (graduateService.findByEmail(graduateDTO.getEmail()).isPresent()) {
                     System.out.println("GraduateController: Update failed: Email already exists: " + graduateDTO.getEmail());
-                    return ResponseEntity.badRequest().body("⚠️ Email already exists.");
+                    return ResponseEntity.badRequest().body(Map.of("message", "⚠️ Email already exists."));
                 }
                 existingGraduate.setEmail(graduateDTO.getEmail());
             }
             if (graduateDTO.getPhoneNumber() != null && !graduateDTO.getPhoneNumber().equals(existingGraduate.getPhoneNumber())) {
                 if (graduateService.findByPhoneNumber(graduateDTO.getPhoneNumber()).isPresent()) {
                     System.out.println("GraduateController: Update failed: Phone number already exists: " + graduateDTO.getPhoneNumber());
-                    return ResponseEntity.badRequest().body("⚠️ Phone number already exists.");
+                    return ResponseEntity.badRequest().body(Map.of("message", "⚠️ Phone number already exists."));
                 }
                 existingGraduate.setPhoneNumber(graduateDTO.getPhoneNumber());
             }
@@ -625,6 +642,7 @@ public class GraduateController {
         @ApiResponse(responseCode = "500", description = "Failed to send OTP")
     })
     @PostMapping("/forgot-password")
+    @SuppressWarnings("CallToPrintStackTrace")
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
         try {
             if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
@@ -655,6 +673,7 @@ public class GraduateController {
         @ApiResponse(responseCode = "500", description = "Failed to reset password")
     })
     @PostMapping("/reset-password")
+    @SuppressWarnings("CallToPrintStackTrace")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
         try {
             if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
@@ -736,7 +755,7 @@ public class GraduateController {
         }
     }
 
-    static class LoginRequest {
+    public static class LoginRequest {
         private String username;
         private String password;
 
@@ -746,20 +765,20 @@ public class GraduateController {
         public void setPassword(String password) { this.password = password; }
     }
 
-    static class TokenResponse {
+    public static class TokenResponse {
         private String token;
         public TokenResponse(String token) { this.token = token; }
         public String getToken() { return token; }
         public void setToken(String token) { this.token = token; }
     }
 
-    static class ForgotPasswordRequest {
+    public static class ForgotPasswordRequest {
         private String email;
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
     }
 
-    static class ResetPasswordRequest {
+    public static class ResetPasswordRequest {
         private String email;
         private String otp;
         private String newPassword;

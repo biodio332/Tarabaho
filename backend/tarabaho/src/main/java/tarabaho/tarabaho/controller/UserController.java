@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -57,8 +58,7 @@ public class UserController {
     private PasswordEncoderService passwordEncoderService;
 
     private String getUsernameFromAuthentication(Authentication authentication) {
-        if (authentication.getPrincipal() instanceof OAuth2User) {
-            OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+        if (authentication.getPrincipal() instanceof OAuth2User oauthUser) {
             String email = oauthUser.getAttribute("email");
             System.out.println("UserController: OAuth2 authentication detected, using email: " + email);
             return email;
@@ -82,7 +82,13 @@ public class UserController {
         @ApiResponse(responseCode = "400", description = "Username, email, phone, or invalid input")
     })
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody User user) {
+    public ResponseEntity<?> registerUser(@RequestBody User user,BindingResult result) {
+            if (result.hasErrors()) {
+            var errors = result.getFieldErrors().stream()
+                .map(err -> err.getDefaultMessage())
+                .toList();
+            return ResponseEntity.badRequest().body(errors);
+        }
         System.out.println("UserController: Received registration request for username: " + user.getUsername());
 
         if (userService.findByUsername(user.getUsername()).isPresent()) {
@@ -165,6 +171,7 @@ public class UserController {
         @ApiResponse(responseCode = "401", description = "No valid token found")
     })
     @GetMapping("/get-token")
+    @SuppressWarnings("CallToPrintStackTrace")
     public ResponseEntity<?> getToken(Authentication authentication) {
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
@@ -173,8 +180,7 @@ public class UserController {
             }
 
             String username;
-            if (authentication.getPrincipal() instanceof OAuth2User) {
-                OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+            if (authentication.getPrincipal() instanceof OAuth2User oauthUser) {
                 username = oauthUser.getAttribute("email"); // Use email for OAuth2 users
                 System.out.println("UserController: OAuth2 authentication detected, using email: " + username);
                 System.out.println("UserController: OAuth2User attributes: " + oauthUser.getAttributes());
@@ -226,8 +232,7 @@ public class UserController {
         }
 
         String username;
-        if (authentication.getPrincipal() instanceof OAuth2User) {
-            OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+        if (authentication.getPrincipal() instanceof OAuth2User oauthUser) {
             username = oauthUser.getAttribute("email"); // Use email for OAuth2 users
             System.out.println("UserController: OAuth2 authentication detected, using email: " + username);
             System.out.println("UserController: OAuth2User attributes: " + oauthUser.getAttributes());
@@ -375,8 +380,14 @@ public class UserController {
     @PutMapping("/update-profile")
     public ResponseEntity<?> updateProfile(
             Authentication authentication,
-            @RequestBody ProfileUpdateRequest request
+            @RequestBody ProfileUpdateRequest request,BindingResult result
     ) {
+            if (result.hasErrors()) {
+            var errors = result.getFieldErrors().stream()
+                .map(err -> err.getDefaultMessage())
+                .toList();
+            return ResponseEntity.badRequest().body(errors);
+        }
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
                 System.out.println("UserController: Update profile failed: User not authenticated");
@@ -397,12 +408,24 @@ public class UserController {
             if (request.getEmail() != null && !request.getEmail().isEmpty()) {
                 if (userService.findByEmail(request.getEmail()).isPresent() && !request.getEmail().equals(user.getEmail())) {
                     System.out.println("UserController: Update profile failed: Email already exists: " + request.getEmail());
-                    return ResponseEntity.badRequest().body("⚠️ Email already exists.");
+                    return ResponseEntity.badRequest()
+                    .body(Map.of(
+                            "field", "email",
+                            "message", "Email is already taken."
+                    ));
                 }
                 user.setEmail(request.getEmail());
             }
             if (request.getLocation() != null) {
+                try{
                 user.setLocation(request.getLocation());
+                } catch(Exception e){
+                    System.out.println("UserController: Update profile failed: Invalid location format");
+                    return ResponseEntity.badRequest() .body(Map.of(
+                            "field", "location",
+                            "message", "Location must only be 500 characters long."
+                    ));
+                }
             }
             if (request.getBirthday() != null && !request.getBirthday().isEmpty()) {
                 try {
@@ -410,7 +433,10 @@ public class UserController {
                     user.setBirthday(birthday);
                 } catch (Exception e) {
                     System.out.println("UserController: Update profile failed: Invalid birthday format");
-                    return ResponseEntity.badRequest().body("Invalid birthday format. Use YYYY-MM-DD.");
+                    return ResponseEntity.badRequest() .body(Map.of(
+                            "field", "birthday",
+                            "message", "Birthday invalid format MM-DD-YYYY."
+                    ));
                 }
             }
             if (request.getPassword() != null && !request.getPassword().isEmpty()) {
@@ -450,6 +476,7 @@ public class UserController {
         @ApiResponse(responseCode = "500", description = "Logout failed")
     })
     @PostMapping("/logout")
+    @SuppressWarnings("CallToPrintStackTrace")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         try {
             System.out.println("GraduateController: Entering /logout endpoint");
@@ -588,6 +615,7 @@ public class UserController {
 
     static class ProfileUpdateRequest {
         private String email;
+        
         private String location;
         private String birthday;
         private String password;
@@ -618,13 +646,13 @@ public class UserController {
         public void setToken(String token) { this.token = token; }
     }
 
-    static class ForgotPasswordRequest {
+    public static class ForgotPasswordRequest {
         private String email;
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
     }
 
-    static class ResetPasswordRequest {
+    public static class ResetPasswordRequest {
         private String email;
         private String otp;
         private String newPassword;

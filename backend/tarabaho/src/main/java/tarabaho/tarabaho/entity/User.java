@@ -11,6 +11,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "users")
@@ -21,20 +24,31 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
+    @Size(max = 255, message = "First name must not exceed 255 characters")
     private String firstname;
+
+    @Size(max = 255, message = "Last name must not exceed 255 characters")
     private String lastname;
 
     @Column(unique = true)
+    @NotBlank(message = "Username is required")
+    @Size(max = 255, message = "Username must not exceed 255 characters")
     private String username;
 
+    @NotBlank(message = "Password is required")
     private String password;
 
     @Column(unique = true)
+    @Email(message = "Invalid email format")
+    @Size(max = 255, message = "Email must not exceed 255 characters")
     private String email;
 
     @Column(unique = true, nullable = true)
+    @Size(max = 20, message = "Phone number must not exceed 20 characters")
     private String phoneNumber;
 
+    @Size(max = 500, message = "Location must not exceed 500 characters")
     private String location;
 
     private LocalDate birthday;

@@ -30,6 +30,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import tarabaho.tarabaho.dto.CompletePublicPortfolioResponse;
 import tarabaho.tarabaho.dto.PortfolioRequest;
 import tarabaho.tarabaho.dto.PublicPortfolioSearchResult;
@@ -65,8 +66,7 @@ public class PortfolioController {
     private ProjectService projectService;
 
      private String getUsernameFromAuthentication(Authentication authentication) {
-        if (authentication.getPrincipal() instanceof OAuth2User) {
-            OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+        if (authentication.getPrincipal() instanceof OAuth2User oauthUser) {
             String email = oauthUser.getAttribute("email");
             logger.debug("OAuth2 authentication detected, using email: {}", email);
             return email;
@@ -139,7 +139,7 @@ public class PortfolioController {
         @ApiResponse(responseCode = "404", description = "Graduate not found")
     })
     @PostMapping
-    public ResponseEntity<?> createPortfolio(@RequestBody PortfolioRequest portfolioRequest, Authentication authentication) {
+    public ResponseEntity<?> createPortfolio(@Valid @RequestBody PortfolioRequest portfolioRequest, Authentication authentication) {
        try {
             logger.debug("Creating portfolio for graduate ID: {}", portfolioRequest.getGraduateId());
             if (authentication == null || !authentication.isAuthenticated()) {
@@ -369,7 +369,7 @@ public class PortfolioController {
         @ApiResponse(responseCode = "404", description = "Portfolio not found")
     })
     @PutMapping("/{portfolioId}")
-    public ResponseEntity<?> updatePortfolio(@PathVariable Long portfolioId, @RequestBody PortfolioRequest portfolioRequest, Authentication authentication) {
+    public ResponseEntity<?> updatePortfolio(@PathVariable Long portfolioId,@Valid @RequestBody PortfolioRequest portfolioRequest, Authentication authentication) {
          try {
             logger.debug("Updating portfolio ID: {}", portfolioId);
             if (authentication == null || !authentication.isAuthenticated()) {

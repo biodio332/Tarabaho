@@ -11,11 +11,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class StateCaptureFilter extends OncePerRequestFilter {
-    private static final String TYPE_ATTRIBUTE = "type";
     private static final String SESSION_TYPE_KEY = "oauth2_login_type"; // Match controller
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(@SuppressWarnings("null") HttpServletRequest request, @SuppressWarnings("null") HttpServletResponse response, @SuppressWarnings("null") FilterChain filterChain)
             throws IOException, jakarta.servlet.ServletException {
         System.out.println("StateCaptureFilter: Processing request for URI: " + request.getRequestURI());
         if (isCallbackRequest(request)) {

@@ -616,6 +616,7 @@ public class PortfolioService {
         return new ShareInfo(shareToken, shareUrl);
     }
 
+    @SuppressWarnings("null")
     public CompletePublicPortfolioResponse getPublicPortfolioByShareToken(Long graduateId, String shareToken,String viewId) {
         System.out.println("PortfolioService: Validating public access for graduate ID: " + graduateId);
         System.out.println("=== PORTFOLIO SERVICE DEBUG ===");

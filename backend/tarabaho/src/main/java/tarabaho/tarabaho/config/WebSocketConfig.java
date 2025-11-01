@@ -30,13 +30,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private JwtUtil jwtUtil;
 
     @Override
-    public void configureMessageBroker(MessageBrokerRegistry config) {
+    public void configureMessageBroker(@SuppressWarnings("null") MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic");
         config.setApplicationDestinationPrefixes("/app");
     }
 
     @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
+    public void registerStompEndpoints(@SuppressWarnings("null") StompEndpointRegistry registry) {
     // Raw WebSocket endpoint for Android client
     registry.addEndpoint("/chat")
             .setAllowedOrigins("*");  // or specify your Android app origin if needed
@@ -49,10 +49,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 
     @Override
-    public void configureClientInboundChannel(ChannelRegistration registration) {
+    public void configureClientInboundChannel(@SuppressWarnings("null") ChannelRegistration registration) {
         registration.interceptors(new ChannelInterceptor() {
+            @SuppressWarnings("null")
             @Override
-            public Message<?> preSend(Message<?> message, MessageChannel channel) {
+            public Message<?> preSend(@SuppressWarnings("null") Message<?> message, @SuppressWarnings("null") MessageChannel channel) {
                 StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
                 if (accessor != null && "CONNECT".equals(accessor.getCommand().name())) {
                     String authHeader = accessor.getFirstNativeHeader("Authorization");

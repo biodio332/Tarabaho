@@ -28,6 +28,7 @@ public class SupabaseRestStorageService {
         this.restTemplate = restTemplate;
     }
 
+    @SuppressWarnings("null")
     public String uploadFile(MultipartFile file, String bucketName) throws IOException {
         // Validate file type
         String contentType = file.getContentType();

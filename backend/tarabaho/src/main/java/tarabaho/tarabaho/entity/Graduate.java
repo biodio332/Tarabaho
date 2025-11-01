@@ -15,9 +15,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "graduates")
@@ -33,18 +32,25 @@ public class Graduate{
 
     private String password;
 
+    @Size(max = 255, message = "First name must not exceed 255 characters")
     private String firstName;
 
+    @Size(max = 255, message = "Last name must not exceed 255 characters")
     private String lastName;
 
+    
     @Column(unique = true)
+    @Size(max = 255, message = "Email must not exceed 255 characters")
     private String email;
 
     @Column(unique = true, nullable = true)
+    @Size(max = 20, message = "Phone number must not exceed 20 characters")
     private String phoneNumber;
 
+    @Size(max = 500, message = "Address must not exceed 500 characters")
     private String address;
 
+    @Size(max = 1000, message = "Biography must not exceed 1000 characters")
     private String biography;
 
     private LocalDate birthday;
@@ -66,13 +72,7 @@ public class Graduate{
     private List<Certificate> certificates = new ArrayList<>();
 
     // Ensure default values before persisting or updating
-    @PrePersist
-    @PreUpdate
-    private void ensureDefaults() {
-        if (this.isVerified == null) {
-            this.isVerified = false;
-        }
-    }
+   
 
     // Equals and hashCode
     @Override
