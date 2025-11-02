@@ -918,8 +918,53 @@ const fetchPublicDataWithToken = async () => {
               </div>
             </div>
           </div>
-
+ 
           <div className="lg:col-span-3 space-y-12">
+            {/* Certificates */}
+            <div>
+              <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
+                Certificates
+              </Typography>
+              {certificates && certificates.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {certificates.map((certificate) => (
+                    <div
+                      key={certificate.id}
+                      className="bg-white border border-gray-100 rounded-lg p-6 cursor-pointer hover:shadow-md transition-shadow duration-300"
+                      onClick={() => handleCertificateClick(certificate)}
+                    >
+                      <div className="flex items-start space-x-4">
+                        {certificate.certificateFilePath && (
+                          <img
+                            src={certificate.certificateFilePath || "/placeholder.svg"}
+                            alt={certificate.courseName || "Certificate"}
+                            className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <Typography variant="h6" className="font-medium mb-2">
+                            {certificate.courseName || "Certificate"}
+                          </Typography>
+                          <Typography variant="small" color="gray" className="mb-1">
+                            {certificate.certificateNumber || "N/A"}
+                          </Typography>
+                          <Typography variant="small" color="blue">
+                            {certificate.issueDate || "N/A"}
+                          </Typography>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white border border-gray-100 rounded-lg p-6">
+                  <Typography variant="small" className="text-gray-500 italic">
+                    No certificates added yet
+                  </Typography>
+                </div>
+              )}
+            </div>
+            
             {/* Experience */}
             <div>
               <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
@@ -1011,51 +1056,6 @@ const fetchPublicDataWithToken = async () => {
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
                   <Typography variant="small" className="text-gray-500 italic">
                     No projects added yet
-                  </Typography>
-                </div>
-              )}
-            </div>
-
-            {/* Certificates */}
-            <div>
-              <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
-                Certificates
-              </Typography>
-              {certificates && certificates.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {certificates.map((certificate) => (
-                    <div
-                      key={certificate.id}
-                      className="bg-white border border-gray-100 rounded-lg p-6 cursor-pointer hover:shadow-md transition-shadow duration-300"
-                      onClick={() => handleCertificateClick(certificate)}
-                    >
-                      <div className="flex items-start space-x-4">
-                        {certificate.certificateFilePath && (
-                          <img
-                            src={certificate.certificateFilePath || "/placeholder.svg"}
-                            alt={certificate.courseName || "Certificate"}
-                            className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <Typography variant="h6" className="font-medium mb-2">
-                            {certificate.courseName || "Certificate"}
-                          </Typography>
-                          <Typography variant="small" color="gray" className="mb-1">
-                            {certificate.certificateNumber || "N/A"}
-                          </Typography>
-                          <Typography variant="small" color="blue">
-                            {certificate.issueDate || "N/A"}
-                          </Typography>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-white border border-gray-100 rounded-lg p-6">
-                  <Typography variant="small" className="text-gray-500 italic">
-                    No certificates added yet
                   </Typography>
                 </div>
               )}

@@ -1157,7 +1157,210 @@ const EditPortfolio = () => {
               </div>
             </CardBody>
           </Card>
+          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardBody className="p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                <Typography variant="h4" className="text-gray-800 font-semibold">
+                  Certificates
+                </Typography>
+              </div>
 
+              <div className="space-y-4">
+                {isAddingCertificate && (
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                      {editingCertificateId ? "Edit Certificate" : "Add New Certificate"}
+                    </Typography>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                          Course Name *
+                        </Typography>
+                        <Input
+                          size="lg"
+                          name="courseName"
+                          value={newCertificate.courseName}
+                          onChange={handleCertificateInputChange}
+                          placeholder="Enter course name"
+                          required
+                          className="!border-gray-300 focus:!border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                          Certificate Number *
+                        </Typography>
+                        <Input
+                          size="lg"
+                          name="certificateNumber"
+                          value={newCertificate.certificateNumber}
+                          onChange={handleCertificateInputChange}
+                          placeholder="Enter certificate number"
+                          required
+                          className="!border-gray-300 focus:!border-blue-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                        Issue Date *
+                      </Typography>
+                      <Input
+                        type="date"
+                        size="lg"
+                        name="issueDate"
+                        value={newCertificate.issueDate}
+                        onChange={handleCertificateInputChange}
+                        required
+                        className="!border-gray-300 focus:!border-blue-500"
+                      />
+                    </div>
+                    <div className="mt-4">
+                      <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                        Certificate File {editingCertificateId ? "(Optional)" : "*"}
+                      </Typography>
+                      <div className="flex items-center gap-4">
+                        {newCertificate.certificateFile ? (
+                          <Avatar
+                            src={URL.createObjectURL(newCertificate.certificateFile)}
+                            alt="Certificate Preview"
+                            size="lg"
+                            className="ring-2 ring-blue-200"
+                          />
+                        ) : editingCertificateId ? (
+                          <Avatar
+                            src={certificates.find((cert) => cert.id === editingCertificateId)?.preview || "/placeholder.svg"}
+                            alt="Certificate Preview"
+                            size="lg"
+                            className="ring-2 ring-blue-200"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center">
+                            <Typography variant="h5" className="text-gray-600">
+                              📄
+                            </Typography>
+                          </div>
+                        )}
+                        <Button
+                          variant="outlined"
+                          color="blue"
+                          onClick={handleCertificateImageClick}
+                          className="flex items-center gap-2"
+                        >
+                          <FaPlus className="w-4 h-4" />
+                          Choose File
+                        </Button>
+                        <input
+                          type="file"
+                          id="certificateFile"
+                          accept="image/*"
+                          onChange={handleCertificateFileChange}
+                          ref={certificateFileInputRef}
+                          className="hidden"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-6 flex justify-end gap-2">
+                      <Button
+                        variant="gradient"
+                        color="blue"
+                        onClick={editingCertificateId ? handleUpdateCertificate : handleAddCertificate}
+                        disabled={!isCertificateFormValid()}
+                      >
+                        {editingCertificateId ? "Update Certificate" : "Add Certificate"}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="gray"
+                        onClick={() => {
+                          setIsAddingCertificate(false)
+                          setEditingCertificateId(null)
+                          setNewCertificate({
+                            courseName: "",
+                            certificateNumber: "",
+                            issueDate: "",
+                            certificateFile: null,
+                          })
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {!isAddingCertificate && (
+                  <Button
+                    variant="outlined"
+                    color="blue"
+                    onClick={() => {
+                      setIsAddingCertificate(true)
+                      setEditingCertificateId(null)
+                      setNewCertificate({ courseName: "", certificateNumber: "", issueDate: "", certificateFile: null })
+                    }}
+                    className="flex items-center gap-2 w-full"
+                  >
+                    <FaPlus className="w-4 h-4" />
+                    Add Certificate
+                  </Button>
+                )}
+
+                {certificates.length > 0 && (
+                  <div className="space-y-4">
+                    {certificates.map((cert) => (
+                      <Card key={cert.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <CardBody className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                          <div className="flex items-center gap-4">
+                            {cert.preview && (
+                              <Avatar
+                                src={cert.preview}
+                                alt="Certificate Preview"
+                                size="lg"
+                                className="ring-2 ring-blue-200"
+                              />
+                            )}
+                            <div>
+                              <Typography variant="h6" className="text-gray-800 font-semibold">
+                                {cert.courseName}
+                              </Typography>
+                              <Typography variant="small" className="text-gray-600">
+                                Certificate #: {cert.certificateNumber}
+                              </Typography>
+                              <Typography variant="small" className="text-gray-600">
+                                Issued: {cert.issueDate ? new Date(cert.issueDate).toLocaleDateString() : "N/A"}
+                              </Typography>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="text"
+                              color="blue"
+                              onClick={() => handleEditCertificate(cert)}
+                              className="flex items-center gap-1"
+                            >
+                              <FaPen className="w-4 h-4" /> Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="text"
+                              color="red"
+                              onClick={() => handleRemoveCertificate(cert.id)}
+                              className="flex items-center gap-1"
+                            >
+                              <FaTrash className="w-4 h-4" /> Remove
+                            </Button>
+                          </div>
+                        </CardBody>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardBody>
+          </Card>
+          
           <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardBody className="p-8">
               <div className="flex items-center gap-3 mb-6">
@@ -1502,209 +1705,7 @@ const EditPortfolio = () => {
             </CardBody>
           </Card>
 
-          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
-            <CardBody className="p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
-                <Typography variant="h4" className="text-gray-800 font-semibold">
-                  Certificates
-                </Typography>
-              </div>
 
-              <div className="space-y-4">
-                {isAddingCertificate && (
-                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
-                      {editingCertificateId ? "Edit Certificate" : "Add New Certificate"}
-                    </Typography>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                          Course Name *
-                        </Typography>
-                        <Input
-                          size="lg"
-                          name="courseName"
-                          value={newCertificate.courseName}
-                          onChange={handleCertificateInputChange}
-                          placeholder="Enter course name"
-                          required
-                          className="!border-gray-300 focus:!border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                          Certificate Number *
-                        </Typography>
-                        <Input
-                          size="lg"
-                          name="certificateNumber"
-                          value={newCertificate.certificateNumber}
-                          onChange={handleCertificateInputChange}
-                          placeholder="Enter certificate number"
-                          required
-                          className="!border-gray-300 focus:!border-blue-500"
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Issue Date *
-                      </Typography>
-                      <Input
-                        type="date"
-                        size="lg"
-                        name="issueDate"
-                        value={newCertificate.issueDate}
-                        onChange={handleCertificateInputChange}
-                        required
-                        className="!border-gray-300 focus:!border-blue-500"
-                      />
-                    </div>
-                    <div className="mt-4">
-                      <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Certificate File {editingCertificateId ? "(Optional)" : "*"}
-                      </Typography>
-                      <div className="flex items-center gap-4">
-                        {newCertificate.certificateFile ? (
-                          <Avatar
-                            src={URL.createObjectURL(newCertificate.certificateFile)}
-                            alt="Certificate Preview"
-                            size="lg"
-                            className="ring-2 ring-blue-200"
-                          />
-                        ) : editingCertificateId ? (
-                          <Avatar
-                            src={certificates.find((cert) => cert.id === editingCertificateId)?.preview || "/placeholder.svg"}
-                            alt="Certificate Preview"
-                            size="lg"
-                            className="ring-2 ring-blue-200"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center">
-                            <Typography variant="h5" className="text-gray-600">
-                              📄
-                            </Typography>
-                          </div>
-                        )}
-                        <Button
-                          variant="outlined"
-                          color="blue"
-                          onClick={handleCertificateImageClick}
-                          className="flex items-center gap-2"
-                        >
-                          <FaPlus className="w-4 h-4" />
-                          Choose File
-                        </Button>
-                        <input
-                          type="file"
-                          id="certificateFile"
-                          accept="image/*"
-                          onChange={handleCertificateFileChange}
-                          ref={certificateFileInputRef}
-                          className="hidden"
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-6 flex justify-end gap-2">
-                      <Button
-                        variant="gradient"
-                        color="blue"
-                        onClick={editingCertificateId ? handleUpdateCertificate : handleAddCertificate}
-                        disabled={!isCertificateFormValid()}
-                      >
-                        {editingCertificateId ? "Update Certificate" : "Add Certificate"}
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="gray"
-                        onClick={() => {
-                          setIsAddingCertificate(false)
-                          setEditingCertificateId(null)
-                          setNewCertificate({
-                            courseName: "",
-                            certificateNumber: "",
-                            issueDate: "",
-                            certificateFile: null,
-                          })
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {!isAddingCertificate && (
-                  <Button
-                    variant="outlined"
-                    color="blue"
-                    onClick={() => {
-                      setIsAddingCertificate(true)
-                      setEditingCertificateId(null)
-                      setNewCertificate({ courseName: "", certificateNumber: "", issueDate: "", certificateFile: null })
-                    }}
-                    className="flex items-center gap-2 w-full"
-                  >
-                    <FaPlus className="w-4 h-4" />
-                    Add Certificate
-                  </Button>
-                )}
-
-                {certificates.length > 0 && (
-                  <div className="space-y-4">
-                    {certificates.map((cert) => (
-                      <Card key={cert.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <CardBody className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                          <div className="flex items-center gap-4">
-                            {cert.preview && (
-                              <Avatar
-                                src={cert.preview}
-                                alt="Certificate Preview"
-                                size="lg"
-                                className="ring-2 ring-blue-200"
-                              />
-                            )}
-                            <div>
-                              <Typography variant="h6" className="text-gray-800 font-semibold">
-                                {cert.courseName}
-                              </Typography>
-                              <Typography variant="small" className="text-gray-600">
-                                Certificate #: {cert.certificateNumber}
-                              </Typography>
-                              <Typography variant="small" className="text-gray-600">
-                                Issued: {cert.issueDate ? new Date(cert.issueDate).toLocaleDateString() : "N/A"}
-                              </Typography>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="text"
-                              color="blue"
-                              onClick={() => handleEditCertificate(cert)}
-                              className="flex items-center gap-1"
-                            >
-                              <FaPen className="w-4 h-4" /> Edit
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="text"
-                              color="red"
-                              onClick={() => handleRemoveCertificate(cert.id)}
-                              className="flex items-center gap-1"
-                            >
-                              <FaTrash className="w-4 h-4" /> Remove
-                            </Button>
-                          </div>
-                        </CardBody>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </CardBody>
-          </Card>
 
           <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardBody className="p-8">
