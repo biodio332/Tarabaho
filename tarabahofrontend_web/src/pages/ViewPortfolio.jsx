@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
 import axios from "axios"
+import { FaPen, FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa"
 import {
   Card,
   CardBody,
@@ -14,6 +15,9 @@ import {
   DialogFooter,
   Chip,
   Spinner,
+  Input,
+  Textarea,
+  IconButton,
 } from "@material-tailwind/react"
 
 const ViewPortfolio = () => {
@@ -29,9 +33,50 @@ const ViewPortfolio = () => {
   const [error, setError] = useState("")
   const [isPublicView, setIsPublicView] = useState(false)
   const [isGraduateView, setIsGraduateView] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false) // Shows edit icons
+  const [editingSections, setEditingSections] = useState({
+    header: false,
+    contact: false,
+    skills: false,
+    tesda: false,
+    certificates: false,
+    experience: false,
+    projects: false,
+    awards: false,
+    education: false,
+    memberships: false,
+    references: false,
+  })
+  const [editingPortfolio, setEditingPortfolio] = useState(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState("")
+  const [saveError, setSaveError] = useState("")
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState(null)
+  const [modifiedCertificates, setModifiedCertificates] = useState(new Set())
+  const [modifiedProjects, setModifiedProjects] = useState(new Set())
+  const [isAddingCertificate, setIsAddingCertificate] = useState(false)
+  const [isAddingProject, setIsAddingProject] = useState(false)
+  const [editingCertificateId, setEditingCertificateId] = useState(null)
+  const [editingProjectId, setEditingProjectId] = useState(null)
+  const [newCertificate, setNewCertificate] = useState({
+    courseName: "",
+    certificateNumber: "",
+    issueDate: "",
+    certificateFile: null,
+  })
+  const [newProject, setNewProject] = useState({
+    title: "",
+    description: "",
+    startDate: "",
+    endDate: "",
+    projectImageFile: null,
+  })
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080"
   const navigate = useNavigate()
   const [selectedProjectImage, setSelectedProjectImage] = useState(null)
+  const avatarFileInputRef = useRef(null)
+  const certificateFileInputRef = useRef(null)
+  const projectFileInputRef = useRef(null)
 
   const urlParams = new URLSearchParams(window.location.search)
   const urlShareToken = urlParams.get("share")
@@ -541,6 +586,1053 @@ const fetchPublicDataWithToken = async () => {
     }
   }
 
+  const handleEditModeToggle = () => {
+    if (!isEditMode) {
+      // Entering edit mode - create a copy of portfolio for editing and show edit icons
+      const portfolioCopy = JSON.parse(JSON.stringify(portfolio))
+      // Ensure experiences have the correct field structure
+      if (portfolioCopy.experiences) {
+        portfolioCopy.experiences = portfolioCopy.experiences.map((exp) => ({
+          ...exp,
+          employer: exp.company || exp.employer || "",
+          description: exp.responsibilities || exp.description || "",
+        }))
+      }
+      setEditingPortfolio(portfolioCopy)
+      setSaveSuccess("")
+      setSaveError("")
+      // Reset all section edit states
+      setEditingSections({
+        header: false,
+        contact: false,
+        skills: false,
+        tesda: false,
+        certificates: false,
+        experience: false,
+        projects: false,
+        awards: false,
+        education: false,
+        memberships: false,
+        references: false,
+      })
+      // Reset certificate and project editing states
+      setIsAddingCertificate(false)
+      setIsAddingProject(false)
+      setEditingCertificateId(null)
+      setEditingProjectId(null)
+      setNewCertificate({
+        courseName: "",
+        certificateNumber: "",
+        issueDate: "",
+        certificateFile: null,
+      })
+      setNewProject({
+        title: "",
+        description: "",
+        startDate: "",
+        endDate: "",
+        projectImageFile: null,
+      })
+      setModifiedCertificates(new Set())
+      setModifiedProjects(new Set())
+    } else {
+      // Exiting edit mode - cancel all edits
+      setEditingPortfolio(null)
+      setSelectedAvatarFile(null)
+      setEditingSections({
+        header: false,
+        contact: false,
+        skills: false,
+        tesda: false,
+        certificates: false,
+        experience: false,
+        projects: false,
+        awards: false,
+        education: false,
+        memberships: false,
+        references: false,
+      })
+      // Reset certificate and project editing states
+      setIsAddingCertificate(false)
+      setIsAddingProject(false)
+      setEditingCertificateId(null)
+      setEditingProjectId(null)
+      setNewCertificate({
+        courseName: "",
+        certificateNumber: "",
+        issueDate: "",
+        certificateFile: null,
+      })
+      setNewProject({
+        title: "",
+        description: "",
+        startDate: "",
+        endDate: "",
+        projectImageFile: null,
+      })
+      setModifiedCertificates(new Set())
+      setModifiedProjects(new Set())
+    }
+    setIsEditMode(!isEditMode)
+  }
+
+  const handleSectionEditToggle = (section) => {
+    setEditingSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }))
+    setSaveError("")
+  }
+
+  const handleFieldChange = (field, value) => {
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+    setSaveError("")
+  }
+
+  const handleArrayFieldChange = (arrayName, index, field, value) => {
+    setEditingPortfolio((prev) => {
+      const updatedArray = [...prev[arrayName]]
+      updatedArray[index] = { ...updatedArray[index], [field]: value }
+      return { ...prev, [arrayName]: updatedArray }
+    })
+    setSaveError("")
+  }
+
+  const handleAddArrayItem = (arrayName, newItem) => {
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      [arrayName]: [...(prev[arrayName] || []), { ...newItem, id: `new-${Date.now()}-${Math.random()}` }],
+    }))
+    setSaveError("")
+  }
+
+  const handleRemoveArrayItem = (arrayName, index) => {
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      [arrayName]: prev[arrayName].filter((_, i) => i !== index),
+    }))
+    setSaveError("")
+  }
+
+  const handleAvatarFileChange = (e) => {
+    const file = e.target.files[0]
+    if (file && !file.type.startsWith("image/")) {
+      setSaveError("Please select an image file for the avatar.")
+      return
+    }
+    setSelectedAvatarFile(file)
+    setSaveError("")
+  }
+
+  const handleCertificateFileChange = (e) => {
+    const file = e.target.files[0]
+    if (file && !file.type.startsWith("image/")) {
+      setSaveError("Please select an image file for the certificate.")
+      return
+    }
+    setNewCertificate((prev) => ({ ...prev, certificateFile: file }))
+    setSaveError("")
+  }
+
+  const handleProjectFileChange = (e) => {
+    const file = e.target.files[0]
+    if (file && !file.type.startsWith("image/")) {
+      setSaveError("Please select an image file for the project.")
+      return
+    }
+    setNewProject((prev) => ({ ...prev, projectImageFile: file }))
+    setSaveError("")
+  }
+
+  const handleCertificateInputChange = (e) => {
+    const { name, value } = e.target
+    setNewCertificate((prev) => ({ ...prev, [name]: value }))
+    setSaveError("")
+  }
+
+  const handleProjectInputChange = (e) => {
+    const { name, value } = e.target
+    setNewProject((prev) => ({ ...prev, [name]: value }))
+    setSaveError("")
+  }
+
+  const isCertificateFormValid = () => {
+    return (
+      newCertificate.courseName.trim() !== "" &&
+      newCertificate.certificateNumber.trim() !== "" &&
+      newCertificate.issueDate.trim() !== "" &&
+      (editingCertificateId ? true : newCertificate.certificateFile !== null)
+    )
+  }
+
+  const isProjectFormValid = () => {
+    return (
+      newProject.title.trim() !== "" &&
+      newProject.description.trim() !== "" &&
+      newProject.startDate.trim() !== "" &&
+      newProject.endDate.trim() !== "" &&
+      (editingProjectId ? true : newProject.projectImageFile !== null)
+    )
+  }
+
+  const handleAddCertificate = () => {
+    if (!isCertificateFormValid()) {
+      setSaveError("Please fill in all required certificate fields, including the certificate file.")
+      return
+    }
+    const newCert = {
+      id: `new-${Date.now()}`,
+      courseName: newCertificate.courseName,
+      certificateNumber: newCertificate.certificateNumber,
+      issueDate: newCertificate.issueDate,
+      certificateFile: newCertificate.certificateFile,
+      preview: newCertificate.certificateFile ? URL.createObjectURL(newCertificate.certificateFile) : "/placeholder.svg",
+      portfolioId: portfolio?.id,
+    }
+    setCertificates((prev) => [...prev, newCert])
+    setModifiedCertificates((prev) => new Set(prev).add(newCert.id))
+    setNewCertificate({
+      courseName: "",
+      certificateNumber: "",
+      issueDate: "",
+      certificateFile: null,
+    })
+    setIsAddingCertificate(false)
+    setEditingCertificateId(null)
+    setSaveError("")
+  }
+
+  const handleAddProject = () => {
+    if (!isProjectFormValid()) {
+      setSaveError("Please fill in all required project fields, including the project image.")
+      return
+    }
+    const newProj = {
+      id: `new-${Date.now()}`,
+      title: newProject.title,
+      description: newProject.description,
+      startDate: newProject.startDate,
+      endDate: newProject.endDate,
+      projectImageFile: newProject.projectImageFile,
+      preview: newProject.projectImageFile ? URL.createObjectURL(newProject.projectImageFile) : "/placeholder.svg",
+      portfolioId: portfolio?.id,
+    }
+    setProjects((prev) => [...prev, newProj])
+    setModifiedProjects((prev) => new Set(prev).add(newProj.id))
+    setNewProject({
+      title: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      projectImageFile: null,
+    })
+    setIsAddingProject(false)
+    setEditingProjectId(null)
+    setSaveError("")
+  }
+
+  const handleEditCertificate = (certificate) => {
+    setEditingCertificateId(certificate.id)
+    setNewCertificate({
+      courseName: certificate.courseName || "",
+      certificateNumber: certificate.certificateNumber || "",
+      issueDate: certificate.issueDate || "",
+      certificateFile: null,
+    })
+    setIsAddingCertificate(true)
+  }
+
+  const handleEditProject = (project) => {
+    setEditingProjectId(project.id)
+    setNewProject({
+      title: project.title || "",
+      description: project.description || "",
+      startDate: project.startDate || "",
+      endDate: project.endDate || "",
+      projectImageFile: null,
+    })
+    setIsAddingProject(true)
+  }
+
+  const handleUpdateCertificate = () => {
+    if (!isCertificateFormValid()) {
+      setSaveError("Please fill in all required certificate fields.")
+      return
+    }
+    setCertificates((prev) =>
+      prev.map((cert) =>
+        cert.id === editingCertificateId
+          ? {
+              ...cert,
+              courseName: newCertificate.courseName,
+              certificateNumber: newCertificate.certificateNumber,
+              issueDate: newCertificate.issueDate,
+              certificateFile: newCertificate.certificateFile || cert.certificateFile,
+              preview: newCertificate.certificateFile
+                ? URL.createObjectURL(newCertificate.certificateFile)
+                : cert.preview || cert.certificateFilePath || "/placeholder.svg",
+            }
+          : cert,
+      ),
+    )
+    setModifiedCertificates((prev) => new Set(prev).add(editingCertificateId))
+    setNewCertificate({
+      courseName: "",
+      certificateNumber: "",
+      issueDate: "",
+      certificateFile: null,
+    })
+    setEditingCertificateId(null)
+    setIsAddingCertificate(false)
+    setSaveError("")
+  }
+
+  const handleUpdateProject = () => {
+    if (!isProjectFormValid()) {
+      setSaveError("Please fill in all required project fields.")
+      return
+    }
+    setProjects((prev) =>
+      prev.map((proj) =>
+        proj.id === editingProjectId
+          ? {
+              ...proj,
+              title: newProject.title,
+              description: newProject.description,
+              startDate: newProject.startDate,
+              endDate: newProject.endDate,
+              projectImageFile: newProject.projectImageFile || proj.projectImageFile,
+              preview: newProject.projectImageFile
+                ? URL.createObjectURL(newProject.projectImageFile)
+                : proj.preview || proj.projectImageFilePath || "/placeholder.svg",
+            }
+          : proj,
+      ),
+    )
+    setModifiedProjects((prev) => new Set(prev).add(editingProjectId))
+    setNewProject({
+      title: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      projectImageFile: null,
+    })
+    setEditingProjectId(null)
+    setIsAddingProject(false)
+    setSaveError("")
+  }
+
+  const handleRemoveCertificate = (id) => {
+    setCertificates((prev) => prev.filter((cert) => cert.id !== id))
+    setModifiedCertificates((prev) => new Set(prev).add(id))
+  }
+
+  const handleRemoveProject = (id) => {
+    setProjects((prev) => prev.filter((proj) => proj.id !== id))
+    setModifiedProjects((prev) => new Set(prev).add(id))
+  }
+
+  const handleCertificateImageClick = () => certificateFileInputRef.current?.click()
+  const handleProjectImageClick = () => projectFileInputRef.current?.click()
+
+  const handleSavePortfolio = async () => {
+    setIsSaving(true)
+    setSaveError("")
+    setSaveSuccess("")
+
+    try {
+      let avatarUrl = editingPortfolio.avatar || ""
+      if (selectedAvatarFile) {
+        const formDataAvatar = new FormData()
+        formDataAvatar.append("file", selectedAvatarFile)
+        const uploadResponse = await axios.post(
+          `${BACKEND_URL}/api/graduate/${graduateId}/upload-picture`,
+          formDataAvatar,
+          { withCredentials: true },
+        )
+        avatarUrl = uploadResponse.data.profilePicture
+      }
+
+      // Handle Certificates - same logic as EditPortfolio.jsx
+      const certificateIds = []
+      const existingCertificateIds = new Set(
+        (
+          await axios.get(`${BACKEND_URL}/api/certificate/graduate/${graduateId}`, {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        ).data.map((cert) => cert.id),
+      )
+
+      for (const cert of certificates) {
+        if (!modifiedCertificates.has(cert.id)) {
+          if (typeof cert.id === "string" && cert.id.includes("new-")) {
+          } else if (existingCertificateIds.has(cert.id)) {
+            certificateIds.push(cert.id)
+            continue
+          }
+        }
+
+        const certificateData = new FormData()
+        certificateData.append("courseName", cert.courseName || "")
+        certificateData.append("certificateNumber", cert.certificateNumber || "")
+        certificateData.append("issueDate", cert.issueDate || "")
+        if (cert.portfolioId) {
+          certificateData.append("portfolioId", cert.portfolioId.toString())
+        }
+        if (typeof cert.id !== "string" || !cert.id.includes("new-")) {
+          certificateData.append("graduateId", graduateId.toString())
+        }
+        if (cert.certificateFile instanceof File) {
+          certificateData.append("certificateFile", cert.certificateFile)
+        }
+
+        if (typeof cert.id === "string" && cert.id.includes("new-")) {
+          console.log("Creating new certificate for graduate ID:", graduateId)
+          try {
+            const certResponse = await axios.post(
+              `${BACKEND_URL}/api/certificate/graduate/${graduateId}`,
+              certificateData,
+              {
+                withCredentials: true,
+                headers: { Authorization: `Bearer ${token}` },
+              },
+            )
+            console.log("Certificate created:", certResponse.data)
+            certificateIds.push(certResponse.data.id)
+          } catch (err) {
+            console.error("Failed to create certificate:", err)
+            if (err.response?.status === 401) {
+              setSaveError("Session expired. Please sign in again.")
+              navigate("/signin")
+              return
+            } else if (err.response?.status === 415) {
+              setSaveError("Unsupported media type. Please check certificate data format.")
+              return
+            } else if (err.response?.status === 400) {
+              setSaveError(`Failed to create certificate: ${err.response?.data?.message || "Invalid data"}`)
+              return
+            }
+            throw err
+          }
+        } else {
+          console.log("Updating certificate with ID:", cert.id)
+          try {
+            const certResponse = await axios.put(`${BACKEND_URL}/api/certificate/${cert.id}`, certificateData, {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${token}` },
+            })
+            console.log("Certificate updated:", certResponse.data)
+            certificateIds.push(cert.id)
+          } catch (err) {
+            console.error("Failed to update certificate ID:", cert.id, err)
+            if (err.response?.status === 401) {
+              setSaveError("Session expired. Please sign in again.")
+              navigate("/signin")
+              return
+            } else if (err.response?.status === 415) {
+              setSaveError("Unsupported media type. Please check certificate data format.")
+              return
+            } else if (err.response?.status === 400) {
+              setSaveError(`Failed to update certificate: ${err.response?.data?.message || "Invalid data"}`)
+              return
+            }
+            throw err
+          }
+        }
+      }
+
+      const certificatesToDelete = Array.from(existingCertificateIds).filter(
+        (id) => !certificates.some((cert) => cert.id === id) && modifiedCertificates.has(id),
+      )
+      for (const certId of certificatesToDelete) {
+        console.log("Deleting certificate ID:", certId)
+        await axios.delete(`${BACKEND_URL}/api/certificate/${certId}`, {
+          withCredentials: true,
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      }
+
+      // Handle Projects - same logic as EditPortfolio.jsx
+      const projectIds = []
+      const existingProjectIds = new Set(
+        (
+          await axios.get(`${BACKEND_URL}/api/project/portfolio/${editingPortfolio.id}`, {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        ).data.map((proj) => proj.id),
+      )
+
+      for (const proj of projects) {
+        if (!modifiedProjects.has(proj.id)) {
+          if (typeof proj.id === "string" && proj.id.includes("new-")) {
+          } else if (existingProjectIds.has(proj.id)) {
+            projectIds.push(proj.id)
+            continue
+          }
+        }
+
+        const projectData = new FormData()
+        projectData.append("portfolioId", editingPortfolio.id.toString())
+        projectData.append("title", proj.title || "")
+        projectData.append("description", proj.description || "")
+        if (proj.startDate) projectData.append("startDate", proj.startDate)
+        if (proj.endDate) projectData.append("endDate", proj.endDate)
+        if (proj.projectImageFile instanceof File) {
+          projectData.append("projectImageFile", proj.projectImageFile)
+        }
+
+        if (typeof proj.id === "string" && proj.id.includes("new-")) {
+          console.log("Creating new project for portfolio ID:", editingPortfolio.id)
+          try {
+            const projResponse = await axios.post(`${BACKEND_URL}/api/project`, projectData, {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${token}` },
+            })
+            console.log("Project created:", projResponse.data)
+            projectIds.push(projResponse.data.id)
+          } catch (err) {
+            console.error("Failed to create project:", err)
+            if (err.response?.status === 401) {
+              setSaveError("Session expired. Please sign in again.")
+              navigate("/signin")
+              return
+            } else if (err.response?.status === 415) {
+              setSaveError("Unsupported media type. Please check project data format.")
+              return
+            } else if (err.response?.status === 400) {
+              setSaveError(`Failed to create project: ${err.response?.data?.message || "Invalid data"}`)
+              return
+            }
+            throw err
+          }
+        } else {
+          console.log("Updating project with ID:", proj.id)
+          try {
+            const projResponse = await axios.put(`${BACKEND_URL}/api/project/${proj.id}`, projectData, {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${token}` },
+            })
+            console.log("Project updated:", projResponse.data)
+            projectIds.push(proj.id)
+          } catch (err) {
+            console.error("Failed to update project ID:", proj.id, err)
+            if (err.response?.status === 401) {
+              setSaveError("Session expired. Please sign in again.")
+              navigate("/signin")
+              return
+            } else if (err.response?.status === 415) {
+              setSaveError("Unsupported media type. Please check project data format.")
+              return
+            } else if (err.response?.status === 400) {
+              setSaveError(`Failed to update project: ${err.response?.data?.message || "Invalid data"}`)
+              return
+            }
+            throw err
+          }
+        }
+      }
+
+      const projectsToDelete = Array.from(existingProjectIds).filter(
+        (id) => !projects.some((proj) => proj.id === id) && modifiedProjects.has(id),
+      )
+      for (const projId of projectsToDelete) {
+        console.log("Deleting project ID:", projId)
+        await axios.delete(`${BACKEND_URL}/api/project/${projId}`, {
+          withCredentials: true,
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      }
+
+      setModifiedCertificates(new Set())
+      setModifiedProjects(new Set())
+
+      const payload = {
+        graduateId,
+        ...editingPortfolio,
+        avatar: avatarUrl || editingPortfolio.avatar || null,
+        certificateIds,
+        projectIds,
+        skills: editingPortfolio.skills?.map((skill) => ({
+          id: typeof skill.id === "string" && skill.id.includes("new-") ? null : skill.id,
+          name: skill.name,
+          type: skill.type,
+          proficiencyLevel: skill.proficiencyLevel || null,
+        })) || [],
+        experiences: editingPortfolio.experiences?.map((exp) => ({
+          id: typeof exp.id === "string" && exp.id.includes("new-") ? null : exp.id,
+          jobTitle: exp.jobTitle,
+          employer: exp.employer,
+          description: exp.description || null,
+          startDate: exp.startDate ? exp.startDate : null,
+          endDate: exp.endDate ? exp.endDate : null,
+        })) || [],
+        awardsRecognitions: editingPortfolio.awardsRecognitions?.map((award) => ({
+          id: typeof award.id === "string" && award.id.includes("new-") ? null : award.id,
+          title: award.title,
+          issuer: award.issuer || null,
+          dateReceived: award.dateReceived ? award.dateReceived : null,
+        })) || [],
+        continuingEducations: editingPortfolio.continuingEducations?.map((edu) => ({
+          id: typeof edu.id === "string" && edu.id.includes("new-") ? null : edu.id,
+          courseName: edu.courseName,
+          institution: edu.institution || null,
+          completionDate: edu.completionDate ? edu.completionDate : null,
+        })) || [],
+        professionalMemberships: editingPortfolio.professionalMemberships?.map((mem) => ({
+          id: typeof mem.id === "string" && mem.id.includes("new-") ? null : mem.id,
+          organization: mem.organization,
+          membershipType: mem.membershipType || null,
+          startDate: mem.startDate ? mem.startDate : null,
+        })) || [],
+        references: editingPortfolio.references?.map((ref) => ({
+          id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
+          name: ref.name,
+          relationship: ref.relationship || null,
+          email: ref.email || null,
+          phone: ref.phone || null,
+        })) || [],
+      }
+
+      await axios.put(`${BACKEND_URL}/api/portfolio/${editingPortfolio.id}`, payload, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      // Refresh portfolio data
+      const portfolioResponse = await axios.get(`${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio`, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data)
+      setPortfolio(normalizedPortfolio)
+
+      // Refresh certificates and projects
+      const certificatesResponse = await axios.get(`${BACKEND_URL}/api/certificate/graduate/${graduateId}`, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setCertificates(certificatesResponse.data)
+
+      if (normalizedPortfolio.id) {
+        const projectsResponse = await axios.get(`${BACKEND_URL}/api/project/portfolio/${normalizedPortfolio.id}`, {
+          withCredentials: true,
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        setProjects(projectsResponse.data)
+      }
+
+      setEditingPortfolio(null)
+      setSelectedAvatarFile(null)
+      setModifiedCertificates(new Set())
+      setModifiedProjects(new Set())
+      setIsEditMode(false)
+      setSaveSuccess("Portfolio updated successfully!")
+      setTimeout(() => setSaveSuccess(""), 3000)
+    } catch (err) {
+      console.error("Failed to save portfolio:", err)
+      setSaveError(
+        err.response?.data?.message || err.response?.data?.error || err.message || "Failed to save portfolio",
+      )
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleSaveSection = async (section) => {
+    setIsSaving(true)
+    setSaveError("")
+    setSaveSuccess("")
+
+    try {
+      // Handle avatar upload for header section
+      let avatarUrl = editingPortfolio.avatar || ""
+      if (section === "header" && selectedAvatarFile) {
+        const formDataAvatar = new FormData()
+        formDataAvatar.append("file", selectedAvatarFile)
+        const uploadResponse = await axios.post(
+          `${BACKEND_URL}/api/graduate/${graduateId}/upload-picture`,
+          formDataAvatar,
+          { withCredentials: true },
+        )
+        avatarUrl = uploadResponse.data.profilePicture
+        setSelectedAvatarFile(null)
+      }
+
+      // Handle certificates section
+      if (section === "certificates") {
+        const certificateIds = []
+        const existingCertificateIds = new Set(
+          (
+            await axios.get(`${BACKEND_URL}/api/certificate/graduate/${graduateId}`, {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${token}` },
+            })
+          ).data.map((cert) => cert.id),
+        )
+
+        for (const cert of certificates) {
+          if (!modifiedCertificates.has(cert.id)) {
+            if (typeof cert.id === "string" && cert.id.includes("new-")) {
+            } else if (existingCertificateIds.has(cert.id)) {
+              certificateIds.push(cert.id)
+              continue
+            }
+          }
+
+          const certificateData = new FormData()
+          certificateData.append("courseName", cert.courseName || "")
+          certificateData.append("certificateNumber", cert.certificateNumber || "")
+          certificateData.append("issueDate", cert.issueDate || "")
+          if (cert.portfolioId) {
+            certificateData.append("portfolioId", cert.portfolioId.toString())
+          }
+          if (typeof cert.id !== "string" || !cert.id.includes("new-")) {
+            certificateData.append("graduateId", graduateId.toString())
+          }
+          if (cert.certificateFile instanceof File) {
+            certificateData.append("certificateFile", cert.certificateFile)
+          }
+
+          if (typeof cert.id === "string" && cert.id.includes("new-")) {
+            const certResponse = await axios.post(
+              `${BACKEND_URL}/api/certificate/graduate/${graduateId}`,
+              certificateData,
+              {
+                withCredentials: true,
+                headers: { Authorization: `Bearer ${token}` },
+              },
+            )
+            certificateIds.push(certResponse.data.id)
+          } else {
+            await axios.put(`${BACKEND_URL}/api/certificate/${cert.id}`, certificateData, {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${token}` },
+            })
+            certificateIds.push(cert.id)
+          }
+        }
+
+        const certificatesToDelete = Array.from(existingCertificateIds).filter(
+          (id) => !certificates.some((cert) => cert.id === id) && modifiedCertificates.has(id),
+        )
+        for (const certId of certificatesToDelete) {
+          await axios.delete(`${BACKEND_URL}/api/certificate/${certId}`, {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        }
+
+        setModifiedCertificates(new Set())
+        
+        // Refresh certificates
+        const certificatesResponse = await axios.get(`${BACKEND_URL}/api/certificate/graduate/${graduateId}`, {
+          withCredentials: true,
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        setCertificates(certificatesResponse.data)
+      }
+
+      // Handle projects section
+      if (section === "projects") {
+        const projectIds = []
+        const existingProjectIds = new Set(
+          (
+            await axios.get(`${BACKEND_URL}/api/project/portfolio/${editingPortfolio.id}`, {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${token}` },
+            })
+          ).data.map((proj) => proj.id),
+        )
+
+        for (const proj of projects) {
+          if (!modifiedProjects.has(proj.id)) {
+            if (typeof proj.id === "string" && proj.id.includes("new-")) {
+            } else if (existingProjectIds.has(proj.id)) {
+              projectIds.push(proj.id)
+              continue
+            }
+          }
+
+          const projectData = new FormData()
+          projectData.append("portfolioId", editingPortfolio.id.toString())
+          projectData.append("title", proj.title || "")
+          projectData.append("description", proj.description || "")
+          if (proj.startDate) projectData.append("startDate", proj.startDate)
+          if (proj.endDate) projectData.append("endDate", proj.endDate)
+          if (proj.projectImageFile instanceof File) {
+            projectData.append("projectImageFile", proj.projectImageFile)
+          }
+
+          if (typeof proj.id === "string" && proj.id.includes("new-")) {
+            const projResponse = await axios.post(`${BACKEND_URL}/api/project`, projectData, {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${token}` },
+            })
+            projectIds.push(projResponse.data.id)
+          } else {
+            await axios.put(`${BACKEND_URL}/api/project/${proj.id}`, projectData, {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${token}` },
+            })
+            projectIds.push(proj.id)
+          }
+        }
+
+        const projectsToDelete = Array.from(existingProjectIds).filter(
+          (id) => !projects.some((proj) => proj.id === id) && modifiedProjects.has(id),
+        )
+        for (const projId of projectsToDelete) {
+          await axios.delete(`${BACKEND_URL}/api/project/${projId}`, {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        }
+
+        setModifiedProjects(new Set())
+        
+        // Refresh projects
+        if (editingPortfolio.id) {
+          const projectsResponse = await axios.get(`${BACKEND_URL}/api/project/portfolio/${editingPortfolio.id}`, {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          setProjects(projectsResponse.data)
+        }
+      }
+
+      // Build payload with all editingPortfolio data to preserve unsaved changes in other sections
+      const payload = {
+        graduateId,
+        ...editingPortfolio, // Start with editingPortfolio to preserve all current edits
+        avatar: section === "header" ? (avatarUrl || editingPortfolio.avatar || portfolio.avatar) : editingPortfolio.avatar || portfolio.avatar,
+      }
+
+      // Update the specific section being saved (already in editingPortfolio, but ensure it's properly formatted)
+      if (section === "header") {
+        payload.fullName = editingPortfolio.fullName
+        payload.professionalTitle = editingPortfolio.professionalTitle
+        payload.professionalSummary = editingPortfolio.professionalSummary
+        payload.avatar = avatarUrl || editingPortfolio.avatar || portfolio.avatar
+      } else if (section === "contact") {
+        payload.email = editingPortfolio.email
+        payload.phone = editingPortfolio.phone
+        payload.website = editingPortfolio.website
+      } else if (section === "skills") {
+        payload.skills = editingPortfolio.skills?.map((skill) => ({
+          id: typeof skill.id === "string" && skill.id.includes("new-") ? null : skill.id,
+          name: skill.name,
+          type: skill.type,
+          proficiencyLevel: skill.proficiencyLevel || null,
+        })) || []
+      } else if (section === "tesda") {
+        payload.ncLevel = editingPortfolio.ncLevel
+        payload.trainingCenter = editingPortfolio.trainingCenter
+        payload.scholarshipType = editingPortfolio.scholarshipType
+        payload.trainingDuration = editingPortfolio.trainingDuration
+        payload.tesdaRegistrationNumber = editingPortfolio.tesdaRegistrationNumber
+      } else if (section === "experience") {
+        payload.experiences = editingPortfolio.experiences?.map((exp) => ({
+          id: typeof exp.id === "string" && exp.id.includes("new-") ? null : exp.id,
+          jobTitle: exp.jobTitle,
+          employer: exp.employer,
+          description: exp.description || null,
+          startDate: exp.startDate ? exp.startDate : null,
+          endDate: exp.endDate ? exp.endDate : null,
+        })) || []
+      } else if (section === "awards") {
+        payload.awardsRecognitions = editingPortfolio.awardsRecognitions?.map((award) => ({
+          id: typeof award.id === "string" && award.id.includes("new-") ? null : award.id,
+          title: award.title,
+          issuer: award.issuer || null,
+          dateReceived: award.dateReceived ? award.dateReceived : null,
+        })) || []
+      } else if (section === "education") {
+        payload.continuingEducations = editingPortfolio.continuingEducations?.map((edu) => ({
+          id: typeof edu.id === "string" && edu.id.includes("new-") ? null : edu.id,
+          courseName: edu.courseName,
+          institution: edu.institution || null,
+          completionDate: edu.completionDate ? edu.completionDate : null,
+        })) || []
+      } else if (section === "memberships") {
+        payload.professionalMemberships = editingPortfolio.professionalMemberships?.map((mem) => ({
+          id: typeof mem.id === "string" && mem.id.includes("new-") ? null : mem.id,
+          organization: mem.organization,
+          membershipType: mem.membershipType || null,
+          startDate: mem.startDate ? mem.startDate : null,
+        })) || []
+      } else if (section === "references") {
+        payload.references = editingPortfolio.references?.map((ref) => ({
+          id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
+          name: ref.name,
+          relationship: ref.relationship || null,
+          email: ref.email || null,
+          phone: ref.phone || null,
+        })) || []
+      }
+
+      // Ensure all array fields are properly formatted from editingPortfolio
+      payload.skills = editingPortfolio.skills?.map((skill) => ({
+        id: typeof skill.id === "string" && skill.id.includes("new-") ? null : skill.id,
+        name: skill.name,
+        type: skill.type,
+        proficiencyLevel: skill.proficiencyLevel || null,
+      })) || []
+      payload.experiences = editingPortfolio.experiences?.map((exp) => ({
+        id: typeof exp.id === "string" && exp.id.includes("new-") ? null : exp.id,
+        jobTitle: exp.jobTitle,
+        employer: exp.employer,
+        description: exp.description || null,
+        startDate: exp.startDate ? exp.startDate : null,
+        endDate: exp.endDate ? exp.endDate : null,
+      })) || []
+      payload.awardsRecognitions = editingPortfolio.awardsRecognitions?.map((award) => ({
+        id: typeof award.id === "string" && award.id.includes("new-") ? null : award.id,
+        title: award.title,
+        issuer: award.issuer || null,
+        dateReceived: award.dateReceived ? award.dateReceived : null,
+      })) || []
+      payload.continuingEducations = editingPortfolio.continuingEducations?.map((edu) => ({
+        id: typeof edu.id === "string" && edu.id.includes("new-") ? null : edu.id,
+        courseName: edu.courseName,
+        institution: edu.institution || null,
+        completionDate: edu.completionDate ? edu.completionDate : null,
+      })) || []
+      payload.professionalMemberships = editingPortfolio.professionalMemberships?.map((mem) => ({
+        id: typeof mem.id === "string" && mem.id.includes("new-") ? null : mem.id,
+        organization: mem.organization,
+        membershipType: mem.membershipType || null,
+        startDate: mem.startDate ? mem.startDate : null,
+      })) || []
+      payload.references = editingPortfolio.references?.map((ref) => ({
+        id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
+        name: ref.name,
+        relationship: ref.relationship || null,
+        email: ref.email || null,
+        phone: ref.phone || null,
+      })) || []
+
+      // Add certificate and project IDs if they exist
+      if (section === "certificates") {
+        const existingCertificateIds = (
+          await axios.get(`${BACKEND_URL}/api/certificate/graduate/${graduateId}`, {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        ).data.map((cert) => cert.id)
+        payload.certificateIds = existingCertificateIds
+      } else if (editingPortfolio.certificateIds || portfolio.certificateIds) {
+        payload.certificateIds = editingPortfolio.certificateIds || portfolio.certificateIds
+      }
+
+      if (section === "projects") {
+        if (editingPortfolio.id) {
+          const existingProjectIds = (
+            await axios.get(`${BACKEND_URL}/api/project/portfolio/${editingPortfolio.id}`, {
+              withCredentials: true,
+              headers: { Authorization: `Bearer ${token}` },
+            })
+          ).data.map((proj) => proj.id)
+          payload.projectIds = existingProjectIds
+        }
+      } else if (editingPortfolio.projectIds || portfolio.projectIds) {
+        payload.projectIds = editingPortfolio.projectIds || portfolio.projectIds
+      }
+
+      await axios.put(`${BACKEND_URL}/api/portfolio/${editingPortfolio.id}`, payload, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      // Refresh portfolio data
+      const portfolioResponse = await axios.get(`${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio`, {
+        withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data)
+      setPortfolio(normalizedPortfolio)
+      
+      // Update editingPortfolio with fresh data, but preserve unsaved changes in sections still in edit mode
+      const portfolioCopy = JSON.parse(JSON.stringify(normalizedPortfolio))
+      if (portfolioCopy.experiences) {
+        portfolioCopy.experiences = portfolioCopy.experiences.map((exp) => ({
+          ...exp,
+          employer: exp.company || exp.employer || "",
+          description: exp.responsibilities || exp.description || "",
+        }))
+      }
+      
+      // Merge with existing editingPortfolio to preserve unsaved changes in other sections (excluding the one we just saved)
+      const mergedPortfolio = {
+        ...portfolioCopy,
+        // Preserve unsaved changes from sections still in edit mode (excluding the section we just saved)
+        ...(editingSections.header && section !== "header" && {
+          fullName: editingPortfolio.fullName,
+          professionalTitle: editingPortfolio.professionalTitle,
+          professionalSummary: editingPortfolio.professionalSummary,
+        }),
+        ...(editingSections.contact && section !== "contact" && {
+          email: editingPortfolio.email,
+          phone: editingPortfolio.phone,
+          website: editingPortfolio.website,
+        }),
+        ...(editingSections.skills && section !== "skills" && {
+          skills: editingPortfolio.skills,
+        }),
+        ...(editingSections.tesda && section !== "tesda" && {
+          ncLevel: editingPortfolio.ncLevel,
+          trainingCenter: editingPortfolio.trainingCenter,
+          scholarshipType: editingPortfolio.scholarshipType,
+          trainingDuration: editingPortfolio.trainingDuration,
+          tesdaRegistrationNumber: editingPortfolio.tesdaRegistrationNumber,
+        }),
+        ...(editingSections.experience && section !== "experience" && {
+          experiences: editingPortfolio.experiences,
+        }),
+        ...(editingSections.awards && section !== "awards" && {
+          awardsRecognitions: editingPortfolio.awardsRecognitions,
+        }),
+        ...(editingSections.education && section !== "education" && {
+          continuingEducations: editingPortfolio.continuingEducations,
+        }),
+        ...(editingSections.memberships && section !== "memberships" && {
+          professionalMemberships: editingPortfolio.professionalMemberships,
+        }),
+        ...(editingSections.references && section !== "references" && {
+          references: editingPortfolio.references,
+        }),
+      }
+      
+      setEditingPortfolio(mergedPortfolio)
+
+      // Close the edit mode for this section only
+      setEditingSections((prev) => ({
+        ...prev,
+        [section]: false,
+      }))
+
+      setSaveSuccess(`${section.charAt(0).toUpperCase() + section.slice(1)} updated successfully!`)
+      setTimeout(() => setSaveSuccess(""), 3000)
+    } catch (err) {
+      console.error(`Failed to save ${section}:`, err)
+      setSaveError(
+        err.response?.data?.message || err.response?.data?.error || err.message || `Failed to save ${section}`,
+      )
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleImageClick = () => {
+    if (isEditMode && editingSections.header) {
+      avatarFileInputRef.current?.click()
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -620,50 +1712,128 @@ const fetchPublicDataWithToken = async () => {
           
           <div className="flex items-center justify-between max-w-6xl mx-auto gap-16">
             {/* Profile Image - Left Side */}
-            {(graduate?.profilePicture || portfolio?.avatar) && (
+            {(graduate?.profilePicture || portfolio?.avatar || isEditMode) && (
               <div className="relative flex-shrink-0 animate-fade-in-up">
                 <div className="absolute inset-0 bg-white/20 blur-xl scale-110 animate-pulse"></div>
                 <div className="absolute inset-0 bg-blue-300/30 blur-2xl scale-125 animate-ping opacity-20"></div>
                 <Avatar
-                  src={graduate?.profilePicture || portfolio?.avatar}
+                  src={
+                    isEditMode && selectedAvatarFile
+                      ? URL.createObjectURL(selectedAvatarFile)
+                      : graduate?.profilePicture || portfolio?.avatar
+                  }
                   alt={`${portfolio.fullName || "Profile"} Picture`}
                   size="xxl"
-                  className="relative shadow-2xl w-80 h-80 backdrop-blur-sm hover:scale-105 transition-all duration-500 animate-float rounded-none border-0"
+                  className={`relative shadow-2xl w-80 h-80 backdrop-blur-sm transition-all duration-500 animate-float rounded-none border-0 ${
+                    isEditMode ? "cursor-pointer hover:scale-110 hover:ring-4 hover:ring-white/50" : "hover:scale-105"
+                  }`}
+                  onClick={handleImageClick}
+                />
+                {isEditMode && !editingSections.header && (
+                  <div className="absolute bottom-2 right-2 bg-blue-500 rounded-full p-2 shadow-lg cursor-pointer hover:bg-blue-600"
+                    onClick={() => handleSectionEditToggle("header")}>
+                    <FaPen className="w-4 h-4 text-white" />
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarFileChange}
+                  ref={avatarFileInputRef}
+                  className="hidden"
                 />
               </div>
             )}
 
             {/* Text Content - Right Side */}
             <div className="flex-1 text-left space-y-8">
-              <div className="animate-fade-in-up animation-delay-300">
-                <Typography
-                  variant="h1"
-                  className="mb-6 font-extralight text-5xl md:text-6xl lg:text-7xl tracking-tight animate-typing overflow-hidden whitespace-nowrap border-r-4 border-white/50 break-words"
-                >
-                  {portfolio.fullName || "Professional Portfolio"}
-                </Typography>
+              <div className="animate-fade-in-up animation-delay-300 flex items-center gap-3">
+                {isEditMode && editingSections.header ? (
+                  <div className="flex-1">
+                    <Input
+                      value={editingPortfolio?.fullName || ""}
+                      onChange={(e) => handleFieldChange("fullName", e.target.value)}
+                      className="!text-5xl md:!text-6xl lg:!text-7xl !font-extralight !bg-white/20 !border-white/40 !text-white placeholder:text-white/60"
+                      placeholder="Full Name"
+                    />
+                  </div>
+                ) : (
+                  <Typography
+                    variant="h1"
+                    className="mb-6 font-extralight text-5xl md:text-6xl lg:text-7xl tracking-tight animate-typing overflow-hidden whitespace-nowrap border-r-4 border-white/50 break-words"
+                  >
+                    {portfolio.fullName || "Professional Portfolio"}
+                  </Typography>
+                )}
+                {isGraduateView && isEditMode && (
+                  <IconButton
+                    size="sm"
+                    variant="text"
+                    className="text-white hover:bg-white/20"
+                    onClick={() => handleSectionEditToggle("header")}
+                  >
+                    <FaPen className="w-4 h-4" />
+                  </IconButton>
+                )}
               </div>
 
-              {portfolio.professionalTitle && (
-                <div className="relative animate-fade-in-up animation-delay-600">
-                  <Typography
-                    variant="h3"
-                    className="font-light text-white/90 text-2xl md:text-3xl tracking-wide break-words"
-                  >
-                    {portfolio.professionalTitle}
-                  </Typography>
-                  <div className="w-0 h-0.5 bg-white/40 mt-4 animate-expand-line"></div>
+              {(portfolio.professionalTitle || (isEditMode && editingSections.header)) && (
+                <div className="relative animate-fade-in-up animation-delay-600 flex items-center gap-3">
+                  {isEditMode && editingSections.header ? (
+                    <div className="flex-1">
+                      <Input
+                        value={editingPortfolio?.professionalTitle || ""}
+                        onChange={(e) => handleFieldChange("professionalTitle", e.target.value)}
+                        className="!text-2xl md:!text-3xl !font-light !bg-white/20 !border-white/40 !text-white placeholder:text-white/60"
+                        placeholder="Professional Title"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <Typography
+                        variant="h3"
+                        className="font-light text-white/90 text-2xl md:text-3xl tracking-wide break-words"
+                      >
+                        {portfolio.professionalTitle}
+                      </Typography>
+                      <div className="w-0 h-0.5 bg-white/40 mt-4 animate-expand-line"></div>
+                    </>
+                  )}
                 </div>
               )}
 
-              {portfolio.professionalSummary && (
+              {(portfolio.professionalSummary || (isEditMode && editingSections.header)) && (
                 <div className="max-w-3xl mt-10 animate-fade-in-up animation-delay-900">
-                  <Typography
-                    variant="lead"
-                    className="text-white/80 leading-relaxed text-xl md:text-2xl font-light tracking-wide break-words overflow-wrap-anywhere"
+                  {isEditMode && editingSections.header ? (
+                    <Textarea
+                      value={editingPortfolio?.professionalSummary || ""}
+                      onChange={(e) => handleFieldChange("professionalSummary", e.target.value)}
+                      className="!text-xl md:!text-2xl !font-light !bg-white/20 !border-white/40 !text-white placeholder:text-white/60"
+                      placeholder="Professional Summary"
+                      rows={4}
+                    />
+                  ) : (
+                    <Typography
+                      variant="lead"
+                      className="text-white/80 leading-relaxed text-xl md:text-2xl font-light tracking-wide break-words overflow-wrap-anywhere"
+                    >
+                      {portfolio.professionalSummary}
+                    </Typography>
+                  )}
+                </div>
+              )}
+              {isEditMode && editingSections.header && (
+                <div className="mt-6 flex justify-end">
+                  <Button
+                    variant="gradient"
+                    color="white"
+                    onClick={() => handleSaveSection("header")}
+                    disabled={isSaving}
+                    className="flex items-center gap-2"
                   >
-                    {portfolio.professionalSummary}
-                  </Typography>
+                    <FaSave className="w-4 h-4" />
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </Button>
                 </div>
               )}
 
@@ -792,65 +1962,192 @@ const fetchPublicDataWithToken = async () => {
           <div className="lg:col-span-1 space-y-8">
             {/* Contact Information */}
             <div className="bg-white border border-gray-100 rounded-lg p-6">
-              <Typography variant="h6" className="font-light text-blue-600 mb-6 text-lg">
-                Contact
-              </Typography>
+              <div className="flex items-center justify-between mb-6">
+                <Typography variant="h6" className="font-light text-blue-600 text-lg">
+                  Contact
+                </Typography>
+                {isGraduateView && isEditMode && (
+                  <IconButton 
+                    size="sm" 
+                    variant="text" 
+                    onClick={() => handleSectionEditToggle("contact")}
+                    className={editingSections.contact ? "text-blue-600" : ""}
+                  >
+                    <FaPen className="w-4 h-4" />
+                  </IconButton>
+                )}
+              </div>
               <div className="space-y-4">
-                {portfolio.email && (
+                {(portfolio.email || isEditMode) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
                       Email
                     </Typography>
-                    <Typography variant="small" className="text-gray-800 break-all">
-                      {portfolio.email}
-                    </Typography>
+                    {isEditMode && editingSections.contact ? (
+                      <Input
+                        size="sm"
+                        value={editingPortfolio?.email || ""}
+                        onChange={(e) => handleFieldChange("email", e.target.value)}
+                        placeholder="Email address"
+                        className="!border-gray-300"
+                      />
+                    ) : (
+                      <Typography variant="small" className="text-gray-800 break-all">
+                        {portfolio.email}
+                      </Typography>
+                    )}
                   </div>
                 )}
-                {portfolio.phone && (
+                {(portfolio.phone || isEditMode) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
                       Phone
                     </Typography>
-                    <Typography variant="small" className="text-gray-800">
-                      {portfolio.phone}
-                    </Typography>
+                    {isEditMode && editingSections.contact ? (
+                      <Input
+                        size="sm"
+                        value={editingPortfolio?.phone || ""}
+                        onChange={(e) => handleFieldChange("phone", e.target.value)}
+                        placeholder="Phone number"
+                        className="!border-gray-300"
+                      />
+                    ) : (
+                      <Typography variant="small" className="text-gray-800">
+                        {portfolio.phone}
+                      </Typography>
+                    )}
                   </div>
                 )}
-                {portfolio.website && (
+                {(portfolio.website || isEditMode) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
                       Website
                     </Typography>
-                    <Typography variant="small" className="text-gray-800 break-all">
-                      {portfolio.website}
-                    </Typography>
+                    {isEditMode && editingSections.contact ? (
+                      <Input
+                        size="sm"
+                        value={editingPortfolio?.website || ""}
+                        onChange={(e) => handleFieldChange("website", e.target.value)}
+                        placeholder="Website URL"
+                        className="!border-gray-300"
+                      />
+                    ) : (
+                      <Typography variant="small" className="text-gray-800 break-all">
+                        {portfolio.website}
+                      </Typography>
+                    )}
                   </div>
                 )}
               </div>
+              {isEditMode && editingSections.contact && (
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="gradient"
+                    color="blue"
+                    size="sm"
+                    onClick={() => handleSaveSection("contact")}
+                    disabled={isSaving}
+                    className="flex items-center gap-2"
+                  >
+                    <FaSave className="w-3 h-3" />
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Skills */}
             <div className="bg-white border border-gray-100 rounded-lg p-6">
-              <Typography variant="h6" className="font-light text-blue-600 mb-6 text-lg">
-                Skills
-              </Typography>
-              {portfolio.skills && portfolio.skills.length > 0 ? (
+              <div className="flex items-center justify-between mb-6">
+                <Typography variant="h6" className="font-light text-blue-600 text-lg">
+                  Skills
+                </Typography>
+                {isGraduateView && isEditMode && (
+                  <IconButton 
+                    size="sm" 
+                    variant="text" 
+                    onClick={() => handleSectionEditToggle("skills")}
+                    className={editingSections.skills ? "text-blue-600" : ""}
+                  >
+                    <FaPen className="w-4 h-4" />
+                  </IconButton>
+                )}
+              </div>
+              {((portfolio.skills && portfolio.skills.length > 0) || (isEditMode && editingSections.skills)) ? (
                 <div className="space-y-3">
-                  {portfolio.skills.map((skill, index) => (
+                  {(isEditMode && editingSections.skills ? editingPortfolio?.skills : portfolio.skills)?.map((skill, index) => (
                     <div key={index} className="pb-3 border-b border-gray-50 last:border-b-0">
-                      <Typography variant="small" className="font-medium text-gray-800 mb-1">
-                        {skill.name}
-                      </Typography>
-                      <div className="flex items-center space-x-2">
-                        <Chip size="sm" value={skill.type} color="blue" className="text-xs font-light" />
-                        {skill.proficiencyLevel && (
-                          <Typography variant="small" color="gray" className="text-xs">
-                            {skill.proficiencyLevel}
+                      {isEditMode && editingSections.skills ? (
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <Input
+                              size="sm"
+                              value={skill.name || ""}
+                              onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
+                              placeholder="Skill name"
+                              className="!border-gray-300 flex-1"
+                            />
+                            <IconButton
+                              size="sm"
+                              variant="text"
+                              color="red"
+                              onClick={() => handleRemoveArrayItem("skills", index)}
+                            >
+                              <FaTrash className="w-3 h-3" />
+                            </IconButton>
+                          </div>
+                          <Input
+                            size="sm"
+                            value={skill.proficiencyLevel || ""}
+                            onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
+                            placeholder="Proficiency level"
+                            className="!border-gray-300"
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <Typography variant="small" className="font-medium text-gray-800 mb-1">
+                            {skill.name}
                           </Typography>
-                        )}
-                      </div>
+                          <div className="flex items-center space-x-2">
+                            <Chip size="sm" value={skill.type} color="blue" className="text-xs font-light" />
+                            {skill.proficiencyLevel && (
+                              <Typography variant="small" color="gray" className="text-xs">
+                                {skill.proficiencyLevel}
+                              </Typography>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
+                  {isEditMode && editingSections.skills && (
+                    <Button
+                      variant="outlined"
+                      size="sm"
+                      color="blue"
+                      onClick={() => handleAddArrayItem("skills", { name: "", type: "TECHNICAL", proficiencyLevel: "" })}
+                      className="w-full flex items-center justify-center gap-2 mt-2"
+                    >
+                      <FaPlus className="w-3 h-3" />
+                      Add Skill
+                    </Button>
+                  )}
+                  {isEditMode && editingSections.skills && (
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        variant="gradient"
+                        color="blue"
+                        size="sm"
+                        onClick={() => handleSaveSection("skills")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-3 h-3" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <Typography variant="small" className="text-gray-500 italic">
@@ -861,100 +2158,377 @@ const fetchPublicDataWithToken = async () => {
 
             {/* TESDA Information */}
             <div className="bg-white border border-gray-100 rounded-lg p-6">
-              <Typography variant="h6" className="font-light text-blue-600 mb-6 text-lg">
-                TESDA Information
-              </Typography>
+              <div className="flex items-center justify-between mb-6">
+                <Typography variant="h6" className="font-light text-blue-600 text-lg">
+                  TESDA Information
+                </Typography>
+                {isGraduateView && isEditMode && (
+                  <IconButton 
+                    size="sm" 
+                    variant="text" 
+                    onClick={() => handleSectionEditToggle("tesda")}
+                    className={editingSections.tesda ? "text-blue-600" : ""}
+                  >
+                    <FaPen className="w-4 h-4" />
+                  </IconButton>
+                )}
+              </div>
               <div className="space-y-4">
-                {portfolio.ncLevel && (
+                {(portfolio.ncLevel || (isEditMode && editingSections.tesda)) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
                       NC Level
                     </Typography>
-                    <Typography variant="small" className="text-gray-800">
-                      {portfolio.ncLevel}
-                    </Typography>
+                    {isEditMode && editingSections.tesda ? (
+                      <Input
+                        size="sm"
+                        value={editingPortfolio?.ncLevel || ""}
+                        onChange={(e) => handleFieldChange("ncLevel", e.target.value)}
+                        placeholder="NC Level"
+                        className="!border-gray-300"
+                      />
+                    ) : (
+                      <Typography variant="small" className="text-gray-800">
+                        {portfolio.ncLevel}
+                      </Typography>
+                    )}
                   </div>
                 )}
-                {portfolio.trainingCenter && (
+                {(portfolio.trainingCenter || (isEditMode && editingSections.tesda)) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
                       Training Center
                     </Typography>
-                    <Typography variant="small" className="text-gray-800">
-                      {portfolio.trainingCenter}
-                    </Typography>
+                    {isEditMode && editingSections.tesda ? (
+                      <Input
+                        size="sm"
+                        value={editingPortfolio?.trainingCenter || ""}
+                        onChange={(e) => handleFieldChange("trainingCenter", e.target.value)}
+                        placeholder="Training Center"
+                        className="!border-gray-300"
+                      />
+                    ) : (
+                      <Typography variant="small" className="text-gray-800">
+                        {portfolio.trainingCenter}
+                      </Typography>
+                    )}
                   </div>
                 )}
-                {portfolio.scholarshipType && (
+                {(portfolio.scholarshipType || (isEditMode && editingSections.tesda)) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
                       Scholarship Type
                     </Typography>
-                    <Typography variant="small" className="text-gray-800">
-                      {portfolio.scholarshipType}
-                    </Typography>
+                    {isEditMode && editingSections.tesda ? (
+                      <Input
+                        size="sm"
+                        value={editingPortfolio?.scholarshipType || ""}
+                        onChange={(e) => handleFieldChange("scholarshipType", e.target.value)}
+                        placeholder="Scholarship Type"
+                        className="!border-gray-300"
+                      />
+                    ) : (
+                      <Typography variant="small" className="text-gray-800">
+                        {portfolio.scholarshipType}
+                      </Typography>
+                    )}
                   </div>
                 )}
-                {portfolio.trainingDuration && (
+                {(portfolio.trainingDuration || (isEditMode && editingSections.tesda)) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
                       Training Duration
                     </Typography>
-                    <Typography variant="small" className="text-gray-800">
-                      {portfolio.trainingDuration}
-                    </Typography>
+                    {isEditMode && editingSections.tesda ? (
+                      <Input
+                        size="sm"
+                        value={editingPortfolio?.trainingDuration || ""}
+                        onChange={(e) => handleFieldChange("trainingDuration", e.target.value)}
+                        placeholder="Training Duration"
+                        className="!border-gray-300"
+                      />
+                    ) : (
+                      <Typography variant="small" className="text-gray-800">
+                        {portfolio.trainingDuration}
+                      </Typography>
+                    )}
                   </div>
                 )}
-                {portfolio.tesdaRegistrationNumber && (
+                {(portfolio.tesdaRegistrationNumber || (isEditMode && editingSections.tesda)) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
                       Registration Number
                     </Typography>
-                    <Typography variant="small" className="text-gray-800">
-                      {portfolio.tesdaRegistrationNumber}
-                    </Typography>
+                    {isEditMode && editingSections.tesda ? (
+                      <Input
+                        size="sm"
+                        value={editingPortfolio?.tesdaRegistrationNumber || ""}
+                        onChange={(e) => handleFieldChange("tesdaRegistrationNumber", e.target.value)}
+                        placeholder="TESDA Registration Number"
+                        className="!border-gray-300"
+                      />
+                    ) : (
+                      <Typography variant="small" className="text-gray-800">
+                        {portfolio.tesdaRegistrationNumber}
+                      </Typography>
+                    )}
                   </div>
                 )}
               </div>
+              {isEditMode && editingSections.tesda && (
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="gradient"
+                    color="blue"
+                    size="sm"
+                    onClick={() => handleSaveSection("tesda")}
+                    disabled={isSaving}
+                    className="flex items-center gap-2"
+                  >
+                    <FaSave className="w-3 h-3" />
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
  
           <div className="lg:col-span-3 space-y-12">
             {/* Certificates */}
             <div>
-              <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
-                Certificates
-              </Typography>
-              {certificates && certificates.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {certificates.map((certificate) => (
-                    <div
-                      key={certificate.id}
-                      className="bg-white border border-gray-100 rounded-lg p-6 cursor-pointer hover:shadow-md transition-shadow duration-300"
-                      onClick={() => handleCertificateClick(certificate)}
-                    >
-                      <div className="flex items-start space-x-4">
-                        {certificate.certificateFilePath && (
-                          <img
-                            src={certificate.certificateFilePath || "/placeholder.svg"}
-                            alt={certificate.courseName || "Certificate"}
-                            className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <Typography variant="h6" className="font-medium mb-2">
-                            {certificate.courseName || "Certificate"}
-                          </Typography>
-                          <Typography variant="small" color="gray" className="mb-1">
-                            {certificate.certificateNumber || "N/A"}
-                          </Typography>
-                          <Typography variant="small" color="blue">
-                            {certificate.issueDate || "N/A"}
+              <div className="flex items-center justify-between mb-8">
+                <Typography variant="h4" className="font-light text-blue-600 text-2xl">
+                  Certificates
+                </Typography>
+                {isGraduateView && isEditMode && (
+                  <IconButton 
+                    size="sm" 
+                    variant="text" 
+                    onClick={() => handleSectionEditToggle("certificates")}
+                    className={editingSections.certificates ? "text-blue-600" : ""}
+                  >
+                    <FaPen className="w-4 h-4" />
+                  </IconButton>
+                )}
+              </div>
+              {isEditMode && editingSections.certificates && isAddingCertificate && (
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                  <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                    {editingCertificateId ? "Edit Certificate" : "Add New Certificate"}
+                  </Typography>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                        Course Name *
+                      </Typography>
+                      <Input
+                        size="lg"
+                        name="courseName"
+                        value={newCertificate.courseName}
+                        onChange={handleCertificateInputChange}
+                        placeholder="Enter course name"
+                        required
+                        className="!border-gray-300 focus:!border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                        Certificate Number *
+                      </Typography>
+                      <Input
+                        size="lg"
+                        name="certificateNumber"
+                        value={newCertificate.certificateNumber}
+                        onChange={handleCertificateInputChange}
+                        placeholder="Enter certificate number"
+                        required
+                        className="!border-gray-300 focus:!border-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                      Issue Date *
+                    </Typography>
+                    <Input
+                      type="date"
+                      size="lg"
+                      name="issueDate"
+                      value={newCertificate.issueDate}
+                      onChange={handleCertificateInputChange}
+                      required
+                      className="!border-gray-300 focus:!border-blue-500"
+                    />
+                  </div>
+                  <div className="mt-4">
+                    <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                      Certificate File {editingCertificateId ? "(Optional)" : "*"}
+                    </Typography>
+                    <div className="flex items-center gap-4">
+                      {newCertificate.certificateFile ? (
+                        <Avatar
+                          src={URL.createObjectURL(newCertificate.certificateFile)}
+                          alt="Certificate Preview"
+                          size="lg"
+                          className="ring-2 ring-blue-200"
+                        />
+                      ) : editingCertificateId ? (
+                        <Avatar
+                          src={certificates.find((cert) => cert.id === editingCertificateId)?.certificateFilePath || "/placeholder.svg"}
+                          alt="Certificate Preview"
+                          size="lg"
+                          className="ring-2 ring-blue-200"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center">
+                          <Typography variant="h5" className="text-gray-600">
+                            📄
                           </Typography>
                         </div>
-                      </div>
+                      )}
+                      <Button
+                        variant="outlined"
+                        color="blue"
+                        onClick={handleCertificateImageClick}
+                        className="flex items-center gap-2"
+                      >
+                        <FaPlus className="w-4 h-4" />
+                        Choose File
+                      </Button>
+                      <input
+                        type="file"
+                        id="certificateFile"
+                        accept="image/*"
+                        onChange={handleCertificateFileChange}
+                        ref={certificateFileInputRef}
+                        className="hidden"
+                      />
                     </div>
-                  ))}
+                  </div>
+                  <div className="mt-6 flex justify-end gap-2">
+                    <Button
+                      variant="gradient"
+                      color="blue"
+                      onClick={editingCertificateId ? handleUpdateCertificate : handleAddCertificate}
+                      disabled={!isCertificateFormValid()}
+                    >
+                      {editingCertificateId ? "Update Certificate" : "Add Certificate"}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="gray"
+                      onClick={() => {
+                        setIsAddingCertificate(false)
+                        setEditingCertificateId(null)
+                        setNewCertificate({
+                          courseName: "",
+                          certificateNumber: "",
+                          issueDate: "",
+                          certificateFile: null,
+                        })
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {((certificates && certificates.length > 0) || (isEditMode && editingSections.certificates)) ? (
+                <div className="space-y-4">
+                  {!isAddingCertificate && isEditMode && editingSections.certificates && (
+                    <Button
+                      variant="outlined"
+                      color="blue"
+                      onClick={() => {
+                        setIsAddingCertificate(true)
+                        setEditingCertificateId(null)
+                        setNewCertificate({ courseName: "", certificateNumber: "", issueDate: "", certificateFile: null })
+                      }}
+                      className="flex items-center gap-2 w-full"
+                    >
+                      <FaPlus className="w-4 h-4" />
+                      Add Certificate
+                    </Button>
+                  )}
+
+                  {certificates && certificates.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {certificates.map((certificate) => (
+                        <Card key={certificate.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <CardBody className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                            <div className="flex items-center gap-4">
+                              {(certificate.preview || certificate.certificateFilePath) && (
+                                <Avatar
+                                  src={certificate.preview || certificate.certificateFilePath || "/placeholder.svg"}
+                                  alt="Certificate Preview"
+                                  size="lg"
+                                  className="ring-2 ring-blue-200"
+                                />
+                              )}
+                              <div>
+                                <Typography variant="h6" className="text-gray-800 font-semibold">
+                                  {certificate.courseName}
+                                </Typography>
+                                <Typography variant="small" className="text-gray-600">
+                                  Certificate #: {certificate.certificateNumber}
+                                </Typography>
+                                <Typography variant="small" className="text-gray-600">
+                                  Issued: {certificate.issueDate ? new Date(certificate.issueDate).toLocaleDateString() : "N/A"}
+                                </Typography>
+                              </div>
+                            </div>
+                            {isEditMode && editingSections.certificates && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="text"
+                                  color="blue"
+                                  onClick={() => handleEditCertificate(certificate)}
+                                  className="flex items-center gap-1"
+                                >
+                                  <FaPen className="w-4 h-4" /> Edit
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => handleRemoveCertificate(certificate.id)}
+                                  className="flex items-center gap-1"
+                                >
+                                  <FaTrash className="w-4 h-4" /> Remove
+                                </Button>
+                              </div>
+                            )}
+                            {!isEditMode || !editingSections.certificates ? (
+                              <div
+                                className="cursor-pointer"
+                                onClick={() => handleCertificateClick(certificate)}
+                              >
+                                <Typography variant="small" color="blue">
+                                  View
+                                </Typography>
+                              </div>
+                            ) : null}
+                          </CardBody>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                  {isEditMode && editingSections.certificates && (
+                    <div className="mt-6 flex justify-end">
+                      <Button
+                        variant="gradient"
+                        color="blue"
+                        onClick={() => handleSaveSection("certificates")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-4 h-4" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
@@ -967,36 +2541,124 @@ const fetchPublicDataWithToken = async () => {
             
             {/* Experience */}
             <div>
-              <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
-                Experience
-              </Typography>
-              {portfolio.experiences && portfolio.experiences.length > 0 ? (
+              <div className="flex items-center justify-between mb-8">
+                <Typography variant="h4" className="font-light text-blue-600 text-2xl">
+                  Experience
+                </Typography>
+                {isGraduateView && isEditMode && (
+                  <IconButton 
+                    size="sm" 
+                    variant="text" 
+                    onClick={() => handleSectionEditToggle("experience")}
+                    className={editingSections.experience ? "text-blue-600" : ""}
+                  >
+                    <FaPen className="w-4 h-4" />
+                  </IconButton>
+                )}
+              </div>
+              {((portfolio.experiences && portfolio.experiences.length > 0) || (isEditMode && editingSections.experience)) ? (
                 <div className="space-y-8">
-                  {portfolio.experiences.map((exp, index) => (
-                    <div key={index} className="border-l-2 border-blue-100 pl-8 pb-8">
-                      <Typography variant="h6" className="font-medium text-gray-800 mb-2 break-words">
-                        {exp.jobTitle}
-                      </Typography>
-                      {exp.company && (
-                        <Typography variant="small" color="blue" className="font-medium mb-2 break-words">
-                          {exp.company}
-                        </Typography>
-                      )}
-                      {exp.duration && (
-                        <Typography variant="small" color="gray" className="mb-4">
-                          {exp.duration}
-                        </Typography>
-                      )}
-                      {exp.responsibilities && (
-                        <Typography
-                          variant="small"
-                          className="text-gray-700 leading-relaxed break-words overflow-wrap-anywhere"
+                  {(isEditMode && editingSections.experience ? editingPortfolio?.experiences : portfolio.experiences)?.map((exp, index) => (
+                    <div key={index} className="border-l-2 border-blue-100 pl-8 pb-8 relative">
+                      {isEditMode && editingSections.experience && (
+                        <IconButton
+                          size="sm"
+                          variant="text"
+                          color="red"
+                          className="absolute top-0 right-0"
+                          onClick={() => handleRemoveArrayItem("experiences", index)}
                         >
-                          {exp.responsibilities}
-                        </Typography>
+                          <FaTrash className="w-4 h-4" />
+                        </IconButton>
+                      )}
+                      {isEditMode && editingSections.experience ? (
+                        <div className="space-y-3">
+                          <Input
+                            size="md"
+                            value={exp.jobTitle || ""}
+                            onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
+                            placeholder="Job Title"
+                            className="!border-gray-300"
+                          />
+                          <Input
+                            size="md"
+                            value={exp.employer || ""}
+                            onChange={(e) => handleArrayFieldChange("experiences", index, "employer", e.target.value)}
+                            placeholder="Company"
+                            className="!border-gray-300"
+                          />
+                          <Textarea
+                            size="md"
+                            value={exp.description || ""}
+                            onChange={(e) =>
+                              handleArrayFieldChange("experiences", index, "description", e.target.value)
+                            }
+                            placeholder="Responsibilities"
+                            className="!border-gray-300"
+                            rows={3}
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <Typography variant="h6" className="font-medium text-gray-800 mb-2 break-words">
+                            {exp.jobTitle}
+                          </Typography>
+                          {exp.company && (
+                            <Typography variant="small" color="blue" className="font-medium mb-2 break-words">
+                              {exp.company}
+                            </Typography>
+                          )}
+                          {exp.duration && (
+                            <Typography variant="small" color="gray" className="mb-4">
+                              {exp.duration}
+                            </Typography>
+                          )}
+                          {exp.responsibilities && (
+                            <Typography
+                              variant="small"
+                              className="text-gray-700 leading-relaxed break-words overflow-wrap-anywhere"
+                            >
+                              {exp.responsibilities}
+                            </Typography>
+                          )}
+                        </>
                       )}
                     </div>
                   ))}
+                  {isEditMode && editingSections.experience && (
+                    <Button
+                      variant="outlined"
+                      size="md"
+                      color="blue"
+                      onClick={() =>
+                        handleAddArrayItem("experiences", {
+                          jobTitle: "",
+                          employer: "",
+                          description: "",
+                          startDate: "",
+                          endDate: "",
+                        })
+                      }
+                      className="w-full flex items-center justify-center gap-2"
+                    >
+                      <FaPlus className="w-4 h-4" />
+                      Add Experience
+                    </Button>
+                  )}
+                  {isEditMode && editingSections.experience && (
+                    <div className="mt-6 flex justify-end">
+                      <Button
+                        variant="gradient"
+                        color="blue"
+                        onClick={() => handleSaveSection("experience")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-4 h-4" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
@@ -1009,48 +2671,258 @@ const fetchPublicDataWithToken = async () => {
 
             {/* Projects */}
             <div>
-              <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
-                Projects
-              </Typography>
-              {projects && projects.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {projects.map((project) => (
-                    <div
-                      key={project.id}
-                      className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300"
-                    >
-                      {project.projectImageFilePath && (
-                        <div className="relative h-48 overflow-hidden">
-                          <img
-                            src={project.projectImageFilePath || "/placeholder.svg"}
-                            alt={project.title || "Project"}
-                            className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                            onClick={() => setSelectedProjectImage(project.projectImageFilePath)}
-                          />
+              <div className="flex items-center justify-between mb-8">
+                <Typography variant="h4" className="font-light text-blue-600 text-2xl">
+                  Projects
+                </Typography>
+                {isGraduateView && isEditMode && (
+                  <IconButton 
+                    size="sm" 
+                    variant="text" 
+                    onClick={() => handleSectionEditToggle("projects")}
+                    className={editingSections.projects ? "text-blue-600" : ""}
+                  >
+                    <FaPen className="w-4 h-4" />
+                  </IconButton>
+                )}
+              </div>
+              {isEditMode && editingSections.projects && isAddingProject && (
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                  <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                    {editingProjectId ? "Edit Project" : "Add New Project"}
+                  </Typography>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                        Project Title *
+                      </Typography>
+                      <Input
+                        size="lg"
+                        name="title"
+                        value={newProject.title}
+                        onChange={handleProjectInputChange}
+                        placeholder="Enter project title"
+                        required
+                        className="!border-gray-300 focus:!border-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                      Description *
+                    </Typography>
+                    <Textarea
+                      size="lg"
+                      name="description"
+                      value={newProject.description}
+                      onChange={handleProjectInputChange}
+                      placeholder="Describe your project"
+                      required
+                      className="!border-gray-300 focus:!border-blue-500"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                        Start Date *
+                      </Typography>
+                      <Input
+                        type="date"
+                        size="lg"
+                        name="startDate"
+                        value={newProject.startDate}
+                        onChange={handleProjectInputChange}
+                        required
+                        className="!border-gray-300 focus:!border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                        End Date *
+                      </Typography>
+                      <Input
+                        type="date"
+                        size="lg"
+                        name="endDate"
+                        value={newProject.endDate}
+                        onChange={handleProjectInputChange}
+                        required
+                        className="!border-gray-300 focus:!border-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                      Project Image {editingProjectId ? "(Optional)" : "*"}
+                    </Typography>
+                    <div className="flex items-center gap-4">
+                      {newProject.projectImageFile ? (
+                        <Avatar
+                          src={URL.createObjectURL(newProject.projectImageFile)}
+                          alt="Project Preview"
+                          size="lg"
+                          className="ring-2 ring-blue-200"
+                        />
+                      ) : editingProjectId ? (
+                        <Avatar
+                          src={projects.find((proj) => proj.id === editingProjectId)?.projectImageFilePath || "/placeholder.svg"}
+                          alt="Project Preview"
+                          size="lg"
+                          className="ring-2 ring-blue-200"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center">
+                          <Typography variant="h5" className="text-gray-600">
+                            📷
+                          </Typography>
                         </div>
                       )}
-                      <div className="p-6">
-                        <Typography variant="h6" className="font-medium mb-3 break-words">
-                          {project.title || "Unnamed Project"}
-                        </Typography>
-                        {project.description && (
-                          <Typography
-                            variant="small"
-                            color="gray"
-                            className="mb-4 leading-relaxed break-words overflow-wrap-anywhere"
-                          >
-                            {project.description}
-                          </Typography>
-                        )}
-                        {project.startDate && project.endDate && (
-                          <Typography variant="small" color="blue" className="font-medium">
-                            {new Date(project.startDate).toLocaleDateString()} -{" "}
-                            {new Date(project.endDate).toLocaleDateString()}
-                          </Typography>
-                        )}
-                      </div>
+                      <Button
+                        variant="outlined"
+                        color="blue"
+                        onClick={handleProjectImageClick}
+                        className="flex items-center gap-2"
+                      >
+                        <FaPlus className="w-4 h-4" />
+                        Choose Image
+                      </Button>
+                      <input
+                        type="file"
+                        id="projectImageFile"
+                        accept="image/*"
+                        onChange={handleProjectFileChange}
+                        ref={projectFileInputRef}
+                        className="hidden"
+                      />
                     </div>
-                  ))}
+                  </div>
+                  <div className="mt-6 flex justify-end gap-2">
+                    <Button
+                      variant="gradient"
+                      color="blue"
+                      onClick={editingProjectId ? handleUpdateProject : handleAddProject}
+                      disabled={!isProjectFormValid()}
+                    >
+                      {editingProjectId ? "Update Project" : "Add Project"}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="gray"
+                      onClick={() => {
+                        setIsAddingProject(false)
+                        setEditingProjectId(null)
+                        setNewProject({
+                          title: "",
+                          description: "",
+                          startDate: "",
+                          endDate: "",
+                          projectImageFile: null,
+                        })
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {((projects && projects.length > 0) || (isEditMode && editingSections.projects)) ? (
+                <div className="space-y-4">
+                  {!isAddingProject && isEditMode && editingSections.projects && (
+                    <Button
+                      variant="outlined"
+                      color="blue"
+                      onClick={() => {
+                        setIsAddingProject(true)
+                        setEditingProjectId(null)
+                        setNewProject({ title: "", description: "", startDate: "", endDate: "", projectImageFile: null })
+                      }}
+                      className="flex items-center gap-2 w-full"
+                    >
+                      <FaPlus className="w-4 h-4" />
+                      Add Project
+                    </Button>
+                  )}
+
+                  {projects && projects.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {projects.map((project) => (
+                        <Card key={project.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
+                          {project.projectImageFilePath && (
+                            <div className="relative h-48 overflow-hidden">
+                              <img
+                                src={project.projectImageFilePath || "/placeholder.svg"}
+                                alt={project.title || "Project"}
+                                className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                                onClick={() => setSelectedProjectImage(project.projectImageFilePath)}
+                              />
+                            </div>
+                          )}
+                          <CardBody className="p-6">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <Typography variant="h6" className="font-medium mb-3 break-words">
+                                  {project.title || "Unnamed Project"}
+                                </Typography>
+                                {project.description && (
+                                  <Typography
+                                    variant="small"
+                                    color="gray"
+                                    className="mb-4 leading-relaxed break-words overflow-wrap-anywhere"
+                                  >
+                                    {project.description}
+                                  </Typography>
+                                )}
+                                {project.startDate && project.endDate && (
+                                  <Typography variant="small" color="blue" className="font-medium">
+                                    {new Date(project.startDate).toLocaleDateString()} -{" "}
+                                    {new Date(project.endDate).toLocaleDateString()}
+                                  </Typography>
+                                )}
+                              </div>
+                              {isEditMode && editingSections.projects && (
+                                <div className="flex flex-col gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="text"
+                                    color="blue"
+                                    onClick={() => handleEditProject(project)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <FaPen className="w-4 h-4" /> Edit
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="text"
+                                    color="red"
+                                    onClick={() => handleRemoveProject(project.id)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <FaTrash className="w-4 h-4" /> Remove
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </CardBody>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                  {isEditMode && editingSections.projects && (
+                    <div className="mt-6 flex justify-end">
+                      <Button
+                        variant="gradient"
+                        color="blue"
+                        onClick={() => handleSaveSection("projects")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-4 h-4" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
@@ -1063,28 +2935,105 @@ const fetchPublicDataWithToken = async () => {
 
             {/* Awards & Recognition */}
             <div>
-              <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
-                Awards & Recognition
-              </Typography>
-              {portfolio.awardsRecognitions && portfolio.awardsRecognitions.length > 0 ? (
+              <div className="flex items-center justify-between mb-8">
+                <Typography variant="h4" className="font-light text-blue-600 text-2xl">
+                  Awards & Recognition
+                </Typography>
+                {isGraduateView && isEditMode && (
+                  <IconButton 
+                    size="sm" 
+                    variant="text" 
+                    onClick={() => handleSectionEditToggle("awards")}
+                    className={editingSections.awards ? "text-blue-600" : ""}
+                  >
+                    <FaPen className="w-4 h-4" />
+                  </IconButton>
+                )}
+              </div>
+              {((portfolio.awardsRecognitions && portfolio.awardsRecognitions.length > 0) || (isEditMode && editingSections.awards)) ? (
                 <div className="space-y-4">
-                  {portfolio.awardsRecognitions.map((award, index) => (
-                    <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
-                      <Typography variant="h6" className="font-medium mb-2">
-                        {award.title}
-                      </Typography>
-                      {award.issuer && (
-                        <Typography variant="small" color="gray" className="mb-1">
-                          Issued by: {award.issuer}
-                        </Typography>
+                  {(isEditMode && editingSections.awards ? editingPortfolio?.awardsRecognitions : portfolio.awardsRecognitions)?.map((award, index) => (
+                    <div key={index} className="bg-white border border-gray-100 rounded-lg p-6 relative">
+                      {isEditMode && editingSections.awards && (
+                        <IconButton
+                          size="sm"
+                          variant="text"
+                          color="red"
+                          className="absolute top-2 right-2"
+                          onClick={() => handleRemoveArrayItem("awardsRecognitions", index)}
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </IconButton>
                       )}
-                      {award.dateReceived && (
-                        <Typography variant="small" color="blue">
-                          {award.dateReceived}
-                        </Typography>
+                      {isEditMode && editingSections.awards ? (
+                        <div className="space-y-3">
+                          <Input
+                            size="md"
+                            value={award.title || ""}
+                            onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
+                            placeholder="Award Title"
+                            className="!border-gray-300"
+                          />
+                          <Input
+                            size="md"
+                            value={award.issuer || ""}
+                            onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "issuer", e.target.value)}
+                            placeholder="Issued by"
+                            className="!border-gray-300"
+                          />
+                          <Input
+                            type="date"
+                            size="md"
+                            value={award.dateReceived || ""}
+                            onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
+                            className="!border-gray-300"
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <Typography variant="h6" className="font-medium mb-2">
+                            {award.title}
+                          </Typography>
+                          {award.issuer && (
+                            <Typography variant="small" color="gray" className="mb-1">
+                              Issued by: {award.issuer}
+                            </Typography>
+                          )}
+                          {award.dateReceived && (
+                            <Typography variant="small" color="blue">
+                              {award.dateReceived}
+                            </Typography>
+                          )}
+                        </>
                       )}
                     </div>
                   ))}
+                  {isEditMode && editingSections.awards && (
+                    <Button
+                      variant="outlined"
+                      size="md"
+                      color="blue"
+                      onClick={() => handleAddArrayItem("awardsRecognitions", { title: "", issuer: "", dateReceived: "" })}
+                      className="w-full flex items-center justify-center gap-2"
+                    >
+                      <FaPlus className="w-4 h-4" />
+                      Add Award
+                    </Button>
+                  )}
+                  {isEditMode && editingSections.awards && (
+                    <div className="mt-6 flex justify-end">
+                      <Button
+                        variant="gradient"
+                        color="blue"
+                        onClick={() => handleSaveSection("awards")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-4 h-4" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
@@ -1099,28 +3048,106 @@ const fetchPublicDataWithToken = async () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Continuing Education */}
               <div>
-                <Typography variant="h5" className="font-light text-blue-600 mb-6">
-                  Continuing Education
-                </Typography>
-                {portfolio.continuingEducations && portfolio.continuingEducations.length > 0 ? (
+                <div className="flex items-center justify-between mb-6">
+                  <Typography variant="h5" className="font-light text-blue-600">
+                    Continuing Education
+                  </Typography>
+                  {isGraduateView && isEditMode && (
+                    <IconButton 
+                      size="sm" 
+                      variant="text" 
+                      onClick={() => handleSectionEditToggle("education")}
+                      className={editingSections.education ? "text-blue-600" : ""}
+                    >
+                      <FaPen className="w-4 h-4" />
+                    </IconButton>
+                  )}
+                </div>
+                {((portfolio.continuingEducations && portfolio.continuingEducations.length > 0) || (isEditMode && editingSections.education)) ? (
                   <div className="space-y-4">
-                    {portfolio.continuingEducations.map((edu, index) => (
-                      <div key={index} className="border-l-2 border-blue-100 pl-4 py-2">
-                        <Typography variant="small" className="font-medium mb-1">
-                          {edu.courseName}
-                        </Typography>
-                        {edu.institution && (
-                          <Typography variant="small" color="gray" className="mb-1">
-                            {edu.institution}
-                          </Typography>
+                    {(isEditMode && editingSections.education ? editingPortfolio?.continuingEducations : portfolio.continuingEducations)?.map((edu, index) => (
+                      <div key={index} className="border-l-2 border-blue-100 pl-4 py-2 relative">
+                        {isEditMode && editingSections.education && (
+                          <IconButton
+                            size="sm"
+                            variant="text"
+                            color="red"
+                            className="absolute top-0 right-0"
+                            onClick={() => handleRemoveArrayItem("continuingEducations", index)}
+                          >
+                            <FaTrash className="w-3 h-3" />
+                          </IconButton>
                         )}
-                        {edu.completionDate && (
-                          <Typography variant="small" color="blue">
-                            {edu.completionDate}
-                          </Typography>
+                        {isEditMode && editingSections.education ? (
+                          <div className="space-y-2 pr-8">
+                            <Input
+                              size="sm"
+                              value={edu.courseName || ""}
+                              onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
+                              placeholder="Course Name"
+                              className="!border-gray-300"
+                            />
+                            <Input
+                              size="sm"
+                              value={edu.institution || ""}
+                              onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
+                              placeholder="Institution"
+                              className="!border-gray-300"
+                            />
+                            <Input
+                              type="date"
+                              size="sm"
+                              value={edu.completionDate || ""}
+                              onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
+                              className="!border-gray-300"
+                            />
+                          </div>
+                        ) : (
+                          <>
+                            <Typography variant="small" className="font-medium mb-1">
+                              {edu.courseName}
+                            </Typography>
+                            {edu.institution && (
+                              <Typography variant="small" color="gray" className="mb-1">
+                                {edu.institution}
+                              </Typography>
+                            )}
+                            {edu.completionDate && (
+                              <Typography variant="small" color="blue">
+                                {edu.completionDate}
+                              </Typography>
+                            )}
+                          </>
                         )}
                       </div>
                     ))}
+                    {isEditMode && editingSections.education && (
+                      <Button
+                        variant="outlined"
+                        size="sm"
+                        color="blue"
+                        onClick={() => handleAddArrayItem("continuingEducations", { courseName: "", institution: "", completionDate: "" })}
+                        className="w-full flex items-center justify-center gap-2"
+                      >
+                        <FaPlus className="w-3 h-3" />
+                        Add Education
+                      </Button>
+                    )}
+                    {isEditMode && editingSections.education && (
+                      <div className="mt-4 flex justify-end">
+                        <Button
+                          variant="gradient"
+                          color="blue"
+                          size="sm"
+                          onClick={() => handleSaveSection("education")}
+                          disabled={isSaving}
+                          className="flex items-center gap-2"
+                        >
+                          <FaSave className="w-3 h-3" />
+                          {isSaving ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <Typography variant="small" className="text-gray-500 italic">
@@ -1131,28 +3158,106 @@ const fetchPublicDataWithToken = async () => {
 
               {/* Professional Memberships */}
               <div>
-                <Typography variant="h5" className="font-light text-blue-600 mb-6">
-                  Professional Memberships
-                </Typography>
-                {portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0 ? (
+                <div className="flex items-center justify-between mb-6">
+                  <Typography variant="h5" className="font-light text-blue-600">
+                    Professional Memberships
+                  </Typography>
+                  {isGraduateView && isEditMode && (
+                    <IconButton 
+                      size="sm" 
+                      variant="text" 
+                      onClick={() => handleSectionEditToggle("memberships")}
+                      className={editingSections.memberships ? "text-blue-600" : ""}
+                    >
+                      <FaPen className="w-4 h-4" />
+                    </IconButton>
+                  )}
+                </div>
+                {((portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0) || (isEditMode && editingSections.memberships)) ? (
                   <div className="space-y-4">
-                    {portfolio.professionalMemberships.map((mem, index) => (
-                      <div key={index} className="border-l-2 border-blue-100 pl-4 py-2">
-                        <Typography variant="small" className="font-medium mb-1">
-                          {mem.organization}
-                        </Typography>
-                        {mem.membershipType && (
-                          <Typography variant="small" color="gray" className="mb-1">
-                            {mem.membershipType}
-                          </Typography>
+                    {(isEditMode && editingSections.memberships ? editingPortfolio?.professionalMemberships : portfolio.professionalMemberships)?.map((mem, index) => (
+                      <div key={index} className="border-l-2 border-blue-100 pl-4 py-2 relative">
+                        {isEditMode && editingSections.memberships && (
+                          <IconButton
+                            size="sm"
+                            variant="text"
+                            color="red"
+                            className="absolute top-0 right-0"
+                            onClick={() => handleRemoveArrayItem("professionalMemberships", index)}
+                          >
+                            <FaTrash className="w-3 h-3" />
+                          </IconButton>
                         )}
-                        {mem.startDate && (
-                          <Typography variant="small" color="blue">
-                            Since {mem.startDate}
-                          </Typography>
+                        {isEditMode && editingSections.memberships ? (
+                          <div className="space-y-2 pr-8">
+                            <Input
+                              size="sm"
+                              value={mem.organization || ""}
+                              onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
+                              placeholder="Organization"
+                              className="!border-gray-300"
+                            />
+                            <Input
+                              size="sm"
+                              value={mem.membershipType || ""}
+                              onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
+                              placeholder="Membership Type"
+                              className="!border-gray-300"
+                            />
+                            <Input
+                              type="date"
+                              size="sm"
+                              value={mem.startDate || ""}
+                              onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
+                              className="!border-gray-300"
+                            />
+                          </div>
+                        ) : (
+                          <>
+                            <Typography variant="small" className="font-medium mb-1">
+                              {mem.organization}
+                            </Typography>
+                            {mem.membershipType && (
+                              <Typography variant="small" color="gray" className="mb-1">
+                                {mem.membershipType}
+                              </Typography>
+                            )}
+                            {mem.startDate && (
+                              <Typography variant="small" color="blue">
+                                Since {mem.startDate}
+                              </Typography>
+                            )}
+                          </>
                         )}
                       </div>
                     ))}
+                    {isEditMode && editingSections.memberships && (
+                      <Button
+                        variant="outlined"
+                        size="sm"
+                        color="blue"
+                        onClick={() => handleAddArrayItem("professionalMemberships", { organization: "", membershipType: "", startDate: "" })}
+                        className="w-full flex items-center justify-center gap-2"
+                      >
+                        <FaPlus className="w-3 h-3" />
+                        Add Membership
+                      </Button>
+                    )}
+                    {isEditMode && editingSections.memberships && (
+                      <div className="mt-4 flex justify-end">
+                        <Button
+                          variant="gradient"
+                          color="blue"
+                          size="sm"
+                          onClick={() => handleSaveSection("memberships")}
+                          disabled={isSaving}
+                          className="flex items-center gap-2"
+                        >
+                          <FaSave className="w-3 h-3" />
+                          {isSaving ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <Typography variant="small" className="text-gray-500 italic">
@@ -1164,40 +3269,134 @@ const fetchPublicDataWithToken = async () => {
 
             {/* References */}
             <div>
-              <Typography variant="h4" className="font-light text-blue-600 mb-8 text-2xl">
-                References
-              </Typography>
-              {portfolio.references && portfolio.references.length > 0 ? (
+              <div className="flex items-center justify-between mb-8">
+                <Typography variant="h4" className="font-light text-blue-600 text-2xl">
+                  References
+                </Typography>
+                {isGraduateView && isEditMode && (
+                  <IconButton 
+                    size="sm" 
+                    variant="text" 
+                    onClick={() => handleSectionEditToggle("references")}
+                    className={editingSections.references ? "text-blue-600" : ""}
+                  >
+                    <FaPen className="w-4 h-4" />
+                  </IconButton>
+                )}
+              </div>
+              {((portfolio.references && portfolio.references.length > 0) || (isEditMode && editingSections.references)) ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {portfolio.references.map((ref, index) => (
-                    <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
-                      <Typography variant="h6" className="font-medium mb-2 break-words">
-                        {ref.name}
-                      </Typography>
-                      {ref.position && (
-                        <Typography variant="small" color="gray" className="mb-1 break-words">
-                          {ref.position}
-                        </Typography>
+                  {(isEditMode && editingSections.references ? editingPortfolio?.references : portfolio.references)?.map((ref, index) => (
+                    <div key={index} className="bg-white border border-gray-100 rounded-lg p-6 relative">
+                      {isEditMode && editingSections.references && (
+                        <IconButton
+                          size="sm"
+                          variant="text"
+                          color="red"
+                          className="absolute top-2 right-2"
+                          onClick={() => handleRemoveArrayItem("references", index)}
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </IconButton>
                       )}
-                      {ref.company && (
-                        <Typography variant="small" color="blue" className="mb-3 break-words">
-                          {ref.company}
-                        </Typography>
+                      {isEditMode && editingSections.references ? (
+                        <div className="space-y-3 pr-8">
+                          <Input
+                            size="md"
+                            value={ref.name || ""}
+                            onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
+                            placeholder="Name"
+                            className="!border-gray-300"
+                          />
+                          <Input
+                            size="md"
+                            value={ref.relationship || ref.position || ""}
+                            onChange={(e) => handleArrayFieldChange("references", index, "relationship", e.target.value)}
+                            placeholder="Relationship/Position"
+                            className="!border-gray-300"
+                          />
+                          <Input
+                            size="md"
+                            value={ref.company || ""}
+                            onChange={(e) => handleArrayFieldChange("references", index, "company", e.target.value)}
+                            placeholder="Company"
+                            className="!border-gray-300"
+                          />
+                          <Input
+                            type="email"
+                            size="md"
+                            value={ref.email || ""}
+                            onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
+                            placeholder="Email"
+                            className="!border-gray-300"
+                          />
+                          <Input
+                            size="md"
+                            value={ref.phone || ref.contact || ""}
+                            onChange={(e) => handleArrayFieldChange("references", index, "phone", e.target.value)}
+                            placeholder="Phone"
+                            className="!border-gray-300"
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <Typography variant="h6" className="font-medium mb-2 break-words">
+                            {ref.name}
+                          </Typography>
+                          {ref.position && (
+                            <Typography variant="small" color="gray" className="mb-1 break-words">
+                              {ref.position}
+                            </Typography>
+                          )}
+                          {ref.company && (
+                            <Typography variant="small" color="blue" className="mb-3 break-words">
+                              {ref.company}
+                            </Typography>
+                          )}
+                          <div className="space-y-1">
+                            {ref.email && (
+                              <Typography variant="small" color="gray" className="break-all">
+                                {ref.email}
+                              </Typography>
+                            )}
+                            {ref.contact && (
+                              <Typography variant="small" color="gray" className="break-words">
+                                {ref.contact}
+                              </Typography>
+                            )}
+                          </div>
+                        </>
                       )}
-                      <div className="space-y-1">
-                        {ref.email && (
-                          <Typography variant="small" color="gray" className="break-all">
-                            {ref.email}
-                          </Typography>
-                        )}
-                        {ref.contact && (
-                          <Typography variant="small" color="gray" className="break-words">
-                            {ref.contact}
-                          </Typography>
-                        )}
-                      </div>
                     </div>
                   ))}
+                  {isEditMode && editingSections.references && (
+                    <div className="md:col-span-2">
+                      <Button
+                        variant="outlined"
+                        size="md"
+                        color="blue"
+                        onClick={() => handleAddArrayItem("references", { name: "", relationship: "", company: "", email: "", phone: "" })}
+                        className="w-full flex items-center justify-center gap-2"
+                      >
+                        <FaPlus className="w-4 h-4" />
+                        Add Reference
+                      </Button>
+                    </div>
+                  )}
+                  {isEditMode && editingSections.references && (
+                    <div className="mt-6 flex justify-end md:col-span-2">
+                      <Button
+                        variant="gradient"
+                        color="blue"
+                        onClick={() => handleSaveSection("references")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-4 h-4" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
@@ -1248,18 +3447,82 @@ const fetchPublicDataWithToken = async () => {
               </div>
             )}
 
+            {saveSuccess && (
+              <Card className="mb-6 bg-green-50 border border-green-200">
+                <CardBody>
+                  <Typography color="green" className="text-center">
+                    {saveSuccess}
+                  </Typography>
+                </CardBody>
+              </Card>
+            )}
+
+            {saveError && (
+              <Card className="mb-6 bg-red-50 border border-red-200">
+                <CardBody>
+                  <Typography color="red" className="text-center">
+                    {saveError}
+                  </Typography>
+                </CardBody>
+              </Card>
+            )}
+
             <div className="flex flex-wrap gap-4 justify-center">
-              <Link to={`/portfolio/edit/${graduateId}`}>
-                <Button color="blue" size="lg" className="font-light">
-                  Edit Portfolio
+              <Button
+                onClick={handleEditModeToggle}
+                color={isEditMode ? "red" : "blue"}
+                size="lg"
+                className="font-light flex items-center gap-2"
+              >
+                {isEditMode ? (
+                  <>
+                    <FaTimes className="w-4 h-4" />
+                    Cancel Edit
+                  </>
+                ) : (
+                  <>
+                    <FaPen className="w-4 h-4" />
+                    Edit Portfolio
+                  </>
+                )}
+              </Button>
+              {isEditMode && (
+                <Button
+                  onClick={handleSavePortfolio}
+                  color="green"
+                  size="lg"
+                  className="font-light flex items-center gap-2"
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <Spinner className="w-4 h-4" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <FaSave className="w-4 h-4" />
+                      Save Changes
+                    </>
+                  )}
                 </Button>
-              </Link>
-              <Button onClick={handleRegenerateToken} color="blue" variant="outlined" size="lg" className="font-light">
-                Generate New Link
-              </Button>
-              <Button onClick={handleDelete} color="red" variant="outlined" size="lg" className="font-light">
-                Delete Portfolio
-              </Button>
+              )}
+              {!isEditMode && (
+                <>
+                  <Button
+                    onClick={handleRegenerateToken}
+                    color="blue"
+                    variant="outlined"
+                    size="lg"
+                    className="font-light"
+                  >
+                    Generate New Link
+                  </Button>
+                  <Button onClick={handleDelete} color="red" variant="outlined" size="lg" className="font-light">
+                    Delete Portfolio
+                  </Button>
+                </>
+              )}
             </div>
 
             <div className="text-center mt-8">

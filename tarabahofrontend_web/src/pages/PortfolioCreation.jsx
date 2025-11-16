@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
-import { FaPlus, FaTrash, FaPen } from "react-icons/fa"
+import { FaPlus, FaTrash, FaPen, FaChevronLeft, FaChevronRight, FaCheck } from "react-icons/fa"
 import {
   Card,
   CardBody,
@@ -15,6 +15,7 @@ import {
   Select,
   Option,
   Spinner,
+  Progress,
 } from "@material-tailwind/react"
 
 const PortfolioCreation = () => {
@@ -110,6 +111,8 @@ const PortfolioCreation = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [token, setToken] = useState(null)
   const [graduateId, setGraduateId] = useState(null)
+  const [currentStep, setCurrentStep] = useState(0)
+  const [completedSteps, setCompletedSteps] = useState(new Set())
   const navigate = useNavigate()
   const avatarFileInputRef = useRef(null)
   const projectFileInputRef = useRef(null)
@@ -117,6 +120,75 @@ const PortfolioCreation = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080"
 
   const validSkillTypes = ["TECHNICAL", "LANGUAGE", "DIGITAL", "SOFT", "INDUSTRY_SPECIFIC"]
+
+  const steps = [
+    { id: 0, name: "Profile Photo", required: false },
+    { id: 1, name: "Basic Information", required: true },
+    { id: 2, name: "TESDA Information", required: false },
+    { id: 3, name: "Contact Information", required: false },
+    { id: 4, name: "Projects", required: false },
+    { id: 5, name: "Certificates", required: false },
+    { id: 6, name: "Skills", required: false },
+    { id: 7, name: "Experiences", required: false },
+    { id: 8, name: "Awards & Recognitions", required: false },
+    { id: 9, name: "Continuing Education", required: false },
+    { id: 10, name: "Professional Memberships", required: false },
+    { id: 11, name: "References", required: false },
+    { id: 12, name: "Additional Information", required: true },
+  ]
+
+  const totalSteps = steps.length
+  const progressPercentage = ((currentStep + 1) / totalSteps) * 100
+
+  // Check if a step can be accessed (all previous required steps must be completed)
+  const canAccessStep = (stepIndex) => {
+    if (stepIndex === 0) return true
+    if (stepIndex === currentStep) return true
+    
+    // Check all previous required steps
+    for (let i = 0; i < stepIndex; i++) {
+      if (steps[i].required && !completedSteps.has(i)) {
+        return false
+      }
+    }
+    return true
+  }
+
+  // Check if a step is completed
+  const isStepCompleted = (stepIndex) => {
+    if (steps[stepIndex].required) {
+      return completedSteps.has(stepIndex) || validateStep(stepIndex, false)
+    }
+    
+    // For optional steps, check if they have any data
+    switch (stepIndex) {
+      case 0: // Profile Photo
+        return previewAvatar !== "/placeholder.svg" || selectedAvatarFile !== null
+      case 2: // TESDA Information
+        return formData.ncLevel || formData.trainingCenter || formData.scholarshipType || 
+               formData.trainingDuration || formData.tesdaRegistrationNumber
+      case 3: // Contact Information
+        return formData.email || formData.phone || formData.website
+      case 4: // Projects
+        return projects.length > 0
+      case 5: // Certificates
+        return certificates.length > 0
+      case 6: // Skills
+        return skills.length > 0
+      case 7: // Experiences
+        return experiences.length > 0
+      case 8: // Awards
+        return awardsRecognitions.length > 0
+      case 9: // Education
+        return continuingEducations.length > 0
+      case 10: // Memberships
+        return professionalMemberships.length > 0
+      case 11: // References
+        return references.length > 0
+      default:
+        return false
+    }
+  }
 
   useEffect(() => {
     const fetchTokenAndProfileData = async () => {
@@ -448,6 +520,139 @@ const PortfolioCreation = () => {
   const handleProjectImageClick = () => projectFileInputRef.current.click()
   const handleCertificateImageClick = () => certificateFileInputRef.current.click()
 
+  const validateStep = (step, showError = true) => {
+    switch (step) {
+      case 0: // Profile Photo - optional
+        return true
+      case 1: // Basic Information
+        if (!formData.fullName || formData.fullName.trim() === "") {
+          if (showError) setError("Please fill in your full name. This field is required.")
+          return false
+        }
+        if (!formData.professionalSummary || formData.professionalSummary.trim() === "") {
+          if (showError) setError("Please fill in your professional summary. This field is required.")
+          return false
+        }
+        if (formData.professionalSummary.length > 1000) {
+          if (showError) setError("Professional summary cannot exceed 1000 characters.")
+          return false
+        }
+        return true
+      case 12: // Additional Information
+        if (!formData.primaryCourseType || formData.primaryCourseType.trim() === "") {
+          if (showError) setError("Please fill in your primary course type. This field is required.")
+          return false
+        }
+        return true
+      default:
+        return true // Other steps are optional
+    }
+  }
+
+  const markStepAsCompleted = (stepIndex) => {
+    if (steps[stepIndex].required && validateStep(stepIndex, false)) {
+      setCompletedSteps((prev) => new Set([...prev, stepIndex]))
+    }
+  }
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep)) {
+      // Mark current step as completed if it's a required step
+      markStepAsCompleted(currentStep)
+      
+      setError("")
+      if (currentStep < totalSteps - 1) {
+        setCurrentStep(currentStep + 1)
+        window.scrollTo({ top: 0, behavior: "smooth" })
+      }
+    } else {
+      // Validation failed, error already set by validateStep
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+  }
+
+  const handlePreviousStep = () => {
+    if (currentStep > 0) {
+      setError("")
+      setCurrentStep(currentStep - 1)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+  }
+
+  const handleStepClick = (stepIndex) => {
+    if (stepIndex >= 0 && stepIndex < totalSteps) {
+      // Allow clicking on current step or completed steps
+      if (stepIndex === currentStep) {
+        return
+      }
+      
+      // Check if we can access this step (all previous required steps completed)
+      if (canAccessStep(stepIndex)) {
+        setError("")
+        setCurrentStep(stepIndex)
+        window.scrollTo({ top: 0, behavior: "smooth" })
+      } else {
+        // Find the first incomplete required step
+        for (let i = 0; i < stepIndex; i++) {
+          if (steps[i].required && !completedSteps.has(i)) {
+            setError(`Please complete the "${steps[i].name}" section before proceeding.`)
+            setCurrentStep(i)
+            window.scrollTo({ top: 0, behavior: "smooth" })
+            return
+          }
+        }
+      }
+    }
+  }
+
+  // Update completed steps when form data changes
+  useEffect(() => {
+    // Check and update completed status for all steps when data changes
+    steps.forEach((step, index) => {
+      if (isStepCompleted(index)) {
+        setCompletedSteps((prev) => {
+          if (!prev.has(index)) {
+            return new Set([...prev, index])
+          }
+          return prev
+        })
+      } else if (step.required) {
+        // Remove from completed if required step is no longer valid
+        setCompletedSteps((prev) => {
+          if (prev.has(index)) {
+            const newSet = new Set(prev)
+            newSet.delete(index)
+            return newSet
+          }
+          return prev
+        })
+      }
+    })
+  }, [
+    formData.fullName,
+    formData.professionalSummary,
+    formData.primaryCourseType,
+    formData.ncLevel,
+    formData.trainingCenter,
+    formData.scholarshipType,
+    formData.trainingDuration,
+    formData.tesdaRegistrationNumber,
+    formData.email,
+    formData.phone,
+    formData.website,
+    previewAvatar,
+    selectedAvatarFile,
+    projects,
+    certificates,
+    skills,
+    experiences,
+    awardsRecognitions,
+    continuingEducations,
+    professionalMemberships,
+    references,
+    currentStep,
+  ])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
@@ -644,16 +849,73 @@ const PortfolioCreation = () => {
 
       <div className="relative z-10 container mx-auto px-4 py-8">
         {/* Hero Section */}
-        <div className="text-center mb-12 animate-fade-in-up">
+        <div className="text-center mb-8 animate-fade-in-up">
           <Typography
             variant="h1"
             className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4"
           >
             Create Your Portfolio
           </Typography>
-          <Typography variant="lead" className="text-gray-600 max-w-2xl mx-auto">
+          <Typography variant="lead" className="text-gray-600 max-w-2xl mx-auto mb-6">
             Build a professional portfolio that showcases your skills, experience, and achievements
           </Typography>
+          
+          {/* Progress Bar */}
+          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl mb-6">
+            <CardBody className="p-6">
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <Typography variant="small" className="text-gray-700 font-medium">
+                    Step {currentStep + 1} of {totalSteps}
+                  </Typography>
+                  <Typography variant="small" className="text-gray-700 font-medium">
+                    {Math.round(progressPercentage)}% Complete
+                  </Typography>
+                </div>
+                <Progress value={progressPercentage} color="blue" className="h-2" />
+              </div>
+              
+              {/* Step Indicators */}
+              <div className="flex flex-wrap gap-2 justify-center mt-4">
+                {steps.map((step, index) => {
+                  const isAccessible = canAccessStep(index)
+                  const isCompleted = completedSteps.has(index) || (step.required && validateStep(index, false))
+                  const isCurrent = index === currentStep
+                  
+                  return (
+                    <button
+                      key={step.id}
+                      type="button"
+                      onClick={() => handleStepClick(index)}
+                      disabled={isLoading || !isAccessible}
+                      title={
+                        !isAccessible
+                          ? `Complete required steps before accessing "${step.name}"`
+                          : step.required && !isCompleted
+                          ? `"${step.name}" is required and not yet completed`
+                          : step.name
+                      }
+                      className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
+                        isCurrent
+                          ? "bg-blue-500 text-white shadow-lg scale-105 cursor-pointer"
+                          : isCompleted
+                          ? "bg-green-500 text-white hover:bg-green-600 cursor-pointer"
+                          : !isAccessible
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+                          : "bg-gray-200 text-gray-600 hover:bg-gray-300 cursor-pointer"
+                      }`}
+                    >
+                      {isCompleted && <FaCheck className="w-3 h-3" />}
+                      <span>{step.name}</span>
+                      {step.required && (
+                        <span className="ml-1 text-red-500">*</span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </CardBody>
+          </Card>
         </div>
 
         {error && (
@@ -667,11 +929,20 @@ const PortfolioCreation = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* File Uploads Section */}
-          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+          {/* Step 0: Profile Photo */}
+          {currentStep === 0 && (
+            <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
+              isStepCompleted(0)
+                ? "bg-green-50/70 border-green-400"
+                : "bg-white/70 border-0"
+            }`}>
             <CardBody className="p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
+                  isStepCompleted(0)
+                    ? "bg-gradient-to-b from-green-500 to-green-600"
+                    : "bg-gradient-to-b from-blue-500 to-purple-500"
+                }`}></div>
                 <Typography variant="h4" className="text-gray-800 font-semibold">
                   Profile Photo
                 </Typography>
@@ -708,12 +979,22 @@ const PortfolioCreation = () => {
               </div>
             </CardBody>
           </Card>
+          )}
 
-          {/* Basic Information Section */}
-          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+          {/* Step 1: Basic Information */}
+          {currentStep === 1 && (
+            <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
+              isStepCompleted(1)
+                ? "bg-green-50/70 border-green-400"
+                : "bg-white/70 border-0"
+            }`}>
             <CardBody className="p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
+                  isStepCompleted(1)
+                    ? "bg-gradient-to-b from-green-500 to-green-600"
+                    : "bg-gradient-to-b from-blue-500 to-purple-500"
+                }`}></div>
                 <Typography variant="h4" className="text-gray-800 font-semibold">
                   Basic Information
                 </Typography>
@@ -781,12 +1062,22 @@ const PortfolioCreation = () => {
             </div>
             </CardBody>
           </Card>
+          )}
 
-          {/* TESDA Information Section */}
-          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+          {/* Step 2: TESDA Information */}
+          {currentStep === 2 && (
+            <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
+              isStepCompleted(2)
+                ? "bg-green-50/70 border-green-400"
+                : "bg-white/70 border-0"
+            }`}>
             <CardBody className="p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
+                  isStepCompleted(2)
+                    ? "bg-gradient-to-b from-green-500 to-green-600"
+                    : "bg-gradient-to-b from-blue-500 to-purple-500"
+                }`}></div>
                 <Typography variant="h4" className="text-gray-800 font-semibold">
                   TESDA Information
                 </Typography>
@@ -870,12 +1161,22 @@ const PortfolioCreation = () => {
               </div>
             </CardBody>
           </Card>
+          )}
 
-          {/* Contact Information Section */}
-          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+          {/* Step 3: Contact Information */}
+          {currentStep === 3 && (
+            <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
+              isStepCompleted(3)
+                ? "bg-green-50/70 border-green-400"
+                : "bg-white/70 border-0"
+            }`}>
             <CardBody className="p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
+                  isStepCompleted(3)
+                    ? "bg-gradient-to-b from-green-500 to-green-600"
+                    : "bg-gradient-to-b from-blue-500 to-purple-500"
+                }`}></div>
                 <Typography variant="h4" className="text-gray-800 font-semibold">
                   Contact Information
                 </Typography>
@@ -932,13 +1233,23 @@ const PortfolioCreation = () => {
               </div>
             </CardBody>
           </Card>
+          )}
 
-          {/* Projects Section */}
-          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+          {/* Step 4: Projects */}
+          {currentStep === 4 && (
+            <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
+              isStepCompleted(4)
+                ? "bg-green-50/70 border-green-400"
+                : "bg-white/70 border-0"
+            }`}>
             <CardBody className="p-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                  <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
+                    isStepCompleted(4)
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
+                      : "bg-gradient-to-b from-blue-500 to-purple-500"
+                  }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
                     Projects
                   </Typography>
@@ -1137,13 +1448,23 @@ const PortfolioCreation = () => {
               )}
             </CardBody>
           </Card>
+          )}
 
-          {/* Certificates Section */}
-          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+          {/* Step 5: Certificates */}
+          {currentStep === 5 && (
+            <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
+              isStepCompleted(5)
+                ? "bg-green-50/70 border-green-400"
+                : "bg-white/70 border-0"
+            }`}>
             <CardBody className="p-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                  <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
+                    isStepCompleted(5)
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
+                      : "bg-gradient-to-b from-blue-500 to-purple-500"
+                  }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
                     Certificates
                   </Typography>
@@ -1339,13 +1660,23 @@ const PortfolioCreation = () => {
               )}
             </CardBody>
           </Card>
+          )}
 
-          {/* Skills Section */}
-          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+          {/* Step 6: Skills */}
+          {currentStep === 6 && (
+            <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
+              isStepCompleted(6)
+                ? "bg-green-50/70 border-green-400"
+                : "bg-white/70 border-0"
+            }`}>
             <CardBody className="p-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                  <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
+                    isStepCompleted(6)
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
+                      : "bg-gradient-to-b from-blue-500 to-purple-500"
+                  }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
                     Skills
                   </Typography>
@@ -1472,13 +1803,23 @@ const PortfolioCreation = () => {
               )}
             </CardBody>
           </Card>
+          )}
 
-          {/* Experiences Section */}
-          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+          {/* Step 7: Experiences */}
+          {currentStep === 7 && (
+            <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
+              isStepCompleted(7)
+                ? "bg-green-50/70 border-green-400"
+                : "bg-white/70 border-0"
+            }`}>
             <CardBody className="p-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                  <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
+                    isStepCompleted(7)
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
+                      : "bg-gradient-to-b from-blue-500 to-purple-500"
+                  }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
                     Experiences
                   </Typography>
@@ -1623,13 +1964,23 @@ const PortfolioCreation = () => {
               )}
             </CardBody>
           </Card>
+          )}
 
-          {/* Awards & Recognitions Section */}
-          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+          {/* Step 8: Awards & Recognitions */}
+          {currentStep === 8 && (
+            <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
+              isStepCompleted(8)
+                ? "bg-green-50/70 border-green-400"
+                : "bg-white/70 border-0"
+            }`}>
             <CardBody className="p-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                  <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
+                    isStepCompleted(8)
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
+                      : "bg-gradient-to-b from-blue-500 to-purple-500"
+                  }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
                     Awards & Recognitions
                   </Typography>
@@ -1753,13 +2104,23 @@ const PortfolioCreation = () => {
               )}
             </CardBody>
           </Card>
+          )}
 
-          {/* Continuing Education Section */}
-          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+          {/* Step 9: Continuing Education */}
+          {currentStep === 9 && (
+            <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
+              isStepCompleted(9)
+                ? "bg-green-50/70 border-green-400"
+                : "bg-white/70 border-0"
+            }`}>
             <CardBody className="p-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                  <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
+                    isStepCompleted(9)
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
+                      : "bg-gradient-to-b from-blue-500 to-purple-500"
+                  }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
                     Continuing Education
                   </Typography>
@@ -1883,13 +2244,23 @@ const PortfolioCreation = () => {
               )}
             </CardBody>
           </Card>
+          )}
 
-          {/* Professional Memberships Section */}
-          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+          {/* Step 10: Professional Memberships */}
+          {currentStep === 10 && (
+            <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
+              isStepCompleted(10)
+                ? "bg-green-50/70 border-green-400"
+                : "bg-white/70 border-0"
+            }`}>
             <CardBody className="p-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                  <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
+                    isStepCompleted(10)
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
+                      : "bg-gradient-to-b from-blue-500 to-purple-500"
+                  }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
                     Professional Memberships
                   </Typography>
@@ -2013,13 +2384,23 @@ const PortfolioCreation = () => {
               )}
             </CardBody>
           </Card>
+          )}
 
-          {/* References Section */}
-          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+          {/* Step 11: References */}
+          {currentStep === 11 && (
+            <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
+              isStepCompleted(11)
+                ? "bg-green-50/70 border-green-400"
+                : "bg-white/70 border-0"
+            }`}>
             <CardBody className="p-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                  <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
+                    isStepCompleted(11)
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
+                      : "bg-gradient-to-b from-blue-500 to-purple-500"
+                  }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
                     References
                   </Typography>
@@ -2182,12 +2563,22 @@ const PortfolioCreation = () => {
               )}
             </CardBody>
           </Card>
+          )}
 
-          {/* Additional Form Fields */}
-          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+          {/* Step 12: Additional Information */}
+          {currentStep === 12 && (
+            <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
+              isStepCompleted(12)
+                ? "bg-green-50/70 border-green-400"
+                : "bg-white/70 border-0"
+            }`}>
             <CardBody className="p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
+                  isStepCompleted(12)
+                    ? "bg-gradient-to-b from-green-500 to-green-600"
+                    : "bg-gradient-to-b from-blue-500 to-purple-500"
+                }`}></div>
                 <Typography variant="h4" className="text-gray-800 font-semibold">
                   Additional Information
                 </Typography>
@@ -2247,27 +2638,72 @@ const PortfolioCreation = () => {
               </div>
             </CardBody>
           </Card>
+          )}
 
-          {/* Submit Button */}
-          <div className="text-center pt-8">
-            <Button
-              type="submit"
-              size="lg"
-              variant="gradient"
-              color="blue"
-              disabled={isLoading}
-              className="px-12 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-3">
-                  <Spinner className="h-5 w-5" />
-                  Creating Portfolio...
-                </div>
-              ) : (
-                "Create Portfolio"
-              )}
-            </Button>
-          </div>
+          {/* Navigation Buttons */}
+          <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl">
+            <CardBody className="p-6">
+              <div className="flex justify-between items-center gap-4">
+                <Button
+                  type="button"
+                  variant="outlined"
+                  color="gray"
+                  onClick={handlePreviousStep}
+                  disabled={currentStep === 0 || isLoading}
+                  className="flex items-center gap-2"
+                >
+                  <FaChevronLeft className="w-4 h-4" />
+                  Previous
+                </Button>
+
+                {currentStep === totalSteps - 1 ? (
+                  <Button
+                    type="submit"
+                    size="lg"
+                    variant="gradient"
+                    color="blue"
+                    disabled={isLoading || !validateStep(currentStep, false)}
+                    className="flex items-center gap-2 px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                    onClick={(e) => {
+                      if (!validateStep(currentStep)) {
+                        e.preventDefault()
+                        window.scrollTo({ top: 0, behavior: "smooth" })
+                      }
+                    }}
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center gap-3">
+                        <Spinner className="h-5 w-5" />
+                        Creating Portfolio...
+                      </div>
+                    ) : (
+                      <>
+                        <FaCheck className="w-5 h-5" />
+                        Create Portfolio
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="gradient"
+                    color="blue"
+                    onClick={handleNextStep}
+                    disabled={isLoading || !validateStep(currentStep, false)}
+                    className="flex items-center gap-2 px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={
+                      steps[currentStep].required && !validateStep(currentStep, false)
+                        ? "Please complete all required fields before proceeding"
+                        : "Continue to next step"
+                    }
+                  >
+                    Next
+                    <FaChevronRight className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </CardBody>
+          </Card>
         </form>
       </div>
     </div>
