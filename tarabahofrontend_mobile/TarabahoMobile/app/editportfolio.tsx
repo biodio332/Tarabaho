@@ -158,6 +158,40 @@ export default function EditPortfolioScreen() {
   const [editingCertificateId, setEditingCertificateId] = useState<string | number | null>(null)
   const [editingProjectId, setEditingProjectId] = useState<string | number | null>(null)
   
+  // States for section editing modes - similar to web logic
+  const [editingSections, setEditingSections] = useState({
+    profilePhoto: false,
+    basicInfo: false,
+    contactInfo: false,
+    skills: false,
+    tesdaInfo: false,
+    experiences: false,
+    projects: false,
+    certificates: false,
+    awards: false,
+    education: false,
+    memberships: false,
+    references: false,
+    settings: false,
+  })
+  
+  // Function to toggle editing mode for a section
+  const toggleSectionEdit = (section: keyof typeof editingSections) => {
+    setEditingSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }))
+    setError("")
+  }
+  
+  // Function to save a section and exit edit mode
+  const saveSectionEdit = (section: keyof typeof editingSections) => {
+    setEditingSections(prev => ({
+      ...prev,
+      [section]: false
+    }))
+  }
+  
   // New certificate and project states
   const [newCertificate, setNewCertificate] = useState<{
     courseName: string
@@ -1021,424 +1055,816 @@ export default function EditPortfolioScreen() {
 
   const renderProfileSection = () => (
     <View className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
-      <View className="flex-row items-center mb-4">
-        <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
-          <Ionicons name="image-outline" size={18} color="#2563EB" />
+      <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
+            <Ionicons name="image-outline" size={18} color="#2563EB" />
+          </View>
+          <Text className="text-lg font-bold text-gray-800">Profile Photo</Text>
         </View>
-        <Text className="text-lg font-bold text-gray-800">Profile Photo</Text>
+        
+        <TouchableOpacity
+          onPress={() => toggleSectionEdit('profilePhoto')}
+          className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full"
+        >
+          <Ionicons 
+            name={editingSections.profilePhoto ? "checkmark" : "pencil"} 
+            size={14} 
+            color="#2563EB" 
+          />
+          <Text className="text-blue-600 font-medium ml-1 text-sm">
+            {editingSections.profilePhoto ? "Done" : "Edit"}
+          </Text>
+        </TouchableOpacity>
       </View>
       
-      <TouchableOpacity 
-        onPress={() => pickImage('avatar')} 
-        className="items-center justify-center bg-gray-50 p-6 rounded-lg"
-      >
-        {previewAvatar ? (
-          <View className="rounded-full border-4 border-white shadow-md mb-3">
-            <Image 
-              source={{ uri: previewAvatar }} 
-              className="w-28 h-28 rounded-full"
-            />
+      {editingSections.profilePhoto ? (
+        <TouchableOpacity 
+          onPress={() => pickImage('avatar')} 
+          className="items-center justify-center bg-gray-50 p-6 rounded-lg"
+        >
+          {previewAvatar ? (
+            <View className="rounded-full border-4 border-white shadow-md mb-3">
+              <Image 
+                source={{ uri: previewAvatar }} 
+                className="w-28 h-28 rounded-full"
+              />
+            </View>
+          ) : (
+            <View className="w-28 h-28 rounded-full bg-gray-200 items-center justify-center mb-3 border-4 border-white shadow-md">
+              <Ionicons name="person-outline" size={40} color="#9CA3AF" />
+            </View>
+          )}
+          <View className="flex-row items-center bg-blue-100 px-4 py-2 rounded-full">
+            <Ionicons name="camera" size={16} color="#2563EB" />
+            <Text className="text-blue-600 font-medium ml-2">Change Photo</Text>
           </View>
-        ) : (
-          <View className="w-28 h-28 rounded-full bg-gray-200 items-center justify-center mb-3 border-4 border-white shadow-md">
-            <Ionicons name="person-outline" size={40} color="#9CA3AF" />
-          </View>
-        )}
-        <View className="flex-row items-center bg-blue-100 px-4 py-2 rounded-full">
-          <Ionicons name="camera" size={16} color="#2563EB" />
-          <Text className="text-blue-600 font-medium ml-2">Change Photo</Text>
+        </TouchableOpacity>
+      ) : (
+        <View className="items-center justify-center bg-gray-50 p-6 rounded-lg">
+          {previewAvatar ? (
+            <View className="rounded-full border-4 border-white shadow-md mb-3">
+              <Image 
+                source={{ uri: previewAvatar }} 
+                className="w-28 h-28 rounded-full"
+              />
+            </View>
+          ) : (
+            <View className="w-28 h-28 rounded-full bg-gray-200 items-center justify-center mb-3 border-4 border-white shadow-md">
+              <Ionicons name="person-outline" size={40} color="#9CA3AF" />
+            </View>
+          )}
+          <Text className="text-gray-500 font-medium">Tap Edit to change photo</Text>
         </View>
-      </TouchableOpacity>
+      )}
     </View>
   )
 
   const renderBasicInfoSection = () => (
     <View className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
-      <View className="flex-row items-center mb-4">
-        <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
-          <Ionicons name="person-outline" size={18} color="#2563EB" />
+      <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
+            <Ionicons name="person-outline" size={18} color="#2563EB" />
+          </View>
+          <Text className="text-lg font-bold text-gray-800">Basic Information</Text>
         </View>
-        <Text className="text-lg font-bold text-gray-800">Basic Information</Text>
+        
+        <TouchableOpacity
+          onPress={() => editingSections.basicInfo ? saveSectionEdit('basicInfo') : toggleSectionEdit('basicInfo')}
+          className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full"
+        >
+          <Ionicons 
+            name={editingSections.basicInfo ? "checkmark" : "pencil"} 
+            size={14} 
+            color="#2563EB" 
+          />
+          <Text className="text-blue-600 font-medium ml-1 text-sm">
+            {editingSections.basicInfo ? "Done" : "Edit"}
+          </Text>
+        </TouchableOpacity>
       </View>
       
-      <TextField
-        label="Full Name"
-        value={portfolio?.fullName || ""}
-        onChangeText={(text) => handlePortfolioChange("fullName", text)}
-        placeholder="Enter your full name"
-        size="medium"
-      />
-      
-      <TextField
-        label="Professional Title"
-        value={portfolio?.professionalTitle || ""}
-        onChangeText={(text) => handlePortfolioChange("professionalTitle", text)}
-        placeholder="Enter your professional title"
-        size="medium"
-      />
-      
-      <TextField
-        label="Professional Summary"
-        value={portfolio?.professionalSummary || ""}
-        onChangeText={(text) => handlePortfolioChange("professionalSummary", text)}
-        placeholder="Brief summary of your professional background"
-        multiline
-        numberOfLines={4}
-        size="medium"
-      />
+      {editingSections.basicInfo ? (
+        <>
+          <TextField
+            label="Full Name"
+            value={portfolio?.fullName || ""}
+            onChangeText={(text) => handlePortfolioChange("fullName", text)}
+            placeholder="Enter your full name"
+            size="medium"
+          />
+          
+          <TextField
+            label="Professional Title"
+            value={portfolio?.professionalTitle || ""}
+            onChangeText={(text) => handlePortfolioChange("professionalTitle", text)}
+            placeholder="Enter your professional title"
+            size="medium"
+          />
+          
+          <TextField
+            label="Professional Summary"
+            value={portfolio?.professionalSummary || ""}
+            onChangeText={(text) => handlePortfolioChange("professionalSummary", text)}
+            placeholder="Brief summary of your professional background"
+            multiline
+            numberOfLines={4}
+            size="medium"
+          />
+        </>
+      ) : (
+        <View className="space-y-4">
+          <View>
+            <Text className="text-sm font-medium text-gray-600 mb-1">Full Name</Text>
+            <Text className="text-base text-gray-800">{portfolio?.fullName || "Not provided"}</Text>
+          </View>
+          
+          <View>
+            <Text className="text-sm font-medium text-gray-600 mb-1">Professional Title</Text>
+            <Text className="text-base text-gray-800">{portfolio?.professionalTitle || "Not provided"}</Text>
+          </View>
+          
+          <View>
+            <Text className="text-sm font-medium text-gray-600 mb-1">Professional Summary</Text>
+            <Text className="text-base text-gray-800" numberOfLines={3}>
+              {portfolio?.professionalSummary || "Not provided"}
+            </Text>
+          </View>
+        </View>
+      )}
     </View>
   )
 
   const renderContactInfoSection = () => (
     <View className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
-      <View className="flex-row items-center mb-4">
-        <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
-          <Ionicons name="call-outline" size={18} color="#2563EB" />
+      <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
+            <Ionicons name="call-outline" size={18} color="#2563EB" />
+          </View>
+          <Text className="text-lg font-bold text-gray-800">Contact Information</Text>
         </View>
-        <Text className="text-lg font-bold text-gray-800">Contact Information</Text>
+        
+        <TouchableOpacity
+          onPress={() => editingSections.contactInfo ? saveSectionEdit('contactInfo') : toggleSectionEdit('contactInfo')}
+          className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full"
+        >
+          <Ionicons 
+            name={editingSections.contactInfo ? "checkmark" : "pencil"} 
+            size={14} 
+            color="#2563EB" 
+          />
+          <Text className="text-blue-600 font-medium ml-1 text-sm">
+            {editingSections.contactInfo ? "Done" : "Edit"}
+          </Text>
+        </TouchableOpacity>
       </View>
       
-      <TextField
-        label="Email"
-        value={portfolio?.email || ""}
-        onChangeText={(text) => handlePortfolioChange("email", text)}
-        placeholder="Enter your email"
-        keyboardType="email-address"
-        size="medium"
-      />
-      
-      <TextField
-        label="Phone"
-        value={portfolio?.phone || ""}
-        onChangeText={(text) => handlePortfolioChange("phone", text)}
-        placeholder="Enter your phone number"
-        keyboardType="phone-pad"
-        size="medium"
-      />
-      
-      <TextField
-        label="Website"
-        value={portfolio?.website || ""}
-        onChangeText={(text) => handlePortfolioChange("website", text)}
-        placeholder="Enter your website URL"
-        keyboardType="url"
-        size="medium"
-      />
+      {editingSections.contactInfo ? (
+        <>
+          <TextField
+            label="Email"
+            value={portfolio?.email || ""}
+            onChangeText={(text) => handlePortfolioChange("email", text)}
+            placeholder="Enter your email"
+            keyboardType="email-address"
+            size="medium"
+          />
+          
+          <TextField
+            label="Phone"
+            value={portfolio?.phone || ""}
+            onChangeText={(text) => handlePortfolioChange("phone", text)}
+            placeholder="Enter your phone number"
+            keyboardType="phone-pad"
+            size="medium"
+          />
+          
+          <TextField
+            label="Website"
+            value={portfolio?.website || ""}
+            onChangeText={(text) => handlePortfolioChange("website", text)}
+            placeholder="Enter your website URL"
+            keyboardType="url"
+            size="medium"
+          />
+        </>
+      ) : (
+        <View className="space-y-4">
+          <View>
+            <Text className="text-sm font-medium text-gray-600 mb-1">Email</Text>
+            <Text className="text-base text-gray-800">{portfolio?.email || "Not provided"}</Text>
+          </View>
+          
+          <View>
+            <Text className="text-sm font-medium text-gray-600 mb-1">Phone</Text>
+            <Text className="text-base text-gray-800">{portfolio?.phone || "Not provided"}</Text>
+          </View>
+          
+          <View>
+            <Text className="text-sm font-medium text-gray-600 mb-1">Website</Text>
+            <Text className="text-base text-gray-800">{portfolio?.website || "Not provided"}</Text>
+          </View>
+        </View>
+      )}
     </View>
   )
 
   const renderTESDAInfoSection = () => (
     <View className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
-      <View className="flex-row items-center mb-4">
-        <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
-          <Ionicons name="school-outline" size={18} color="#2563EB" />
+      <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
+            <Ionicons name="school-outline" size={18} color="#2563EB" />
+          </View>
+          <Text className="text-lg font-bold text-gray-800">TESDA Information</Text>
         </View>
-        <Text className="text-lg font-bold text-gray-800">TESDA Information</Text>
+        
+        <TouchableOpacity
+          onPress={() => editingSections.tesdaInfo ? saveSectionEdit('tesdaInfo') : toggleSectionEdit('tesdaInfo')}
+          className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full"
+        >
+          <Ionicons 
+            name={editingSections.tesdaInfo ? "checkmark" : "pencil"} 
+            size={14} 
+            color="#2563EB" 
+          />
+          <Text className="text-blue-600 font-medium ml-1 text-sm">
+            {editingSections.tesdaInfo ? "Done" : "Edit"}
+          </Text>
+        </TouchableOpacity>
       </View>
       
-      <TextField
-        label="NC Level"
-        value={portfolio?.ncLevel || ""}
-        onChangeText={(text) => handlePortfolioChange("ncLevel", text)}
-        placeholder="e.g., NC II"
-        size="medium"
-      />
-      
-      <TextField
-        label="Training Center/Institution"
-        value={portfolio?.trainingCenter || ""}
-        onChangeText={(text) => handlePortfolioChange("trainingCenter", text)}
-        placeholder="Enter training center name"
-        size="medium"
-      />
-      
-      <TextField
-        label="Scholarship Type"
-        value={portfolio?.scholarshipType || ""}
-        onChangeText={(text) => handlePortfolioChange("scholarshipType", text)}
-        placeholder="Enter scholarship type"
-        size="medium"
-      />
-      
-      <TextField
-        label="Training Duration"
-        value={portfolio?.trainingDuration || ""}
-        onChangeText={(text) => handlePortfolioChange("trainingDuration", text)}
-        placeholder="Enter training duration"
-        size="medium"
-      />
-      
-      <TextField
-        label="TESDA Registration Number"
-        value={portfolio?.tesdaRegistrationNumber || ""}
-        onChangeText={(text) => handlePortfolioChange("tesdaRegistrationNumber", text)}
-        placeholder="Enter TESDA registration number"
-        size="medium"
-      />
+      {editingSections.tesdaInfo ? (
+        <>
+          <TextField
+            label="NC Level"
+            value={portfolio?.ncLevel || ""}
+            onChangeText={(text) => handlePortfolioChange("ncLevel", text)}
+            placeholder="e.g., NC II"
+            size="medium"
+          />
+          
+          <TextField
+            label="Training Center/Institution"
+            value={portfolio?.trainingCenter || ""}
+            onChangeText={(text) => handlePortfolioChange("trainingCenter", text)}
+            placeholder="Enter training center name"
+            size="medium"
+          />
+          
+          <TextField
+            label="Scholarship Type"
+            value={portfolio?.scholarshipType || ""}
+            onChangeText={(text) => handlePortfolioChange("scholarshipType", text)}
+            placeholder="Enter scholarship type"
+            size="medium"
+          />
+          
+          <TextField
+            label="Training Duration"
+            value={portfolio?.trainingDuration || ""}
+            onChangeText={(text) => handlePortfolioChange("trainingDuration", text)}
+            placeholder="Enter training duration"
+            size="medium"
+          />
+          
+          <TextField
+            label="TESDA Registration Number"
+            value={portfolio?.tesdaRegistrationNumber || ""}
+            onChangeText={(text) => handlePortfolioChange("tesdaRegistrationNumber", text)}
+            placeholder="Enter TESDA registration number"
+            size="medium"
+          />
+        </>
+      ) : (
+        <View className="space-y-4">
+          <View>
+            <Text className="text-sm font-medium text-gray-600 mb-1">NC Level</Text>
+            <Text className="text-base text-gray-800">{portfolio?.ncLevel || "Not provided"}</Text>
+          </View>
+          
+          <View>
+            <Text className="text-sm font-medium text-gray-600 mb-1">Training Center/Institution</Text>
+            <Text className="text-base text-gray-800">{portfolio?.trainingCenter || "Not provided"}</Text>
+          </View>
+          
+          <View>
+            <Text className="text-sm font-medium text-gray-600 mb-1">Scholarship Type</Text>
+            <Text className="text-base text-gray-800">{portfolio?.scholarshipType || "Not provided"}</Text>
+          </View>
+          
+          <View>
+            <Text className="text-sm font-medium text-gray-600 mb-1">Training Duration</Text>
+            <Text className="text-base text-gray-800">{portfolio?.trainingDuration || "Not provided"}</Text>
+          </View>
+          
+          <View>
+            <Text className="text-sm font-medium text-gray-600 mb-1">TESDA Registration Number</Text>
+            <Text className="text-base text-gray-800">{portfolio?.tesdaRegistrationNumber || "Not provided"}</Text>
+          </View>
+        </View>
+      )}
     </View>
   )
 
   const renderSkillsSection = () => (
     <View className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
-      <View className="flex-row items-center mb-4">
-        <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
-          <Ionicons name="hammer-outline" size={18} color="#2563EB" />
+      <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
+            <Ionicons name="hammer-outline" size={18} color="#2563EB" />
+          </View>
+          <Text className="text-lg font-bold text-gray-800">Skills</Text>
         </View>
-        <Text className="text-lg font-bold text-gray-800">Skills</Text>
+        
+        <TouchableOpacity
+          onPress={() => editingSections.skills ? saveSectionEdit('skills') : toggleSectionEdit('skills')}
+          className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full"
+        >
+          <Ionicons 
+            name={editingSections.skills ? "checkmark" : "pencil"} 
+            size={14} 
+            color="#2563EB" 
+          />
+          <Text className="text-blue-600 font-medium ml-1 text-sm">
+            {editingSections.skills ? "Done" : "Edit"}
+          </Text>
+        </TouchableOpacity>
       </View>
       
-      {portfolio?.skills.map((skill, index) => (
-        <View key={`skill-${index}`} className="bg-gray-50 rounded-lg p-4 mb-3 border border-gray-200/70">
-          <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-sm font-semibold text-gray-700">Skill {index + 1}</Text>
-            <TouchableOpacity
-              onPress={() => removeArrayItem("skills", index)}
-              className="bg-red-100 rounded-full p-1.5"
-            >
-              <Ionicons name="close" size={14} color="#EF4444" />
-            </TouchableOpacity>
-          </View>
-          
-          <TextField
-            label="Skill Name"
-            value={skill.name}
-            onChangeText={(text) => handleArrayChange("skills", index, "name", text)}
-            placeholder="Enter skill name"
-            size="medium"
-          />
-          
-          <View className="mb-4">
-            <Text className="mb-2 text-gray-700 font-medium">Skill Type</Text>
-            <View className="bg-white border border-gray-300 rounded-lg p-2">
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {['TECHNICAL', 'LANGUAGE', 'DIGITAL', 'SOFT', 'INDUSTRY_SPECIFIC'].map((type) => (
-                  <TouchableOpacity
-                    key={type}
-                    onPress={() => handleArrayChange("skills", index, "type", type)}
-                    className={`px-4 py-2 mx-1 rounded-full ${
-                      skill.type === type ? 'bg-blue-500' : 'bg-gray-100'
-                    }`}
-                  >
-                    <Text
-                      className={`${
-                        skill.type === type ? 'text-white' : 'text-gray-700'
-                      } font-medium`}
-                    >
-                      {type.replace('_', ' ')}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </View>
-          
-          <View className="mb-2">
-            <Text className="mb-2 text-gray-700 font-medium">Proficiency Level</Text>
-            <View className="flex-row justify-between">
-              {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
+      {editingSections.skills ? (
+        <>
+          {portfolio?.skills.map((skill, index) => (
+            <View key={`skill-${index}`} className="bg-gray-50 rounded-lg p-4 mb-3 border border-gray-200/70">
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-sm font-semibold text-gray-700">Skill {index + 1}</Text>
                 <TouchableOpacity
-                  key={level}
-                  onPress={() => handleArrayChange("skills", index, "proficiencyLevel", level)}
-                  className={`flex-1 py-2.5 mx-1 rounded-lg items-center justify-center ${
-                    skill.proficiencyLevel === level 
-                      ? level === 'Beginner' 
-                        ? 'bg-blue-300 border border-blue-400' 
-                        : level === 'Intermediate' 
-                          ? 'bg-blue-500 border border-blue-600' 
-                          : 'bg-blue-700 border border-blue-800'
-                      : 'bg-gray-100 border border-gray-200'
-                  }`}
+                  onPress={() => removeArrayItem("skills", index)}
+                  className="bg-red-100 rounded-full p-1.5"
                 >
-                  <Text
-                    className={`text-sm font-medium ${
-                      skill.proficiencyLevel === level ? 'text-white' : 'text-gray-700'
-                    }`}
-                  >
-                    {level}
-                  </Text>
+                  <Ionicons name="close" size={14} color="#EF4444" />
                 </TouchableOpacity>
-              ))}
+              </View>
+              
+              <TextField
+                label="Skill Name"
+                value={skill.name}
+                onChangeText={(text) => handleArrayChange("skills", index, "name", text)}
+                placeholder="Enter skill name"
+                size="medium"
+              />
+              
+              <View className="mb-4">
+                <Text className="mb-2 text-gray-700 font-medium">Skill Type</Text>
+                <View className="bg-white border border-gray-300 rounded-lg p-2">
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {['TECHNICAL', 'LANGUAGE', 'DIGITAL', 'SOFT', 'INDUSTRY_SPECIFIC'].map((type) => (
+                      <TouchableOpacity
+                        key={type}
+                        onPress={() => handleArrayChange("skills", index, "type", type)}
+                        className={`px-4 py-2 mx-1 rounded-full ${
+                          skill.type === type ? 'bg-blue-500' : 'bg-gray-100'
+                        }`}
+                      >
+                        <Text
+                          className={`${
+                            skill.type === type ? 'text-white' : 'text-gray-700'
+                          } font-medium`}
+                        >
+                          {type.replace('_', ' ')}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </View>
+              
+              <View className="mb-2">
+                <Text className="mb-2 text-gray-700 font-medium">Proficiency Level</Text>
+                <View className="flex-row justify-between">
+                  {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
+                    <TouchableOpacity
+                      key={level}
+                      onPress={() => handleArrayChange("skills", index, "proficiencyLevel", level)}
+                      className={`flex-1 py-2.5 mx-1 rounded-lg items-center justify-center ${
+                        skill.proficiencyLevel === level 
+                          ? level === 'Beginner' 
+                            ? 'bg-blue-300 border border-blue-400' 
+                            : level === 'Intermediate' 
+                              ? 'bg-blue-500 border border-blue-600' 
+                              : 'bg-blue-700 border border-blue-800'
+                          : 'bg-gray-100 border border-gray-200'
+                      }`}
+                    >
+                      <Text
+                        className={`text-sm font-medium ${
+                          skill.proficiencyLevel === level ? 'text-white' : 'text-gray-700'
+                        }`}
+                      >
+                        {level}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
             </View>
-          </View>
+          ))}
+          
+          <TouchableOpacity
+            onPress={() => addArrayItem("skills", { name: "", type: "TECHNICAL", proficiencyLevel: "" })}
+            className="flex-row items-center justify-center bg-blue-50 rounded-lg py-3 mt-2 border border-blue-200"
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#2563EB" />
+            <Text className="text-blue-600 font-medium ml-2">Add Skill</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <View>
+          {portfolio?.skills && portfolio.skills.length > 0 ? (
+            <View className="space-y-3">
+              {portfolio.skills.slice(0, 3).map((skill, index) => (
+                <View key={`skill-view-${index}`} className="bg-gray-50 rounded-lg p-3 border border-gray-200/50">
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="font-semibold text-gray-800">{skill.name || "Unnamed skill"}</Text>
+                    <View className="bg-blue-100 px-2 py-1 rounded-full">
+                      <Text className="text-xs font-medium text-blue-700">
+                        {skill.type?.replace('_', ' ') || 'TECHNICAL'}
+                      </Text>
+                    </View>
+                  </View>
+                  <View className="flex-row items-center">
+                    <View className={`px-2 py-1 rounded-full ${
+                      skill.proficiencyLevel === 'Beginner' ? 'bg-blue-200' :
+                      skill.proficiencyLevel === 'Intermediate' ? 'bg-blue-400' :
+                      skill.proficiencyLevel === 'Advanced' ? 'bg-blue-600' : 'bg-gray-200'
+                    }`}>
+                      <Text className={`text-xs font-medium ${
+                        skill.proficiencyLevel && skill.proficiencyLevel !== 'Beginner' ? 'text-white' : 'text-blue-700'
+                      }`}>
+                        {skill.proficiencyLevel || 'Not specified'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+              {portfolio.skills.length > 3 && (
+                <View className="bg-gray-50 rounded-lg p-3 border border-gray-200/50 items-center">
+                  <Text className="text-gray-600 font-medium">
+                    +{portfolio.skills.length - 3} more skills
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View className="bg-gray-50 rounded-lg p-8 items-center">
+              <View className="w-16 h-16 rounded-full bg-gray-200 items-center justify-center mb-3">
+                <Ionicons name="hammer-outline" size={32} color="#9CA3AF" />
+              </View>
+              <Text className="text-gray-500 font-medium mb-2">No skills added yet</Text>
+              <Text className="text-gray-400 text-center text-sm">Tap Edit to add your professional skills</Text>
+            </View>
+          )}
         </View>
-      ))}
-      
-      <TouchableOpacity
-        onPress={() => addArrayItem("skills", { name: "", type: "TECHNICAL", proficiencyLevel: "" })}
-        className="flex-row items-center justify-center bg-blue-50 rounded-lg py-3 mt-2 border border-blue-200"
-      >
-        <Ionicons name="add-circle-outline" size={20} color="#2563EB" />
-        <Text className="text-blue-600 font-medium ml-2">Add Skill</Text>
-      </TouchableOpacity>
+      )}
     </View>
   )
 
   const renderExperiencesSection = () => (
-    <View className="bg-white rounded-xl shadow-sm p-5 mb-4">
-      <Text className="text-lg font-bold text-gray-800 mb-4">Experiences</Text>
-      
-      {portfolio?.experiences.map((exp, index) => (
-        <View key={`exp-${index}`} className="bg-gray-50 rounded-lg p-4 mb-3">
-          <TextField
-            label="Job Title"
-            value={exp.jobTitle}
-            onChangeText={(text) => handleArrayChange("experiences", index, "jobTitle", text)}
-            placeholder="Enter job title"
-            size="medium"
-          />
-          
-          <TextField
-            label="Employer"
-            value={exp.employer}
-            onChangeText={(text) => handleArrayChange("experiences", index, "employer", text)}
-            placeholder="Enter employer name"
-            size="medium"
-          />
-          
-          <TextField
-            label="Description"
-            value={exp.description || ""}
-            onChangeText={(text) => handleArrayChange("experiences", index, "description", text)}
-            placeholder="Describe your responsibilities and achievements"
-            multiline
-            numberOfLines={3}
-            size="medium"
-          />
-          
-          <View style={{ marginBottom: 15 }}>
-            <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 8, color: '#333' }}>Start Date</Text>
-            <DatePicker
-              value={exp.startDate ? new Date(exp.startDate) : new Date()}
-              onChange={(date) => handleArrayChange("experiences", index, "startDate", date.toISOString().split('T')[0])}
-              minimumDate={new Date(1950, 0, 1)}
-              maximumDate={new Date()}
-            />
+    <View className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
+      <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
+            <Ionicons name="briefcase-outline" size={18} color="#2563EB" />
           </View>
-          
-          <View style={{ marginBottom: 15 }}>
-            <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 8, color: '#333' }}>End Date</Text>
-            <DatePicker
-              value={exp.endDate ? new Date(exp.endDate) : new Date()}
-              onChange={(date) => handleArrayChange("experiences", index, "endDate", date.toISOString().split('T')[0])}
-              minimumDate={new Date(1950, 0, 1)}
-              placeholder="Leave blank for current position"
-            />
-          </View>
-          
-          <Button
-            title="Remove Experience"
-            onPress={() => removeArrayItem("experiences", index)}
-            variant="danger"
-            style={{ marginTop: 10 }}
-          />
+          <Text className="text-lg font-bold text-gray-800">Work Experiences</Text>
         </View>
-      ))}
+        
+        <TouchableOpacity
+          onPress={() => editingSections.experiences ? saveSectionEdit('experiences') : toggleSectionEdit('experiences')}
+          className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full"
+        >
+          <Ionicons 
+            name={editingSections.experiences ? "checkmark" : "pencil"} 
+            size={14} 
+            color="#2563EB" 
+          />
+          <Text className="text-blue-600 font-medium ml-1 text-sm">
+            {editingSections.experiences ? "Done" : "Edit"}
+          </Text>
+        </TouchableOpacity>
+      </View>
       
-      <Button
-        title="Add Experience"
-        onPress={() =>
-          addArrayItem("experiences", {
-            jobTitle: "",
-            employer: "",
-            description: "",
-            startDate: "",
-            endDate: "",
-          })
-        }
-        variant="outline"
-        style={{ marginTop: 10 }}
-      />
+      {editingSections.experiences ? (
+        <>
+          {portfolio?.experiences.map((exp, index) => (
+            <View key={`exp-${index}`} className="bg-gray-50 rounded-lg p-4 mb-3 border border-gray-200/70">
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-sm font-semibold text-gray-700">Experience {index + 1}</Text>
+                <TouchableOpacity
+                  onPress={() => removeArrayItem("experiences", index)}
+                  className="bg-red-100 rounded-full p-1.5"
+                >
+                  <Ionicons name="close" size={14} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+              
+              <TextField
+                label="Job Title"
+                value={exp.jobTitle}
+                onChangeText={(text) => handleArrayChange("experiences", index, "jobTitle", text)}
+                placeholder="Enter job title"
+                size="medium"
+              />
+              
+              <TextField
+                label="Employer"
+                value={exp.employer}
+                onChangeText={(text) => handleArrayChange("experiences", index, "employer", text)}
+                placeholder="Enter employer name"
+                size="medium"
+              />
+              
+              <TextField
+                label="Description"
+                value={exp.description || ""}
+                onChangeText={(text) => handleArrayChange("experiences", index, "description", text)}
+                placeholder="Describe your responsibilities and achievements"
+                multiline
+                numberOfLines={3}
+                size="medium"
+              />
+              
+              <View style={{ marginBottom: 15 }}>
+                <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 8, color: '#333' }}>Start Date</Text>
+                <DatePicker
+                  value={exp.startDate ? new Date(exp.startDate) : new Date()}
+                  onChange={(date) => handleArrayChange("experiences", index, "startDate", date.toISOString().split('T')[0])}
+                  minimumDate={new Date(1950, 0, 1)}
+                  maximumDate={new Date()}
+                />
+              </View>
+              
+              <View style={{ marginBottom: 15 }}>
+                <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 8, color: '#333' }}>End Date</Text>
+                <DatePicker
+                  value={exp.endDate ? new Date(exp.endDate) : new Date()}
+                  onChange={(date) => handleArrayChange("experiences", index, "endDate", date.toISOString().split('T')[0])}
+                  minimumDate={new Date(1950, 0, 1)}
+                  placeholder="Leave blank for current position"
+                />
+              </View>
+            </View>
+          ))}
+          
+          <TouchableOpacity
+            onPress={() =>
+              addArrayItem("experiences", {
+                jobTitle: "",
+                employer: "",
+                description: "",
+                startDate: "",
+                endDate: "",
+              })
+            }
+            className="flex-row items-center justify-center bg-blue-50 rounded-lg py-3 mt-2 border border-blue-200"
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#2563EB" />
+            <Text className="text-blue-600 font-medium ml-2">Add Experience</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <View>
+          {portfolio?.experiences && portfolio.experiences.length > 0 ? (
+            <View className="space-y-3">
+              {portfolio.experiences.slice(0, 2).map((exp, index) => (
+                <View key={`exp-view-${index}`} className="bg-gray-50 rounded-lg p-4 border border-gray-200/50">
+                  <Text className="font-semibold text-gray-800 text-base mb-1">
+                    {exp.jobTitle || "Job Title Not Provided"}
+                  </Text>
+                  <Text className="text-gray-600 font-medium mb-2">
+                    {exp.employer || "Company Not Provided"}
+                  </Text>
+                  <Text className="text-gray-500 text-sm mb-2" numberOfLines={2}>
+                    {exp.description || "No description provided"}
+                  </Text>
+                  <View className="flex-row items-center">
+                    <Ionicons name="calendar-outline" size={14} color="#6B7280" />
+                    <Text className="text-gray-500 text-sm ml-1">
+                      {exp.startDate || "Start date not provided"} - {exp.endDate || "Present"}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+              {portfolio.experiences.length > 2 && (
+                <View className="bg-gray-50 rounded-lg p-3 border border-gray-200/50 items-center">
+                  <Text className="text-gray-600 font-medium">
+                    +{portfolio.experiences.length - 2} more experiences
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View className="bg-gray-50 rounded-lg p-8 items-center">
+              <View className="w-16 h-16 rounded-full bg-gray-200 items-center justify-center mb-3">
+                <Ionicons name="briefcase-outline" size={32} color="#9CA3AF" />
+              </View>
+              <Text className="text-gray-500 font-medium mb-2">No work experience added yet</Text>
+              <Text className="text-gray-400 text-center text-sm">Tap Edit to add your work history</Text>
+            </View>
+          )}
+        </View>
+      )}
     </View>
   )
 
   const renderProjectsSection = () => (
-    <View className="bg-white rounded-xl shadow-sm p-5 mb-4">
-      <Text className="text-lg font-bold text-gray-800 mb-4">Projects</Text>
+    <View className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
+      <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
+            <Ionicons name="folder-outline" size={18} color="#2563EB" />
+          </View>
+          <Text className="text-lg font-bold text-gray-800">Projects</Text>
+        </View>
+        
+        <TouchableOpacity
+          onPress={() => editingSections.projects ? saveSectionEdit('projects') : toggleSectionEdit('projects')}
+          className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full"
+        >
+          <Ionicons 
+            name={editingSections.projects ? "checkmark" : "pencil"} 
+            size={14} 
+            color="#2563EB" 
+          />
+          <Text className="text-blue-600 font-medium ml-1 text-sm">
+            {editingSections.projects ? "Done" : "Edit"}
+          </Text>
+        </TouchableOpacity>
+      </View>
       
-      {/* Project Form (Add/Edit) */}
-      {isAddingProject && (
-        <View className="bg-gray-50 rounded-lg p-4 mb-4">
-          <Text className="text-base font-semibold mb-3">
-            {editingProjectId ? "Edit Project" : "Add New Project"}
-          </Text>
-          
-          <TextField
-            label="Project Title"
-            value={newProject.title}
-            onChangeText={(text) => handleProjectInputChange("title", text)}
-            placeholder="Enter project title"
-            size="medium"
-          />
-          
-          <TextField
-            label="Description"
-            value={newProject.description}
-            onChangeText={(text) => handleProjectInputChange("description", text)}
-            placeholder="Describe your project"
-            multiline
-            numberOfLines={3}
-            size="medium"
-          />
-          
-          <View style={{ marginBottom: 15 }}>
-            <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 8, color: '#333' }}>Start Date</Text>
-            <DatePicker
-              value={newProject.startDate ? new Date(newProject.startDate) : new Date()}
-              onChange={(date) => handleProjectInputChange("startDate", date.toISOString().split('T')[0])}
-              minimumDate={new Date(2000, 0, 1)}
-              maximumDate={new Date(2030, 11, 31)}
-            />
-          </View>
-          
-          <View style={{ marginBottom: 15 }}>
-            <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 8, color: '#333' }}>End Date</Text>
-            <DatePicker
-              value={newProject.endDate ? new Date(newProject.endDate) : new Date()}
-              onChange={(date) => handleProjectInputChange("endDate", date.toISOString().split('T')[0])}
-              minimumDate={new Date(2000, 0, 1)}
-              maximumDate={new Date(2030, 11, 31)}
-            />
-          </View>
-          
-          <Text className="mb-2 text-gray-700 font-medium">
-            Project Image {editingProjectId ? "(Optional)" : "*"}
-          </Text>
-          
-          <TouchableOpacity
-            onPress={() => pickImage('project')}
-            className="flex-row items-center bg-gray-100 p-4 rounded-lg mb-4"
-          >
-            {newProject.projectImageFile ? (
-              <View className="flex-row items-center">
-                <Image
-                  source={{ uri: newProject.projectImageFile.uri }}
-                  className="w-16 h-16 rounded-md mr-3"
+      {editingSections.projects ? (
+        <>
+          {/* Project Form (Add/Edit) */}
+          {isAddingProject && (
+            <View className="bg-gray-50 rounded-lg p-4 mb-4">
+              <Text className="text-base font-semibold mb-3">
+                {editingProjectId ? "Edit Project" : "Add New Project"}
+              </Text>
+              
+              <TextField
+                label="Project Title"
+                value={newProject.title}
+                onChangeText={(text) => handleProjectInputChange("title", text)}
+                placeholder="Enter project title"
+                size="medium"
+              />
+              
+              <TextField
+                label="Description"
+                value={newProject.description}
+                onChangeText={(text) => handleProjectInputChange("description", text)}
+                placeholder="Describe your project"
+                multiline
+                numberOfLines={3}
+                size="medium"
+              />
+              
+              <View style={{ marginBottom: 15 }}>
+                <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 8, color: '#333' }}>Start Date</Text>
+                <DatePicker
+                  value={newProject.startDate ? new Date(newProject.startDate) : new Date()}
+                  onChange={(date) => handleProjectInputChange("startDate", date.toISOString().split('T')[0])}
+                  minimumDate={new Date(2000, 0, 1)}
+                  maximumDate={new Date(2030, 11, 31)}
                 />
-                <Text className="text-blue-600">Change Image</Text>
               </View>
-            ) : editingProjectId && projects.find((p) => p.id === editingProjectId)?.preview ? (
-              <View className="flex-row items-center">
-                <Image
-                  source={{ uri: projects.find((p) => p.id === editingProjectId)?.preview }}
-                  className="w-16 h-16 rounded-md mr-3"
+              
+              <View style={{ marginBottom: 15 }}>
+                <Text style={{ fontSize: 16, fontWeight: '500', marginBottom: 8, color: '#333' }}>End Date</Text>
+                <DatePicker
+                  value={newProject.endDate ? new Date(newProject.endDate) : new Date()}
+                  onChange={(date) => handleProjectInputChange("endDate", date.toISOString().split('T')[0])}
+                  minimumDate={new Date(2000, 0, 1)}
+                  maximumDate={new Date(2030, 11, 31)}
                 />
-                <Text className="text-blue-600">Change Image</Text>
               </View>
-            ) : (
+              
+              <Text className="mb-2 text-gray-700 font-medium">
+                Project Image {editingProjectId ? "(Optional)" : "*"}
+              </Text>
+              
+              <TouchableOpacity
+                onPress={() => pickImage('project')}
+                className="flex-row items-center bg-gray-100 p-4 rounded-lg mb-4"
+              >
+                {newProject.projectImageFile ? (
+                  <View className="flex-row items-center">
+                    <Image
+                      source={{ uri: newProject.projectImageFile.uri }}
+                      className="w-16 h-16 rounded-md mr-3"
+                    />
+                    <Text className="text-blue-600">Change Image</Text>
+                  </View>
+                ) : editingProjectId && projects.find((p) => p.id === editingProjectId)?.preview ? (
+                  <View className="flex-row items-center">
+                    <Image
+                      source={{ uri: projects.find((p) => p.id === editingProjectId)?.preview }}
+                      className="w-16 h-16 rounded-md mr-3"
+                    />
+                    <Text className="text-blue-600">Change Image</Text>
+                  </View>
+                ) : (
+                  <View className="flex-row items-center">
+                    <View className="w-16 h-16 bg-gray-200 rounded-md items-center justify-center mr-3">
+                      <Ionicons name="image-outline" size={24} color="#9CA3AF" />
+                    </View>
+                    <Text className="text-blue-600">Select Image</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              
+              <View className="flex-row justify-end mt-4" style={{ gap: 8 }}>
+                <Button
+                  title="Cancel"
+                  onPress={() => {
+                    setIsAddingProject(false)
+                    setEditingProjectId(null)
+                    setNewProject({
+                      title: "",
+                      description: "",
+                      startDate: "",
+                      endDate: "",
+                      projectImageFile: null,
+                    })
+                  }}
+                  variant="secondary"
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  title={editingProjectId ? "Update" : "Add"}
+                  onPress={editingProjectId ? handleUpdateProject : handleAddProject}
+                  variant="primary"
+                  style={{ flex: 1 }}
+                  disabled={!isProjectFormValid()}
+                />
+              </View>
+            </View>
+          )}
+          
+          {/* Project List */}
+          {projects.length === 0 && !isAddingProject && (
+            <View className="bg-gray-50 rounded-lg p-8 mb-4 items-center">
+              <View className="w-16 h-16 rounded-full bg-gray-200 items-center justify-center mb-3">
+                <Ionicons name="briefcase-outline" size={32} color="#9CA3AF" />
+              </View>
+              <Text className="text-gray-500 text-center font-medium mb-2">No projects added yet</Text>
+              <Text className="text-gray-400 text-center text-sm">Add your projects to showcase your work</Text>
+            </View>
+          )}
+          
+          {projects.map((project, index) => (
+            <View key={`project-${index}`} className="bg-gray-50 rounded-lg p-4 mb-3">
               <View className="flex-row items-center">
-                <View className="w-16 h-16 bg-gray-200 rounded-md items-center justify-center mr-3">
-                  <Ionicons name="image-outline" size={24} color="#9CA3AF" />
+                {project.preview ? (
+                  <Image source={{ uri: project.preview }} className="w-16 h-16 rounded-md" />
+                ) : (
+                  <View className="w-16 h-16 bg-gray-200 rounded-md items-center justify-center">
+                    <Ionicons name="image-outline" size={24} color="#9CA3AF" />
+                  </View>
+                )}
+                
+                <View className="flex-1 ml-3">
+                  <Text className="font-semibold text-gray-800">{project.title}</Text>
+                  <Text numberOfLines={1} className="text-sm text-gray-500">
+                    {project.startDate} - {project.endDate}
+                  </Text>
                 </View>
-                <Text className="text-blue-600">Select Image</Text>
               </View>
-            )}
-          </TouchableOpacity>
+              
+              <View className="flex-row justify-end mt-3" style={{ gap: 8 }}>
+                <TouchableOpacity
+                  onPress={() => handleEditProject(project)}
+                  className="px-4 py-2 bg-blue-100 rounded-lg"
+                >
+                  <Text className="text-blue-700 text-sm font-medium">Edit</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={() => handleRemoveProject(project.id)}
+                  className="px-4 py-2 bg-red-100 rounded-lg"
+                >
+                  <Text className="text-red-700 text-sm font-medium">Remove</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
           
-          <View className="flex-row justify-end mt-4" style={{ gap: 8 }}>
-            <Button
-              title="Cancel"
+          {!isAddingProject && (
+            <TouchableOpacity
               onPress={() => {
-                setIsAddingProject(false)
+                setIsAddingProject(true)
                 setEditingProjectId(null)
                 setNewProject({
                   title: "",
@@ -1448,95 +1874,93 @@ export default function EditPortfolioScreen() {
                   projectImageFile: null,
                 })
               }}
-              variant="secondary"
-              style={{ flex: 1 }}
-            />
-            <Button
-              title={editingProjectId ? "Update" : "Add"}
-              onPress={editingProjectId ? handleUpdateProject : handleAddProject}
-              variant="primary"
-              style={{ flex: 1 }}
-              disabled={!isProjectFormValid()}
-            />
-          </View>
-        </View>
-      )}
-      
-      {/* Project List */}
-      {projects.length === 0 && !isAddingProject && (
-        <View className="bg-gray-50 rounded-lg p-8 mb-4 items-center">
-          <View className="w-16 h-16 rounded-full bg-gray-200 items-center justify-center mb-3">
-            <Ionicons name="briefcase-outline" size={32} color="#9CA3AF" />
-          </View>
-          <Text className="text-gray-500 text-center font-medium mb-2">No projects added yet</Text>
-          <Text className="text-gray-400 text-center text-sm">Add your projects to showcase your work</Text>
-        </View>
-      )}
-      
-      {projects.map((project, index) => (
-        <View key={`project-${index}`} className="bg-gray-50 rounded-lg p-4 mb-3">
-          <View className="flex-row items-center">
-            {project.preview ? (
-              <Image source={{ uri: project.preview }} className="w-16 h-16 rounded-md" />
-            ) : (
-              <View className="w-16 h-16 bg-gray-200 rounded-md items-center justify-center">
-                <Ionicons name="image-outline" size={24} color="#9CA3AF" />
-              </View>
-            )}
-            
-            <View className="flex-1 ml-3">
-              <Text className="font-semibold text-gray-800">{project.title}</Text>
-              <Text numberOfLines={1} className="text-sm text-gray-500">
-                {project.startDate} - {project.endDate}
-              </Text>
+              className="flex-row items-center justify-center bg-blue-50 rounded-lg py-3 mt-2 border border-blue-200"
+            >
+              <Ionicons name="add-circle-outline" size={20} color="#2563EB" />
+              <Text className="text-blue-600 font-medium ml-2">Add Project</Text>
+            </TouchableOpacity>
+          )}
+        </>
+      ) : (
+        <View>
+          {projects && projects.length > 0 ? (
+            <View className="space-y-3">
+              {projects.slice(0, 2).map((project, index) => (
+                <View key={`project-view-${index}`} className="bg-gray-50 rounded-lg p-4 border border-gray-200/50">
+                  <View className="flex-row items-center mb-2">
+                    {project.preview ? (
+                      <Image source={{ uri: project.preview }} className="w-12 h-12 rounded-md mr-3" />
+                    ) : (
+                      <View className="w-12 h-12 bg-gray-200 rounded-md items-center justify-center mr-3">
+                        <Ionicons name="image-outline" size={20} color="#9CA3AF" />
+                      </View>
+                    )}
+                    <View className="flex-1">
+                      <Text className="font-semibold text-gray-800">{project.title || "Untitled Project"}</Text>
+                      <Text className="text-sm text-gray-500" numberOfLines={1}>
+                        {project.description || "No description"}
+                      </Text>
+                    </View>
+                  </View>
+                  <View className="flex-row items-center">
+                    <Ionicons name="calendar-outline" size={14} color="#6B7280" />
+                    <Text className="text-gray-500 text-sm ml-1">
+                      {project.startDate || "Start date not provided"} - {project.endDate || "End date not provided"}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+              {projects.length > 2 && (
+                <View className="bg-gray-50 rounded-lg p-3 border border-gray-200/50 items-center">
+                  <Text className="text-gray-600 font-medium">
+                    +{projects.length - 2} more projects
+                  </Text>
+                </View>
+              )}
             </View>
-          </View>
-          
-          <View className="flex-row justify-end mt-3" style={{ gap: 8 }}>
-            <TouchableOpacity
-              onPress={() => handleEditProject(project)}
-              className="px-4 py-2 bg-blue-100 rounded-lg"
-            >
-              <Text className="text-blue-700 text-sm font-medium">Edit</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              onPress={() => handleRemoveProject(project.id)}
-              className="px-4 py-2 bg-red-100 rounded-lg"
-            >
-              <Text className="text-red-700 text-sm font-medium">Remove</Text>
-            </TouchableOpacity>
-          </View>
+          ) : (
+            <View className="bg-gray-50 rounded-lg p-8 items-center">
+              <View className="w-16 h-16 rounded-full bg-gray-200 items-center justify-center mb-3">
+                <Ionicons name="briefcase-outline" size={32} color="#9CA3AF" />
+              </View>
+              <Text className="text-gray-500 font-medium mb-2">No projects added yet</Text>
+              <Text className="text-gray-400 text-center text-sm">Tap Edit to add your projects</Text>
+            </View>
+          )}
         </View>
-      ))}
-      
-      {!isAddingProject && (
-        <Button
-          title="Add Project"
-          onPress={() => {
-            setIsAddingProject(true)
-            setEditingProjectId(null)
-            setNewProject({
-              title: "",
-              description: "",
-              startDate: "",
-              endDate: "",
-              projectImageFile: null,
-            })
-          }}
-          variant="outline"
-          style={{ marginTop: 10 }}
-        />
       )}
     </View>
   )
 
   const renderCertificatesSection = () => (
-    <View className="bg-white rounded-xl shadow-sm p-5 mb-4">
-      <Text className="text-lg font-bold text-gray-800 mb-4">Certificates</Text>
+    <View className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
+      <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
+            <Ionicons name="document-outline" size={18} color="#2563EB" />
+          </View>
+          <Text className="text-lg font-bold text-gray-800">Certificates</Text>
+        </View>
+        
+        <TouchableOpacity
+          onPress={() => editingSections.certificates ? saveSectionEdit('certificates') : toggleSectionEdit('certificates')}
+          className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full"
+        >
+          <Ionicons 
+            name={editingSections.certificates ? "checkmark" : "pencil"} 
+            size={14} 
+            color="#2563EB" 
+          />
+          <Text className="text-blue-600 font-medium ml-1 text-sm">
+            {editingSections.certificates ? "Done" : "Edit"}
+          </Text>
+        </TouchableOpacity>
+      </View>
       
-      {/* Certificate Form (Add/Edit) */}
-      {isAddingCertificate && (
+      {editingSections.certificates ? (
+        <>
+          {/* Certificate Form (Add/Edit) */}
+          {isAddingCertificate && (
         <View className="bg-gray-50 rounded-lg p-4 mb-4">
           <Text className="text-base font-semibold mb-3">
             {editingCertificateId ? "Edit Certificate" : "Add New Certificate"}
@@ -1676,129 +2100,285 @@ export default function EditPortfolioScreen() {
         </View>
       ))}
       
-      {!isAddingCertificate && (
-        <Button
-          title="Add Certificate"
-          onPress={() => {
-            setIsAddingCertificate(true)
-            setEditingCertificateId(null)
-            setNewCertificate({
-              courseName: "",
-              certificateNumber: "",
-              issueDate: "",
-              certificateFile: null,
-            })
-          }}
-          variant="outline"
-          style={{ marginTop: 10 }}
-        />
+          {!isAddingCertificate && (
+            <TouchableOpacity
+              onPress={() => {
+                setIsAddingCertificate(true)
+                setEditingCertificateId(null)
+                setNewCertificate({
+                  courseName: "",
+                  certificateNumber: "",
+                  issueDate: "",
+                  certificateFile: null,
+                })
+              }}
+              className="flex-row items-center justify-center bg-blue-50 rounded-lg py-3 mt-2 border border-blue-200"
+            >
+              <Ionicons name="add-circle-outline" size={20} color="#2563EB" />
+              <Text className="text-blue-600 font-medium ml-2">Add Certificate</Text>
+            </TouchableOpacity>
+          )}
+        </>
+      ) : (
+        <View>
+          {certificates && certificates.length > 0 ? (
+            <View className="space-y-3">
+              {certificates.slice(0, 2).map((certificate, index) => (
+                <View key={`cert-view-${index}`} className="bg-gray-50 rounded-lg p-4 border border-gray-200/50">
+                  <View className="flex-row items-center mb-2">
+                    {certificate.preview ? (
+                      <Image source={{ uri: certificate.preview }} className="w-12 h-12 rounded-md mr-3" />
+                    ) : (
+                      <View className="w-12 h-12 bg-gray-200 rounded-md items-center justify-center mr-3">
+                        <Ionicons name="document-outline" size={20} color="#9CA3AF" />
+                      </View>
+                    )}
+                    <View className="flex-1">
+                      <Text className="font-semibold text-gray-800">{certificate.courseName || "Untitled Certificate"}</Text>
+                      <Text className="text-sm text-gray-500">#{certificate.certificateNumber || "No number"}</Text>
+                    </View>
+                  </View>
+                  <View className="flex-row items-center">
+                    <Ionicons name="calendar-outline" size={14} color="#6B7280" />
+                    <Text className="text-gray-500 text-sm ml-1">
+                      Issued: {certificate.issueDate || "Date not provided"}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+              {certificates.length > 2 && (
+                <View className="bg-gray-50 rounded-lg p-3 border border-gray-200/50 items-center">
+                  <Text className="text-gray-600 font-medium">
+                    +{certificates.length - 2} more certificates
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View className="bg-gray-50 rounded-lg p-8 items-center">
+              <View className="w-16 h-16 rounded-full bg-gray-200 items-center justify-center mb-3">
+                <Ionicons name="document-outline" size={32} color="#9CA3AF" />
+              </View>
+              <Text className="text-gray-500 font-medium mb-2">No certificates added yet</Text>
+              <Text className="text-gray-400 text-center text-sm">Tap Edit to add your certificates</Text>
+            </View>
+          )}
+        </View>
       )}
     </View>
   )
 
   const renderReferencesSection = () => (
     <View className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
-      <View className="flex-row items-center mb-4">
-        <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
-          <Ionicons name="people-outline" size={18} color="#2563EB" />
+      <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
+            <Ionicons name="people-outline" size={18} color="#2563EB" />
+          </View>
+          <Text className="text-lg font-bold text-gray-800">Professional References</Text>
         </View>
-        <Text className="text-lg font-bold text-gray-800">Professional References</Text>
+        
+        <TouchableOpacity
+          onPress={() => editingSections.references ? saveSectionEdit('references') : toggleSectionEdit('references')}
+          className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full"
+        >
+          <Ionicons 
+            name={editingSections.references ? "checkmark" : "pencil"} 
+            size={14} 
+            color="#2563EB" 
+          />
+          <Text className="text-blue-600 font-medium ml-1 text-sm">
+            {editingSections.references ? "Done" : "Edit"}
+          </Text>
+        </TouchableOpacity>
       </View>
       
-      {portfolio?.references.map((reference, index) => (
-        <View key={`ref-${index}`} className="bg-gray-50 rounded-lg p-4 mb-3 border border-gray-200/70">
-          <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-sm font-semibold text-gray-700">Reference {index + 1}</Text>
-            <TouchableOpacity
-              onPress={() => removeArrayItem("references", index)}
-              className="bg-red-100 rounded-full p-1.5"
-            >
-              <Ionicons name="close" size={14} color="#EF4444" />
-            </TouchableOpacity>
-          </View>
+      {editingSections.references ? (
+        <>
+          {portfolio?.references.map((reference, index) => (
+            <View key={`ref-${index}`} className="bg-gray-50 rounded-lg p-4 mb-3 border border-gray-200/70">
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-sm font-semibold text-gray-700">Reference {index + 1}</Text>
+                <TouchableOpacity
+                  onPress={() => removeArrayItem("references", index)}
+                  className="bg-red-100 rounded-full p-1.5"
+                >
+                  <Ionicons name="close" size={14} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+              
+              <TextField
+                label="Name"
+                value={reference.name}
+                onChangeText={(text) => handleArrayChange("references", index, "name", text)}
+                placeholder="Enter reference name"
+                size="medium"
+              />
+              
+              <TextField
+                label="Relationship"
+                value={reference.relationship || ""}
+                onChangeText={(text) => handleArrayChange("references", index, "relationship", text)}
+                placeholder="E.g., Former Manager, Mentor, Colleague"
+                size="medium"
+              />
+              
+              <TextField
+                label="Email"
+                value={reference.email || ""}
+                onChangeText={(text) => handleArrayChange("references", index, "email", text)}
+                placeholder="Enter reference email"
+                keyboardType="email-address"
+                size="medium"
+              />
+              
+              <TextField
+                label="Phone"
+                value={reference.phone || ""}
+                onChangeText={(text) => handleArrayChange("references", index, "phone", text)}
+                placeholder="Enter reference phone number"
+                keyboardType="phone-pad"
+                size="medium"
+              />
+            </View>
+          ))}
           
-          <TextField
-            label="Name"
-            value={reference.name}
-            onChangeText={(text) => handleArrayChange("references", index, "name", text)}
-            placeholder="Enter reference name"
-            size="medium"
-          />
-          
-          <TextField
-            label="Relationship"
-            value={reference.relationship || ""}
-            onChangeText={(text) => handleArrayChange("references", index, "relationship", text)}
-            placeholder="E.g., Former Manager, Mentor, Colleague"
-            size="medium"
-          />
-          
-          <TextField
-            label="Email"
-            value={reference.email || ""}
-            onChangeText={(text) => handleArrayChange("references", index, "email", text)}
-            placeholder="Enter reference email"
-            keyboardType="email-address"
-            size="medium"
-          />
-          
-          <TextField
-            label="Phone"
-            value={reference.phone || ""}
-            onChangeText={(text) => handleArrayChange("references", index, "phone", text)}
-            placeholder="Enter reference phone number"
-            keyboardType="phone-pad"
-            size="medium"
-          />
+          <TouchableOpacity
+            onPress={() => addArrayItem("references", { name: "", relationship: "", email: "", phone: "" })}
+            className="flex-row items-center justify-center bg-blue-50 rounded-lg py-3 mt-2 border border-blue-200"
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#2563EB" />
+            <Text className="text-blue-600 font-medium ml-2">Add Reference</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <View>
+          {portfolio?.references && portfolio.references.length > 0 ? (
+            <View className="space-y-3">
+              {portfolio.references.slice(0, 2).map((reference, index) => (
+                <View key={`ref-view-${index}`} className="bg-gray-50 rounded-lg p-4 border border-gray-200/50">
+                  <Text className="font-semibold text-gray-800 text-base mb-1">
+                    {reference.name || "Name not provided"}
+                  </Text>
+                  <Text className="text-gray-600 font-medium mb-2">
+                    {reference.relationship || "Relationship not specified"}
+                  </Text>
+                  <View className="flex-row items-center mb-1">
+                    <Ionicons name="mail-outline" size={14} color="#6B7280" />
+                    <Text className="text-gray-500 text-sm ml-1">
+                      {reference.email || "Email not provided"}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center">
+                    <Ionicons name="call-outline" size={14} color="#6B7280" />
+                    <Text className="text-gray-500 text-sm ml-1">
+                      {reference.phone || "Phone not provided"}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+              {portfolio.references.length > 2 && (
+                <View className="bg-gray-50 rounded-lg p-3 border border-gray-200/50 items-center">
+                  <Text className="text-gray-600 font-medium">
+                    +{portfolio.references.length - 2} more references
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View className="bg-gray-50 rounded-lg p-8 items-center">
+              <View className="w-16 h-16 rounded-full bg-gray-200 items-center justify-center mb-3">
+                <Ionicons name="people-outline" size={32} color="#9CA3AF" />
+              </View>
+              <Text className="text-gray-500 font-medium mb-2">No references added yet</Text>
+              <Text className="text-gray-400 text-center text-sm">Tap Edit to add professional references</Text>
+            </View>
+          )}
         </View>
-      ))}
-      
-      <TouchableOpacity
-        onPress={() => addArrayItem("references", { name: "", relationship: "", email: "", phone: "" })}
-        className="flex-row items-center justify-center bg-blue-50 rounded-lg py-3 mt-2 border border-blue-200"
-      >
-        <Ionicons name="add-circle-outline" size={20} color="#2563EB" />
-        <Text className="text-blue-600 font-medium ml-2">Add Reference</Text>
-      </TouchableOpacity>
+      )}
     </View>
   )
 
   const renderPortfolioSettingsSection = () => (
-    <View className="bg-white rounded-xl shadow-sm p-5 mb-4">
-      <Text className="text-lg font-bold text-gray-800 mb-4">Portfolio Settings</Text>
-      
-      <View className="mb-4">
-        <Text className="mb-2 text-gray-700 font-medium">Visibility</Text>
-        <View className="bg-white border border-gray-300 rounded-lg p-2">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {['PUBLIC', 'PRIVATE'].map((type) => (
-              <TouchableOpacity
-                key={type}
-                onPress={() => handlePortfolioChange("visibility", type)}
-                className={`px-4 py-2 mx-1 rounded-full ${
-                  portfolio?.visibility === type ? 'bg-blue-500' : 'bg-gray-100'
-                }`}
-              >
-                <Text
-                  className={`${
-                    portfolio?.visibility === type ? 'text-white' : 'text-gray-700'
-                  } font-medium`}
-                >
-                  {type}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+    <View className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
+      <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
+            <Ionicons name="settings-outline" size={18} color="#2563EB" />
+          </View>
+          <Text className="text-lg font-bold text-gray-800">Portfolio Settings</Text>
         </View>
+        
+        <TouchableOpacity
+          onPress={() => editingSections.settings ? saveSectionEdit('settings') : toggleSectionEdit('settings')}
+          className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full"
+        >
+          <Ionicons 
+            name={editingSections.settings ? "checkmark" : "pencil"} 
+            size={14} 
+            color="#2563EB" 
+          />
+          <Text className="text-blue-600 font-medium ml-1 text-sm">
+            {editingSections.settings ? "Done" : "Edit"}
+          </Text>
+        </TouchableOpacity>
       </View>
       
-      <TextField
-        label="Design Template"
-        value={portfolio?.designTemplate || ""}
-        onChangeText={(text) => handlePortfolioChange("designTemplate", text)}
-        placeholder="Enter design template name"
-        size="medium"
-      />
+      {editingSections.settings ? (
+        <>
+          <View className="mb-4">
+            <Text className="mb-2 text-gray-700 font-medium">Visibility</Text>
+            <View className="bg-white border border-gray-300 rounded-lg p-2">
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {['PUBLIC', 'PRIVATE'].map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    onPress={() => handlePortfolioChange("visibility", type)}
+                    className={`px-4 py-2 mx-1 rounded-full ${
+                      portfolio?.visibility === type ? 'bg-blue-500' : 'bg-gray-100'
+                    }`}
+                  >
+                    <Text
+                      className={`${
+                        portfolio?.visibility === type ? 'text-white' : 'text-gray-700'
+                      } font-medium`}
+                    >
+                      {type}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+          
+          <TextField
+            label="Design Template"
+            value={portfolio?.designTemplate || ""}
+            onChangeText={(text) => handlePortfolioChange("designTemplate", text)}
+            placeholder="Enter design template name"
+            size="medium"
+          />
+        </>
+      ) : (
+        <View className="space-y-4">
+          <View>
+            <Text className="text-sm font-medium text-gray-600 mb-1">Visibility</Text>
+            <View className="flex-row items-center">
+              <View className={`w-3 h-3 rounded-full mr-2 ${
+                portfolio?.visibility === 'PUBLIC' ? 'bg-green-500' : 'bg-gray-500'
+              }`} />
+              <Text className="text-base text-gray-800">
+                {portfolio?.visibility === 'PUBLIC' ? 'Public - Visible to everyone' : 'Private - Only visible to you'}
+              </Text>
+            </View>
+          </View>
+          
+          <View>
+            <Text className="text-sm font-medium text-gray-600 mb-1">Design Template</Text>
+            <Text className="text-base text-gray-800">{portfolio?.designTemplate || "Default template"}</Text>
+          </View>
+        </View>
+      )}
     </View>
   )
 

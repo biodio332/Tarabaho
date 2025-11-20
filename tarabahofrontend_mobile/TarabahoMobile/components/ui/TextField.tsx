@@ -65,7 +65,7 @@ const TextField = forwardRef<TextInput, TextFieldProps>(
                 size === 'large' && styles.largeInput,
                 inputStyle
               ]}
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor="#6B7280"
               onFocus={(e) => {
                 setFocused(true)
                 onFocus?.(e)

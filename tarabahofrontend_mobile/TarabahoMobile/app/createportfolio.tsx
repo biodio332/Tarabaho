@@ -10,6 +10,7 @@ import {
   Platform,
   StatusBar,
   TextInput,
+  Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,6 +22,7 @@ import Button from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:8080";
+const { width } = Dimensions.get('window');
 
 // Utility function to handle date conversion
 const parseDate = (dateString: string | null | undefined): Date => {
@@ -33,6 +35,23 @@ const parseDate = (dateString: string | null | undefined): Date => {
 };
 
 const validSkillTypes = ["TECHNICAL", "LANGUAGE", "DIGITAL", "SOFT", "INDUSTRY_SPECIFIC"];
+
+// Steps configuration
+const steps = [
+  { id: 0, name: "Profile Photo", required: false, icon: "person" },
+  { id: 1, name: "Basic Information", required: true, icon: "document-text" },
+  { id: 2, name: "TESDA Information", required: false, icon: "school" },
+  { id: 3, name: "Contact Information", required: false, icon: "call" },
+  { id: 4, name: "Projects", required: false, icon: "folder" },
+  { id: 5, name: "Certificates", required: false, icon: "medal" },
+  { id: 6, name: "Skills", required: false, icon: "build" },
+  { id: 7, name: "Experiences", required: false, icon: "briefcase" },
+  { id: 8, name: "Awards & Recognitions", required: false, icon: "trophy" },
+  { id: 9, name: "Continuing Education", required: false, icon: "library" },
+  { id: 10, name: "Professional Memberships", required: false, icon: "people" },
+  { id: 11, name: "References", required: false, icon: "chatbubbles" },
+  { id: 12, name: "Additional Information", required: true, icon: "information-circle" },
+];
 
 export default function CreatePortfolio() {
   const router = useRouter();
@@ -157,6 +176,186 @@ export default function CreatePortfolio() {
   const [graduateId, setGraduateId] = useState<string | null>(null);
   const [editingCertificateId, setEditingCertificateId] = useState<number | null>(null);
   
+  // Multi-step state
+  const [currentStep, setCurrentStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState(new Set<number>());
+  
+  const totalSteps = steps.length;
+  const progressPercentage = ((currentStep + 1) / totalSteps) * 100;
+  
+  // Step validation function
+  const validateStep = (step: number, showError = true) => {
+    switch (step) {
+      case 0: // Profile Photo - optional
+        return true;
+      case 1: // Basic Information
+        if (!formData.fullName || formData.fullName.trim() === "") {
+          if (showError) setError("Please fill in your full name. This field is required.");
+          return false;
+        }
+        if (!formData.professionalSummary || formData.professionalSummary.trim() === "") {
+          if (showError) setError("Please fill in your professional summary. This field is required.");
+          return false;
+        }
+        if (formData.professionalSummary.length > 1000) {
+          if (showError) setError("Professional summary cannot exceed 1000 characters.");
+          return false;
+        }
+        return true;
+      case 12: // Additional Information
+        if (!formData.primaryCourseType || formData.primaryCourseType.trim() === "") {
+          if (showError) setError("Please fill in your primary course type. This field is required.");
+          return false;
+        }
+        return true;
+      default:
+        return true; // Other steps are optional
+    }
+  };
+
+  // Check if a step is completed
+  const isStepCompleted = (stepIndex: number) => {
+    if (steps[stepIndex].required) {
+      return completedSteps.has(stepIndex) || validateStep(stepIndex, false);
+    }
+    
+    // For optional steps, check if they have any data
+    switch (stepIndex) {
+      case 0: // Profile Photo
+        return previewAvatar !== "" || selectedAvatarFile !== null;
+      case 2: // TESDA Information
+        return !!(formData.ncLevel || formData.trainingCenter || formData.scholarshipType || 
+               formData.trainingDuration || formData.tesdaRegistrationNumber);
+      case 3: // Contact Information
+        return !!(formData.email || formData.phone || formData.website);
+      case 4: // Projects
+        return projects.length > 0;
+      case 5: // Certificates
+        return certificates.length > 0;
+      case 6: // Skills
+        return skills.length > 0;
+      case 7: // Experiences
+        return experiences.length > 0;
+      case 8: // Awards
+        return awardsRecognitions.length > 0;
+      case 9: // Education
+        return continuingEducations.length > 0;
+      case 10: // Memberships
+        return professionalMemberships.length > 0;
+      case 11: // References
+        return references.length > 0;
+      default:
+        return false;
+    }
+  };
+
+  // Check if a step can be accessed
+  const canAccessStep = (stepIndex: number) => {
+    if (stepIndex === 0) return true;
+    if (stepIndex === currentStep) return true;
+    
+    // Check all previous required steps
+    for (let i = 0; i < stepIndex; i++) {
+      if (steps[i].required && !completedSteps.has(i)) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Mark step as completed if it's a required step
+  const markStepAsCompleted = (stepIndex: number) => {
+    if (steps[stepIndex].required && validateStep(stepIndex, false)) {
+      setCompletedSteps((prev) => new Set([...prev, stepIndex]));
+    }
+  };
+
+  // Navigation functions
+  const handleNextStep = () => {
+    if (validateStep(currentStep)) {
+      markStepAsCompleted(currentStep);
+      setError("");
+      if (currentStep < totalSteps - 1) {
+        setCurrentStep(currentStep + 1);
+      }
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep > 0) {
+      setError("");
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleStepClick = (stepIndex: number) => {
+    if (stepIndex >= 0 && stepIndex < totalSteps) {
+      if (stepIndex === currentStep) {
+        return;
+      }
+      
+      if (canAccessStep(stepIndex)) {
+        setError("");
+        setCurrentStep(stepIndex);
+      } else {
+        // Find the first incomplete required step
+        for (let i = 0; i < stepIndex; i++) {
+          if (steps[i].required && !completedSteps.has(i)) {
+            setError(`Please complete the "${steps[i].name}" section before proceeding.`);
+            setCurrentStep(i);
+            return;
+          }
+        }
+      }
+    }
+  };
+
+  // Update completed steps when form data changes
+  useEffect(() => {
+    steps.forEach((step, index) => {
+      if (isStepCompleted(index)) {
+        setCompletedSteps((prev) => {
+          if (!prev.has(index)) {
+            return new Set([...prev, index]);
+          }
+          return prev;
+        });
+      } else if (step.required) {
+        setCompletedSteps((prev) => {
+          if (prev.has(index)) {
+            const newSet = new Set(prev);
+            newSet.delete(index);
+            return newSet;
+          }
+          return prev;
+        });
+      }
+    });
+  }, [
+    formData.fullName,
+    formData.professionalSummary,
+    formData.primaryCourseType,
+    formData.ncLevel,
+    formData.trainingCenter,
+    formData.scholarshipType,
+    formData.trainingDuration,
+    formData.tesdaRegistrationNumber,
+    formData.email,
+    formData.phone,
+    formData.website,
+    previewAvatar,
+    selectedAvatarFile,
+    projects,
+    certificates,
+    skills,
+    experiences,
+    awardsRecognitions,
+    continuingEducations,
+    professionalMemberships,
+    references,
+    currentStep,
+  ]);
+
   // Fetch token and graduate data on component mount
   useEffect(() => {
     const fetchTokenAndProfileData = async () => {
@@ -759,20 +958,7 @@ export default function CreatePortfolio() {
     }
   };
   
-  // Helper component for section headers
-  const SectionHeader = ({ title, onAdd }: { title: string, onAdd?: () => void }) => (
-    <View className="flex-row items-center justify-between mb-4 border-b border-gray-200 pb-2">
-      <Text className="text-xl font-bold text-gray-800">{title}</Text>
-      {onAdd && (
-        <TouchableOpacity
-          onPress={onAdd}
-          className="bg-blue-500 p-2 rounded-full"
-        >
-          <Ionicons name="add" size={18} color="white" />
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+
 
   // Helper component for skill type picker
   const SkillTypePicker = ({ value, onChange }: { value: string, onChange: (value: string) => void }) => (
@@ -841,9 +1027,8 @@ export default function CreatePortfolio() {
     <SafeAreaView 
       className="flex-1 bg-gray-50" 
       style={{ backgroundColor: '#3b82f6' }}
-      edges={['top']} // Only apply safe area to the top edge
+      edges={['top']}
     >
-      {/* Status bar styling */}
       <StatusBar backgroundColor="#3b82f6" barStyle="light-content" />
       
       {/* Header */}
@@ -858,17 +1043,84 @@ export default function CreatePortfolio() {
           </TouchableOpacity>
         </View>
         
-        {/* Centered title with absolute positioning to ensure perfect centering */}
+        {/* Title and Progress */}
         <View className="w-full items-center px-4 mt-10">
           <Text className="text-white text-2xl font-bold text-center">Create Portfolio</Text>
           <Text className="text-blue-100 text-center mt-2 px-4">
-            Showcase your skills and achievements to potential employers
+            Step {currentStep + 1} of {totalSteps}: {steps[currentStep].name}
+          </Text>
+          
+          {/* Progress Bar */}
+          <View className="w-full bg-blue-400 rounded-full h-2 mt-4">
+            <View 
+              className="bg-white h-2 rounded-full transition-all duration-300"
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </View>
+          <Text className="text-blue-100 text-sm mt-2">
+            {Math.round(progressPercentage)}% Complete
           </Text>
         </View>
       </View>
 
-      {/* Content area with white background */}
-      <View className="flex-1 bg-gray-50 rounded-t-3xl overflow-hidden mt-1" style={{ paddingBottom: Platform.OS === 'ios' ? 20 : 0 }}>
+      {/* Step Indicators - Horizontal scrollable */}
+      <View className="bg-white px-4 py-3 border-b border-gray-200">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View className="flex-row space-x-3">
+            {steps.map((step, index) => {
+              const isAccessible = canAccessStep(index);
+              const isCompleted = completedSteps.has(index) || (step.required && validateStep(index, false));
+              const isCurrent = index === currentStep;
+              
+              return (
+                <TouchableOpacity
+                  key={step.id}
+                  onPress={() => handleStepClick(index)}
+                  disabled={loading || !isAccessible}
+                  className={`flex-row items-center px-4 py-3 rounded-full border ${
+                    isCurrent
+                      ? "bg-blue-500 border-blue-500"
+                      : isCompleted
+                      ? "bg-green-500 border-green-500"
+                      : !isAccessible
+                      ? "bg-gray-100 border-gray-200"
+                      : "bg-white border-gray-300"
+                  }`}
+                >
+                  <Ionicons 
+                    name={isCompleted ? "checkmark-circle" : step.icon as any} 
+                    size={16} 
+                    color={
+                      isCurrent || isCompleted
+                        ? "white"
+                        : !isAccessible
+                        ? "#9CA3AF"
+                        : "#6B7280"
+                    } 
+                  />
+                  <Text 
+                    className={`ml-1 text-xs font-medium ${
+                      isCurrent || isCompleted
+                        ? "text-white"
+                        : !isAccessible
+                        ? "text-gray-400"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    {step.name}
+                  </Text>
+                  {step.required && (
+                    <Text className="ml-1 text-red-500 text-xs">*</Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </ScrollView>
+      </View>
+
+      {/* Content area */}
+      <View className="flex-1 bg-gray-50">
         {error ? (
           <View className="m-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <Text className="text-red-600 text-center">{error}</Text>
@@ -876,277 +1128,254 @@ export default function CreatePortfolio() {
         ) : null}
 
         <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
-        {/* Profile Photo */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <SectionHeader title="Profile Photo" />
-          <View className="items-center">
-            <TouchableOpacity onPress={handleAvatarSelect}>
-              {previewAvatar ? (
-                <Image
-                  source={{ uri: previewAvatar }}
-                  className="w-32 h-32 rounded-full"
-                  resizeMode="cover"
-                />
-              ) : (
-                <View className="w-32 h-32 rounded-full bg-gray-200 items-center justify-center">
-                  <Ionicons name="person" size={64} color="#9ca3af" />
-                </View>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={handleAvatarSelect} 
-              className="bg-blue-500 px-4 py-2 rounded-lg mt-4"
-            >
-              <Text className="text-white font-medium">Select Photo</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        
-        {/* Basic Information */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <SectionHeader title="Basic Information" />
-          
-          <TextField
-            label="Full Name *"
-            value={formData.fullName}
-            onChangeText={(text) => handleInputChange("fullName", text)}
-            placeholder="Enter your full name"
-          />
-          
-          <TextField
-            label="Professional Title"
-            value={formData.professionalTitle}
-            onChangeText={(text) => handleInputChange("professionalTitle", text)}
-            placeholder="Enter your professional title"
-          />
-          
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-gray-700 mb-2">Professional Summary *</Text>
-            <TextInput
-              multiline
-              numberOfLines={4}
-              value={formData.professionalSummary}
-              onChangeText={(text) => handleInputChange("professionalSummary", text)}
-              placeholder="Brief summary of your professional background"
-              className="border border-gray-300 bg-gray-50 rounded-lg p-4 text-base text-gray-800 min-h-[120px]"
-              textAlignVertical="top"
-            />
-          </View>
-        </View>
-        
-        {/* TESDA Information */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <SectionHeader title="TESDA Information" />
-          
-          <TextField
-            label="NC Level"
-            value={formData.ncLevel}
-            onChangeText={(text) => handleInputChange("ncLevel", text)}
-            placeholder="e.g., NC II"
-          />
-          
-          <TextField
-            label="Training Center/Institution"
-            value={formData.trainingCenter}
-            onChangeText={(text) => handleInputChange("trainingCenter", text)}
-            placeholder="Enter training center or institution"
-          />
-          
-          <TextField
-            label="Scholarship Type"
-            value={formData.scholarshipType}
-            onChangeText={(text) => handleInputChange("scholarshipType", text)}
-            placeholder="e.g., Full Scholarship"
-          />
-          
-          <TextField
-            label="Training Duration"
-            value={formData.trainingDuration}
-            onChangeText={(text) => handleInputChange("trainingDuration", text)}
-            placeholder="e.g., January 2023 - June 2023"
-          />
-          
-          <TextField
-            label="TESDA Registration Number"
-            value={formData.tesdaRegistrationNumber}
-            onChangeText={(text) => handleInputChange("tesdaRegistrationNumber", text)}
-            placeholder="Enter TESDA registration number"
-          />
-        </View>
-        
-        {/* Contact Information */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <SectionHeader title="Contact Information" />
-          
-          <TextField
-            label="Email"
-            value={formData.email}
-            onChangeText={(text) => handleInputChange("email", text)}
-            placeholder="Enter your email"
-            keyboardType="email-address"
-          />
-          
-          <TextField
-            label="Phone"
-            value={formData.phone}
-            onChangeText={(text) => handleInputChange("phone", text)}
-            placeholder="Enter your phone number"
-            keyboardType="phone-pad"
-          />
-          
-          <TextField
-            label="Website"
-            value={formData.website}
-            onChangeText={(text) => handleInputChange("website", text)}
-            placeholder="Enter your website URL"
-            keyboardType="url"
-          />
-        </View>
-        
-        {/* Skills Section */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <SectionHeader 
-            title="Skills" 
-            onAdd={() => {
-              setIsAddingSkill(true);
-              setNewSkill({ name: "", type: "TECHNICAL", proficiencyLevel: "" });
-            }}
-          />
-          
-          {isAddingSkill && (
-            <View className="bg-blue-50 p-4 rounded-lg mb-4">
-              <TextField
-                label="Skill Name *"
-                value={newSkill.name}
-                onChangeText={(text) => setNewSkill(prev => ({ ...prev, name: text }))}
-                placeholder="e.g., Welding"
-              />
-              
-              <SkillTypePicker 
-                value={newSkill.type} 
-                onChange={(value) => setNewSkill(prev => ({ ...prev, type: value }))} 
-              />
-              
-              <View className="border border-gray-300 rounded-lg p-3 my-2">
-                <Text className="text-sm font-medium mb-2 text-gray-700">Proficiency Level</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {["Beginner", "Intermediate", "Advanced"].map((level) => (
-                    <TouchableOpacity
-                      key={level}
-                      onPress={() => setNewSkill(prev => ({ ...prev, proficiencyLevel: level }))}
-                      className={`mr-2 px-4 py-2 rounded-full ${
-                        level === newSkill.proficiencyLevel ? "bg-blue-500" : "bg-gray-200"
-                      }`}
-                    >
-                      <Text
-                        className={`text-sm ${
-                          level === newSkill.proficiencyLevel ? "text-white font-semibold" : "text-gray-700"
-                        }`}
-                      >
-                        {level}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+          {/* Step Content */}
+          {currentStep === 0 && (
+            // Profile Photo Step
+            <View className={`bg-white rounded-2xl p-5 shadow-sm mb-4 ${
+              isStepCompleted(0) ? 'border-2 border-green-200' : ''
+            }`}>
+              <View className="flex-row items-center mb-4">
+                <View className={`w-1 h-8 rounded-full mr-3 ${
+                  isStepCompleted(0) ? 'bg-green-500' : 'bg-blue-500'
+                }`} />
+                <Text className="text-xl font-bold text-gray-800">Profile Photo</Text>
+                {!steps[0].required && (
+                  <Text className="text-gray-500 ml-2">(Optional)</Text>
+                )}
               </View>
               
-              <View className="flex-row mt-4 justify-between">
-                <Button 
-                  title="Add Skill" 
-                  onPress={handleAddSkill} 
-                  style={{ flex: 1, marginRight: 5 }} 
-                />
-                <Button 
-                  title="Cancel" 
-                  onPress={() => setIsAddingSkill(false)} 
-                  variant="outline" 
-                  style={{ flex: 1, marginLeft: 5 }} 
-                />
+              <View className="items-center">
+                <TouchableOpacity onPress={handleAvatarSelect}>
+                  {previewAvatar ? (
+                    <Image
+                      source={{ uri: previewAvatar }}
+                      className="w-32 h-32 rounded-full border-4 border-white shadow-lg"
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View className="w-32 h-32 rounded-full border-2 border-dashed border-gray-300 bg-gray-50 items-center justify-center">
+                      <Ionicons name="person-outline" size={48} color="#6B7280" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={handleAvatarSelect} 
+                  className="bg-blue-500 px-6 py-3 rounded-lg mt-4 shadow-sm"
+                >
+                  <Text className="text-white font-medium">Select Photo</Text>
+                </TouchableOpacity>
+                <Text className="text-gray-600 text-center mt-2 text-sm">
+                  Add a professional photo to make your portfolio stand out
+                </Text>
               </View>
             </View>
           )}
-          
-          {skills.length > 0 ? (
-            <View className="space-y-3">
-              {skills.map((skill, index) => (
-                <View key={index} className="bg-gray-50 p-3 rounded-lg flex-row justify-between items-center border border-gray-200">
-                  <View className="flex-1">
-                    <Text className="font-semibold text-gray-800">{skill.name}</Text>
-                    <Text className="text-sm text-gray-600">Type: {skill.type}</Text>
-                    {skill.proficiencyLevel && (
-                      <Text className="text-sm text-gray-600">Level: {skill.proficiencyLevel}</Text>
-                    )}
-                  </View>
-                  <TouchableOpacity 
-                    onPress={() => handleRemoveSkill(index)} 
-                    className="p-2"
-                  >
-                    <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <View className="py-4 items-center">
-              <Text className="text-gray-500">No skills added yet</Text>
-            </View>
-          )}
-        </View>
-        
-        {/* Projects Section */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <SectionHeader 
-            title="Projects" 
-            onAdd={() => {
-              setIsAddingProject(true);
-              setNewProject({
-                title: "",
-                description: "",
-                startDate: "",
-                endDate: "",
-                projectImageFile: null,
-                preview: "",
-              });
-            }}
-          />
-          
-          {isAddingProject && (
-            <View className="bg-blue-50 p-4 rounded-lg mb-4">
+
+          {currentStep === 1 && (
+            // Basic Information Step
+            <View className={`bg-white rounded-2xl p-5 shadow-sm mb-4 ${
+              isStepCompleted(1) ? 'border-2 border-green-200' : ''
+            }`}>
+              <View className="flex-row items-center mb-4">
+                <View className={`w-1 h-8 rounded-full mr-3 ${
+                  isStepCompleted(1) ? 'bg-green-500' : 'bg-blue-500'
+                }`} />
+                <Text className="text-xl font-bold text-gray-800">Basic Information</Text>
+                <Text className="text-red-500 ml-2">*Required</Text>
+              </View>
+              
               <TextField
-                label="Project Title *"
-                value={newProject.title}
-                onChangeText={(text) => setNewProject(prev => ({ ...prev, title: text }))}
-                placeholder="Enter project title"
+                label="Full Name *"
+                value={formData.fullName}
+                onChangeText={(text) => handleInputChange("fullName", text)}
+                placeholder="Enter your full name"
+              />
+              
+              <TextField
+                label="Professional Title"
+                value={formData.professionalTitle}
+                onChangeText={(text) => handleInputChange("professionalTitle", text)}
+                placeholder="Enter your professional title"
               />
               
               <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">Description</Text>
+                <Text className="text-sm font-medium text-gray-700 mb-2">Professional Summary *</Text>
                 <TextInput
                   multiline
-                  numberOfLines={3}
-                  value={newProject.description}
-                  onChangeText={(text) => setNewProject(prev => ({ ...prev, description: text }))}
-                  placeholder="Describe your project"
-                  className="border border-gray-300 bg-gray-50 rounded-lg p-4 text-base text-gray-800 min-h-[100px]"
+                  numberOfLines={4}
+                  value={formData.professionalSummary}
+                  onChangeText={(text) => handleInputChange("professionalSummary", text)}
+                  placeholder="Brief summary of your professional background (max 1000 characters)"
+                  placeholderTextColor="#6B7280"
+                  className="border border-gray-300 bg-gray-50 rounded-lg p-4 text-base text-gray-800 min-h-[120px]"
                   textAlignVertical="top"
+                  maxLength={1000}
                 />
+                <Text className="text-gray-500 text-xs mt-1">
+                  {formData.professionalSummary.length}/1000 characters
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {currentStep === 2 && (
+            // TESDA Information Step
+            <View className={`bg-white rounded-2xl p-5 shadow-sm mb-4 ${
+              isStepCompleted(2) ? 'border-2 border-green-200' : ''
+            }`}>
+              <View className="flex-row items-center mb-4">
+                <View className={`w-1 h-8 rounded-full mr-3 ${
+                  isStepCompleted(2) ? 'bg-green-500' : 'bg-blue-500'
+                }`} />
+                <Text className="text-xl font-bold text-gray-800">TESDA Information</Text>
+                <Text className="text-gray-500 ml-2">(Optional)</Text>
               </View>
               
-              <DatePicker
-                label="Start Date"
-                value={parseDate(newProject.startDate)}
-                onChange={(date) => setNewProject(prev => ({ ...prev, startDate: date.toISOString().split('T')[0] }))}
+              <TextField
+                label="NC Level"
+                value={formData.ncLevel}
+                onChangeText={(text) => handleInputChange("ncLevel", text)}
+                placeholder="e.g., NC II"
               />
               
-              <DatePicker
-                label="End Date"
-                value={parseDate(newProject.endDate)}
-                onChange={(date) => setNewProject(prev => ({ ...prev, endDate: date.toISOString().split('T')[0] }))}
+              <TextField
+                label="Training Center/Institution"
+                value={formData.trainingCenter}
+                onChangeText={(text) => handleInputChange("trainingCenter", text)}
+                placeholder="Enter training center or institution"
               />
               
+              <TextField
+                label="Scholarship Type"
+                value={formData.scholarshipType}
+                onChangeText={(text) => handleInputChange("scholarshipType", text)}
+                placeholder="e.g., Full Scholarship"
+              />
+              
+              <TextField
+                label="Training Duration"
+                value={formData.trainingDuration}
+                onChangeText={(text) => handleInputChange("trainingDuration", text)}
+                placeholder="e.g., January 2023 - June 2023"
+              />
+              
+              <TextField
+                label="TESDA Registration Number"
+                value={formData.tesdaRegistrationNumber}
+                onChangeText={(text) => handleInputChange("tesdaRegistrationNumber", text)}
+                placeholder="Enter TESDA registration number"
+              />
+            </View>
+          )}
+
+          {currentStep === 3 && (
+            // Contact Information Step
+            <View className={`bg-white rounded-2xl p-5 shadow-sm mb-4 ${
+              isStepCompleted(3) ? 'border-2 border-green-200' : ''
+            }`}>
+              <View className="flex-row items-center mb-4">
+                <View className={`w-1 h-8 rounded-full mr-3 ${
+                  isStepCompleted(3) ? 'bg-green-500' : 'bg-blue-500'
+                }`} />
+                <Text className="text-xl font-bold text-gray-800">Contact Information</Text>
+                <Text className="text-gray-500 ml-2">(Optional)</Text>
+              </View>
+              
+              <TextField
+                label="Email"
+                value={formData.email}
+                onChangeText={(text) => handleInputChange("email", text)}
+                placeholder="Enter your email"
+                keyboardType="email-address"
+              />
+              
+              <TextField
+                label="Phone"
+                value={formData.phone}
+                onChangeText={(text) => handleInputChange("phone", text)}
+                placeholder="Enter your phone number"
+                keyboardType="phone-pad"
+              />
+              
+              <TextField
+                label="Website"
+                value={formData.website}
+                onChangeText={(text) => handleInputChange("website", text)}
+                placeholder="Enter your website URL"
+                keyboardType="url"
+              />
+            </View>
+          )}
+
+          {currentStep === 4 && (
+            // Projects Step
+            <View className={`bg-white rounded-2xl p-5 shadow-sm mb-4 ${
+              isStepCompleted(4) ? 'border-2 border-green-200' : ''
+            }`}>
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center">
+                  <View className={`w-1 h-8 rounded-full mr-3 ${
+                    isStepCompleted(4) ? 'bg-green-500' : 'bg-blue-500'
+                  }`} />
+                  <Text className="text-xl font-bold text-gray-800">Projects</Text>
+                  <Text className="text-gray-500 ml-2">(Optional)</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsAddingProject(true);
+                    setNewProject({
+                      title: "",
+                      description: "",
+                      startDate: "",
+                      endDate: "",
+                      projectImageFile: null,
+                      preview: "",
+                    });
+                  }}
+                  className="bg-blue-500 p-2 rounded-full"
+                >
+                  <Ionicons name="add" size={18} color="white" />
+                </TouchableOpacity>
+              </View>
+
+              {isAddingProject && (
+                <View className="bg-blue-50 p-4 rounded-lg mb-4">
+                  <TextField
+                    label="Project Title *"
+                    value={newProject.title}
+                    onChangeText={(text) => setNewProject(prev => ({ ...prev, title: text }))}
+                    placeholder="Enter project title"
+                  />
+                  
+                  <View className="mb-4">
+                    <Text className="text-sm font-medium text-gray-700 mb-2">Description</Text>
+                    <TextInput
+                      multiline
+                      numberOfLines={3}
+                      value={newProject.description}
+                      onChangeText={(text) => setNewProject(prev => ({ ...prev, description: text }))}
+                      placeholder="Describe your project"
+                      placeholderTextColor="#6B7280"
+                      className="border border-gray-300 bg-gray-50 rounded-lg p-4 text-base text-gray-800 min-h-[100px]"
+                      textAlignVertical="top"
+                    />
+                  </View>
+                  
+                  <DatePicker
+                    label="Start Date"
+                    value={parseDate(newProject.startDate)}
+                    onChange={(date) => setNewProject(prev => ({ ...prev, startDate: date.toISOString().split('T')[0] }))}
+                  />
+                  
+                  <DatePicker
+                    label="End Date"
+                    value={parseDate(newProject.endDate)}
+                    onChange={(date) => setNewProject(prev => ({ ...prev, endDate: date.toISOString().split('T')[0] }))}
+                  />
+                  
               <View className="items-center my-4">
                 <Text className="text-sm font-medium text-gray-700 mb-2">Project Image *</Text>
-                <TouchableOpacity onPress={handleProjectImageSelect}>
+                <TouchableOpacity onPress={handleProjectImageSelect} className="w-full">
                   {newProject.preview ? (
                     <Image
                       source={{ uri: newProject.preview }}
@@ -1154,607 +1383,869 @@ export default function CreatePortfolio() {
                       resizeMode="cover"
                     />
                   ) : (
-                    <View className="w-full h-48 rounded-lg bg-gray-200 items-center justify-center">
-                      <Ionicons name="image" size={48} color="#9ca3af" />
-                      <Text className="text-gray-500 mt-2">Tap to select image</Text>
+                    <View className="w-full h-48 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 items-center justify-center">
+                      <View className="items-center">
+                        <Ionicons name="image-outline" size={48} color="#6B7280" />
+                        <Text className="text-gray-600 mt-3 font-medium">Tap to select image</Text>
+                        <Text className="text-gray-500 text-sm mt-1">JPG, PNG or GIF</Text>
+                      </View>
                     </View>
                   )}
                 </TouchableOpacity>
-              </View>
-              
-              <View className="flex-row mt-4 justify-between">
-                <Button 
-                  title="Add Project" 
-                  onPress={handleAddProject} 
-                  style={{ flex: 1, marginRight: 5 }} 
-                />
-                <Button 
-                  title="Cancel" 
-                  onPress={() => setIsAddingProject(false)} 
-                  variant="outline" 
-                  style={{ flex: 1, marginLeft: 5 }} 
-                />
-              </View>
-            </View>
-          )}
-          
-          {projects.length > 0 ? (
-            <View className="space-y-4">
-              {projects.map((project) => (
-                <View key={project.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                  <View className="flex-row justify-between items-center mb-2">
-                    <Text className="font-semibold text-lg text-gray-800">{project.title}</Text>
-                    <TouchableOpacity onPress={() => handleRemoveProject(project.id)}>
-                      <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                    </TouchableOpacity>
-                  </View>
-                  {project.preview && (
-                    <Image
-                      source={{ uri: project.preview }}
-                      className="w-full h-36 rounded-lg my-2"
-                      resizeMode="cover"
+              </View>                  <View className="flex-row mt-4 justify-between">
+                    <Button 
+                      title="Add Project" 
+                      onPress={handleAddProject} 
+                      style={{ flex: 1, marginRight: 5 }} 
                     />
-                  )}
-                  {project.description && (
-                    <Text className="text-gray-600 mb-2">{project.description}</Text>
-                  )}
-                  <Text className="text-sm text-gray-500">
-                    {project.startDate ? new Date(project.startDate).toLocaleDateString() : 'Start: N/A'} - 
-                    {project.endDate ? new Date(project.endDate).toLocaleDateString() : ' End: N/A'}
+                    <Button 
+                      title="Cancel" 
+                      onPress={() => setIsAddingProject(false)} 
+                      variant="outline" 
+                      style={{ flex: 1, marginLeft: 5 }} 
+                    />
+                  </View>
+                </View>
+              )}
+              
+              {projects.length > 0 ? (
+                <View className="space-y-4">
+                  {projects.map((project) => (
+                    <View key={project.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                      <View className="flex-row justify-between items-center mb-2">
+                        <Text className="font-semibold text-lg text-gray-800">{project.title}</Text>
+                        <TouchableOpacity onPress={() => handleRemoveProject(project.id)}>
+                          <Ionicons name="trash-outline" size={20} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+                      {project.preview && (
+                        <Image
+                          source={{ uri: project.preview }}
+                          className="w-full h-36 rounded-lg my-2"
+                          resizeMode="cover"
+                        />
+                      )}
+                      {project.description && (
+                        <Text className="text-gray-600 mb-2">{project.description}</Text>
+                      )}
+                      <Text className="text-sm text-gray-500">
+                        {project.startDate ? new Date(project.startDate).toLocaleDateString() : 'Start: N/A'} - 
+                        {project.endDate ? new Date(project.endDate).toLocaleDateString() : ' End: N/A'}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View className="py-8 items-center">
+                  <Ionicons name="folder-outline" size={48} color="#9CA3AF" />
+                  <Text className="text-gray-500 mt-2">No projects added yet</Text>
+                  <Text className="text-gray-400 text-sm text-center mt-1">
+                    Showcase your work and achievements
                   </Text>
                 </View>
-              ))}
-            </View>
-          ) : (
-            <View className="py-4 items-center">
-              <Text className="text-gray-500">No projects added yet</Text>
+              )}
             </View>
           )}
-        </View>
-        
-        {/* Certificates Section */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <SectionHeader 
-            title="Certificates" 
-            onAdd={() => {
-              setIsAddingCertificate(true);
-              setEditingCertificateId(null);
-              setNewCertificate({
-                courseName: "",
-                certificateNumber: "",
-                issueDate: "",
-                certificateFile: null,
-                preview: "",
-              });
-            }}
-          />
-          
-          {isAddingCertificate && (
-            <View className="bg-blue-50 p-4 rounded-lg mb-4">
-              <TextField
-                label="Course Name *"
-                value={newCertificate.courseName}
-                onChangeText={(text) => setNewCertificate(prev => ({ ...prev, courseName: text }))}
-                placeholder="Enter course name"
-              />
-              
-              <TextField
-                label="Certificate Number *"
-                value={newCertificate.certificateNumber}
-                onChangeText={(text) => setNewCertificate(prev => ({ ...prev, certificateNumber: text }))}
-                placeholder="Enter certificate number"
-              />
-              
-              <DatePicker
-                label="Issue Date *"
-                value={parseDate(newCertificate.issueDate)}
-                onChange={(date) => setNewCertificate(prev => ({ ...prev, issueDate: date.toISOString().split('T')[0] }))}
-              />
-              
-              <View className="items-center my-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">Certificate Image</Text>
-                <TouchableOpacity onPress={handleCertificateFileSelect}>
-                  {newCertificate.preview ? (
-                    <Image
-                      source={{ uri: newCertificate.preview }}
-                      className="w-full h-48 rounded-lg"
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View className="w-full h-48 rounded-lg bg-gray-200 items-center justify-center">
-                      <Ionicons name="document" size={48} color="#9ca3af" />
-                      <Text className="text-gray-500 mt-2">Tap to select image</Text>
-                    </View>
-                  )}
+
+          {currentStep === 5 && (
+            // Certificates Step
+            <View className={`bg-white rounded-2xl p-5 shadow-sm mb-4 ${
+              isStepCompleted(5) ? 'border-2 border-green-200' : ''
+            }`}>
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center">
+                  <View className={`w-1 h-8 rounded-full mr-3 ${
+                    isStepCompleted(5) ? 'bg-green-500' : 'bg-blue-500'
+                  }`} />
+                  <Text className="text-xl font-bold text-gray-800">Certificates</Text>
+                  <Text className="text-gray-500 ml-2">(Optional)</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsAddingCertificate(true);
+                    setEditingCertificateId(null);
+                    setNewCertificate({
+                      courseName: "",
+                      certificateNumber: "",
+                      issueDate: "",
+                      certificateFile: null,
+                      preview: "",
+                    });
+                  }}
+                  className="bg-blue-500 p-2 rounded-full"
+                >
+                  <Ionicons name="add" size={18} color="white" />
                 </TouchableOpacity>
               </View>
+
+              {isAddingCertificate && (
+                <View className="bg-blue-50 p-4 rounded-lg mb-4">
+                  <TextField
+                    label="Course Name *"
+                    value={newCertificate.courseName}
+                    onChangeText={(text) => setNewCertificate(prev => ({ ...prev, courseName: text }))}
+                    placeholder="Enter course name"
+                  />
+                  
+                  <TextField
+                    label="Certificate Number *"
+                    value={newCertificate.certificateNumber}
+                    onChangeText={(text) => setNewCertificate(prev => ({ ...prev, certificateNumber: text }))}
+                    placeholder="Enter certificate number"
+                  />
+                  
+                  <DatePicker
+                    label="Issue Date *"
+                    value={parseDate(newCertificate.issueDate)}
+                    onChange={(date) => setNewCertificate(prev => ({ ...prev, issueDate: date.toISOString().split('T')[0] }))}
+                  />
+                  
+                  <View className="items-center my-4">
+                    <Text className="text-sm font-medium text-gray-700 mb-2">Certificate Image</Text>
+                    <TouchableOpacity onPress={handleCertificateFileSelect} className="w-full">
+                      {newCertificate.preview ? (
+                        <Image
+                          source={{ uri: newCertificate.preview }}
+                          className="w-full h-48 rounded-lg"
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View className="w-full h-48 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 items-center justify-center">
+                          <View className="items-center">
+                            <Ionicons name="document-outline" size={48} color="#6B7280" />
+                            <Text className="text-gray-600 mt-3 font-medium">Tap to select image</Text>
+                            <Text className="text-gray-500 text-sm mt-1">JPG, PNG or PDF</Text>
+                          </View>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <View className="flex-row mt-4 justify-between">
+                    <Button 
+                      title={editingCertificateId ? "Update" : "Add Certificate"} 
+                      onPress={editingCertificateId ? handleUpdateCertificate : handleAddCertificate} 
+                      style={{ flex: 1, marginRight: 5 }} 
+                    />
+                    <Button 
+                      title="Cancel" 
+                      onPress={() => {
+                        setIsAddingCertificate(false);
+                        setEditingCertificateId(null);
+                      }} 
+                      variant="outline" 
+                      style={{ flex: 1, marginLeft: 5 }} 
+                    />
+                  </View>
+                </View>
+              )}
               
-              <View className="flex-row mt-4 justify-between">
-                <Button 
-                  title={editingCertificateId ? "Update" : "Add Certificate"} 
-                  onPress={editingCertificateId ? handleUpdateCertificate : handleAddCertificate} 
-                  style={{ flex: 1, marginRight: 5 }} 
-                />
-                <Button 
-                  title="Cancel" 
-                  onPress={() => {
-                    setIsAddingCertificate(false);
-                    setEditingCertificateId(null);
-                  }} 
-                  variant="outline" 
-                  style={{ flex: 1, marginLeft: 5 }} 
-                />
-              </View>
+              {certificates.length > 0 ? (
+                <View className="space-y-4">
+                  {certificates.map((cert) => (
+                    <View key={cert.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                      <View className="flex-row justify-between items-center mb-2">
+                        <Text className="font-semibold text-lg text-gray-800">{cert.courseName}</Text>
+                        <View className="flex-row">
+                          <TouchableOpacity 
+                            onPress={() => handleEditCertificate(cert)}
+                            className="mr-2"
+                          >
+                            <Ionicons name="pencil" size={20} color="#3b82f6" />
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => handleRemoveCertificate(cert.id)}>
+                            <Ionicons name="trash-outline" size={20} color="#ef4444" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                      {cert.preview && (
+                        <Image
+                          source={{ uri: cert.preview }}
+                          className="w-full h-36 rounded-lg my-2"
+                          resizeMode="cover"
+                        />
+                      )}
+                      <Text className="text-sm text-gray-600">Certificate #: {cert.certificateNumber}</Text>
+                      <Text className="text-sm text-gray-600">Issued: {cert.issueDate}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View className="py-8 items-center">
+                  <Ionicons name="medal-outline" size={48} color="#9CA3AF" />
+                  <Text className="text-gray-500 mt-2">No certificates added yet</Text>
+                  <Text className="text-gray-400 text-sm text-center mt-1">
+                    Add your certifications and credentials
+                  </Text>
+                </View>
+              )}
             </View>
           )}
-          
-          {certificates.length > 0 ? (
-            <View className="space-y-4">
-              {certificates.map((cert) => (
-                <View key={cert.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                  <View className="flex-row justify-between items-center mb-2">
-                    <Text className="font-semibold text-lg text-gray-800">{cert.courseName}</Text>
-                    <View className="flex-row">
+
+          {currentStep === 6 && (
+            // Skills Step
+            <View className={`bg-white rounded-2xl p-5 shadow-sm mb-4 ${
+              isStepCompleted(6) ? 'border-2 border-green-200' : ''
+            }`}>
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center">
+                  <View className={`w-1 h-8 rounded-full mr-3 ${
+                    isStepCompleted(6) ? 'bg-green-500' : 'bg-blue-500'
+                  }`} />
+                  <Text className="text-xl font-bold text-gray-800">Skills</Text>
+                  <Text className="text-gray-500 ml-2">(Optional)</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsAddingSkill(true);
+                    setNewSkill({ name: "", type: "TECHNICAL", proficiencyLevel: "" });
+                  }}
+                  className="bg-blue-500 p-2 rounded-full"
+                >
+                  <Ionicons name="add" size={18} color="white" />
+                </TouchableOpacity>
+              </View>
+
+              {isAddingSkill && (
+                <View className="bg-blue-50 p-4 rounded-lg mb-4">
+                  <TextField
+                    label="Skill Name *"
+                    value={newSkill.name}
+                    onChangeText={(text) => setNewSkill(prev => ({ ...prev, name: text }))}
+                    placeholder="e.g., Welding"
+                  />
+                  
+                  <SkillTypePicker 
+                    value={newSkill.type} 
+                    onChange={(value) => setNewSkill(prev => ({ ...prev, type: value }))} 
+                  />
+                  
+                  <View className="border border-gray-300 rounded-lg p-3 my-2">
+                    <Text className="text-sm font-medium mb-2 text-gray-700">Proficiency Level</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      {["Beginner", "Intermediate", "Advanced"].map((level) => (
+                        <TouchableOpacity
+                          key={level}
+                          onPress={() => setNewSkill(prev => ({ ...prev, proficiencyLevel: level }))}
+                          className={`mr-2 px-4 py-2 rounded-full ${
+                            level === newSkill.proficiencyLevel ? "bg-blue-500" : "bg-gray-200"
+                          }`}
+                        >
+                          <Text
+                            className={`text-sm ${
+                              level === newSkill.proficiencyLevel ? "text-white font-semibold" : "text-gray-700"
+                            }`}
+                          >
+                            {level}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                  
+                  <View className="flex-row mt-4 justify-between">
+                    <Button 
+                      title="Add Skill" 
+                      onPress={handleAddSkill} 
+                      style={{ flex: 1, marginRight: 5 }} 
+                    />
+                    <Button 
+                      title="Cancel" 
+                      onPress={() => setIsAddingSkill(false)} 
+                      variant="outline" 
+                      style={{ flex: 1, marginLeft: 5 }} 
+                    />
+                  </View>
+                </View>
+              )}
+              
+              {skills.length > 0 ? (
+                <View className="space-y-3">
+                  {skills.map((skill, index) => (
+                    <View key={index} className="bg-gray-50 p-3 rounded-lg flex-row justify-between items-center border border-gray-200">
+                      <View className="flex-1">
+                        <Text className="font-semibold text-gray-800">{skill.name}</Text>
+                        <Text className="text-sm text-gray-600">Type: {skill.type}</Text>
+                        {skill.proficiencyLevel && (
+                          <Text className="text-sm text-gray-600">Level: {skill.proficiencyLevel}</Text>
+                        )}
+                      </View>
                       <TouchableOpacity 
-                        onPress={() => handleEditCertificate(cert)}
-                        className="mr-2"
+                        onPress={() => handleRemoveSkill(index)} 
+                        className="p-2"
                       >
-                        <Ionicons name="pencil" size={20} color="#3b82f6" />
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => handleRemoveCertificate(cert.id)}>
                         <Ionicons name="trash-outline" size={20} color="#ef4444" />
                       </TouchableOpacity>
                     </View>
-                  </View>
-                  {cert.preview && (
-                    <Image
-                      source={{ uri: cert.preview }}
-                      className="w-full h-36 rounded-lg my-2"
-                      resizeMode="cover"
+                  ))}
+                </View>
+              ) : (
+                <View className="py-8 items-center">
+                  <Ionicons name="build-outline" size={48} color="#9CA3AF" />
+                  <Text className="text-gray-500 mt-2">No skills added yet</Text>
+                  <Text className="text-gray-400 text-sm text-center mt-1">
+                    Add your technical and professional skills
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {currentStep === 7 && (
+            // Experiences Step
+            <View className={`bg-white rounded-2xl p-5 shadow-sm mb-4 ${
+              isStepCompleted(7) ? 'border-2 border-green-200' : ''
+            }`}>
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center">
+                  <View className={`w-1 h-8 rounded-full mr-3 ${
+                    isStepCompleted(7) ? 'bg-green-500' : 'bg-blue-500'
+                  }`} />
+                  <Text className="text-xl font-bold text-gray-800">Experiences</Text>
+                  <Text className="text-gray-500 ml-2">(Optional)</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsAddingExperience(true);
+                    setNewExperience({
+                      jobTitle: "",
+                      company: "",
+                      duration: "",
+                      responsibilities: "",
+                    });
+                  }}
+                  className="bg-blue-500 p-2 rounded-full"
+                >
+                  <Ionicons name="add" size={18} color="white" />
+                </TouchableOpacity>
+              </View>
+
+              {isAddingExperience && (
+                <View className="bg-blue-50 p-4 rounded-lg mb-4">
+                  <TextField
+                    label="Job Title *"
+                    value={newExperience.jobTitle}
+                    onChangeText={(text) => setNewExperience(prev => ({ ...prev, jobTitle: text }))}
+                    placeholder="e.g., Software Engineer"
+                  />
+                  
+                  <TextField
+                    label="Company *"
+                    value={newExperience.company}
+                    onChangeText={(text) => setNewExperience(prev => ({ ...prev, company: text }))}
+                    placeholder="e.g., ABC Corp"
+                  />
+                  
+                  <TextField
+                    label="Duration"
+                    value={newExperience.duration}
+                    onChangeText={(text) => setNewExperience(prev => ({ ...prev, duration: text }))}
+                    placeholder="e.g., Jan 2020 - Dec 2022"
+                  />
+                  
+                  <View className="mb-4">
+                    <Text className="text-sm font-medium text-gray-700 mb-2">Responsibilities</Text>
+                    <TextInput
+                      multiline
+                      numberOfLines={3}
+                      value={newExperience.responsibilities}
+                      onChangeText={(text) => setNewExperience(prev => ({ ...prev, responsibilities: text }))}
+                      placeholder="Describe your responsibilities"
+                      placeholderTextColor="#6B7280"
+                      className="border border-gray-300 bg-gray-50 rounded-lg p-4 text-base text-gray-800 min-h-[100px]"
+                      textAlignVertical="top"
                     />
-                  )}
-                  <Text className="text-sm text-gray-600">Certificate #: {cert.certificateNumber}</Text>
-                  <Text className="text-sm text-gray-600">Issued: {cert.issueDate}</Text>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <View className="py-4 items-center">
-              <Text className="text-gray-500">No certificates added yet</Text>
-            </View>
-          )}
-        </View>
-        
-        {/* Experiences Section */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <SectionHeader 
-            title="Experiences" 
-            onAdd={() => {
-              setIsAddingExperience(true);
-              setNewExperience({
-                jobTitle: "",
-                company: "",
-                duration: "",
-                responsibilities: "",
-              });
-            }}
-          />
-          
-          {isAddingExperience && (
-            <View className="bg-blue-50 p-4 rounded-lg mb-4">
-              <TextField
-                label="Job Title *"
-                value={newExperience.jobTitle}
-                onChangeText={(text) => setNewExperience(prev => ({ ...prev, jobTitle: text }))}
-                placeholder="e.g., Software Engineer"
-              />
-              
-              <TextField
-                label="Company *"
-                value={newExperience.company}
-                onChangeText={(text) => setNewExperience(prev => ({ ...prev, company: text }))}
-                placeholder="e.g., ABC Corp"
-              />
-              
-              <TextField
-                label="Duration"
-                value={newExperience.duration}
-                onChangeText={(text) => setNewExperience(prev => ({ ...prev, duration: text }))}
-                placeholder="e.g., Jan 2020 - Dec 2022"
-              />
-              
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">Responsibilities</Text>
-                <TextInput
-                  multiline
-                  numberOfLines={3}
-                  value={newExperience.responsibilities}
-                  onChangeText={(text) => setNewExperience(prev => ({ ...prev, responsibilities: text }))}
-                  placeholder="Describe your responsibilities"
-                  className="border border-gray-300 bg-gray-50 rounded-lg p-4 text-base text-gray-800 min-h-[100px]"
-                  textAlignVertical="top"
-                />
-              </View>
-              
-              <View className="flex-row mt-4 justify-between">
-                <Button 
-                  title="Add Experience" 
-                  onPress={handleAddExperience} 
-                  style={{ flex: 1, marginRight: 5 }} 
-                />
-                <Button 
-                  title="Cancel" 
-                  onPress={() => setIsAddingExperience(false)} 
-                  variant="outline" 
-                  style={{ flex: 1, marginLeft: 5 }} 
-                />
-              </View>
-            </View>
-          )}
-          
-          {experiences.length > 0 ? (
-            <View className="space-y-3">
-              {experiences.map((exp, index) => (
-                <View key={index} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                  <View className="flex-row justify-between items-center mb-1">
-                    <Text className="font-semibold text-lg text-gray-800">{exp.jobTitle}</Text>
-                    <TouchableOpacity onPress={() => handleRemoveExperience(index)}>
-                      <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                    </TouchableOpacity>
                   </View>
-                  <Text className="text-gray-700">{exp.company}</Text>
-                  {exp.duration && <Text className="text-sm text-gray-600">Duration: {exp.duration}</Text>}
-                  {exp.responsibilities && (
-                    <Text className="text-sm text-gray-600 mt-2">{exp.responsibilities}</Text>
-                  )}
-                </View>
-              ))}
-            </View>
-          ) : (
-            <View className="py-4 items-center">
-              <Text className="text-gray-500">No experiences added yet</Text>
-            </View>
-          )}
-        </View>
-        
-        {/* Awards & Recognitions Section */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <SectionHeader 
-            title="Awards & Recognitions" 
-            onAdd={() => {
-              setIsAddingAward(true);
-              setNewAward({ title: "", issuer: "", dateReceived: "" });
-            }}
-          />
-          
-          {isAddingAward && (
-            <View className="bg-blue-50 p-4 rounded-lg mb-4">
-              <TextField
-                label="Award Title *"
-                value={newAward.title}
-                onChangeText={(text) => setNewAward(prev => ({ ...prev, title: text }))}
-                placeholder="e.g., Best Employee"
-              />
-              
-              <TextField
-                label="Issuer"
-                value={newAward.issuer}
-                onChangeText={(text) => setNewAward(prev => ({ ...prev, issuer: text }))}
-                placeholder="e.g., XYZ Organization"
-              />
-              
-              <DatePicker
-                label="Date Received"
-                value={parseDate(newAward.dateReceived)}
-                onChange={(date) => setNewAward(prev => ({ ...prev, dateReceived: date.toISOString().split('T')[0] }))}
-              />
-              
-              <View className="flex-row mt-4 justify-between">
-                <Button 
-                  title="Add Award" 
-                  onPress={handleAddAward} 
-                  style={{ flex: 1, marginRight: 5 }} 
-                />
-                <Button 
-                  title="Cancel" 
-                  onPress={() => setIsAddingAward(false)} 
-                  variant="outline" 
-                  style={{ flex: 1, marginLeft: 5 }} 
-                />
-              </View>
-            </View>
-          )}
-          
-          {awardsRecognitions.length > 0 ? (
-            <View className="space-y-3">
-              {awardsRecognitions.map((award, index) => (
-                <View key={index} className="bg-gray-50 p-3 rounded-lg flex-row justify-between items-center border border-gray-200">
-                  <View className="flex-1">
-                    <Text className="font-semibold text-gray-800">{award.title}</Text>
-                    {award.issuer && <Text className="text-sm text-gray-600">Issuer: {award.issuer}</Text>}
-                    {award.dateReceived && <Text className="text-sm text-gray-600">Received: {award.dateReceived}</Text>}
+                  
+                  <View className="flex-row mt-4 justify-between">
+                    <Button 
+                      title="Add Experience" 
+                      onPress={handleAddExperience} 
+                      style={{ flex: 1, marginRight: 5 }} 
+                    />
+                    <Button 
+                      title="Cancel" 
+                      onPress={() => setIsAddingExperience(false)} 
+                      variant="outline" 
+                      style={{ flex: 1, marginLeft: 5 }} 
+                    />
                   </View>
-                  <TouchableOpacity 
-                    onPress={() => handleRemoveAward(index)} 
-                    className="p-2"
-                  >
-                    <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                  </TouchableOpacity>
                 </View>
-              ))}
-            </View>
-          ) : (
-            <View className="py-4 items-center">
-              <Text className="text-gray-500">No awards added yet</Text>
-            </View>
-          )}
-        </View>
-        
-        {/* Continuing Education Section */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <SectionHeader 
-            title="Continuing Education" 
-            onAdd={() => {
-              setIsAddingEducation(true);
-              setNewEducation({ courseName: "", institution: "", completionDate: "" });
-            }}
-          />
-          
-          {isAddingEducation && (
-            <View className="bg-blue-50 p-4 rounded-lg mb-4">
-              <TextField
-                label="Course Name *"
-                value={newEducation.courseName}
-                onChangeText={(text) => setNewEducation(prev => ({ ...prev, courseName: text }))}
-                placeholder="e.g., Advanced Welding"
-              />
+              )}
               
-              <TextField
-                label="Institution"
-                value={newEducation.institution}
-                onChangeText={(text) => setNewEducation(prev => ({ ...prev, institution: text }))}
-                placeholder="e.g., TESDA Institute"
-              />
-              
-              <DatePicker
-                label="Completion Date"
-                value={parseDate(newEducation.completionDate)}
-                onChange={(date) => setNewEducation(prev => ({ ...prev, completionDate: date.toISOString().split('T')[0] }))}
-              />
-              
-              <View className="flex-row mt-4 justify-between">
-                <Button 
-                  title="Add Education" 
-                  onPress={handleAddEducation} 
-                  style={{ flex: 1, marginRight: 5 }} 
-                />
-                <Button 
-                  title="Cancel" 
-                  onPress={() => setIsAddingEducation(false)} 
-                  variant="outline" 
-                  style={{ flex: 1, marginLeft: 5 }} 
-                />
-              </View>
-            </View>
-          )}
-          
-          {continuingEducations.length > 0 ? (
-            <View className="space-y-3">
-              {continuingEducations.map((edu, index) => (
-                <View key={index} className="bg-gray-50 p-3 rounded-lg flex-row justify-between items-center border border-gray-200">
-                  <View className="flex-1">
-                    <Text className="font-semibold text-gray-800">{edu.courseName}</Text>
-                    {edu.institution && <Text className="text-sm text-gray-600">Institution: {edu.institution}</Text>}
-                    {edu.completionDate && <Text className="text-sm text-gray-600">Completed: {edu.completionDate}</Text>}
-                  </View>
-                  <TouchableOpacity 
-                    onPress={() => handleRemoveEducation(index)} 
-                    className="p-2"
-                  >
-                    <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                  </TouchableOpacity>
+              {experiences.length > 0 ? (
+                <View className="space-y-3">
+                  {experiences.map((exp, index) => (
+                    <View key={index} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                      <View className="flex-row justify-between items-center mb-1">
+                        <Text className="font-semibold text-lg text-gray-800">{exp.jobTitle}</Text>
+                        <TouchableOpacity onPress={() => handleRemoveExperience(index)}>
+                          <Ionicons name="trash-outline" size={20} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+                      <Text className="text-gray-700">{exp.company}</Text>
+                      {exp.duration && <Text className="text-sm text-gray-600">Duration: {exp.duration}</Text>}
+                      {exp.responsibilities && (
+                        <Text className="text-sm text-gray-600 mt-2">{exp.responsibilities}</Text>
+                      )}
+                    </View>
+                  ))}
                 </View>
-              ))}
-            </View>
-          ) : (
-            <View className="py-4 items-center">
-              <Text className="text-gray-500">No education entries added yet</Text>
+              ) : (
+                <View className="py-8 items-center">
+                  <Ionicons name="briefcase-outline" size={48} color="#9CA3AF" />
+                  <Text className="text-gray-500 mt-2">No experiences added yet</Text>
+                  <Text className="text-gray-400 text-sm text-center mt-1">
+                    Add your work experience and roles
+                  </Text>
+                </View>
+              )}
             </View>
           )}
-        </View>
 
-        {/* Professional Memberships Section */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <SectionHeader 
-            title="Professional Memberships" 
-            onAdd={() => {
-              setIsAddingMembership(true);
-              setNewMembership({ organization: "", membershipType: "", startDate: "" });
-            }}
-          />
-          
-          {isAddingMembership && (
-            <View className="bg-blue-50 p-4 rounded-lg mb-4">
-              <TextField
-                label="Organization *"
-                value={newMembership.organization}
-                onChangeText={(text) => setNewMembership(prev => ({ ...prev, organization: text }))}
-                placeholder="e.g., IEEE"
-              />
-              
-              <TextField
-                label="Membership Type"
-                value={newMembership.membershipType}
-                onChangeText={(text) => setNewMembership(prev => ({ ...prev, membershipType: text }))}
-                placeholder="e.g., Professional Member"
-              />
-              
-              <DatePicker
-                label="Join Date"
-                value={parseDate(newMembership.startDate)}
-                onChange={(date) => setNewMembership(prev => ({ ...prev, startDate: date.toISOString().split('T')[0] }))}
-              />
-              
-              <View className="flex-row mt-4 justify-between">
-                <Button 
-                  title="Add Membership" 
-                  onPress={handleAddMembership} 
-                  style={{ flex: 1, marginRight: 5 }} 
-                />
-                <Button 
-                  title="Cancel" 
-                  onPress={() => setIsAddingMembership(false)} 
-                  variant="outline" 
-                  style={{ flex: 1, marginLeft: 5 }} 
-                />
-              </View>
-            </View>
-          )}
-          
-          {professionalMemberships.length > 0 ? (
-            <View className="space-y-3">
-              {professionalMemberships.map((mem, index) => (
-                <View key={index} className="bg-gray-50 p-3 rounded-lg flex-row justify-between items-center border border-gray-200">
-                  <View className="flex-1">
-                    <Text className="font-semibold text-gray-800">{mem.organization}</Text>
-                    {mem.membershipType && <Text className="text-sm text-gray-600">Type: {mem.membershipType}</Text>}
-                    {mem.startDate && <Text className="text-sm text-gray-600">Joined: {mem.startDate}</Text>}
-                  </View>
-                  <TouchableOpacity 
-                    onPress={() => handleRemoveMembership(index)} 
-                    className="p-2"
-                  >
-                    <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                  </TouchableOpacity>
+          {currentStep === 8 && (
+            // Awards & Recognitions Step
+            <View className={`bg-white rounded-2xl p-5 shadow-sm mb-4 ${
+              isStepCompleted(8) ? 'border-2 border-green-200' : ''
+            }`}>
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center">
+                  <View className={`w-1 h-8 rounded-full mr-3 ${
+                    isStepCompleted(8) ? 'bg-green-500' : 'bg-blue-500'
+                  }`} />
+                  <Text className="text-xl font-bold text-gray-800">Awards & Recognitions</Text>
+                  <Text className="text-gray-500 ml-2">(Optional)</Text>
                 </View>
-              ))}
-            </View>
-          ) : (
-            <View className="py-4 items-center">
-              <Text className="text-gray-500">No memberships added yet</Text>
-            </View>
-          )}
-        </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsAddingAward(true);
+                    setNewAward({ title: "", issuer: "", dateReceived: "" });
+                  }}
+                  className="bg-blue-500 p-2 rounded-full"
+                >
+                  <Ionicons name="add" size={18} color="white" />
+                </TouchableOpacity>
+              </View>
 
-        {/* References Section */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <SectionHeader 
-            title="References" 
-            onAdd={() => {
-              setIsAddingReference(true);
-              setNewReference({ name: "", position: "", company: "", contact: "", email: "" });
-            }}
-          />
-          
-          {isAddingReference && (
-            <View className="bg-blue-50 p-4 rounded-lg mb-4">
-              <TextField
-                label="Name *"
-                value={newReference.name}
-                onChangeText={(text) => setNewReference(prev => ({ ...prev, name: text }))}
-                placeholder="e.g., John Doe"
-              />
-              
-              <TextField
-                label="Position"
-                value={newReference.position}
-                onChangeText={(text) => setNewReference(prev => ({ ...prev, position: text }))}
-                placeholder="e.g., Manager"
-              />
-              
-              <TextField
-                label="Company"
-                value={newReference.company}
-                onChangeText={(text) => setNewReference(prev => ({ ...prev, company: text }))}
-                placeholder="e.g., ABC Corp"
-              />
-              
-              <TextField
-                label="Contact"
-                value={newReference.contact}
-                onChangeText={(text) => setNewReference(prev => ({ ...prev, contact: text }))}
-                placeholder="e.g., +1234567890"
-                keyboardType="phone-pad"
-              />
-              
-              <TextField
-                label="Email"
-                value={newReference.email}
-                onChangeText={(text) => setNewReference(prev => ({ ...prev, email: text }))}
-                placeholder="e.g., john.doe@example.com"
-                keyboardType="email-address"
-              />
-              
-              <View className="flex-row mt-4 justify-between">
-                <Button 
-                  title="Add Reference" 
-                  onPress={handleAddReference} 
-                  style={{ flex: 1, marginRight: 5 }} 
-                />
-                <Button 
-                  title="Cancel" 
-                  onPress={() => setIsAddingReference(false)} 
-                  variant="outline" 
-                  style={{ flex: 1, marginLeft: 5 }} 
-                />
-              </View>
-            </View>
-          )}
-          
-          {references.length > 0 ? (
-            <View className="space-y-3">
-              {references.map((ref, index) => (
-                <View key={index} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                  <View className="flex-row justify-between items-center mb-1">
-                    <Text className="font-semibold text-gray-800">{ref.name}</Text>
-                    <TouchableOpacity onPress={() => handleRemoveReference(index)}>
-                      <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                    </TouchableOpacity>
+              {isAddingAward && (
+                <View className="bg-blue-50 p-4 rounded-lg mb-4">
+                  <TextField
+                    label="Award Title *"
+                    value={newAward.title}
+                    onChangeText={(text) => setNewAward(prev => ({ ...prev, title: text }))}
+                    placeholder="e.g., Best Employee"
+                  />
+                  
+                  <TextField
+                    label="Issuer"
+                    value={newAward.issuer}
+                    onChangeText={(text) => setNewAward(prev => ({ ...prev, issuer: text }))}
+                    placeholder="e.g., XYZ Organization"
+                  />
+                  
+                  <DatePicker
+                    label="Date Received"
+                    value={parseDate(newAward.dateReceived)}
+                    onChange={(date) => setNewAward(prev => ({ ...prev, dateReceived: date.toISOString().split('T')[0] }))}
+                  />
+                  
+                  <View className="flex-row mt-4 justify-between">
+                    <Button 
+                      title="Add Award" 
+                      onPress={handleAddAward} 
+                      style={{ flex: 1, marginRight: 5 }} 
+                    />
+                    <Button 
+                      title="Cancel" 
+                      onPress={() => setIsAddingAward(false)} 
+                      variant="outline" 
+                      style={{ flex: 1, marginLeft: 5 }} 
+                    />
                   </View>
-                  {ref.position && <Text className="text-sm text-gray-600">Position: {ref.position}</Text>}
-                  {ref.company && <Text className="text-sm text-gray-600">Company: {ref.company}</Text>}
-                  {ref.contact && <Text className="text-sm text-gray-600">Contact: {ref.contact}</Text>}
-                  {ref.email && <Text className="text-sm text-gray-600">Email: {ref.email}</Text>}
                 </View>
-              ))}
-            </View>
-          ) : (
-            <View className="py-4 items-center">
-              <Text className="text-gray-500">No references added yet</Text>
+              )}
+              
+              {awardsRecognitions.length > 0 ? (
+                <View className="space-y-3">
+                  {awardsRecognitions.map((award, index) => (
+                    <View key={index} className="bg-gray-50 p-3 rounded-lg flex-row justify-between items-center border border-gray-200">
+                      <View className="flex-1">
+                        <Text className="font-semibold text-gray-800">{award.title}</Text>
+                        {award.issuer && <Text className="text-sm text-gray-600">Issuer: {award.issuer}</Text>}
+                        {award.dateReceived && <Text className="text-sm text-gray-600">Received: {award.dateReceived}</Text>}
+                      </View>
+                      <TouchableOpacity 
+                        onPress={() => handleRemoveAward(index)} 
+                        className="p-2"
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#ef4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View className="py-8 items-center">
+                  <Ionicons name="trophy-outline" size={48} color="#9CA3AF" />
+                  <Text className="text-gray-500 mt-2">No awards added yet</Text>
+                  <Text className="text-gray-400 text-sm text-center mt-1">
+                    Add your achievements and recognitions
+                  </Text>
+                </View>
+              )}
             </View>
           )}
-        </View>
-        
-        {/* Additional Information */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <SectionHeader title="Additional Information" />
+
+          {/* Steps 9-12: Remaining Optional Steps and Final Required Step */}
+          {currentStep === 9 && (
+            // Continuing Education Step
+            <View className={`bg-white rounded-2xl p-5 shadow-sm mb-4 ${
+              isStepCompleted(9) ? 'border-2 border-green-200' : ''
+            }`}>
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center">
+                  <View className={`w-1 h-8 rounded-full mr-3 ${
+                    isStepCompleted(9) ? 'bg-green-500' : 'bg-blue-500'
+                  }`} />
+                  <Text className="text-xl font-bold text-gray-800">Continuing Education</Text>
+                  <Text className="text-gray-500 ml-2">(Optional)</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsAddingEducation(true);
+                    setNewEducation({ courseName: "", institution: "", completionDate: "" });
+                  }}
+                  className="bg-blue-500 p-2 rounded-full"
+                >
+                  <Ionicons name="add" size={18} color="white" />
+                </TouchableOpacity>
+              </View>
+              
+              {isAddingEducation && (
+                <View className="bg-blue-50 p-4 rounded-lg mb-4">
+                  <TextField
+                    label="Course Name *"
+                    value={newEducation.courseName}
+                    onChangeText={(text) => setNewEducation(prev => ({ ...prev, courseName: text }))}
+                    placeholder="e.g., Advanced Welding"
+                  />
+                  
+                  <TextField
+                    label="Institution"
+                    value={newEducation.institution}
+                    onChangeText={(text) => setNewEducation(prev => ({ ...prev, institution: text }))}
+                    placeholder="e.g., TESDA Institute"
+                  />
+                  
+                  <DatePicker
+                    label="Completion Date"
+                    value={parseDate(newEducation.completionDate)}
+                    onChange={(date) => setNewEducation(prev => ({ ...prev, completionDate: date.toISOString().split('T')[0] }))}
+                  />
+                  
+                  <View className="flex-row mt-4 justify-between">
+                    <Button 
+                      title="Add Education" 
+                      onPress={handleAddEducation} 
+                      style={{ flex: 1, marginRight: 5 }} 
+                    />
+                    <Button 
+                      title="Cancel" 
+                      onPress={() => setIsAddingEducation(false)} 
+                      variant="outline" 
+                      style={{ flex: 1, marginLeft: 5 }} 
+                    />
+                  </View>
+                </View>
+              )}
+              
+              {continuingEducations.length > 0 ? (
+                <View className="space-y-3">
+                  {continuingEducations.map((edu, index) => (
+                    <View key={index} className="bg-gray-50 p-3 rounded-lg flex-row justify-between items-center border border-gray-200">
+                      <View className="flex-1">
+                        <Text className="font-semibold text-gray-800">{edu.courseName}</Text>
+                        {edu.institution && <Text className="text-sm text-gray-600">Institution: {edu.institution}</Text>}
+                        {edu.completionDate && <Text className="text-sm text-gray-600">Completed: {edu.completionDate}</Text>}
+                      </View>
+                      <TouchableOpacity 
+                        onPress={() => handleRemoveEducation(index)} 
+                        className="p-2"
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#ef4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View className="py-8 items-center">
+                  <Ionicons name="library-outline" size={48} color="#9CA3AF" />
+                  <Text className="text-gray-500 mt-2">No education entries added yet</Text>
+                  <Text className="text-gray-400 text-sm text-center mt-1">
+                    Add your continuing education and courses
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {currentStep === 10 && (
+            // Professional Memberships Step
+            <View className={`bg-white rounded-2xl p-5 shadow-sm mb-4 ${
+              isStepCompleted(10) ? 'border-2 border-green-200' : ''
+            }`}>
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center">
+                  <View className={`w-1 h-8 rounded-full mr-3 ${
+                    isStepCompleted(10) ? 'bg-green-500' : 'bg-blue-500'
+                  }`} />
+                  <Text className="text-xl font-bold text-gray-800">Professional Memberships</Text>
+                  <Text className="text-gray-500 ml-2">(Optional)</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsAddingMembership(true);
+                    setNewMembership({ organization: "", membershipType: "", startDate: "" });
+                  }}
+                  className="bg-blue-500 p-2 rounded-full"
+                >
+                  <Ionicons name="add" size={18} color="white" />
+                </TouchableOpacity>
+              </View>
+              
+              {isAddingMembership && (
+                <View className="bg-blue-50 p-4 rounded-lg mb-4">
+                  <TextField
+                    label="Organization *"
+                    value={newMembership.organization}
+                    onChangeText={(text) => setNewMembership(prev => ({ ...prev, organization: text }))}
+                    placeholder="e.g., IEEE"
+                  />
+                  
+                  <TextField
+                    label="Membership Type"
+                    value={newMembership.membershipType}
+                    onChangeText={(text) => setNewMembership(prev => ({ ...prev, membershipType: text }))}
+                    placeholder="e.g., Professional Member"
+                  />
+                  
+                  <DatePicker
+                    label="Join Date"
+                    value={parseDate(newMembership.startDate)}
+                    onChange={(date) => setNewMembership(prev => ({ ...prev, startDate: date.toISOString().split('T')[0] }))}
+                  />
+                  
+                  <View className="flex-row mt-4 justify-between">
+                    <Button 
+                      title="Add Membership" 
+                      onPress={handleAddMembership} 
+                      style={{ flex: 1, marginRight: 5 }} 
+                    />
+                    <Button 
+                      title="Cancel" 
+                      onPress={() => setIsAddingMembership(false)} 
+                      variant="outline" 
+                      style={{ flex: 1, marginLeft: 5 }} 
+                    />
+                  </View>
+                </View>
+              )}
+              
+              {professionalMemberships.length > 0 ? (
+                <View className="space-y-3">
+                  {professionalMemberships.map((mem, index) => (
+                    <View key={index} className="bg-gray-50 p-3 rounded-lg flex-row justify-between items-center border border-gray-200">
+                      <View className="flex-1">
+                        <Text className="font-semibold text-gray-800">{mem.organization}</Text>
+                        {mem.membershipType && <Text className="text-sm text-gray-600">Type: {mem.membershipType}</Text>}
+                        {mem.startDate && <Text className="text-sm text-gray-600">Joined: {mem.startDate}</Text>}
+                      </View>
+                      <TouchableOpacity 
+                        onPress={() => handleRemoveMembership(index)} 
+                        className="p-2"
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#ef4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View className="py-8 items-center">
+                  <Ionicons name="people-outline" size={48} color="#9CA3AF" />
+                  <Text className="text-gray-500 mt-2">No memberships added yet</Text>
+                  <Text className="text-gray-400 text-sm text-center mt-1">
+                    Add your professional associations
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {currentStep === 11 && (
+            // References Step
+            <View className={`bg-white rounded-2xl p-5 shadow-sm mb-4 ${
+              isStepCompleted(11) ? 'border-2 border-green-200' : ''
+            }`}>
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center">
+                  <View className={`w-1 h-8 rounded-full mr-3 ${
+                    isStepCompleted(11) ? 'bg-green-500' : 'bg-blue-500'
+                  }`} />
+                  <Text className="text-xl font-bold text-gray-800">References</Text>
+                  <Text className="text-gray-500 ml-2">(Optional)</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsAddingReference(true);
+                    setNewReference({ name: "", position: "", company: "", contact: "", email: "" });
+                  }}
+                  className="bg-blue-500 p-2 rounded-full"
+                >
+                  <Ionicons name="add" size={18} color="white" />
+                </TouchableOpacity>
+              </View>
+              
+              {isAddingReference && (
+                <View className="bg-blue-50 p-4 rounded-lg mb-4">
+                  <TextField
+                    label="Name *"
+                    value={newReference.name}
+                    onChangeText={(text) => setNewReference(prev => ({ ...prev, name: text }))}
+                    placeholder="e.g., John Doe"
+                  />
+                  
+                  <TextField
+                    label="Position"
+                    value={newReference.position}
+                    onChangeText={(text) => setNewReference(prev => ({ ...prev, position: text }))}
+                    placeholder="e.g., Manager"
+                  />
+                  
+                  <TextField
+                    label="Company"
+                    value={newReference.company}
+                    onChangeText={(text) => setNewReference(prev => ({ ...prev, company: text }))}
+                    placeholder="e.g., ABC Corp"
+                  />
+                  
+                  <TextField
+                    label="Contact"
+                    value={newReference.contact}
+                    onChangeText={(text) => setNewReference(prev => ({ ...prev, contact: text }))}
+                    placeholder="e.g., +1234567890"
+                    keyboardType="phone-pad"
+                  />
+                  
+                  <TextField
+                    label="Email"
+                    value={newReference.email}
+                    onChangeText={(text) => setNewReference(prev => ({ ...prev, email: text }))}
+                    placeholder="e.g., john.doe@example.com"
+                    keyboardType="email-address"
+                  />
+                  
+                  <View className="flex-row mt-4 justify-between">
+                    <Button 
+                      title="Add Reference" 
+                      onPress={handleAddReference} 
+                      style={{ flex: 1, marginRight: 5 }} 
+                    />
+                    <Button 
+                      title="Cancel" 
+                      onPress={() => setIsAddingReference(false)} 
+                      variant="outline" 
+                      style={{ flex: 1, marginLeft: 5 }} 
+                    />
+                  </View>
+                </View>
+              )}
+              
+              {references.length > 0 ? (
+                <View className="space-y-3">
+                  {references.map((ref, index) => (
+                    <View key={index} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                      <View className="flex-row justify-between items-center mb-1">
+                        <Text className="font-semibold text-gray-800">{ref.name}</Text>
+                        <TouchableOpacity onPress={() => handleRemoveReference(index)}>
+                          <Ionicons name="trash-outline" size={20} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+                      {ref.position && <Text className="text-sm text-gray-600">Position: {ref.position}</Text>}
+                      {ref.company && <Text className="text-sm text-gray-600">Company: {ref.company}</Text>}
+                      {ref.contact && <Text className="text-sm text-gray-600">Contact: {ref.contact}</Text>}
+                      {ref.email && <Text className="text-sm text-gray-600">Email: {ref.email}</Text>}
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View className="py-8 items-center">
+                  <Ionicons name="chatbubbles-outline" size={48} color="#9CA3AF" />
+                  <Text className="text-gray-500 mt-2">No references added yet</Text>
+                  <Text className="text-gray-400 text-sm text-center mt-1">
+                    Add professional references
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
           
-          <TextField
-            label="Primary Course Type *"
-            value={formData.primaryCourseType}
-            onChangeText={(text) => handleInputChange("primaryCourseType", text)}
-            placeholder="e.g., Computer Science"
-          />
-          
-          <VisibilityPicker 
-            value={formData.visibility} 
-            onChange={(value) => handleInputChange("visibility", value)} 
-          />
-        </View>
+          {currentStep === 12 && (
+            // Additional Information Step (Final Required Step)
+            <View className={`bg-white rounded-2xl p-5 shadow-sm mb-4 ${
+              isStepCompleted(12) ? 'border-2 border-green-200' : ''
+            }`}>
+              <View className="flex-row items-center mb-4">
+                <View className={`w-1 h-8 rounded-full mr-3 ${
+                  isStepCompleted(12) ? 'bg-green-500' : 'bg-blue-500'
+                }`} />
+                <Text className="text-xl font-bold text-gray-800">Additional Information</Text>
+                <Text className="text-red-500 ml-2">*Required</Text>
+              </View>
+              
+              <TextField
+                label="Primary Course Type *"
+                value={formData.primaryCourseType}
+                onChangeText={(text) => handleInputChange("primaryCourseType", text)}
+                placeholder="e.g., Computer Programming"
+              />
+              
+              <VisibilityPicker 
+                value={formData.visibility} 
+                onChange={(value) => handleInputChange("visibility", value)} 
+              />
+            </View>
+          )}
+
+          {/* Navigation Buttons */}
+          <View className="flex-row justify-between mt-6 mb-4">
+            <Button
+              title="Previous"
+              onPress={handlePreviousStep}
+              disabled={currentStep === 0 || loading}
+              variant="outline"
+              style={{ flex: 0.45 }}
+            />
+            
+            {currentStep === totalSteps - 1 ? (
+              <Button
+                title={loading ? "Creating..." : "Create Portfolio"}
+                onPress={handleSubmit}
+                disabled={loading}
+                loading={loading}
+                style={{ flex: 0.45 }}
+              />
+            ) : (
+              <Button
+                title="Next"
+                onPress={handleNextStep}
+                disabled={loading}
+                style={{ flex: 0.45 }}
+              />
+            )}
+          </View>
         
-        {/* Submit Button */}
-        <View className="my-6 mb-10">
-          <Button
-            title={loading ? "Creating Portfolio..." : "Create Portfolio"}
-            onPress={handleSubmit}
-            disabled={loading}
-            loading={loading}
-          />
-        </View>
-        
-        {/* Extra padding for bottom safe area */}
-        <View style={{ height: Platform.OS === 'ios' ? 30 : 10 }} />
-      </ScrollView>
+          {/* Extra padding for bottom safe area */}
+          <View style={{ height: Platform.OS === 'ios' ? 30 : 10 }} />
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
