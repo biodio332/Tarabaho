@@ -177,8 +177,8 @@ public class UserService {
         }
 
         User user = findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
-        if (newPassword == null || newPassword.length() < 8) {
-            throw new IllegalArgumentException("New password must be at least 8 characters long.");
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new IllegalArgumentException("New password must be at least 6 characters long.");
         }
         user.setPassword(passwordEncoderService.encodePassword(newPassword));
         userRepository.save(user);

@@ -179,8 +179,8 @@ public class GraduateService {
 
         Graduate graduate = findByEmail(email)
             .orElseThrow(() -> new IllegalArgumentException("Graduate not found with email: " + email));
-        if (newPassword == null || newPassword.length() < 8) {
-            throw new IllegalArgumentException("New password must be at least 8 characters long.");
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new IllegalArgumentException("New password must be at least 6 characters long.");
         }
         graduate.setPassword(passwordEncoderService.encodePassword(newPassword));
         graduateRepository.save(graduate);

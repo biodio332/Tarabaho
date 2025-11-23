@@ -64,7 +64,7 @@ const ForgotPassword = () => {
     }
 
     if (newPassword.length < 6) {
-      setError("Password must be at least 8 characters long.")
+      setError("Password must be at least 6 characters long.")
       setIsLoading(false)
       return
     }
@@ -316,7 +316,7 @@ const ForgotPassword = () => {
                     <input
                       id="newPassword"
                       type={showNewPassword ? "text" : "password"}
-                      placeholder="At least 8 characters"
+                      placeholder="At least 6 characters"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
@@ -376,12 +376,12 @@ const ForgotPassword = () => {
             )}
 
             <div className="mt-8 text-center">
-              <Link
-                href={`/signin?type=${type}`}
-                className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors hover:underline"
-              >
-                Back to Sign In
-              </Link>
+            <Link
+              to={`/signin?type=${type}`}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors hover:underline"
+            >
+              ← Back to Sign In
+            </Link>
             </div>
           </div>
         </div>
