@@ -90,6 +90,208 @@ const ViewPortfolio = () => {
     return `${baseUrl}/portfolio/${graduateId}`
   }
 
+  // Get design theme colors and layout based on designTemplate
+  const getDesignTheme = (template) => {
+    const themes = {
+      "bread-pastry": {
+        headerGradient: "from-amber-500 via-orange-500 to-amber-600",
+        headerBg: "bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600",
+        sidebarBg: "bg-gradient-to-br from-amber-600 via-orange-600 to-amber-700",
+        headerBarBg: "bg-gray-800",
+        accentColor: "amber",
+        textColor: "text-amber-600",
+        borderColor: "border-amber-300",
+        bgColor: "bg-amber-50",
+        cardBorder: "border-amber-200",
+        buttonColor: "amber",
+        lightBg: "bg-amber-50",
+        mediumBg: "bg-amber-100",
+        darkBg: "bg-amber-200",
+        pageBg: "bg-amber-50",
+        // Unique layout: Centered card-based design
+        layoutType: "centered-cards",
+        headerLayout: "centered",
+        headerTextAlign: "text-center",
+        headerFlexDirection: "flex-col items-center",
+        avatarSize: "w-40 h-40",
+        avatarPosition: "mb-6",
+        cardStyle: "rounded-3xl shadow-xl border-2 border-amber-200",
+        cardPadding: "p-8",
+        contentGrid: "grid-cols-1 md:grid-cols-2",
+        sectionSpacing: "space-y-8",
+        typographySize: "text-4xl md:text-5xl",
+        titleWeight: "font-bold",
+        sectionHeaderStyle: "rounded-t-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-4",
+        sectionContentStyle: "rounded-b-2xl bg-white p-6 border-2 border-amber-200",
+        useCardSections: true,
+      },
+      "cookery": {
+        headerGradient: "from-red-500 via-pink-500 to-red-600",
+        headerBg: "bg-gradient-to-br from-red-500 via-pink-500 to-red-600",
+        sidebarBg: "bg-gradient-to-br from-red-600 via-pink-600 to-red-700",
+        headerBarBg: "bg-red-700",
+        accentColor: "red",
+        textColor: "text-red-600",
+        borderColor: "border-red-300",
+        bgColor: "bg-red-50",
+        cardBorder: "border-red-100",
+        buttonColor: "red",
+        lightBg: "bg-red-50",
+        mediumBg: "bg-red-100",
+        darkBg: "bg-red-200",
+        pageBg: "bg-red-50",
+        // Unique layout: Top header with two-column content below
+        layoutType: "top-header",
+        headerLayout: "centered",
+        headerTextAlign: "text-center",
+        headerFlexDirection: "flex-col items-center",
+        avatarSize: "w-48 h-48",
+        avatarPosition: "mb-8",
+        cardStyle: "rounded-xl shadow-lg border-l-4 border-red-500",
+        cardPadding: "p-6",
+        contentGrid: "grid-cols-1 lg:grid-cols-2",
+        sectionSpacing: "space-y-6",
+        typographySize: "text-5xl md:text-6xl",
+        titleWeight: "font-extrabold",
+        sectionHeaderStyle: "bg-red-600 text-white px-5 py-3 rounded-t-lg font-bold uppercase text-sm",
+        sectionContentStyle: "bg-white p-6 rounded-b-lg border-2 border-red-200",
+        useCardSections: true,
+      },
+      "housekeeping": {
+        headerGradient: "from-gray-700 to-gray-700",
+        headerBg: "bg-gray-700", // Dark gray header
+        sidebarBg: "bg-gray-200", // Light gray sidebar
+        headerBarBg: "bg-gray-700", // Dark gray for header bar
+        accentColor: "gray",
+        textColor: "text-gray-800", // Dark gray text
+        borderColor: "border-gray-400", // Gray borders
+        bgColor: "bg-white",
+        cardBorder: "border-gray-400",
+        buttonColor: "gray",
+        lightBg: "bg-gray-200",
+        mediumBg: "bg-gray-300",
+        darkBg: "bg-gray-400",
+        pageBg: "bg-white",
+        // Unique layout: Top header + Left sidebar + Right content (matching image)
+        layoutType: "housekeeping-layout", // Special layout for housekeeping
+        headerLayout: "centered",
+        headerTextAlign: "text-center",
+        headerFlexDirection: "flex-col items-center",
+        avatarSize: "w-32 h-32",
+        avatarPosition: "mb-6",
+        cardStyle: "rounded-none shadow-none", // No rounded corners, no shadow
+        cardPadding: "p-6",
+        contentGrid: "grid-cols-1",
+        sectionSpacing: "space-y-6",
+        typographySize: "text-4xl md:text-5xl",
+        titleWeight: "font-bold",
+        sectionHeaderStyle: "text-gray-800 font-bold uppercase text-sm mb-2 pb-2 border-b border-gray-600", // Dark gray text with line underneath
+        sectionContentStyle: "bg-transparent p-0", // No background, no padding
+        useCardSections: false,
+        headerTextColor: "text-white", // White text in header
+        sidebarTextColor: "text-gray-800", // Dark gray text in sidebar
+        mainTextColor: "text-gray-800", // Dark gray text in main content
+      },
+      "food-beverage": {
+        headerGradient: "from-green-500 via-teal-500 to-green-600",
+        headerBg: "bg-gradient-to-br from-green-500 via-teal-500 to-green-600",
+        sidebarBg: "bg-gradient-to-br from-green-600 via-teal-600 to-green-700",
+        headerBarBg: "bg-green-700",
+        accentColor: "green",
+        textColor: "text-green-600",
+        borderColor: "border-green-300",
+        bgColor: "bg-green-50",
+        cardBorder: "border-green-100",
+        buttonColor: "green",
+        lightBg: "bg-green-50",
+        mediumBg: "bg-green-100",
+        darkBg: "bg-green-200",
+        pageBg: "bg-green-50",
+        // Unique layout: Right sidebar with main content on left
+        layoutType: "right-sidebar",
+        headerLayout: "right-left",
+        headerTextAlign: "text-right",
+        headerFlexDirection: "flex-row-reverse items-center",
+        avatarSize: "w-32 h-32",
+        avatarPosition: "mb-6",
+        cardStyle: "rounded-2xl shadow-xl border-2 border-green-200",
+        cardPadding: "p-6",
+        contentGrid: "grid-cols-1",
+        sectionSpacing: "space-y-8",
+        typographySize: "text-4xl md:text-5xl",
+        titleWeight: "font-semibold",
+        sectionHeaderStyle: "bg-gradient-to-r from-green-600 to-teal-600 text-white px-5 py-3 rounded-t-2xl font-bold uppercase text-sm",
+        sectionContentStyle: "bg-white p-6 rounded-b-2xl border-2 border-green-200",
+        useCardSections: true,
+      },
+      "bartending-barista": {
+        headerGradient: "from-blue-500 via-blue-500 to-blue-500",
+        headerBg: "bg-blue-500",
+        sidebarBg: "bg-blue-500",
+        headerBarBg: "bg-transparent",
+        accentColor: "blue",
+        textColor: "text-gray-800",
+        borderColor: "border-gray-300",
+        bgColor: "bg-gray-50",
+        cardBorder: "border-gray-300",
+        buttonColor: "blue",
+        lightBg: "bg-gray-50",
+        mediumBg: "bg-gray-100",
+        darkBg: "bg-gray-200",
+        pageBg: "bg-gray-50",
+        // Unique layout: Split view with simple headers
+        layoutType: "split-view",
+        headerLayout: "centered",
+        headerTextAlign: "text-left",
+        headerFlexDirection: "flex-col items-center",
+        avatarSize: "w-32 h-32",
+        avatarPosition: "mb-8",
+        cardStyle: "rounded-lg shadow-md",
+        cardPadding: "p-6",
+        contentGrid: "grid-cols-1",
+        sectionSpacing: "space-y-8",
+        typographySize: "text-3xl",
+        titleWeight: "font-bold",
+        sectionHeaderStyle: "text-gray-800 font-bold uppercase text-sm mb-2",
+        sectionContentStyle: "bg-white border-t border-gray-300 pt-4",
+        useCardSections: false,
+        useSimpleHeaders: true,
+      },
+      "default": {
+        headerGradient: "from-blue-600 via-blue-700 to-blue-800",
+        headerBg: "bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800",
+        sidebarBg: "bg-gradient-to-br from-blue-700 via-blue-800 to-blue-900",
+        headerBarBg: "bg-blue-800",
+        accentColor: "blue",
+        textColor: "text-blue-600",
+        borderColor: "border-blue-300",
+        bgColor: "bg-blue-50",
+        cardBorder: "border-blue-100",
+        buttonColor: "blue",
+        lightBg: "bg-blue-50",
+        mediumBg: "bg-blue-100",
+        darkBg: "bg-blue-200",
+        pageBg: "bg-gray-50",
+        layoutType: "left-sidebar",
+        headerLayout: "left-right",
+        headerTextAlign: "text-left",
+        headerFlexDirection: "flex-row items-center",
+        avatarSize: "w-32 h-32",
+        avatarPosition: "mb-6",
+        cardStyle: "rounded-lg shadow-md",
+        cardPadding: "p-6",
+        contentGrid: "grid-cols-1",
+        sectionSpacing: "space-y-6",
+        typographySize: "text-3xl md:text-4xl",
+        titleWeight: "font-semibold",
+        sectionHeaderStyle: "bg-blue-800 text-white px-4 py-3 font-bold uppercase text-sm",
+        sectionContentStyle: "bg-white p-6 border-t-2 border-blue-300",
+        useCardSections: false,
+      },
+    }
+    return themes[template] || themes["default"]
+  }
+
   const fetchShareToken = async (authToken) => {
     try {
       console.log("Fetching share token for graduate ID:", graduateId)
@@ -130,6 +332,8 @@ const ViewPortfolio = () => {
       professionalTitle: portfolioData.professionalTitle || "",
       primaryCourseType: portfolioData.primaryCourseType || "",
       scholarScheme: portfolioData.scholarScheme || "",
+      designTemplate: portfolioData.designTemplate || "default",
+      visibility: portfolioData.visibility || "PUBLIC",
       customSectionJson: portfolioData.customSectionJson || "",
       avatar: portfolioData.avatar || graduateData.profilePicture || "",
       ncLevel: portfolioData.ncLevel || "",
@@ -221,6 +425,8 @@ const ViewPortfolio = () => {
 
     console.log("✅ Normalized portfolio data:", {
       fullName: normalized.fullName,
+      designTemplate: normalized.designTemplate,
+      primaryCourseType: normalized.primaryCourseType,
       hasProjects: normalized.projects.length > 0,
       hasSkills: normalized.skills.length > 0,
       hasExperiences: normalized.experiences.length > 0,
@@ -507,6 +713,16 @@ const fetchPublicDataWithToken = async () => {
       })
     }
   }, [portfolio, isPublicView, isGraduateView, shareToken, urlShareToken])
+
+  // Get design theme - calculate early so it's available for all renders
+  const designTheme = portfolio ? getDesignTheme(portfolio.designTemplate || "default") : getDesignTheme("default")
+  
+  // Debug: Log the design template being used
+  useEffect(() => {
+    if (portfolio) {
+      console.log("Portfolio Design Template:", portfolio.designTemplate, "Theme:", designTheme)
+    }
+  }, [portfolio, designTheme])
 
   const handleCertificateClick = (certificate) => {
     setSelectedCertificate(selectedCertificate?.id === certificate.id ? null : certificate)
@@ -1703,19 +1919,685 @@ const fetchPublicDataWithToken = async () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white relative overflow-hidden">
-        {/* Background pattern */}
-        <div className="absolute inset-0 bg-white/5 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px] animate-pulse"></div>
-        <div className="container mx-auto px-6 py-24 relative">
+    <div className={`min-h-screen ${designTheme.pageBg || "bg-gray-50"} py-8 px-4`}>
+      <div className={`mx-auto bg-white ${designTheme.layoutType === "housekeeping-layout" ? "max-w-6xl shadow-xl rounded-none" : "max-w-7xl shadow-2xl rounded-2xl"} overflow-hidden`}>
+        {/* Housekeeping Layout: Top header + Left sidebar + Right content */}
+        {designTheme.layoutType === "housekeeping-layout" ? (
+          <div>
+            {/* Top Header - Full Width Dark Gray */}
+            <div className={`${designTheme.headerBg} text-white p-8 ${designTheme.headerFlexDirection} ${designTheme.headerTextAlign}`}>
+              {isEditMode && editingSections.header ? (
+                <>
+                  <Input
+                    value={editingPortfolio?.fullName || ""}
+                    onChange={(e) => handleFieldChange("fullName", e.target.value)}
+                    className={`!${designTheme.typographySize} !${designTheme.titleWeight} !bg-white/20 !border-white/40 !text-white placeholder:text-white/60 uppercase`}
+                    placeholder="Full Name"
+                  />
+                  <Input
+                    value={editingPortfolio?.professionalTitle || ""}
+                    onChange={(e) => handleFieldChange("professionalTitle", e.target.value)}
+                    className="!text-lg !font-normal !bg-white/20 !border-white/40 !text-white placeholder:text-white/60 uppercase mt-2"
+                    placeholder="Professional Title"
+                  />
+                </>
+              ) : (
+                <>
+                  <Typography variant="h1" className={`${designTheme.typographySize} ${designTheme.titleWeight} text-white uppercase tracking-wide mb-2`}>
+                    {portfolio.fullName || "Professional Portfolio"}
+                  </Typography>
+                  {portfolio.professionalTitle && (
+                    <Typography variant="h6" className="text-white text-lg font-normal uppercase tracking-wide">
+                      {portfolio.professionalTitle}
+                    </Typography>
+                  )}
+                </>
+              )}
+              {isGraduateView && isEditMode && (
+                <IconButton
+                  size="sm"
+                  variant="text"
+                  className="text-white hover:bg-white/20 mt-2"
+                  onClick={() => handleSectionEditToggle("header")}
+                >
+                  <FaPen className="w-4 h-4" />
+                </IconButton>
+              )}
+              {isEditMode && editingSections.header && (
+                <Button
+                  variant="gradient"
+                  color="white"
+                  onClick={() => handleSaveSection("header")}
+                  disabled={isSaving}
+                  className="flex items-center gap-2 mt-4"
+                >
+                  <FaSave className="w-4 h-4" />
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
+              )}
+            </div>
+
+            {/* Main Content: Left Sidebar + Right Content */}
+            <div className="flex flex-col lg:flex-row">
+              {/* Left Sidebar - Light Gray Background */}
+              <div className={`${designTheme.sidebarBg} w-full lg:w-80 flex-shrink-0 p-8 border-r border-gray-400`}>
+                {/* Contact Section */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <Typography variant="h6" className={`${designTheme.sidebarTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+                      Contact
+                    </Typography>
+                    {isGraduateView && isEditMode && (
+                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("contact")}>
+                        <FaPen className="w-4 h-4" />
+                      </IconButton>
+                    )}
+                  </div>
+                  <div className="mt-3 space-y-3">
+                    {isEditMode && editingSections.contact ? (
+                      <>
+                        <Input
+                          size="sm"
+                          value={editingPortfolio?.email || ""}
+                          onChange={(e) => handleFieldChange("email", e.target.value)}
+                          placeholder="Email"
+                          className="!border-gray-300"
+                        />
+                        <Input
+                          size="sm"
+                          value={editingPortfolio?.phone || ""}
+                          onChange={(e) => handleFieldChange("phone", e.target.value)}
+                          placeholder="Phone"
+                          className="!border-gray-300"
+                        />
+                        <Input
+                          size="sm"
+                          value={editingPortfolio?.website || ""}
+                          onChange={(e) => handleFieldChange("website", e.target.value)}
+                          placeholder="Website"
+                          className="!border-gray-300"
+                        />
+                        <Button size="sm" onClick={() => handleSaveSection("contact")} disabled={isSaving}>
+                          {isSaving ? "Saving..." : "Save"}
+                        </Button>
+                      </>
+                    ) : (portfolio.email || portfolio.phone || portfolio.website) ? (
+                      <>
+                        {portfolio.email && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-700">✉️</span>
+                            <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm break-all`}>
+                              {portfolio.email}
+                            </Typography>
+                          </div>
+                        )}
+                        {portfolio.phone && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-700">📞</span>
+                            <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm`}>
+                              {portfolio.phone}
+                            </Typography>
+                          </div>
+                        )}
+                        {portfolio.website && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-700">📍</span>
+                            <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm`}>
+                              {portfolio.website}
+                            </Typography>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} italic text-xs`}>
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )}
+                  </div>
+                </div>
+
+                {/* Education Section */}
+                <div className="mb-6">
+                  <Typography variant="h6" className={`${designTheme.sidebarTextColor || "text-gray-800"} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
+                    Education
+                  </Typography>
+                  <div className="mt-3 space-y-2">
+                    {portfolio.trainingCenter || portfolio.ncLevel || portfolio.scholarshipType ? (
+                      <>
+                        {portfolio.trainingCenter && (
+                          <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm font-semibold`}>
+                            {portfolio.trainingCenter}
+                          </Typography>
+                        )}
+                        {portfolio.ncLevel && (
+                          <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm`}>
+                            • {portfolio.ncLevel}
+                          </Typography>
+                        )}
+                        {portfolio.scholarshipType && (
+                          <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm`}>
+                            • {portfolio.scholarshipType}
+                          </Typography>
+                        )}
+                      </>
+                    ) : (
+                      <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} italic text-xs`}>
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )}
+                  </div>
+                </div>
+
+                {/* Skills Section */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <Typography variant="h6" className={`${designTheme.sidebarTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+                      Skills
+                    </Typography>
+                    {isGraduateView && isEditMode && (
+                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("skills")}>
+                        <FaPen className="w-4 h-4" />
+                      </IconButton>
+                    )}
+                  </div>
+                  <div className="mt-3">
+                    {portfolio.skills && portfolio.skills.length > 0 ? (
+                      <ul className="space-y-1 list-disc list-inside">
+                        {portfolio.skills.map((skill, index) => (
+                          <li key={index}>
+                            <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm`}>
+                              {skill.name}
+                            </Typography>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} italic text-xs`}>
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )}
+                  </div>
+                </div>
+
+                {/* TESDA Information */}
+                <div>
+                  <Typography variant="h6" className={`${designTheme.sidebarTextColor || "text-gray-800"} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
+                    TESDA
+                  </Typography>
+                  <div className="mt-3 space-y-2">
+                    {portfolio.trainingDuration || portfolio.tesdaRegistrationNumber ? (
+                      <>
+                        {portfolio.trainingDuration && (
+                          <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm`}>
+                            • Duration: {portfolio.trainingDuration}
+                          </Typography>
+                        )}
+                        {portfolio.tesdaRegistrationNumber && (
+                          <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm`}>
+                            • Reg. #: {portfolio.tesdaRegistrationNumber}
+                          </Typography>
+                        )}
+                      </>
+                    ) : (
+                      <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} italic text-xs`}>
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Main Content - White Background */}
+              <div className="flex-1 bg-white p-8">
+                {/* Professional Summary */}
+                <div className="mb-8">
+                  <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
+                    Professional Summary
+                  </Typography>
+                  <div className="mt-3">
+                    {isEditMode && editingSections.header ? (
+                      <Textarea
+                        value={editingPortfolio?.professionalSummary || ""}
+                        onChange={(e) => handleFieldChange("professionalSummary", e.target.value)}
+                        className="!border-gray-300"
+                        rows={4}
+                      />
+                    ) : portfolio.professionalSummary ? (
+                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} leading-relaxed`}>
+                        {portfolio.professionalSummary}
+                      </Typography>
+                    ) : (
+                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )}
+                  </div>
+                </div>
+
+                {/* Work Experience */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+                      Work Experience
+                    </Typography>
+                    {isGraduateView && isEditMode && (
+                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("experience")}>
+                        <FaPen className="w-4 h-4" />
+                      </IconButton>
+                    )}
+                  </div>
+                  <div className="mt-3">
+                    {portfolio.experiences && portfolio.experiences.length > 0 ? (
+                      <div className="space-y-6">
+                        {portfolio.experiences.map((exp, index) => (
+                          <div key={index} className="mb-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} font-semibold`}>
+                                  {exp.employer || exp.company || "Company"}
+                                </Typography>
+                                <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"}`}>
+                                  {exp.jobTitle || "Position"}
+                                </Typography>
+                              </div>
+                              {(exp.startDate || exp.endDate) && (
+                                <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-right`}>
+                                  {exp.startDate && exp.endDate ? `${exp.startDate} - ${exp.endDate}` : exp.startDate || exp.endDate}
+                                </Typography>
+                              )}
+                            </div>
+                            {exp.description && (
+                              <ul className="list-disc list-inside mt-2">
+                                <li>
+                                  <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"}`}>
+                                    {exp.description}
+                                  </Typography>
+                                </li>
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )}
+                  </div>
+                </div>
+
+                {/* Certificates */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+                      Certificates
+                    </Typography>
+                    {isGraduateView && isEditMode && (
+                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("certificates")}>
+                        <FaPen className="w-4 h-4" />
+                      </IconButton>
+                    )}
+                  </div>
+                  <div className="mt-3">
+                    {certificates.length > 0 ? (
+                      <div className="space-y-3">
+                        {certificates.map((certificate, index) => (
+                          <div key={index}>
+                            <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} font-medium`}>
+                              {certificate.courseName}
+                            </Typography>
+                            {certificate.certificateNumber && (
+                              <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-xs`}>
+                                #{certificate.certificateNumber}
+                              </Typography>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )}
+                  </div>
+                </div>
+
+                {/* Projects */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+                      Projects
+                    </Typography>
+                    {isGraduateView && isEditMode && (
+                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("projects")}>
+                        <FaPen className="w-4 h-4" />
+                      </IconButton>
+                    )}
+                  </div>
+                  <div className="mt-3">
+                    {projects.length > 0 ? (
+                      <div className="space-y-4">
+                        {projects.map((project, index) => (
+                          <div key={index}>
+                            <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} font-semibold`}>
+                              {project.title}
+                            </Typography>
+                            {project.description && (
+                              <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-xs mt-1`}>
+                                {project.description}
+                              </Typography>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )}
+                  </div>
+                </div>
+
+                {/* Awards & Recognition */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+                      Awards & Recognition
+                    </Typography>
+                    {isGraduateView && isEditMode && (
+                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("awards")}>
+                        <FaPen className="w-4 h-4" />
+                      </IconButton>
+                    )}
+                  </div>
+                  <div className="mt-3">
+                    {portfolio.awardsRecognitions && portfolio.awardsRecognitions.length > 0 ? (
+                      <div className="space-y-3">
+                        {portfolio.awardsRecognitions.map((award, index) => (
+                          <div key={index}>
+                            <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} font-medium`}>
+                              {award.title}
+                            </Typography>
+                            {award.issuer && (
+                              <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-xs`}>
+                                {award.issuer}
+                              </Typography>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )}
+                  </div>
+                </div>
+
+                {/* Continuing Education */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+                      Continuing Education
+                    </Typography>
+                    {isGraduateView && isEditMode && (
+                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("education")}>
+                        <FaPen className="w-4 h-4" />
+                      </IconButton>
+                    )}
+                  </div>
+                  <div className="mt-3">
+                    {portfolio.continuingEducations && portfolio.continuingEducations.length > 0 ? (
+                      <div className="space-y-3">
+                        {portfolio.continuingEducations.map((edu, index) => (
+                          <div key={index}>
+                            <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} font-medium`}>
+                              {edu.courseName}
+                            </Typography>
+                            {edu.institution && (
+                              <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-xs`}>
+                                {edu.institution}
+                              </Typography>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )}
+                  </div>
+                </div>
+
+                {/* Professional Memberships */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+                      Professional Memberships
+                    </Typography>
+                    {isGraduateView && isEditMode && (
+                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("memberships")}>
+                        <FaPen className="w-4 h-4" />
+                      </IconButton>
+                    )}
+                  </div>
+                  <div className="mt-3">
+                    {portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0 ? (
+                      <div className="space-y-3">
+                        {portfolio.professionalMemberships.map((mem, index) => (
+                          <div key={index}>
+                            <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} font-medium`}>
+                              {mem.organization}
+                            </Typography>
+                            {mem.membershipType && (
+                              <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-xs`}>
+                                {mem.membershipType}
+                              </Typography>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )}
+                  </div>
+                </div>
+
+                {/* References */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+                      References
+                    </Typography>
+                    {isGraduateView && isEditMode && (
+                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("references")}>
+                        <FaPen className="w-4 h-4" />
+                      </IconButton>
+                    )}
+                  </div>
+                  <div className="mt-3">
+                    {portfolio.references && portfolio.references.length > 0 ? (
+                      <div className="space-y-3">
+                        {portfolio.references.map((ref, index) => (
+                          <div key={index}>
+                            <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} font-medium`}>
+                              {ref.name}
+                            </Typography>
+                            {ref.position && (
+                              <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-xs`}>
+                                {ref.position}
+                              </Typography>
+                            )}
+                            {ref.company && (
+                              <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-xs`}>
+                                {ref.company}
+                              </Typography>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Share Your Portfolio Section - Only for graduate view */}
+            {isGraduateView && (
+              <div className="mt-8 bg-white border border-gray-300 rounded-lg p-8">
+                <div className="text-center mb-8">
+                  <Typography variant="h4" className={`${designTheme.textColor || "text-gray-800"} mb-4 font-light`}>
+                    Share Your Portfolio
+                  </Typography>
+                  <Typography className="text-gray-600 max-w-2xl mx-auto font-light">
+                    Share your professional portfolio with potential employers, clients, or collaborators using secure
+                    links.
+                  </Typography>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                  <Button onClick={copyToClipboard} color={designTheme.buttonColor || "gray"} size="lg" className="font-light">
+                    Copy Secure Link
+                  </Button>
+                  <Button onClick={shareToLinkedIn} color={designTheme.buttonColor || "gray"} variant="outlined" size="lg" className="font-light">
+                    Share to LinkedIn
+                  </Button>
+                  <Button onClick={shareToFacebook} color={designTheme.buttonColor || "gray"} variant="outlined" size="lg" className="font-light">
+                    Share to Facebook
+                  </Button>
+                </div>
+
+                {shareToken && (
+                  <div className="p-6 bg-gray-100 rounded-lg mb-6">
+                    <Typography variant="h6" className={`${designTheme.textColor || "text-gray-800"} mb-2 font-light`}>
+                      Your Secure Token
+                    </Typography>
+                    <Typography variant="small" className="text-gray-700 font-mono">
+                      {shareToken.substring(0, 8)}...{shareToken.slice(-4)}
+                    </Typography>
+                    <Typography variant="small" className="text-gray-600 mt-2 italic">
+                      Links using this token will work until you generate a new one.
+                    </Typography>
+                  </div>
+                )}
+
+                {saveSuccess && (
+                  <Card className="mb-6 bg-green-50 border border-green-200">
+                    <CardBody>
+                      <Typography color="green" className="text-center">
+                        {saveSuccess}
+                      </Typography>
+                    </CardBody>
+                  </Card>
+                )}
+
+                {saveError && (
+                  <Card className="mb-6 bg-red-50 border border-red-200">
+                    <CardBody>
+                      <Typography color="red" className="text-center">
+                        {saveError}
+                      </Typography>
+                    </CardBody>
+                  </Card>
+                )}
+
+                <div className="flex flex-wrap gap-4 justify-center">
+                  <Button
+                    onClick={handleEditModeToggle}
+                    color={isEditMode ? "red" : designTheme.buttonColor || "gray"}
+                    size="lg"
+                    className="font-light flex items-center gap-2"
+                  >
+                    {isEditMode ? (
+                      <>
+                        <FaTimes className="w-4 h-4" />
+                        Cancel Edit
+                      </>
+                    ) : (
+                      <>
+                        <FaPen className="w-4 h-4" />
+                        Edit Portfolio
+                      </>
+                    )}
+                  </Button>
+                  {isEditMode && (
+                    <Button
+                      onClick={handleSavePortfolio}
+                      color="green"
+                      size="lg"
+                      className="font-light flex items-center gap-2"
+                      disabled={isSaving}
+                    >
+                      {isSaving ? (
+                        <>
+                          <Spinner className="w-4 h-4" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <FaSave className="w-4 h-4" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {!isEditMode && (
+                    <>
+                      <Button
+                        onClick={handleRegenerateToken}
+                        color={designTheme.buttonColor || "gray"}
+                        variant="outlined"
+                        size="lg"
+                        className="font-light"
+                      >
+                        Generate New Link
+                      </Button>
+                      <Button onClick={handleDelete} color="red" variant="outlined" size="lg" className="font-light">
+                        Delete Portfolio
+                      </Button>
+                    </>
+                  )}
+                </div>
+
+                <div className="text-center mt-8">
+                  <Link to="/graduate-homepage">
+                    <Button color="gray" variant="text" size="lg" className="font-light">
+                      ← Back to Homepage
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Default Layout */}
+            <div className={`${designTheme.headerBg} text-white relative overflow-hidden`}>
+            {/* Background pattern */}
+            <div className="absolute inset-0 bg-white/5 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px] animate-pulse"></div>
+            <div className="px-6 py-24 relative">
           {/* Back Button - Visible only in public view */}
           
-          <div className="flex items-center justify-between max-w-6xl mx-auto gap-16">
-            {/* Profile Image - Left Side */}
+          <div className={`${designTheme.headerFlexDirection} w-full gap-16`}>
+            {/* Profile Image */}
             {(graduate?.profilePicture || portfolio?.avatar || isEditMode) && (
-              <div className="relative flex-shrink-0 animate-fade-in-up">
+              <div className={`relative flex-shrink-0 animate-fade-in-up ${designTheme.avatarPosition}`}>
                 <div className="absolute inset-0 bg-white/20 blur-xl scale-110 animate-pulse"></div>
-                <div className="absolute inset-0 bg-blue-300/30 blur-2xl scale-125 animate-ping opacity-20"></div>
+                <div className={`absolute inset-0 blur-2xl scale-125 animate-ping opacity-20 ${
+                  designTheme.accentColor === "amber" ? "bg-amber-300/30" :
+                  designTheme.accentColor === "red" ? "bg-red-300/30" :
+                  designTheme.accentColor === "blue" ? "bg-blue-300/30" :
+                  designTheme.accentColor === "green" ? "bg-green-300/30" :
+                  designTheme.accentColor === "purple" ? "bg-purple-300/30" :
+                  "bg-blue-300/30"
+                }`}></div>
                 <Avatar
                   src={
                     isEditMode && selectedAvatarFile
@@ -1724,13 +2606,20 @@ const fetchPublicDataWithToken = async () => {
                   }
                   alt={`${portfolio.fullName || "Profile"} Picture`}
                   size="xxl"
-                  className={`relative shadow-2xl w-80 h-80 backdrop-blur-sm transition-all duration-500 animate-float rounded-none border-0 ${
+                  className={`relative shadow-2xl ${designTheme.avatarSize} backdrop-blur-sm transition-all duration-500 animate-float rounded-none border-0 ${
                     isEditMode ? "cursor-pointer hover:scale-110 hover:ring-4 hover:ring-white/50" : "hover:scale-105"
                   }`}
                   onClick={handleImageClick}
                 />
                 {isEditMode && !editingSections.header && (
-                  <div className="absolute bottom-2 right-2 bg-blue-500 rounded-full p-2 shadow-lg cursor-pointer hover:bg-blue-600"
+                  <div className={`absolute bottom-2 right-2 rounded-full p-2 shadow-lg cursor-pointer ${
+                    designTheme.accentColor === "amber" ? "bg-amber-500 hover:bg-amber-600" :
+                    designTheme.accentColor === "red" ? "bg-red-500 hover:bg-red-600" :
+                    designTheme.accentColor === "blue" ? "bg-blue-500 hover:bg-blue-600" :
+                    designTheme.accentColor === "green" ? "bg-green-500 hover:bg-green-600" :
+                    designTheme.accentColor === "purple" ? "bg-purple-500 hover:bg-purple-600" :
+                    "bg-blue-500 hover:bg-blue-600"
+                  }`}
                     onClick={() => handleSectionEditToggle("header")}>
                     <FaPen className="w-4 h-4 text-white" />
                   </div>
@@ -1745,22 +2634,25 @@ const fetchPublicDataWithToken = async () => {
               </div>
             )}
 
-            {/* Text Content - Right Side */}
-            <div className="flex-1 text-left space-y-8">
-              <div className="animate-fade-in-up animation-delay-300 flex items-center gap-3">
+            {/* Text Content */}
+            <div className={`flex-1 ${designTheme.headerTextAlign} space-y-8`}>
+              <div className={`animate-fade-in-up animation-delay-300 flex items-center gap-3 ${
+                designTheme.headerLayout === "centered" ? "justify-center" : 
+                designTheme.headerLayout === "right-left" ? "justify-end" : "justify-start"
+              }`}>
                 {isEditMode && editingSections.header ? (
                   <div className="flex-1">
                     <Input
                       value={editingPortfolio?.fullName || ""}
                       onChange={(e) => handleFieldChange("fullName", e.target.value)}
-                      className="!text-5xl md:!text-6xl lg:!text-7xl !font-extralight !bg-white/20 !border-white/40 !text-white placeholder:text-white/60"
+                      className={`!${designTheme.typographySize} !${designTheme.titleWeight} !bg-white/20 !border-white/40 !text-white placeholder:text-white/60`}
                       placeholder="Full Name"
                     />
                   </div>
                 ) : (
                   <Typography
                     variant="h1"
-                    className="mb-6 font-extralight text-5xl md:text-6xl lg:text-7xl tracking-tight animate-typing overflow-hidden whitespace-nowrap border-r-4 border-white/50 break-words"
+                    className={`mb-6 ${designTheme.titleWeight} ${designTheme.typographySize} tracking-tight animate-typing overflow-hidden whitespace-nowrap border-r-4 border-white/50 break-words`}
                   >
                     {portfolio.fullName || "Professional Portfolio"}
                   </Typography>
@@ -1803,7 +2695,11 @@ const fetchPublicDataWithToken = async () => {
               )}
 
               {(portfolio.professionalSummary || (isEditMode && editingSections.header)) && (
-                <div className="max-w-3xl mt-10 animate-fade-in-up animation-delay-900">
+                <div className={`mt-10 animate-fade-in-up animation-delay-900 ${
+                  designTheme.headerLayout === "centered" ? "max-w-3xl mx-auto" : 
+                  designTheme.headerLayout === "right-left" ? "max-w-3xl ml-auto" : 
+                  "max-w-3xl"
+                }`}>
                   {isEditMode && editingSections.header ? (
                     <Textarea
                       value={editingPortfolio?.professionalSummary || ""}
@@ -1823,7 +2719,11 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
               {isEditMode && editingSections.header && (
-                <div className="mt-6 flex justify-end">
+                <div className={`mt-6 flex ${
+                  designTheme.headerLayout === "centered" ? "justify-center" : 
+                  designTheme.headerLayout === "right-left" ? "justify-start" : 
+                  "justify-end"
+                }`}>
                   <Button
                     variant="gradient"
                     color="white"
@@ -1837,7 +2737,11 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
 
-              <div className="mt-14 flex justify-start animate-fade-in-up animation-delay-1200">
+              <div className={`mt-14 flex animate-fade-in-up animation-delay-1200 ${
+                designTheme.headerLayout === "centered" ? "justify-center" : 
+                designTheme.headerLayout === "right-left" ? "justify-end" : 
+                "justify-start"
+              }`}>
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-8 py-4 hover:bg-white/20 hover:scale-105 transition-all duration-300 animate-bounce-subtle">
                   <Chip
                     value={isGraduateView ? "Owner View" : `Public View ${urlShareToken ? "🔒" : ""}`}
@@ -1957,13 +2861,18 @@ const fetchPublicDataWithToken = async () => {
         }
       `}</style>
 
-      <div className="container mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
-          <div className="lg:col-span-1 space-y-8">
+      <div className="px-6 py-16">
+        <div className={`grid ${designTheme.contentGrid} gap-12`}>
+          <div className={`${
+            designTheme.contentGrid.includes("lg:grid-cols-4") ? "lg:col-span-1" : 
+            designTheme.contentGrid.includes("lg:grid-cols-3") ? "lg:col-span-1" : 
+            designTheme.contentGrid.includes("lg:grid-cols-2") ? "lg:col-span-1" : 
+            ""
+          } ${designTheme.sectionSpacing}`}>
             {/* Contact Information */}
-            <div className="bg-white border border-gray-100 rounded-lg p-6">
+            <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
               <div className="flex items-center justify-between mb-6">
-                <Typography variant="h6" className="font-light text-blue-600 text-lg">
+                <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg`}>
                   Contact
                 </Typography>
                 {isGraduateView && isEditMode && (
@@ -1971,7 +2880,7 @@ const fetchPublicDataWithToken = async () => {
                     size="sm" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("contact")}
-                    className={editingSections.contact ? "text-blue-600" : ""}
+                    className={editingSections.contact ? designTheme.textColor : ""}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -2043,7 +2952,7 @@ const fetchPublicDataWithToken = async () => {
                 <div className="mt-4 flex justify-end">
                   <Button
                     variant="gradient"
-                    color="blue"
+                    color={designTheme.buttonColor}
                     size="sm"
                     onClick={() => handleSaveSection("contact")}
                     disabled={isSaving}
@@ -2057,9 +2966,9 @@ const fetchPublicDataWithToken = async () => {
             </div>
 
             {/* Skills */}
-            <div className="bg-white border border-gray-100 rounded-lg p-6">
+            <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
               <div className="flex items-center justify-between mb-6">
-                <Typography variant="h6" className="font-light text-blue-600 text-lg">
+                <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg`}>
                   Skills
                 </Typography>
                 {isGraduateView && isEditMode && (
@@ -2067,7 +2976,7 @@ const fetchPublicDataWithToken = async () => {
                     size="sm" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("skills")}
-                    className={editingSections.skills ? "text-blue-600" : ""}
+                    className={editingSections.skills ? designTheme.textColor : ""}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -2110,7 +3019,7 @@ const fetchPublicDataWithToken = async () => {
                             {skill.name}
                           </Typography>
                           <div className="flex items-center space-x-2">
-                            <Chip size="sm" value={skill.type} color="blue" className="text-xs font-light" />
+                            <Chip size="sm" value={skill.type} color={designTheme.buttonColor} className="text-xs font-light" />
                             {skill.proficiencyLevel && (
                               <Typography variant="small" color="gray" className="text-xs">
                                 {skill.proficiencyLevel}
@@ -2125,7 +3034,7 @@ const fetchPublicDataWithToken = async () => {
                     <Button
                       variant="outlined"
                       size="sm"
-                      color="blue"
+                      color={designTheme.buttonColor}
                       onClick={() => handleAddArrayItem("skills", { name: "", type: "TECHNICAL", proficiencyLevel: "" })}
                       className="w-full flex items-center justify-center gap-2 mt-2"
                     >
@@ -2137,7 +3046,7 @@ const fetchPublicDataWithToken = async () => {
                     <div className="mt-4 flex justify-end">
                       <Button
                         variant="gradient"
-                        color="blue"
+                        color={designTheme.buttonColor}
                         size="sm"
                         onClick={() => handleSaveSection("skills")}
                         disabled={isSaving}
@@ -2157,9 +3066,9 @@ const fetchPublicDataWithToken = async () => {
             </div>
 
             {/* TESDA Information */}
-            <div className="bg-white border border-gray-100 rounded-lg p-6">
+            <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
               <div className="flex items-center justify-between mb-6">
-                <Typography variant="h6" className="font-light text-blue-600 text-lg">
+                <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg`}>
                   TESDA Information
                 </Typography>
                 {isGraduateView && isEditMode && (
@@ -2167,7 +3076,7 @@ const fetchPublicDataWithToken = async () => {
                     size="sm" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("tesda")}
-                    className={editingSections.tesda ? "text-blue-600" : ""}
+                    className={editingSections.tesda ? designTheme.textColor : ""}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -2279,7 +3188,7 @@ const fetchPublicDataWithToken = async () => {
                 <div className="mt-4 flex justify-end">
                   <Button
                     variant="gradient"
-                    color="blue"
+                    color={designTheme.buttonColor}
                     size="sm"
                     onClick={() => handleSaveSection("tesda")}
                     disabled={isSaving}
@@ -2293,11 +3202,16 @@ const fetchPublicDataWithToken = async () => {
             </div>
           </div>
  
-          <div className="lg:col-span-3 space-y-12">
+          <div className={`${
+            designTheme.contentGrid.includes("lg:grid-cols-4") ? "lg:col-span-3" : 
+            designTheme.contentGrid.includes("lg:grid-cols-3") ? "lg:col-span-2" : 
+            designTheme.contentGrid.includes("lg:grid-cols-2") ? "lg:col-span-1" : 
+            ""
+          }`}>
             {/* Certificates */}
             <div>
               <div className="flex items-center justify-between mb-8">
-                <Typography variant="h4" className="font-light text-blue-600 text-2xl">
+                <Typography variant="h4" className={`font-light ${designTheme.textColor} ${designTheme.typographySize.includes("text-4xl") ? "text-xl md:text-2xl" : designTheme.typographySize.includes("text-3xl") ? "text-lg md:text-xl" : "text-2xl"}`}>
                   Certificates
                 </Typography>
                 {isGraduateView && isEditMode && (
@@ -2305,7 +3219,7 @@ const fetchPublicDataWithToken = async () => {
                     size="sm" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("certificates")}
-                    className={editingSections.certificates ? "text-blue-600" : ""}
+                    className={editingSections.certificates ? designTheme.textColor : ""}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -2388,7 +3302,7 @@ const fetchPublicDataWithToken = async () => {
                       )}
                       <Button
                         variant="outlined"
-                        color="blue"
+                        color={designTheme.buttonColor}
                         onClick={handleCertificateImageClick}
                         className="flex items-center gap-2"
                       >
@@ -2408,7 +3322,7 @@ const fetchPublicDataWithToken = async () => {
                   <div className="mt-6 flex justify-end gap-2">
                     <Button
                       variant="gradient"
-                      color="blue"
+                      color={designTheme.buttonColor}
                       onClick={editingCertificateId ? handleUpdateCertificate : handleAddCertificate}
                       disabled={!isCertificateFormValid()}
                     >
@@ -3422,13 +4336,13 @@ const fetchPublicDataWithToken = async () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <Button onClick={copyToClipboard} color="blue" size="lg" className="font-light">
+              <Button onClick={copyToClipboard} color={designTheme.buttonColor} size="lg" className="font-light">
                 Copy Secure Link
               </Button>
-              <Button onClick={shareToLinkedIn} color="blue" variant="outlined" size="lg" className="font-light">
+              <Button onClick={shareToLinkedIn} color={designTheme.buttonColor} variant="outlined" size="lg" className="font-light">
                 Share to LinkedIn
               </Button>
-              <Button onClick={shareToFacebook} color="blue" variant="outlined" size="lg" className="font-light">
+              <Button onClick={shareToFacebook} color={designTheme.buttonColor} variant="outlined" size="lg" className="font-light">
                 Share to Facebook
               </Button>
             </div>
@@ -3584,6 +4498,9 @@ const fetchPublicDataWithToken = async () => {
           </DialogFooter>
         </Dialog>
       )}
+          </>
+        )}
+      </div>
     </div>
   )
 }
