@@ -18,7 +18,11 @@ import {
   Input,
   Textarea,
   IconButton,
+  Select,
+  Option,
 } from "@material-tailwind/react"
+
+const VALID_SKILL_TYPES = ["TECHNICAL", "LANGUAGE", "DIGITAL", "SOFT", "INDUSTRY_SPECIFIC"]
 
 const ViewPortfolio = () => {
   const { graduateId } = useParams()
@@ -1710,13 +1714,31 @@ const fetchPublicDataWithToken = async () => {
       } else if (section === "references") {
         payload.references = editingPortfolio.references
           ?.filter((ref) => ref.name && ref.name.trim() !== "") // Filter out entries with empty name
-          .map((ref) => ({
-            id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
-            name: ref.name.trim(),
-            relationship: ref.relationship && ref.relationship.trim() !== "" ? ref.relationship.trim() : null,
-            email: ref.email && ref.email.trim() !== "" ? ref.email.trim() : null,
-            phone: (ref.contact && ref.contact.trim() !== "") || (ref.phone && ref.phone.trim() !== "") ? (ref.contact || ref.phone).trim() : null,
-          })) || []
+          .map((ref) => {
+            const relationshipValue =
+              ref.relationship && ref.relationship.trim() !== ""
+                ? ref.relationship.trim()
+                : ref.position && ref.position.trim() !== ""
+                  ? ref.position.trim()
+                  : null
+            const companyValue =
+              ref.company && ref.company.trim() !== "" ? ref.company.trim() : null
+            const phoneValue =
+              ref.contact && ref.contact.trim() !== ""
+                ? ref.contact.trim()
+                : ref.phone && ref.phone.trim() !== ""
+                  ? ref.phone.trim()
+                  : null
+
+            return {
+              id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
+              name: ref.name.trim(),
+              relationship: relationshipValue,
+              company: companyValue,
+              email: ref.email && ref.email.trim() !== "" ? ref.email.trim() : null,
+              phone: phoneValue,
+            }
+          }) || []
       }
 
       // Ensure all array fields are properly formatted from editingPortfolio
@@ -1765,13 +1787,31 @@ const fetchPublicDataWithToken = async () => {
         })) || []
       payload.references = editingPortfolio.references
         ?.filter((ref) => ref.name && ref.name.trim() !== "") // Filter out entries with empty name
-        .map((ref) => ({
-          id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
-          name: ref.name.trim(),
-          relationship: ref.relationship && ref.relationship.trim() !== "" ? ref.relationship.trim() : null,
-          email: ref.email && ref.email.trim() !== "" ? ref.email.trim() : null,
-          phone: (ref.contact && ref.contact.trim() !== "") || (ref.phone && ref.phone.trim() !== "") ? (ref.contact || ref.phone).trim() : null,
-        })) || []
+        .map((ref) => {
+          const relationshipValue =
+            ref.relationship && ref.relationship.trim() !== ""
+              ? ref.relationship.trim()
+              : ref.position && ref.position.trim() !== ""
+                ? ref.position.trim()
+                : null
+          const companyValue =
+            ref.company && ref.company.trim() !== "" ? ref.company.trim() : null
+          const phoneValue =
+            ref.contact && ref.contact.trim() !== ""
+              ? ref.contact.trim()
+              : ref.phone && ref.phone.trim() !== ""
+                ? ref.phone.trim()
+                : null
+
+          return {
+            id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
+            name: ref.name.trim(),
+            relationship: relationshipValue,
+            company: companyValue,
+            email: ref.email && ref.email.trim() !== "" ? ref.email.trim() : null,
+            phone: phoneValue,
+          }
+        }) || []
 
       // Add certificate and project IDs if they exist
       if (section === "certificates") {
@@ -2119,30 +2159,60 @@ const fetchPublicDataWithToken = async () => {
                         <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
                           {isEditMode && editingSections.skills ? (
                             <div className="space-y-2">
-                              <div className="flex gap-2">
+                              <div>
+                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                  Skill Name
+                                </Typography>
+                                <div className="flex gap-2">
+                                  <Input
+                                    size="md"
+                                    value={skill.name || ""}
+                                    onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
+                                    placeholder="e.g. Latte Art"
+                                    className="!border-gray-300 flex-1"
+                                  />
+                                  <IconButton
+                                    size="md"
+                                    variant="text"
+                                    color="red"
+                                    onClick={() => handleRemoveArrayItem("skills", index)}
+                                  >
+                                    <FaTrash className="w-3 h-3" />
+                                  </IconButton>
+                                </div>
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                  Skill Type
+                                </Typography>
+                                <Select
+                                  size="md"
+                                  label="Select Skill Type"
+                                  value={skill.type || "TECHNICAL"}
+                                  onChange={(value) =>
+                                    handleArrayFieldChange("skills", index, "type", value || "TECHNICAL")
+                                  }
+                                  className="!border-gray-300 [&>div]:text-gray-900"
+                                >
+                                  {VALID_SKILL_TYPES.map((type) => (
+                                    <Option key={type} value={type}>
+                                      {type}
+                                    </Option>
+                                  ))}
+                                </Select>
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                  Proficiency Level
+                                </Typography>
                                 <Input
                                   size="md"
-                                  value={skill.name || ""}
-                                  onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
-                                  placeholder="Skill name"
-                                  className="!border-gray-300 flex-1"
+                                  value={skill.proficiencyLevel || ""}
+                                  onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
+                                  placeholder="e.g. Advanced"
+                                  className="!border-gray-300"
                                 />
-                                <IconButton
-                                  size="md"
-                                  variant="text"
-                                  color="red"
-                                  onClick={() => handleRemoveArrayItem("skills", index)}
-                                >
-                                  <FaTrash className="w-3 h-3" />
-                                </IconButton>
                               </div>
-                              <Input
-                                size="md"
-                                value={skill.proficiencyLevel || ""}
-                                onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
-                                placeholder="Proficiency level"
-                                className="!border-gray-300"
-                              />
                             </div>
                           ) : (
                             <>
@@ -2427,7 +2497,7 @@ const fetchPublicDataWithToken = async () => {
                 <div className={`bg-white border-2 ${designTheme.cardBorder} rounded-xl shadow-lg p-10 space-y-10`}>
                   {/* Certificates Section */}
                   <div>
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center justify-between mb-3">
                       <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
                         Certificates
                       </Typography>
@@ -2442,7 +2512,215 @@ const fetchPublicDataWithToken = async () => {
                         </IconButton>
                       )}
                     </div>
-                    {certificates && certificates.length > 0 ? (
+                    {isEditMode && editingSections.certificates ? (
+                      <>
+                        {isAddingCertificate && (
+                          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                            <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                              {editingCertificateId ? "Edit Certificate" : "Add New Certificate"}
+                            </Typography>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                  Course Name *
+                                </Typography>
+                                <Input
+                                  size="lg"
+                                  name="courseName"
+                                  value={newCertificate.courseName}
+                                  onChange={handleCertificateInputChange}
+                                  placeholder="Enter course name"
+                                  required
+                                  className="!border-gray-300 focus:!border-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                  Certificate Number *
+                                </Typography>
+                                <Input
+                                  size="lg"
+                                  name="certificateNumber"
+                                  value={newCertificate.certificateNumber}
+                                  onChange={handleCertificateInputChange}
+                                  placeholder="Enter certificate number"
+                                  required
+                                  className="!border-gray-300 focus:!border-blue-500"
+                                />
+                              </div>
+                            </div>
+                            <div className="mt-4">
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                Issue Date *
+                              </Typography>
+                              <Input
+                                type="date"
+                                size="lg"
+                                name="issueDate"
+                                value={newCertificate.issueDate}
+                                onChange={handleCertificateInputChange}
+                                required
+                                className="!border-gray-300 focus:!border-blue-500"
+                              />
+                            </div>
+                            <div className="mt-4">
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                Certificate File {editingCertificateId ? "(Optional)" : "*"}
+                              </Typography>
+                              <div className="flex items-center gap-4">
+                                {newCertificate.certificateFile ? (
+                                  <Avatar
+                                    src={URL.createObjectURL(newCertificate.certificateFile)}
+                                    alt="Certificate Preview"
+                                    size="lg"
+                                    className={`ring-2 ${designTheme.borderColor}`}
+                                  />
+                                ) : editingCertificateId ? (
+                                  <Avatar
+                                    src={certificates.find((cert) => cert.id === editingCertificateId)?.certificateFilePath || "/placeholder.svg"}
+                                    alt="Certificate Preview"
+                                    size="lg"
+                                    className={`ring-2 ${designTheme.borderColor}`}
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center">
+                                    <Typography variant="h5" className="text-gray-600">
+                                      📄
+                                    </Typography>
+                                  </div>
+                                )}
+                                <Button
+                                  variant="outlined"
+                                  color={designTheme.buttonColor}
+                                  onClick={handleCertificateImageClick}
+                                  className="flex items-center gap-2"
+                                >
+                                  <FaPlus className="w-4 h-4" />
+                                  Choose File
+                                </Button>
+                                <input
+                                  type="file"
+                                  id="certificateFile"
+                                  accept="image/*"
+                                  onChange={handleCertificateFileChange}
+                                  ref={certificateFileInputRef}
+                                  className="hidden"
+                                />
+                              </div>
+                            </div>
+                            <div className="mt-6 flex justify-end gap-2">
+                              <Button
+                                variant="gradient"
+                                color={designTheme.buttonColor}
+                                onClick={editingCertificateId ? handleUpdateCertificate : handleAddCertificate}
+                                disabled={!isCertificateFormValid()}
+                              >
+                                {editingCertificateId ? "Update Certificate" : "Add Certificate"}
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                color="gray"
+                                onClick={() => {
+                                  setIsAddingCertificate(false)
+                                  setEditingCertificateId(null)
+                                  setNewCertificate({
+                                    courseName: "",
+                                    certificateNumber: "",
+                                    issueDate: "",
+                                    certificateFile: null,
+                                  })
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-4">
+                          {!isAddingCertificate && (
+                            <Button
+                              variant="outlined"
+                              color={designTheme.buttonColor}
+                              onClick={() => {
+                                setIsAddingCertificate(true)
+                                setEditingCertificateId(null)
+                                setNewCertificate({ courseName: "", certificateNumber: "", issueDate: "", certificateFile: null })
+                              }}
+                              className="flex items-center gap-2 w-full"
+                            >
+                              <FaPlus className="w-4 h-4" />
+                              Add Certificate
+                            </Button>
+                          )}
+
+                          {certificates && certificates.length > 0 && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {certificates.map((certificate) => (
+                                <Card key={certificate.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                  <CardBody className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                    <div className="flex items-center gap-4">
+                                      {(certificate.preview || certificate.certificateFilePath) && (
+                                        <Avatar
+                                          src={certificate.preview || certificate.certificateFilePath || "/placeholder.svg"}
+                                          alt="Certificate Preview"
+                                          size="lg"
+                                          className={`ring-2 ${designTheme.borderColor}`}
+                                        />
+                                      )}
+                                      <div>
+                                        <Typography variant="h6" className="text-gray-800 font-semibold">
+                                          {certificate.courseName}
+                                        </Typography>
+                                        <Typography variant="small" className="text-gray-600">
+                                          Certificate #: {certificate.certificateNumber}
+                                        </Typography>
+                                        <Typography variant="small" className="text-gray-600">
+                                          Issued: {certificate.issueDate ? new Date(certificate.issueDate).toLocaleDateString() : "N/A"}
+                                        </Typography>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="md"
+                                        variant="text"
+                                        color={designTheme.buttonColor}
+                                        onClick={() => handleEditCertificate(certificate)}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <FaPen className="w-4 h-4" /> Edit
+                                      </Button>
+                                      <Button
+                                        size="md"
+                                        variant="text"
+                                        color="red"
+                                        onClick={() => handleRemoveCertificate(certificate.id)}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <FaTrash className="w-4 h-4" /> Remove
+                                      </Button>
+                                    </div>
+                                  </CardBody>
+                                </Card>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="mt-6 flex justify-end">
+                            <Button
+                              variant="gradient"
+                              color={designTheme.buttonColor}
+                              onClick={() => handleSaveSection("certificates")}
+                              disabled={isSaving}
+                              className="flex items-center gap-2"
+                            >
+                              <FaSave className="w-4 h-4" />
+                              {isSaving ? "Saving..." : "Save Changes"}
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    ) : certificates && certificates.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {certificates.map((certificate) => (
                           <Card key={certificate.id} className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-300 shadow-md hover:shadow-lg transition-shadow duration-300">
@@ -2487,7 +2765,7 @@ const fetchPublicDataWithToken = async () => {
 
                   {/* Experience Section */}
                   <div>
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center justify-between mb-3">
                       <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
                         Experience
                       </Typography>
@@ -2502,7 +2780,96 @@ const fetchPublicDataWithToken = async () => {
                         </IconButton>
                       )}
                     </div>
-                    {portfolio.experiences && portfolio.experiences.length > 0 ? (
+                    {isEditMode && editingSections.experience ? (
+                      <div className="space-y-8">
+                        {(editingPortfolio?.experiences || []).map((exp, index) => (
+                          <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-8 pb-8`}>
+                            <div className="space-y-4">
+                              <div className="flex justify-end -mt-2">
+                                <IconButton
+                                  size="md"
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => handleRemoveArrayItem("experiences", index)}
+                                  aria-label="Remove experience"
+                                >
+                                  <FaTrash className="w-4 h-4" />
+                                </IconButton>
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                  Job Title
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={exp.jobTitle || ""}
+                                  onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
+                                  placeholder="e.g. Sous Chef"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                  Company / Employer
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={exp.employer || exp.company || ""}
+                                  onChange={(e) => handleArrayFieldChange("experiences", index, "employer", e.target.value)}
+                                  placeholder="e.g. Bistro Manila"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                  Responsibilities / Highlights
+                                </Typography>
+                                <Textarea
+                                  size="md"
+                                  value={exp.description || exp.responsibilities || ""}
+                                  onChange={(e) =>
+                                    handleArrayFieldChange("experiences", index, "description", e.target.value)
+                                  }
+                                  placeholder="Summarize key contributions"
+                                  className="!border-gray-300"
+                                  rows={3}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        <Button
+                          variant="outlined"
+                          size="md"
+                          color={designTheme.buttonColor}
+                          onClick={() =>
+                            handleAddArrayItem("experiences", {
+                              jobTitle: "",
+                              employer: "",
+                              description: "",
+                              startDate: "",
+                              endDate: "",
+                            })
+                          }
+                          className="w-full flex items-center justify-center gap-2"
+                        >
+                          <FaPlus className="w-4 h-4" />
+                          Add Experience
+                        </Button>
+                        <div className="mt-6 flex justify-end">
+                          <Button
+                            variant="gradient"
+                            color={designTheme.buttonColor}
+                            onClick={() => handleSaveSection("experience")}
+                            disabled={isSaving}
+                            className="flex items-center gap-2"
+                          >
+                            <FaSave className="w-4 h-4" />
+                            {isSaving ? "Saving..." : "Save Changes"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : portfolio.experiences && portfolio.experiences.length > 0 ? (
                       <div className="space-y-6">
                         {portfolio.experiences.map((exp, index) => (
                           <div key={index} className="border-l-4 border-gray-600 pl-6 pb-6 relative bg-gradient-to-r from-gray-50/50 to-transparent rounded-r-lg p-5">
@@ -2541,8 +2908,8 @@ const fetchPublicDataWithToken = async () => {
                   </div>
 
                   {/* Projects Section */}
-                  <div>
-                    <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="flex items-center justify-between mb-3">
                       <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
                         Projects
                       </Typography>
@@ -2557,7 +2924,242 @@ const fetchPublicDataWithToken = async () => {
                         </IconButton>
                       )}
                     </div>
-                    {projects && projects.length > 0 ? (
+                    {isEditMode && editingSections.projects ? (
+                      <div className="space-y-4">
+                        {isAddingProject && (
+                          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                            <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                              {editingProjectId ? "Edit Project" : "Add New Project"}
+                            </Typography>
+                            <div className="grid grid-cols-1 gap-4">
+                              <div>
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                  Project Title *
+                                </Typography>
+                                <Input
+                                  size="lg"
+                                  name="title"
+                                  value={newProject.title}
+                                  onChange={handleProjectInputChange}
+                                  placeholder="Enter project title"
+                                  required
+                                  className="!border-gray-300 focus:!border-blue-500"
+                                />
+                              </div>
+                            </div>
+                            <div className="mt-4">
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                Description *
+                              </Typography>
+                              <Textarea
+                                size="lg"
+                                name="description"
+                                value={newProject.description}
+                                onChange={handleProjectInputChange}
+                                placeholder="Describe your project"
+                                required
+                                className="!border-gray-300 focus:!border-blue-500"
+                                rows={3}
+                              />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                              <div>
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                  Start Date *
+                                </Typography>
+                                <Input
+                                  type="date"
+                                  size="lg"
+                                  name="startDate"
+                                  value={newProject.startDate}
+                                  onChange={handleProjectInputChange}
+                                  required
+                                  className="!border-gray-300 focus:!border-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                  End Date *
+                                </Typography>
+                                <Input
+                                  type="date"
+                                  size="lg"
+                                  name="endDate"
+                                  value={newProject.endDate}
+                                  onChange={handleProjectInputChange}
+                                  required
+                                  className="!border-gray-300 focus:!border-blue-500"
+                                />
+                              </div>
+                            </div>
+                            <div className="mt-4">
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                Project Image {editingProjectId ? "(Optional)" : "*"}
+                              </Typography>
+                              <div className="flex items-center gap-4">
+                                {newProject.projectImageFile ? (
+                                  <Avatar
+                                    src={URL.createObjectURL(newProject.projectImageFile)}
+                                    alt="Project Preview"
+                                    size="lg"
+                                    className={`ring-2 ${designTheme.borderColor}`}
+                                  />
+                                ) : editingProjectId ? (
+                                  <Avatar
+                                    src={projects.find((proj) => proj.id === editingProjectId)?.projectImageFilePath || "/placeholder.svg"}
+                                    alt="Project Preview"
+                                    size="lg"
+                                    className={`ring-2 ${designTheme.borderColor}`}
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center">
+                                    <Typography variant="h5" className="text-gray-600">
+                                      📷
+                                    </Typography>
+                                  </div>
+                                )}
+                                <Button
+                                  variant="outlined"
+                                  color={designTheme.buttonColor}
+                                  onClick={handleProjectImageClick}
+                                  className="flex items-center gap-2"
+                                >
+                                  <FaPlus className="w-4 h-4" />
+                                  Choose Image
+                                </Button>
+                                <input
+                                  type="file"
+                                  id="projectImageFile"
+                                  accept="image/*"
+                                  onChange={handleProjectFileChange}
+                                  ref={projectFileInputRef}
+                                  className="hidden"
+                                />
+                              </div>
+                            </div>
+                            <div className="mt-6 flex justify-end gap-2">
+                              <Button
+                                variant="gradient"
+                                color={designTheme.buttonColor}
+                                onClick={editingProjectId ? handleUpdateProject : handleAddProject}
+                                disabled={!isProjectFormValid()}
+                              >
+                                {editingProjectId ? "Update Project" : "Add Project"}
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                color="gray"
+                                onClick={() => {
+                                  setIsAddingProject(false)
+                                  setEditingProjectId(null)
+                                  setNewProject({
+                                    title: "",
+                                    description: "",
+                                    startDate: "",
+                                    endDate: "",
+                                    projectImageFile: null,
+                                  })
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {!isAddingProject && (
+                          <Button
+                            variant="outlined"
+                            color={designTheme.buttonColor}
+                            onClick={() => {
+                              setIsAddingProject(true)
+                              setEditingProjectId(null)
+                              setNewProject({ title: "", description: "", startDate: "", endDate: "", projectImageFile: null })
+                            }}
+                            className="flex items-center gap-2 w-full"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Project
+                          </Button>
+                        )}
+
+                        {projects && projects.length > 0 && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {projects.map((project) => (
+                              <Card key={project.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
+                                {project.projectImageFilePath && (
+                                  <div className="relative h-48 overflow-hidden">
+                                    <img
+                                      src={project.projectImageFilePath || "/placeholder.svg"}
+                                      alt={project.title || "Project"}
+                                      className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                                      onClick={() => setSelectedProjectImage(project.projectImageFilePath)}
+                                    />
+                                  </div>
+                                )}
+                                <CardBody className="p-6">
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1">
+                                      <Typography variant="h6" className="font-medium text-gray-900 mb-2 break-words text-base">
+                                        {project.title || "Unnamed Project"}
+                                      </Typography>
+                                      {project.description && (
+                                        <Typography
+                                          variant="small"
+                                          color="gray"
+                                          className="mb-3 leading-relaxed break-words overflow-wrap-anywhere text-xs line-clamp-3"
+                                        >
+                                          {project.description}
+                                        </Typography>
+                                      )}
+                                      {project.startDate && project.endDate && (
+                                        <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`}>
+                                          {new Date(project.startDate).toLocaleDateString()} -{" "}
+                                          {new Date(project.endDate).toLocaleDateString()}
+                                        </Typography>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                      <Button
+                                        size="md"
+                                        variant="text"
+                                        color={designTheme.buttonColor}
+                                        onClick={() => handleEditProject(project)}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <FaPen className="w-4 h-4" /> Edit
+                                      </Button>
+                                      <Button
+                                        size="md"
+                                        variant="text"
+                                        color="red"
+                                        onClick={() => handleRemoveProject(project.id)}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <FaTrash className="w-4 h-4" /> Remove
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </CardBody>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="mt-6 flex justify-end">
+                          <Button
+                            variant="gradient"
+                            color={designTheme.buttonColor}
+                            onClick={() => handleSaveSection("projects")}
+                            disabled={isSaving}
+                            className="flex items-center gap-2"
+                          >
+                            <FaSave className="w-4 h-4" />
+                            {isSaving ? "Saving..." : "Save Changes"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : projects && projects.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         {projects.map((project) => (
                           <Card key={project.id} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
@@ -2620,7 +3222,86 @@ const fetchPublicDataWithToken = async () => {
                         </IconButton>
                       )}
                     </div>
-                    {portfolio.awardsRecognitions && portfolio.awardsRecognitions.length > 0 ? (
+                    {isEditMode && editingSections.awards ? (
+                      <div className="space-y-4">
+                        {(editingPortfolio?.awardsRecognitions || []).map((award, index) => (
+                          <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
+                            <div className="space-y-3">
+                              <div className="flex justify-end -mt-2">
+                                <IconButton
+                                  size="md"
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => handleRemoveArrayItem("awardsRecognitions", index)}
+                                  aria-label="Remove award"
+                                >
+                                  <FaTrash className="w-4 h-4" />
+                                </IconButton>
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                  Award Title
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={award.title || ""}
+                                  onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
+                                  placeholder="e.g. Best in Pastry Arts"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                  Issuer
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={award.issuer || ""}
+                                  onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "issuer", e.target.value)}
+                                  placeholder="e.g. TESDA"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                  Date Received
+                                </Typography>
+                                <Input
+                                  type="date"
+                                  size="md"
+                                  value={award.dateReceived || ""}
+                                  onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        <Button
+                          variant="outlined"
+                          size="md"
+                          color={designTheme.buttonColor}
+                          onClick={() => handleAddArrayItem("awardsRecognitions", { title: "", issuer: "", dateReceived: "" })}
+                          className="w-full flex items-center justify-center gap-2"
+                        >
+                          <FaPlus className="w-4 h-4" />
+                          Add Award
+                        </Button>
+                        <div className="mt-6 flex justify-end">
+                          <Button
+                            variant="gradient"
+                            color={designTheme.buttonColor}
+                            size="md"
+                            onClick={() => handleSaveSection("awards")}
+                            disabled={isSaving}
+                            className="flex items-center gap-2"
+                          >
+                            <FaSave className="w-3 h-3" />
+                            {isSaving ? "Saving..." : "Save Changes"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : portfolio.awardsRecognitions && portfolio.awardsRecognitions.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {portfolio.awardsRecognitions.map((award, index) => (
                           <div key={index} className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow duration-300">
@@ -2668,7 +3349,84 @@ const fetchPublicDataWithToken = async () => {
                           </IconButton>
                         )}
                       </div>
-                      {portfolio.continuingEducations && portfolio.continuingEducations.length > 0 ? (
+                      {isEditMode && editingSections.education ? (
+                        <div className="space-y-3">
+                          {(editingPortfolio?.continuingEducations || []).map((edu, index) => (
+                            <div key={index} className="border-l-2 border-gray-200 pl-4 py-2 bg-white rounded-lg shadow-sm">
+                              <div className="flex justify-end -mt-2">
+                                <IconButton
+                                  size="md"
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => handleRemoveArrayItem("continuingEducations", index)}
+                                  aria-label="Remove education"
+                                >
+                                  <FaTrash className="w-3 h-3" />
+                                </IconButton>
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Course Name
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={edu.courseName || ""}
+                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
+                                  placeholder="e.g. Advanced Baking Workshop"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Institution
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={edu.institution || ""}
+                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
+                                  placeholder="e.g. TESDA Training Center"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Completion Date
+                                </Typography>
+                                <Input
+                                  type="date"
+                                  size="md"
+                                  value={edu.completionDate || ""}
+                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                          <Button
+                            variant="outlined"
+                            size="md"
+                            color={designTheme.buttonColor}
+                            onClick={() => handleAddArrayItem("continuingEducations", { courseName: "", institution: "", completionDate: "" })}
+                            className="w-full flex items-center justify-center gap-2"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Education
+                          </Button>
+                          <div className="mt-4 flex justify-end">
+                            <Button
+                              variant="gradient"
+                              color={designTheme.buttonColor}
+                              size="md"
+                              onClick={() => handleSaveSection("education")}
+                              disabled={isSaving}
+                              className="flex items-center gap-2"
+                            >
+                              <FaSave className="w-3 h-3" />
+                              {isSaving ? "Saving..." : "Save Changes"}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : portfolio.continuingEducations && portfolio.continuingEducations.length > 0 ? (
                         <div className="space-y-3">
                           {portfolio.continuingEducations.map((edu, index) => (
                             <div key={index} className="border-l-4 border-gray-600 pl-4 py-2 bg-gradient-to-r from-gray-50/50 to-transparent rounded-r-lg">
@@ -2712,7 +3470,84 @@ const fetchPublicDataWithToken = async () => {
                           </IconButton>
                         )}
                       </div>
-                      {portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0 ? (
+                      {isEditMode && editingSections.memberships ? (
+                        <div className="space-y-3">
+                          {(editingPortfolio?.professionalMemberships || []).map((mem, index) => (
+                            <div key={index} className="border-l-2 border-gray-200 pl-4 py-2 bg-white rounded-lg shadow-sm">
+                              <div className="flex justify-end -mt-2">
+                                <IconButton
+                                  size="md"
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => handleRemoveArrayItem("professionalMemberships", index)}
+                                  aria-label="Remove membership"
+                                >
+                                  <FaTrash className="w-3 h-3" />
+                                </IconButton>
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Organization
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={mem.organization || ""}
+                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
+                                  placeholder="e.g. Philippine Chefs Association"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Membership Type
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={mem.membershipType || ""}
+                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
+                                  placeholder="e.g. Regular Member"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Start Date
+                                </Typography>
+                                <Input
+                                  type="date"
+                                  size="md"
+                                  value={mem.startDate || ""}
+                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                          <Button
+                            variant="outlined"
+                            size="md"
+                            color={designTheme.buttonColor}
+                            onClick={() => handleAddArrayItem("professionalMemberships", { organization: "", membershipType: "", startDate: "" })}
+                            className="w-full flex items-center justify-center gap-2"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Membership
+                          </Button>
+                          <div className="mt-4 flex justify-end">
+                            <Button
+                              variant="gradient"
+                              color={designTheme.buttonColor}
+                              size="md"
+                              onClick={() => handleSaveSection("memberships")}
+                              disabled={isSaving}
+                              className="flex items-center gap-2"
+                            >
+                              <FaSave className="w-3 h-3" />
+                              {isSaving ? "Saving..." : "Save Changes"}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0 ? (
                         <div className="space-y-3">
                           {portfolio.professionalMemberships.map((mem, index) => (
                             <div key={index} className="border-l-4 border-gray-600 pl-4 py-2 bg-gradient-to-r from-gray-50/50 to-transparent rounded-r-lg">
@@ -2757,7 +3592,111 @@ const fetchPublicDataWithToken = async () => {
                         </IconButton>
                       )}
                     </div>
-                    {portfolio.references && portfolio.references.length > 0 ? (
+                    {isEditMode && editingSections.references ? (
+                      <div className="space-y-4">
+                        {(editingPortfolio?.references || []).map((ref, index) => (
+                          <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
+                            <div className="space-y-3">
+                              <div className="flex justify-end -mt-2">
+                                <IconButton
+                                  size="md"
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => handleRemoveArrayItem("references", index)}
+                                  aria-label="Remove reference"
+                                >
+                                  <FaTrash className="w-4 h-4" />
+                                </IconButton>
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Name
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={ref.name || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
+                                  placeholder="e.g. Maria Cruz"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Relationship / Position
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={ref.relationship || ref.position || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "relationship", e.target.value)}
+                                  placeholder="e.g. Training Supervisor"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Company
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={ref.company || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "company", e.target.value)}
+                                  placeholder="e.g. Cafe Delight"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Email
+                                </Typography>
+                                <Input
+                                  type="email"
+                                  size="md"
+                                  value={ref.email || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
+                                  placeholder="name@example.com"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Phone
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={ref.contact || ref.phone || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "contact", e.target.value)}
+                                  placeholder="+63 900 000 0000"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        <Button
+                          variant="outlined"
+                          size="md"
+                          color={designTheme.buttonColor}
+                          onClick={() => handleAddArrayItem("references", { name: "", relationship: "", company: "", email: "", phone: "" })}
+                          className="w-full flex items-center justify-center gap-2"
+                        >
+                          <FaPlus className="w-4 h-4" />
+                          Add Reference
+                        </Button>
+                        <div className="mt-4 flex justify-end">
+                          <Button
+                            variant="gradient"
+                            color={designTheme.buttonColor}
+                            size="md"
+                            onClick={() => handleSaveSection("references")}
+                            disabled={isSaving}
+                            className="flex items-center gap-2"
+                          >
+                            <FaSave className="w-3 h-3" />
+                            {isSaving ? "Saving..." : "Save Changes"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : portfolio.references && portfolio.references.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {portfolio.references.map((ref, index) => (
                           <div key={index} className="bg-gradient-to-br from-white to-gray-50/30 border-2 border-gray-300 rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow duration-300">
@@ -3216,38 +4155,61 @@ const fetchPublicDataWithToken = async () => {
                       {(isEditMode && editingSections.skills ? (editingPortfolio?.skills || []) : (portfolio?.skills || []))?.map((skill, index) => (
                         <div key={index} className="flex items-center gap-3 py-2 border-b border-gray-200">
                           {isEditMode && editingSections.skills ? (
-                            <div className="flex-1 space-y-2">
-                              <div className="flex gap-2">
+                            <div className="flex-1 space-y-3">
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Skill Name
+                                </Typography>
+                                <div className="flex gap-2">
+                                  <Input
+                                    size="md"
+                                    value={skill.name || ""}
+                                    onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
+                                    placeholder="e.g. Latte Art"
+                                    className="!border-gray-300 flex-1"
+                                  />
+                                  <IconButton
+                                    size="md"
+                                    variant="text"
+                                    color="red"
+                                    onClick={() => handleRemoveArrayItem("skills", index)}
+                                  >
+                                    <FaTrash className="w-3 h-3" />
+                                  </IconButton>
+                                </div>
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Skill Type
+                                </Typography>
+                                <Select
+                                  size="md"
+                                  label="Select Skill Type"
+                                  value={skill.type || "TECHNICAL"}
+                                  onChange={(value) =>
+                                    handleArrayFieldChange("skills", index, "type", value || "TECHNICAL")
+                                  }
+                                  className="!border-gray-300 [&>div]:text-black"
+                                >
+                                  {VALID_SKILL_TYPES.map((type) => (
+                                    <Option key={type} value={type}>
+                                      {type}
+                                    </Option>
+                                  ))}
+                                </Select>
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Proficiency Level
+                                </Typography>
                                 <Input
                                   size="md"
-                                  value={skill.name || ""}
-                                  onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
-                                  placeholder="Skill name"
-                                  className="!border-gray-300 flex-1"
+                                  value={skill.proficiencyLevel || ""}
+                                  onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
+                                  placeholder="e.g. Intermediate"
+                                  className="!border-gray-300"
                                 />
-                                <IconButton
-                                  size="md"
-                                  variant="text"
-                                  color="red"
-                                  onClick={() => handleRemoveArrayItem("skills", index)}
-                                >
-                                  <FaTrash className="w-3 h-3" />
-                                </IconButton>
                               </div>
-                              <Input
-                                size="md"
-                                value={skill.type || "TECHNICAL"}
-                                onChange={(e) => handleArrayFieldChange("skills", index, "type", e.target.value)}
-                                placeholder="Type"
-                                className="!border-gray-300"
-                              />
-                              <Input
-                                size="md"
-                                value={skill.proficiencyLevel || ""}
-                                onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
-                                placeholder="Proficiency Level"
-                                className="!border-gray-300"
-                              />
                             </div>
                           ) : (
                             <>
@@ -3406,36 +4368,56 @@ const fetchPublicDataWithToken = async () => {
                         .map((exp, index) => (
                         <div key={index} className="pb-3 border-b border-gray-200">
                           {isEditMode && editingSections.experience ? (
-                            <div className="space-y-2">
-                              <Input
-                                size="md"
-                                value={exp.jobTitle || ""}
-                                onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
-                                placeholder="Job Title"
-                                className="!border-gray-300"
-                              />
-                              <Input
-                                size="md"
-                                value={exp.company || ""}
-                                onChange={(e) => handleArrayFieldChange("experiences", index, "company", e.target.value)}
-                                placeholder="Company"
-                                className="!border-gray-300"
-                              />
-                              <Input
-                                size="md"
-                                value={exp.duration || ""}
-                                onChange={(e) => handleArrayFieldChange("experiences", index, "duration", e.target.value)}
-                                placeholder="Duration"
-                                className="!border-gray-300"
-                              />
-                              <Textarea
-                                size="md"
-                                value={exp.responsibilities || ""}
-                                onChange={(e) => handleArrayFieldChange("experiences", index, "responsibilities", e.target.value)}
-                                placeholder="Responsibilities"
-                                className="!border-gray-300"
-                                rows={3}
-                              />
+                            <div className="space-y-3">
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Job Title
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={exp.jobTitle || ""}
+                                  onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
+                                  placeholder="e.g. Barista"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Company
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={exp.company || ""}
+                                  onChange={(e) => handleArrayFieldChange("experiences", index, "company", e.target.value)}
+                                  placeholder="e.g. Brewed Cafe"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Duration
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={exp.duration || ""}
+                                  onChange={(e) => handleArrayFieldChange("experiences", index, "duration", e.target.value)}
+                                  placeholder="Jan 2023 - Present"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Responsibilities
+                                </Typography>
+                                <Textarea
+                                  size="md"
+                                  value={exp.responsibilities || ""}
+                                  onChange={(e) => handleArrayFieldChange("experiences", index, "responsibilities", e.target.value)}
+                                  placeholder="Summarize major contributions"
+                                  className="!border-gray-300"
+                                  rows={3}
+                                />
+                              </div>
                               <div className="flex justify-end">
                                 <IconButton
                                   size="md"
@@ -3645,28 +4627,43 @@ const fetchPublicDataWithToken = async () => {
                         .map((award, index) => (
                         <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
                           {isEditMode && editingSections.awards ? (
-                            <div className="space-y-2">
-                              <Input
-                                size="md"
-                                value={award.title || ""}
-                                onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
-                                placeholder="Award Title"
-                                className="!border-gray-300"
-                              />
-                              <Input
-                                size="md"
-                                value={award.issuer || ""}
-                                onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "issuer", e.target.value)}
-                                placeholder="Issuer"
-                                className="!border-gray-300"
-                              />
-                              <Input
-                                size="md"
-                                value={award.dateReceived || ""}
-                                onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
-                                placeholder="Date Received"
-                                className="!border-gray-300"
-                              />
+                            <div className="space-y-3">
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Award Title
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={award.title || ""}
+                                  onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
+                                  placeholder="e.g. Employee of the Month"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Issuer
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={award.issuer || ""}
+                                  onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "issuer", e.target.value)}
+                                  placeholder="e.g. Cafe Royale"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  Date Received
+                                </Typography>
+                                <Input
+                                  size="md"
+                                  value={award.dateReceived || ""}
+                                  onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
+                                  placeholder="YYYY-MM-DD"
+                                  className="!border-gray-300"
+                                />
+                              </div>
                               <div className="flex justify-end">
                                 <IconButton
                                   size="md"
@@ -3793,28 +4790,43 @@ const fetchPublicDataWithToken = async () => {
                           .map((edu, index) => (
                           <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
                             {isEditMode && editingSections.education ? (
-                              <div className="space-y-2">
-                                <Input
-                                  size="md"
-                                  value={edu.courseName || ""}
-                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
-                                  placeholder="Course Name"
-                                  className="!border-gray-300"
-                                />
-                                <Input
-                                  size="md"
-                                  value={edu.institution || ""}
-                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
-                                  placeholder="Institution"
-                                  className="!border-gray-300"
-                                />
-                                <Input
-                                  size="md"
-                                  value={edu.completionDate || ""}
-                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
-                                  placeholder="Completion Date"
-                                  className="!border-gray-300"
-                                />
+                              <div className="space-y-3">
+                                <div>
+                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                    Course Name
+                                  </Typography>
+                                  <Input
+                                    size="md"
+                                    value={edu.courseName || ""}
+                                    onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
+                                    placeholder="e.g. Wine Appreciation"
+                                    className="!border-gray-300"
+                                  />
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                    Institution
+                                  </Typography>
+                                  <Input
+                                    size="md"
+                                    value={edu.institution || ""}
+                                    onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
+                                    placeholder="e.g. TESDA Training Center"
+                                    className="!border-gray-300"
+                                  />
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                    Completion Date
+                                  </Typography>
+                                  <Input
+                                    size="md"
+                                    value={edu.completionDate || ""}
+                                    onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
+                                    placeholder="YYYY-MM-DD"
+                                    className="!border-gray-300"
+                                  />
+                                </div>
                                 <div className="flex justify-end">
                                   <IconButton
                                     size="md"
@@ -3939,28 +4951,43 @@ const fetchPublicDataWithToken = async () => {
                           .map((mem, index) => (
                           <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
                             {isEditMode && editingSections.memberships ? (
-                              <div className="space-y-2">
-                                <Input
-                                  size="md"
-                                  value={mem.organization || ""}
-                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
-                                  placeholder="Organization"
-                                  className="!border-gray-300"
-                                />
-                                <Input
-                                  size="md"
-                                  value={mem.membershipType || ""}
-                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
-                                  placeholder="Membership Type"
-                                  className="!border-gray-300"
-                                />
-                                <Input
-                                  size="md"
-                                  value={mem.startDate || ""}
-                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
-                                  placeholder="Start Date"
-                                  className="!border-gray-300"
-                                />
+                              <div className="space-y-3">
+                                <div>
+                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                    Organization
+                                  </Typography>
+                                  <Input
+                                    size="md"
+                                    value={mem.organization || ""}
+                                    onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
+                                    placeholder="e.g. National Barista Guild"
+                                    className="!border-gray-300"
+                                  />
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                    Membership Type
+                                  </Typography>
+                                  <Input
+                                    size="md"
+                                    value={mem.membershipType || ""}
+                                    onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
+                                    placeholder="e.g. Member / Officer"
+                                    className="!border-gray-300"
+                                  />
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                    Start Date
+                                  </Typography>
+                                  <Input
+                                    size="md"
+                                    value={mem.startDate || ""}
+                                    onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
+                                    placeholder="YYYY-MM-DD"
+                                    className="!border-gray-300"
+                                  />
+                                </div>
                                 <div className="flex justify-end">
                                   <IconButton
                                     size="md"
@@ -4087,42 +5114,67 @@ const fetchPublicDataWithToken = async () => {
                           .map((ref, index) => (
                           <div key={index} className="bg-white border-l-4 border-gray-300 p-5">
                             {isEditMode && editingSections.references ? (
-                              <div className="space-y-2">
-                                <Input
-                                  size="md"
-                                  value={ref.name || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
-                                  placeholder="Name"
-                                  className="!border-gray-300"
-                                />
-                                <Input
-                                  size="md"
-                                  value={ref.position || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "position", e.target.value)}
-                                  placeholder="Position"
-                                  className="!border-gray-300"
-                                />
-                                <Input
-                                  size="md"
-                                  value={ref.company || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "company", e.target.value)}
-                                  placeholder="Company"
-                                  className="!border-gray-300"
-                                />
-                                <Input
-                                  size="md"
-                                  value={ref.email || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
-                                  placeholder="Email"
-                                  className="!border-gray-300"
-                                />
-                                <Input
-                                  size="md"
-                                  value={ref.contact || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "contact", e.target.value)}
-                                  placeholder="Contact"
-                                  className="!border-gray-300"
-                                />
+                              <div className="space-y-3">
+                                <div>
+                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                    Name
+                                  </Typography>
+                                  <Input
+                                    size="md"
+                                    value={ref.name || ""}
+                                    onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
+                                    placeholder="e.g. Juan Dela Cruz"
+                                    className="!border-gray-300"
+                                  />
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                    Position / Relationship
+                                  </Typography>
+                                  <Input
+                                    size="md"
+                                    value={ref.position || ""}
+                                    onChange={(e) => handleArrayFieldChange("references", index, "position", e.target.value)}
+                                    placeholder="e.g. Training Supervisor"
+                                    className="!border-gray-300"
+                                  />
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                    Company
+                                  </Typography>
+                                  <Input
+                                    size="md"
+                                    value={ref.company || ""}
+                                    onChange={(e) => handleArrayFieldChange("references", index, "company", e.target.value)}
+                                    placeholder="e.g. Cafe Delight"
+                                    className="!border-gray-300"
+                                  />
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                    Email
+                                  </Typography>
+                                  <Input
+                                    size="md"
+                                    value={ref.email || ""}
+                                    onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
+                                    placeholder="name@example.com"
+                                    className="!border-gray-300"
+                                  />
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                    Contact Number
+                                  </Typography>
+                                  <Input
+                                    size="md"
+                                    value={ref.contact || ""}
+                                    onChange={(e) => handleArrayFieldChange("references", index, "contact", e.target.value)}
+                                    placeholder="+63 900 000 0000"
+                                    className="!border-gray-300"
+                                  />
+                                </div>
                                 <div className="flex justify-end">
                                   <IconButton
                                     size="md"
@@ -4399,7 +5451,7 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
 
-              <div className="mt-14 flex animate-fade-in-up animation-delay-1200 justify-start">
+              <div className="mt-8 flex animate-fade-in-up animation-delay-1200 justify-start">
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-8 py-4 hover:bg-white/20 hover:scale-105 transition-all duration-300 animate-bounce-subtle">
                   <Chip
                     value={isGraduateView ? "Owner View" : `Public View ${urlShareToken ? "🔒" : ""}`}
@@ -4519,7 +5571,7 @@ const fetchPublicDataWithToken = async () => {
         }
       `}</style>
 
-      <div className="px-6 py-16">
+      <div className="px-6 py-10">
         <div className={`grid ${designTheme.contentGrid} gap-12`}>
           <div className={`${
             designTheme.contentGrid.includes("lg:grid-cols-4") ? "lg:col-span-1" : 
@@ -4645,31 +5697,61 @@ const fetchPublicDataWithToken = async () => {
                   {(isEditMode && editingSections.skills ? editingPortfolio?.skills : portfolio.skills)?.map((skill, index) => (
                     <div key={index} className="pb-3 border-b border-gray-50 last:border-b-0">
                       {isEditMode && editingSections.skills ? (
-                        <div className="space-y-2">
-                          <div className="flex gap-2">
+                        <div className="space-y-3">
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Skill Name
+                            </Typography>
+                            <div className="flex gap-2">
+                              <Input
+                                size="md"
+                                value={skill.name || ""}
+                                onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
+                                placeholder="e.g. Food Presentation"
+                                className="!border-gray-300 flex-1"
+                              />
+                              <IconButton
+                                size="md"
+                                variant="text"
+                                color="red"
+                                onClick={() => handleRemoveArrayItem("skills", index)}
+                              >
+                                <FaTrash className="w-3 h-3" />
+                              </IconButton>
+                            </div>
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Skill Type
+                            </Typography>
+                            <Select
+                              size="md"
+                              label="Select Skill Type"
+                              value={skill.type || "TECHNICAL"}
+                              onChange={(value) =>
+                                handleArrayFieldChange("skills", index, "type", value || "TECHNICAL")
+                              }
+                              className="!border-gray-300"
+                            >
+                              {VALID_SKILL_TYPES.map((type) => (
+                                <Option key={type} value={type}>
+                                  {type}
+                                </Option>
+                              ))}
+                            </Select>
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Proficiency Level
+                            </Typography>
                             <Input
                               size="md"
-                              value={skill.name || ""}
-                              onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
-                              placeholder="Skill name"
-                              className="!border-gray-300 flex-1"
+                              value={skill.proficiencyLevel || ""}
+                              onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
+                              placeholder="e.g. Advanced"
+                              className="!border-gray-300"
                             />
-                            <IconButton
-                              size="md"
-                              variant="text"
-                              color="red"
-                              onClick={() => handleRemoveArrayItem("skills", index)}
-                            >
-                              <FaTrash className="w-3 h-3" />
-                            </IconButton>
                           </div>
-                          <Input
-                            size="md"
-                            value={skill.proficiencyLevel || ""}
-                            onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
-                            placeholder="Proficiency level"
-                            className="!border-gray-300"
-                          />
                         </div>
                       ) : (
                         <>
@@ -5131,44 +6213,59 @@ const fetchPublicDataWithToken = async () => {
               {((portfolio.experiences && portfolio.experiences.length > 0) || (isEditMode && editingSections.experience)) ? (
                 <div className="space-y-8">
                   {(isEditMode && editingSections.experience ? editingPortfolio?.experiences : portfolio.experiences)?.map((exp, index) => (
-                    <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-8 pb-8 relative`}>
-                      {isEditMode && editingSections.experience && (
-                        <IconButton
-                          size="md"
-                          variant="text"
-                          color="red"
-                          className="absolute top-0 right-0"
-                          onClick={() => handleRemoveArrayItem("experiences", index)}
-                        >
-                          <FaTrash className="w-4 h-4" />
-                        </IconButton>
-                      )}
+                    <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-8 pb-8`}>
                       {isEditMode && editingSections.experience ? (
-                        <div className="space-y-3">
-                          <Input
-                            size="md"
-                            value={exp.jobTitle || ""}
-                            onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
-                            placeholder="Job Title"
-                            className="!border-gray-300"
-                          />
-                          <Input
-                            size="md"
-                            value={exp.employer || ""}
-                            onChange={(e) => handleArrayFieldChange("experiences", index, "employer", e.target.value)}
-                            placeholder="Company"
-                            className="!border-gray-300"
-                          />
-                          <Textarea
-                            size="md"
-                            value={exp.description || ""}
-                            onChange={(e) =>
-                              handleArrayFieldChange("experiences", index, "description", e.target.value)
-                            }
-                            placeholder="Responsibilities"
-                            className="!border-gray-300"
-                            rows={3}
-                          />
+                        <div className="space-y-4">
+                          <div className="flex justify-end -mt-2">
+                            <IconButton
+                              size="md"
+                              variant="text"
+                              color="red"
+                              onClick={() => handleRemoveArrayItem("experiences", index)}
+                              aria-label="Remove experience"
+                            >
+                              <FaTrash className="w-4 h-4" />
+                            </IconButton>
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Job Title
+                            </Typography>
+                            <Input
+                              size="md"
+                              value={exp.jobTitle || ""}
+                              onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
+                              placeholder="e.g. Sous Chef"
+                              className="!border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Company / Employer
+                            </Typography>
+                            <Input
+                              size="md"
+                              value={exp.employer || ""}
+                              onChange={(e) => handleArrayFieldChange("experiences", index, "employer", e.target.value)}
+                              placeholder="e.g. Bistro Manila"
+                              className="!border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Responsibilities / Highlights
+                            </Typography>
+                            <Textarea
+                              size="md"
+                              value={exp.description || ""}
+                              onChange={(e) =>
+                                handleArrayFieldChange("experiences", index, "description", e.target.value)
+                              }
+                              placeholder="Summarize key contributions"
+                              className="!border-gray-300"
+                              rows={3}
+                            />
+                          </div>
                         </div>
                       ) : (
                         <>
@@ -5525,41 +6622,56 @@ const fetchPublicDataWithToken = async () => {
               {((portfolio.awardsRecognitions && portfolio.awardsRecognitions.length > 0) || (isEditMode && editingSections.awards)) ? (
                 <div className="space-y-4">
                   {(isEditMode && editingSections.awards ? editingPortfolio?.awardsRecognitions : portfolio.awardsRecognitions)?.map((award, index) => (
-                    <div key={index} className="bg-white border border-gray-100 rounded-lg p-6 relative">
-                      {isEditMode && editingSections.awards && (
-                        <IconButton
-                          size="md"
-                          variant="text"
-                          color="red"
-                          className="absolute top-2 right-2"
-                          onClick={() => handleRemoveArrayItem("awardsRecognitions", index)}
-                        >
-                          <FaTrash className="w-4 h-4" />
-                        </IconButton>
-                      )}
+                    <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
                       {isEditMode && editingSections.awards ? (
                         <div className="space-y-3">
-                          <Input
-                            size="md"
-                            value={award.title || ""}
-                            onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
-                            placeholder="Award Title"
-                            className="!border-gray-300"
-                          />
-                          <Input
-                            size="md"
-                            value={award.issuer || ""}
-                            onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "issuer", e.target.value)}
-                            placeholder="Issued by"
-                            className="!border-gray-300"
-                          />
-                          <Input
-                            type="date"
-                            size="md"
-                            value={award.dateReceived || ""}
-                            onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
-                            className="!border-gray-300"
-                          />
+                          <div className="flex justify-end -mt-2">
+                            <IconButton
+                              size="md"
+                              variant="text"
+                              color="red"
+                              onClick={() => handleRemoveArrayItem("awardsRecognitions", index)}
+                              aria-label="Remove award"
+                            >
+                              <FaTrash className="w-4 h-4" />
+                            </IconButton>
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Award Title
+                            </Typography>
+                            <Input
+                              size="md"
+                              value={award.title || ""}
+                              onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
+                              placeholder="e.g. Best in Pastry Arts"
+                              className="!border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Issuer
+                            </Typography>
+                            <Input
+                              size="md"
+                              value={award.issuer || ""}
+                              onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "issuer", e.target.value)}
+                              placeholder="e.g. TESDA"
+                              className="!border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Date Received
+                            </Typography>
+                            <Input
+                              type="date"
+                              size="md"
+                              value={award.dateReceived || ""}
+                              onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
+                              className="!border-gray-300"
+                            />
+                          </div>
                         </div>
                       ) : (
                         <>
@@ -5638,41 +6750,56 @@ const fetchPublicDataWithToken = async () => {
                 {((portfolio.continuingEducations && portfolio.continuingEducations.length > 0) || (isEditMode && editingSections.education)) ? (
                   <div className="space-y-4">
                     {(isEditMode && editingSections.education ? editingPortfolio?.continuingEducations : portfolio.continuingEducations)?.map((edu, index) => (
-                      <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2 relative`}>
-                        {isEditMode && editingSections.education && (
-                          <IconButton
-                            size="md"
-                            variant="text"
-                            color="red"
-                            className="absolute top-0 right-0"
-                            onClick={() => handleRemoveArrayItem("continuingEducations", index)}
-                          >
-                            <FaTrash className="w-3 h-3" />
-                          </IconButton>
-                        )}
+                      <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2`}>
                         {isEditMode && editingSections.education ? (
-                          <div className="space-y-2 pr-8">
-                            <Input
-                              size="md"
-                              value={edu.courseName || ""}
-                              onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
-                              placeholder="Course Name"
-                              className="!border-gray-300"
-                            />
-                            <Input
-                              size="md"
-                              value={edu.institution || ""}
-                              onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
-                              placeholder="Institution"
-                              className="!border-gray-300"
-                            />
-                            <Input
-                              type="date"
-                              size="md"
-                              value={edu.completionDate || ""}
-                              onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
-                              className="!border-gray-300"
-                            />
+                          <div className="space-y-3">
+                            <div className="flex justify-end -mt-2">
+                              <IconButton
+                                size="md"
+                                variant="text"
+                                color="red"
+                                onClick={() => handleRemoveArrayItem("continuingEducations", index)}
+                                aria-label="Remove education"
+                              >
+                                <FaTrash className="w-3 h-3" />
+                              </IconButton>
+                            </div>
+                            <div>
+                              <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                Course Name
+                              </Typography>
+                              <Input
+                                size="md"
+                                value={edu.courseName || ""}
+                                onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
+                                placeholder="e.g. Advanced Baking Workshop"
+                                className="!border-gray-300"
+                              />
+                            </div>
+                            <div>
+                              <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                Institution
+                              </Typography>
+                              <Input
+                                size="md"
+                                value={edu.institution || ""}
+                                onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
+                                placeholder="e.g. TESDA Training Center"
+                                className="!border-gray-300"
+                              />
+                            </div>
+                            <div>
+                              <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                Completion Date
+                              </Typography>
+                              <Input
+                                type="date"
+                                size="md"
+                                value={edu.completionDate || ""}
+                                onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
+                                className="!border-gray-300"
+                              />
+                            </div>
                           </div>
                         ) : (
                           <>
@@ -5748,41 +6875,56 @@ const fetchPublicDataWithToken = async () => {
                 {((portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0) || (isEditMode && editingSections.memberships)) ? (
                   <div className="space-y-4">
                     {(isEditMode && editingSections.memberships ? editingPortfolio?.professionalMemberships : portfolio.professionalMemberships)?.map((mem, index) => (
-                      <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2 relative`}>
-                        {isEditMode && editingSections.memberships && (
-                          <IconButton
-                            size="md"
-                            variant="text"
-                            color="red"
-                            className="absolute top-0 right-0"
-                            onClick={() => handleRemoveArrayItem("professionalMemberships", index)}
-                          >
-                            <FaTrash className="w-3 h-3" />
-                          </IconButton>
-                        )}
+                      <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2`}>
                         {isEditMode && editingSections.memberships ? (
-                          <div className="space-y-2 pr-8">
-                            <Input
-                              size="md"
-                              value={mem.organization || ""}
-                              onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
-                              placeholder="Organization"
-                              className="!border-gray-300"
-                            />
-                            <Input
-                              size="md"
-                              value={mem.membershipType || ""}
-                              onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
-                              placeholder="Membership Type"
-                              className="!border-gray-300"
-                            />
-                            <Input
-                              type="date"
-                              size="md"
-                              value={mem.startDate || ""}
-                              onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
-                              className="!border-gray-300"
-                            />
+                          <div className="space-y-3">
+                            <div className="flex justify-end -mt-2">
+                              <IconButton
+                                size="md"
+                                variant="text"
+                                color="red"
+                                onClick={() => handleRemoveArrayItem("professionalMemberships", index)}
+                                aria-label="Remove membership"
+                              >
+                                <FaTrash className="w-3 h-3" />
+                              </IconButton>
+                            </div>
+                            <div>
+                              <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                Organization
+                              </Typography>
+                              <Input
+                                size="md"
+                                value={mem.organization || ""}
+                                onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
+                                placeholder="e.g. Philippine Chefs Association"
+                                className="!border-gray-300"
+                              />
+                            </div>
+                            <div>
+                              <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                Membership Type
+                              </Typography>
+                              <Input
+                                size="md"
+                                value={mem.membershipType || ""}
+                                onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
+                                placeholder="e.g. Regular Member"
+                                className="!border-gray-300"
+                              />
+                            </div>
+                            <div>
+                              <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                Start Date
+                              </Typography>
+                              <Input
+                                type="date"
+                                size="md"
+                                value={mem.startDate || ""}
+                                onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
+                                className="!border-gray-300"
+                              />
+                            </div>
                           </div>
                         ) : (
                           <>
@@ -5859,56 +7001,81 @@ const fetchPublicDataWithToken = async () => {
               {((portfolio.references && portfolio.references.length > 0) || (isEditMode && editingSections.references)) ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {(isEditMode && editingSections.references ? editingPortfolio?.references : portfolio.references)?.map((ref, index) => (
-                    <div key={index} className="bg-white border border-gray-100 rounded-lg p-6 relative">
-                      {isEditMode && editingSections.references && (
-                        <IconButton
-                          size="md"
-                          variant="text"
-                          color="red"
-                          className="absolute top-2 right-2"
-                          onClick={() => handleRemoveArrayItem("references", index)}
-                        >
-                          <FaTrash className="w-4 h-4" />
-                        </IconButton>
-                      )}
+                    <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
                       {isEditMode && editingSections.references ? (
-                        <div className="space-y-3 pr-8">
-                          <Input
-                            size="md"
-                            value={ref.name || ""}
-                            onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
-                            placeholder="Name"
-                            className="!border-gray-300"
-                          />
-                          <Input
-                            size="md"
-                            value={ref.relationship || ref.position || ""}
-                            onChange={(e) => handleArrayFieldChange("references", index, "relationship", e.target.value)}
-                            placeholder="Relationship/Position"
-                            className="!border-gray-300"
-                          />
-                          <Input
-                            size="md"
-                            value={ref.company || ""}
-                            onChange={(e) => handleArrayFieldChange("references", index, "company", e.target.value)}
-                            placeholder="Company"
-                            className="!border-gray-300"
-                          />
-                          <Input
-                            type="email"
-                            size="md"
-                            value={ref.email || ""}
-                            onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
-                            placeholder="Email"
-                            className="!border-gray-300"
-                          />
-                          <Input
-                            size="md"
-                            value={ref.phone || ref.contact || ""}
-                            onChange={(e) => handleArrayFieldChange("references", index, "phone", e.target.value)}
-                            placeholder="Phone"
-                            className="!border-gray-300"
-                          />
+                        <div className="space-y-3">
+                          <div className="flex justify-end -mt-2">
+                            <IconButton
+                              size="md"
+                              variant="text"
+                              color="red"
+                              onClick={() => handleRemoveArrayItem("references", index)}
+                              aria-label="Remove reference"
+                            >
+                              <FaTrash className="w-4 h-4" />
+                            </IconButton>
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Name
+                            </Typography>
+                            <Input
+                              size="md"
+                              value={ref.name || ""}
+                              onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
+                              placeholder="e.g. Maria Cruz"
+                              className="!border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Relationship / Position
+                            </Typography>
+                            <Input
+                              size="md"
+                              value={ref.relationship || ref.position || ""}
+                              onChange={(e) => handleArrayFieldChange("references", index, "relationship", e.target.value)}
+                              placeholder="e.g. Former Training Supervisor"
+                              className="!border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Company
+                            </Typography>
+                            <Input
+                              size="md"
+                              value={ref.company || ""}
+                              onChange={(e) => handleArrayFieldChange("references", index, "company", e.target.value)}
+                              placeholder="e.g. Cafe Delight"
+                              className="!border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Email
+                            </Typography>
+                            <Input
+                              type="email"
+                              size="md"
+                              value={ref.email || ""}
+                              onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
+                              placeholder="name@example.com"
+                              className="!border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Phone
+                            </Typography>
+                            <Input
+                              size="md"
+                              value={ref.phone || ref.contact || ""}
+                              onChange={(e) => handleArrayFieldChange("references", index, "phone", e.target.value)}
+                              placeholder="+63 900 000 0000"
+                              className="!border-gray-300"
+                            />
+                          </div>
                         </div>
                       ) : (
                         <>
