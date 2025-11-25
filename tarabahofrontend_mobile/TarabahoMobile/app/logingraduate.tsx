@@ -222,13 +222,13 @@ export default function LoginGraduate() {
               {/* Alternative Actions */}
               <View style={{ gap: 12 }}>
                 <Button
-                  title="Register as Graduate"
-                  onPress={() => router.push("/registergraduate")}
+                  title="Back to User Login"
+                  onPress={() => router.push("/login")}
                   variant="outline"
                 />
                 <Button
-                  title="Back to User Login"
-                  onPress={() => router.push("/login")}
+                  title="Register as Graduate"
+                  onPress={() => router.push("/registergraduate")}
                   variant="outline"
                 />
               </View>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Platform, StyleSheet, TextInput, Modal, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, StyleSheet, TextInput, Modal } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -156,21 +156,35 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 0,
+    width: "100%",
+    marginBottom: 20,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '500',
     marginBottom: 8,
-    color: '#374151',
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#374151",
+    letterSpacing: 0.5,
   },
   dateButton: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#f9fafb',
+    paddingVertical: 16,
+    backgroundColor: '#ffffff',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderWidth: 1.5,
+    borderColor: '#d1d5db',
+    minHeight: 56,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000000",
+        shadowOpacity: 0.05,
+        shadowOffset: { width: 0, height: 1 },
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
   },
   inputContainer: {
     flexDirection: 'row',
@@ -187,10 +201,12 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 16,
+    fontWeight: "500",
     color: '#111827',
   },
   placeholderText: {
     fontSize: 16,
+    fontWeight: "500",
     color: '#9ca3af',
   },
   errorInput: {

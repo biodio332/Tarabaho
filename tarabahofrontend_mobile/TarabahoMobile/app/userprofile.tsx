@@ -397,7 +397,7 @@ export default function UserProfile() {
         borderBottomColor: '#e5e7eb',
       }}>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => router.push('/userhomepage')}
           style={{
             width: 40,
             height: 40,

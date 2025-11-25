@@ -128,7 +128,6 @@ function CertificateImage({ filePath, style, resizeMode }: CertificateImageProps
       source={{ uri: filePath }}
       style={style}
       resizeMode={resizeMode || 'cover'}
-      onError={(e) => console.log('Certificate image error:', e.nativeEvent.error)}
     />
   );
 }
@@ -327,7 +326,6 @@ export default function ViewPortfolio() {
           
           if (shareTokenResponse.ok) {
             const shareData = await shareTokenResponse.json();
-            console.log('� ViewPortfolio: Got share token, trying public endpoint...');
             
             // Try public endpoint with share token
             portfolioResponse = await fetch(`${BACKEND_URL}/api/portfolio/public/graduate/${graduateId}/portfolio?share=${shareData.shareToken}`, {
@@ -539,21 +537,21 @@ export default function ViewPortfolio() {
         }} />
       </View>
 
-      {/* Enhanced Profile Card */}
+      {/* Professional Profile Card */}
       <View style={{
         backgroundColor: 'white',
         marginHorizontal: 16,
         marginTop: -70,
-        borderRadius: 16,
-        padding: 20,
+        borderRadius: 20,
+        padding: 24,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        elevation: 8,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 16,
+        elevation: 6,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#f1f5f9',
+        borderColor: '#e2e8f0',
       }}>
         {/* Enhanced Profile Image */}
         <View style={{
@@ -787,49 +785,44 @@ export default function ViewPortfolio() {
     <View style={{
       backgroundColor: 'white',
       marginHorizontal: 16,
-      marginBottom: 16,
-      borderRadius: 16,
+      marginBottom: 20,
+      borderRadius: 20,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 4,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 12,
+      elevation: 3,
       borderWidth: 1,
-      borderColor: '#f8fafc',
+      borderColor: '#f1f5f9',
     }}>
       <View style={{
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f1f5f9',
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 16,
       }}>
         <View style={{
-          width: 44,
-          height: 44,
-          borderRadius: 16,
-          backgroundColor: '#eff6ff',
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          backgroundColor: '#1e40af',
           alignItems: 'center',
           justifyContent: 'center',
-          marginRight: 16,
-          shadowColor: '#1e40af',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 2,
+          marginRight: 14,
         }}>
-          <Ionicons name={icon as any} size={20} color="#1e40af" />
+          <Ionicons name={icon as any} size={22} color="#ffffff" />
         </View>
         <Text style={{
-          fontSize: 18,
-          fontWeight: '800',
+          fontSize: 19,
+          fontWeight: '700',
           color: '#1e293b',
-          letterSpacing: -0.5,
+          letterSpacing: -0.3,
         }}>
           {title}
         </Text>
       </View>
-      <View style={{ padding: 16 }}>
+      <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
         {children}
       </View>
     </View>
@@ -856,7 +849,7 @@ export default function ViewPortfolio() {
         {/* Back Button */}
         <View style={{ position: 'absolute', top: 60, left: 20, zIndex: 10 }}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => router.push('/userhomepage')}
             style={{
               width: 40,
               height: 40,
@@ -911,7 +904,7 @@ export default function ViewPortfolio() {
       {/* Enhanced Back Button */}
       <View style={{ position: 'absolute', top: 60, left: 20, zIndex: 10 }}>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => router.push('/userhomepage')}
           style={{
             width: 44,
             height: 44,
@@ -940,106 +933,97 @@ export default function ViewPortfolio() {
         {renderHeader()}
 
         <View style={{ marginTop: 32, backgroundColor: '#f8fafc' }}>
-          {/* Enhanced About Section */}
+          {/* Professional About Section */}
           {portfolio?.professionalSummary && renderSection(
             'About Me',
             'person-circle-outline',
-            <View style={{
-              backgroundColor: '#f8fafc',
-              padding: 20,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: '#e2e8f0',
+            <Text style={{
+              fontSize: 15,
+              lineHeight: 26,
+              color: '#475569',
+              fontWeight: '500',
+              textAlign: 'left',
+              letterSpacing: 0.2,
             }}>
-              <Text style={{
-                fontSize: 14,
-                lineHeight: 24,
-                color: '#334155',
-                fontWeight: '500',
-                textAlign: 'left',
-              }}>
-                {portfolio.professionalSummary}
-              </Text>
-            </View>
+              {portfolio.professionalSummary}
+            </Text>
           )}
 
-          {/* Enhanced Skills Section */}
+          {/* Professional Skills Section */}
           {portfolio?.skills && portfolio.skills.length > 0 && renderSection(
             'Skills & Expertise',
             'construct-outline',
-            <View style={{ gap: 12 }}>
+            <View style={{ gap: 10 }}>
               {portfolio.skills.map((skill, index) => (
                 <View
                   key={index}
                   style={{
-                    backgroundColor: '#f8fafc',
+                    backgroundColor: '#fafbfc',
                     borderColor: '#e2e8f0',
                     borderWidth: 1,
-                    borderRadius: 12,
+                    borderRadius: 14,
                     padding: 16,
-                    marginBottom: 8,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 3,
-                    elevation: 2,
                   }}
                 >
-                  {/* Main skill name */}
-                  <View style={{ marginBottom: 12 }}>
-                    <Text style={{
-                      fontSize: 16,
-                      fontWeight: '700',
-                      color: '#1e293b',
-                    }}>
-                      {skill.name}
-                    </Text>
-                  </View>
+                  <Text style={{
+                    fontSize: 16,
+                    fontWeight: '700',
+                    color: '#1e293b',
+                    marginBottom: 10,
+                  }}>
+                    {skill.name}
+                  </Text>
                   
-                  {/* Bottom row with type and proficiency */}
                   <View style={{
                     flexDirection: 'row',
-                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 8,
                     alignItems: 'center',
                   }}>
-                    {/* Skill type */}
                     {skill.type && (
                       <View style={{
                         backgroundColor: '#1e40af',
                         paddingHorizontal: 12,
                         paddingVertical: 6,
-                        borderRadius: 20,
+                        borderRadius: 8,
                       }}>
                         <Text style={{
                           color: 'white',
                           fontSize: 11,
                           fontWeight: '700',
+                          textTransform: 'uppercase',
+                          letterSpacing: 0.5,
                         }}>
-                          {skill.type.replace(/_/g, ' ').toUpperCase()}
+                          {skill.type.replace(/_/g, ' ')}
                         </Text>
                       </View>
                     )}
                     
-                    {/* Proficiency level with colored indicator */}
                     {skill.proficiencyLevel && (
                       <View style={{
                         flexDirection: 'row',
                         alignItems: 'center',
+                        backgroundColor: 'white',
+                        paddingHorizontal: 10,
+                        paddingVertical: 6,
+                        borderRadius: 8,
+                        borderWidth: 1,
+                        borderColor: '#e2e8f0',
                       }}>
                         <View style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: 6,
-                          marginRight: 8,
+                          width: 8,
+                          height: 8,
+                          borderRadius: 4,
+                          marginRight: 6,
                           backgroundColor: 
                             skill.proficiencyLevel.toLowerCase().includes('beginner') ? '#eab308' : 
-                            skill.proficiencyLevel.toLowerCase().includes('intermediate') ? '#ea580c' : 
-                            skill.proficiencyLevel.toLowerCase().includes('advanced') ? '#16a34a' :
+                            skill.proficiencyLevel.toLowerCase().includes('intermediate') ? '#f97316' : 
+                            skill.proficiencyLevel.toLowerCase().includes('advanced') ? '#10b981' :
                             '#3b82f6',
                         }} />
                         <Text style={{
-                          color: '#374151',
-                          fontSize: 13,
+                          color: '#64748b',
+                          fontSize: 12,
                           fontWeight: '600',
                         }}>
                           {skill.proficiencyLevel}
@@ -1052,74 +1036,62 @@ export default function ViewPortfolio() {
             </View>
           )}
 
-          {/* Enhanced Experience Section */}
+          {/* Professional Experience Section */}
           {portfolio?.experiences && portfolio.experiences.length > 0 && renderSection(
             'Work Experience',
             'briefcase-outline',
-            <View style={{ gap: 20 }}>
+            <View style={{ gap: 16 }}>
               {portfolio.experiences.map((experience, index) => (
                 <View 
                   key={index} 
                   style={{ 
-                    backgroundColor: '#ffffff',
-                    padding: 20,
-                    borderRadius: 16,
+                    backgroundColor: '#fafbfc',
+                    padding: 18,
+                    borderRadius: 14,
                     borderWidth: 1,
                     borderColor: '#e2e8f0',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.04,
-                    shadowRadius: 6,
-                    elevation: 2,
                   }}
                 >
-                  <View style={{ marginBottom: 12 }}>
-                    <Text style={{
-                      fontSize: 16,
-                      fontWeight: '800',
-                      color: '#1e293b',
-                      marginBottom: 6,
-                      lineHeight: 22,
-                    }}>
-                      {experience.jobTitle}
-                    </Text>
-                    <View style={{
-                      backgroundColor: '#eff6ff',
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 12,
-                      alignSelf: 'flex-start',
-                      marginBottom: 8,
-                    }}>
-                      <Text style={{
-                        fontSize: 13,
-                        fontWeight: '700',
-                        color: '#1e40af',
-                      }}>
-                        {experience.employer}
-                      </Text>
-                    </View>
-                    <View style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      marginBottom: 12,
-                    }}>
-                      <Ionicons name="calendar-outline" size={16} color="#64748b" />
-                      <Text style={{
-                        fontSize: 12,
-                        color: '#64748b',
-                        marginLeft: 6,
-                        fontWeight: '600',
-                      }}>
-                        {experience.startDate} - {experience.endDate || 'Present'}
-                      </Text>
-                    </View>
-                  </View>
-                  {experience.description && (
+                  <Text style={{
+                    fontSize: 17,
+                    fontWeight: '700',
+                    color: '#1e293b',
+                    marginBottom: 8,
+                    lineHeight: 24,
+                  }}>
+                    {experience.jobTitle}
+                  </Text>
+                  
+                  <Text style={{
+                    fontSize: 15,
+                    fontWeight: '600',
+                    color: '#1e40af',
+                    marginBottom: 8,
+                  }}>
+                    {experience.employer}
+                  </Text>
+                  
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginBottom: 12,
+                  }}>
+                    <Ionicons name="calendar-outline" size={15} color="#94a3b8" />
                     <Text style={{
                       fontSize: 13,
+                      color: '#64748b',
+                      marginLeft: 6,
+                      fontWeight: '500',
+                    }}>
+                      {experience.startDate} - {experience.endDate || 'Present'}
+                    </Text>
+                  </View>
+                  
+                  {experience.description && (
+                    <Text style={{
+                      fontSize: 14,
                       lineHeight: 22,
-                      color: '#475569',
+                      color: '#64748b',
                       fontWeight: '500',
                     }}>
                       {experience.description}

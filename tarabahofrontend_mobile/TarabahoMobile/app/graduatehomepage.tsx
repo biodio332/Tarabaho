@@ -7,17 +7,18 @@ import {
   Alert, 
   ActivityIndicator,
   StyleSheet,
-  SafeAreaView,
   Platform,
   StatusBar,
   TouchableOpacity,
-  Share,
-  Linking
+  Linking,
+  Modal,
+  Pressable
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import * as Clipboard from 'expo-clipboard';
+import * as NavigationBar from 'expo-navigation-bar';
 
 import Button from '@/components/ui/Button';
 import Chart from '@/components/ui/Chart';
@@ -67,10 +68,9 @@ export default function GraduateHomepage() {
   const [chartType, setChartType] = useState<'line' | 'bar'>('line');
   const [trendsLoading, setTrendsLoading] = useState(false);
   const [showSimplifiedView, setShowSimplifiedView] = useState(false);
+  const [showTimeRangeModal, setShowTimeRangeModal] = useState(false);
   
-  // Share functionality
-  const [shareToken, setShareToken] = useState<string | null>(null);
-  const [shareLoading, setShareLoading] = useState(false);
+
 
   // Helper function to generate date range with labels
   const generateDateRange = (range: 'week' | 'month' | 'year') => {
@@ -161,12 +161,10 @@ export default function GraduateHomepage() {
   // Fetch view trends
   const fetchViewTrends = useCallback(async (portfolioId: number, authToken: string, range: 'week' | 'month' | 'year') => {
     if (!portfolioId || !authToken) {
-      console.warn("Cannot fetch trends: missing portfolioId or token");
       return;
     }
     
     setTrendsLoading(true);
-    console.log(`🔄 Fetching view trends for portfolio ${portfolioId}, range: ${range}`);
     
     try {
       const trendsResponse = await fetch(
@@ -227,199 +225,13 @@ export default function GraduateHomepage() {
     }
   }, [timeRange, chartType]);
 
-  // Share functionality
-  const fetchShareToken = async () => {
-    if (!token || !graduateData?.id) return null;
-    
-    try {
-      setShareLoading(true);
-      const response = await fetch(`${BACKEND_URL}/api/portfolio/graduate/${graduateData.id}/portfolio/share-token`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch share token');
-      }
 
-      const data = await response.json();
-      setShareToken(data.shareToken);
-      return data.shareToken;
-    } catch (error) {
-      console.error('❌ Error fetching share token:', error);
-      Alert.alert('Error', 'Failed to generate share token. Please try again.');
-      return null;
-    } finally {
-      setShareLoading(false);
-    }
-  };
 
-  // NEW: Regenerate share token function
-  const regenerateShareToken = async () => {
-    if (!token || !graduateData?.id) return null;
-    
-    Alert.alert(
-      'Regenerate Share Token',
-      'This will create a NEW share link and INVALIDATE ALL EXISTING LINKS!\n\nAnyone with old links will see "Portfolio not found" errors.\n\nAre you sure you want to continue?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Yes, Regenerate',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setShareLoading(true);
-              console.log('🔄 Regenerating share token for graduate ID:', graduateData.id);
-              
-              const response = await fetch(`${BACKEND_URL}/api/portfolio/graduate/${graduateData.id}/portfolio/regenerate-token`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-                },
-              });
 
-              if (!response.ok) {
-                throw new Error('Failed to regenerate share token');
-              }
 
-              const data = await response.json();
-              console.log('✅ New token generated:', data.shareToken.substring(0, 8) + '...');
-              setShareToken(data.shareToken);
-              
-              Alert.alert(
-                '✅ New Share Link Created!',
-                `New secure share link generated successfully!\n\n⚠️ All previous share links are now invalid.`,
-                [{ text: 'OK' }]
-              );
-              
-              return data.shareToken;
-            } catch (error) {
-              console.error('❌ Error regenerating share token:', error);
-              Alert.alert('Error', 'Failed to generate new share token. Please try again.');
-              return null;
-            } finally {
-              setShareLoading(false);
-            }
-          }
-        }
-      ]
-    );
-  };
 
-  const getShareableUrl = (token: string) => {
-    const baseUrl = __DEV__ ? 'http://localhost:3000' : 'https://your-domain.com';
-    return `${baseUrl}/portfolio/${graduateData?.id}?share=${token}`;
-  };
 
-  const copySecureLink = useCallback(async () => {
-    try {
-      console.log('🔗 Current shareToken in state:', shareToken);
-      
-      // Always fetch the latest token to ensure we have the most current one
-      let currentToken = shareToken;
-      if (!currentToken) {
-        console.log('⚠️ No token in state, fetching new one...');
-        currentToken = await fetchShareToken();
-        if (!currentToken) return;
-      }
-
-      console.log('🔗 Using token for copy:', currentToken);
-      const shareableUrl = getShareableUrl(currentToken);
-      console.log('🔗 Generated URL:', shareableUrl);
-      
-      await Clipboard.setStringAsync(shareableUrl);
-      
-      Alert.alert(
-        '✅ Link Copied!',
-        `Secure share link copied to clipboard!\n\n🔒 Only people with this exact link can view your portfolio.\n💡 Links remain valid until you generate a new one.`,
-        [{ text: 'OK' }]
-      );
-    } catch (error) {
-      console.error('❌ Error copying link:', error);
-      Alert.alert('Error', 'Failed to copy link. Please try again.');
-    }
-  }, [shareToken, graduateData?.id]);
-
-  const shareToLinkedIn = useCallback(async () => {
-    try {
-      // Always use the current shareToken from state
-      let currentToken = shareToken;
-      if (!currentToken) {
-        currentToken = await fetchShareToken();
-        if (!currentToken) return;
-      }
-
-      const shareableUrl = getShareableUrl(currentToken);
-      const title = `${graduateData?.firstName || 'Portfolio'} - Professional Portfolio`;
-      const summary = 'Check out my professional portfolio showcasing my skills, experiences, and achievements!';
-      
-      const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(summary)}`;
-      
-      const supported = await Linking.canOpenURL(linkedInUrl);
-      if (supported) {
-        await Linking.openURL(linkedInUrl);
-      } else {
-        Alert.alert('Error', 'Unable to open LinkedIn. Please try again.');
-      }
-    } catch (error) {
-      console.error('❌ Error sharing to LinkedIn:', error);
-      Alert.alert('Error', 'Failed to share to LinkedIn. Please try again.');
-    }
-  }, [shareToken, graduateData?.firstName, graduateData?.id]);
-
-  const shareToFacebook = useCallback(async () => {
-    try {
-      // Always use the current shareToken from state
-      let currentToken = shareToken;
-      if (!currentToken) {
-        currentToken = await fetchShareToken();
-        if (!currentToken) return;
-      }
-
-      const shareableUrl = getShareableUrl(currentToken);
-      const title = `${graduateData?.firstName || 'Portfolio'} - Professional Portfolio`;
-      const summary = 'Check out my professional portfolio showcasing my skills, experiences, and achievements!';
-      
-      const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}&quote=${encodeURIComponent(summary)}&title=${encodeURIComponent(title)}`;
-      
-      const supported = await Linking.canOpenURL(facebookUrl);
-      if (supported) {
-        await Linking.openURL(facebookUrl);
-      } else {
-        Alert.alert('Error', 'Unable to open Facebook. Please try again.');
-      }
-    } catch (error) {
-      console.error('❌ Error sharing to Facebook:', error);
-      Alert.alert('Error', 'Failed to share to Facebook. Please try again.');
-    }
-  }, [shareToken, graduateData?.firstName, graduateData?.id]);
-
-  const shareViaDevice = useCallback(async () => {
-    try {
-      // Always use the current shareToken from state
-      let currentToken = shareToken;
-      if (!currentToken) {
-        currentToken = await fetchShareToken();
-        if (!currentToken) return;
-      }
-
-      const shareableUrl = getShareableUrl(currentToken);
-      const title = `${graduateData?.firstName || 'Portfolio'} - Professional Portfolio`;
-      const message = `Check out my professional portfolio: ${shareableUrl}`;
-
-      await Share.share({
-        message: message,
-        url: shareableUrl,
-        title: title,
-      });
-    } catch (error) {
-      console.error('❌ Error sharing via device:', error);
-    }
-  }, [shareToken, graduateData?.firstName, graduateData?.id]);
 
   // Initial data fetch
   const fetchInitialData = useCallback(async () => {
@@ -484,28 +296,6 @@ export default function GraduateHomepage() {
             portfolioData = await portfolioResponse.json();
             console.log("✅ Portfolio data received:", portfolioData);
             setPortfolio(portfolioData);
-            
-            // Fetch share token for portfolio if it exists
-            try {
-              const shareTokenResponse = await fetch(
-                `${BACKEND_URL}/api/portfolio/graduate/${graduateData.id}/portfolio/share-token`,
-                {
-                  method: 'GET',
-                  headers: {
-                    'Authorization': `Bearer ${storedToken}`,
-                    'Content-Type': 'application/json',
-                  },
-                }
-              );
-
-              if (shareTokenResponse.ok) {
-                const shareTokenData = await shareTokenResponse.json();
-                console.log("✅ Share token received");
-                setShareToken(shareTokenData.shareToken);
-              }
-            } catch (shareTokenErr: any) {
-              console.error("⚠️ Share token fetch error:", shareTokenErr.message);
-            }
           } else if (portfolioResponse.status === 404) {
             console.log("ℹ️ No portfolio found for graduate ID:", graduateData.id);
             setPortfolio(null);
@@ -569,6 +359,14 @@ export default function GraduateHomepage() {
     }
   }, [router, timeRange, fetchViewTrends]);
 
+  // Set Android navigation bar color
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      NavigationBar.setBackgroundColorAsync('#ffffff');
+      NavigationBar.setButtonStyleAsync('dark');
+    }
+  }, []);
+
   // Initial load
   useEffect(() => {
     fetchInitialData();
@@ -599,47 +397,79 @@ export default function GraduateHomepage() {
     }],
   } : null;
 
-  // Time range options
+  // Debug logging for chart data
+  useEffect(() => {
+    console.log('📊 Chart Debug Info:');
+    console.log('- viewTrends length:', viewTrends?.length);
+    console.log('- chartData exists:', !!chartData);
+    console.log('- viewStats:', viewStats);
+    console.log('- portfolio ID:', portfolio?.id);
+    if (viewTrends?.length > 0) {
+      console.log('- Sample trend data:', viewTrends[0]);
+      console.log('- Total views in trends:', viewTrends.reduce((sum, t) => sum + t.views, 0));
+    }
+  }, [viewTrends, chartData, viewStats, portfolio]);
+
+  // Time range options - Define before early returns
   const timeRangeOptions = [
     { value: 'week', label: 'Last 7 Days', icon: <Ionicons name="time-outline" size={18} color="#6b7280" /> },
     { value: 'month', label: 'This Month', icon: <Ionicons name="calendar-outline" size={18} color="#6b7280" /> },
     { value: 'year', label: 'This Year', icon: <Ionicons name="stats-chart-outline" size={18} color="#6b7280" /> },
   ];
 
-  // Chart type options
+  // Chart type options - Define before early returns
   const chartTypeOptions = [
     { value: 'line', label: 'Line Chart', icon: <Ionicons name="trending-up-outline" size={18} color="#6b7280" /> },
     { value: 'bar', label: 'Bar Chart', icon: <Ionicons name="bar-chart-outline" size={18} color="#6b7280" /> },
   ];
 
+  // Render loading state without early return
   if (isLoading) {
     return (
-      <View style={viewStyles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text style={textStyles.loadingText}>Loading your dashboard...</Text>
-      </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.surface }} edges={['top']}>
+        <StatusBar 
+          barStyle="dark-content" 
+          backgroundColor={theme.colors.background}
+        />
+        <View style={viewStyles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2563eb" />
+          <Text style={textStyles.loadingText}>Loading your dashboard...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
+  // Render error state without early return
   if (error) {
     return (
-      <View style={viewStyles.errorContainer}>
-        <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-        <Text style={textStyles.errorText}>{error}</Text>
-        <Button title="Try Again" onPress={fetchInitialData} />
-      </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.surface }} edges={['top']}>
+        <StatusBar 
+          barStyle="dark-content" 
+          backgroundColor={theme.colors.background}
+        />
+        <View style={viewStyles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
+          <Text style={textStyles.errorText}>{error}</Text>
+          <Button title="Try Again" onPress={fetchInitialData} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <SafeAreaView style={viewStyles.safeArea}>
-        <ScrollView
-          style={viewStyles.container}
-          contentContainerStyle={{ paddingBottom: 160 }} // Space for sticky button + bottom nav
-          refreshControl={
-            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
-          }>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.surface }} edges={['top']}>
+      <StatusBar 
+        barStyle="dark-content" 
+        backgroundColor={theme.colors.background}
+      />
+      <ScrollView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+        contentContainerStyle={{ 
+          paddingBottom: 0,
+        }}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+        }>
         {/* Header - Enhanced Typography */}
         <View style={viewStyles.header}>
           <View style={viewStyles.headerContent}>
@@ -744,69 +574,68 @@ export default function GraduateHomepage() {
               </View>
 
               {/* Chart Display Area */}
-              {chartData ? (
-                viewTrends.some(trend => trend.views > 0) ? (
-                  <View style={viewStyles.chartDisplay}>
-                    <Chart
-                      data={{
-                        labels: (() => {
-                          // Smart label formatting and limiting for mobile
-                          const labels = chartData.labels;
-                          let step = 1;
-                          let maxLabels = 6;
+              <View style={{ marginBottom: 16 }}>
+                <Text style={[textStyles.controlTitle, { fontSize: 18, fontWeight: '700' }]}>Portfolio Analytics</Text>
+              </View>
+              
+              {chartData && chartData.datasets && chartData.datasets.length > 0 ? (
+                <View style={viewStyles.chartDisplay}>
+                  <Chart
+                    data={{
+                      labels: (() => {
+                        // Smart label formatting and limiting for mobile
+                        const labels = chartData.labels;
+                        let step = 1;
+                        let maxLabels = 6;
+                        
+                        if (timeRange === 'year') {
+                          step = 1;
+                          maxLabels = 6;
+                        } else if (timeRange === 'month') {
+                          step = Math.ceil(labels.length / maxLabels);
+                        } else {
+                          step = Math.ceil(labels.length / maxLabels);
+                        }
+                        
+                        return labels.map((label, idx) => {
+                          if (idx % step !== 0) return '';
                           
+                          // Format labels for mobile readability
                           if (timeRange === 'year') {
-                            step = 1;
-                            maxLabels = 6;
-                          } else if (timeRange === 'month') {
-                            step = Math.ceil(labels.length / maxLabels);
-                          } else {
-                            step = Math.ceil(labels.length / maxLabels);
-                          }
-                          
-                          return labels.map((label, idx) => {
-                            if (idx % step !== 0) return '';
-                            
-                            // Format labels for mobile readability
-                            if (timeRange === 'year') {
-                              // Format: "Jan '25"
-                              const parts = label.split(' ');
-                              if (parts.length >= 2) {
-                                const month = parts[0];
-                                const year = parts[1].slice(-2);
-                                return `${month} '${year}`;
-                              }
-                              return label;
-                            } else {
-                              // Format: "Aug 15" -> "Aug 15"
-                              const parts = label.split(' ');
-                              if (parts.length >= 3) {
-                                return `${parts[1]} ${parts[2]}`;
-                              }
-                              return label.length > 8 ? label.split(' ')[0] : label;
+                            // Format: "Jan '25"
+                            const parts = label.split(' ');
+                            if (parts.length >= 2) {
+                              const month = parts[0];
+                              const year = parts[1].slice(-2);
+                              return `${month} '${year}`;
                             }
-                          });
-                        })(),
-                        datasets: chartData.datasets,
-                      }}
-                      type={chartType}
-                      height={260}
-                      loading={trendsLoading}
-                      rotateLabels={true}
-                      formatXLabel={(label) => label}
-                    />
-                  </View>
-                ) : (
-                  <View style={viewStyles.chartEmptyState}>
-                    <View style={viewStyles.emptyIconContainer}>
-                      <Ionicons name="analytics-outline" size={48} color={theme.colors.primary} />
+                            return label;
+                          } else {
+                            // Format: "Aug 15" -> "Aug 15"
+                            const parts = label.split(' ');
+                            if (parts.length >= 3) {
+                              return `${parts[1]} ${parts[2]}`;
+                            }
+                            return label.length > 8 ? label.split(' ')[0] : label;
+                          }
+                        });
+                      })(),
+                      datasets: chartData.datasets,
+                    }}
+                    type={chartType}
+                    height={260}
+                    loading={trendsLoading}
+                    rotateLabels={true}
+                    formatXLabel={(label) => label}
+                  />
+                  {viewTrends.every(trend => trend.views === 0) && (
+                    <View style={{ padding: 16, alignItems: 'center' }}>
+                      <Text style={{ color: theme.colors.text.secondary, fontSize: 14 }}>
+                        No views recorded yet. Share your portfolio to start tracking!
+                      </Text>
                     </View>
-                    <Text style={textStyles.emptyTitle}>No Views Yet</Text>
-                    <Text style={textStyles.emptyMessage}>
-                      Share your portfolio to start tracking engagement
-                    </Text>
-                  </View>
-                )
+                  )}
+                </View>
               ) : (
                 <View style={viewStyles.chartLoadingState}>
                   <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -816,20 +645,23 @@ export default function GraduateHomepage() {
 
               {/* Controls Section */}
               <View style={viewStyles.controlsSection}>
-                <View style={viewStyles.controlRow}>
+                {/* Dropdown for Time Period */}
+                <View style={viewStyles.dropdownContainer}>
                   <Text style={textStyles.controlTitle}>Time Period</Text>
-                  <ScrollView 
-                    horizontal 
-                    showsHorizontalScrollIndicator={false}
-                    style={viewStyles.controlScroll}
+                  <TouchableOpacity
+                    style={viewStyles.dropdown}
+                    onPress={() => setShowTimeRangeModal(true)}
                   >
-                    <ToggleGroup
-                      options={timeRangeOptions}
-                      value={timeRange}
-                      onValueChange={(value) => setTimeRange(value as 'week' | 'month' | 'year')}
-                      variant="compact"
-                    />
-                  </ScrollView>
+                    <View style={viewStyles.dropdownContent}>
+                      <View style={viewStyles.dropdownIcon}>
+                        {timeRangeOptions.find(opt => opt.value === timeRange)?.icon}
+                      </View>
+                      <Text style={textStyles.dropdownText}>
+                        {timeRangeOptions.find(opt => opt.value === timeRange)?.label}
+                      </Text>
+                      <Ionicons name="chevron-down" size={20} color={theme.colors.text.secondary} />
+                    </View>
+                  </TouchableOpacity>
                 </View>
                 
                 {/* Full-width segmented control for chart type */}
@@ -877,121 +709,93 @@ export default function GraduateHomepage() {
           </View>
         )}
 
-        {/* Share Portfolio Section */}
+
+        
+        {/* Sticky View Portfolio Button */}
         {portfolio && (
-          <View style={viewStyles.shareSection}>
-            <Text style={textStyles.shareSectionTitle}>Share Your Portfolio</Text>
-            <Text style={textStyles.shareSectionSubtitle}>
-              Share your professional portfolio with potential employers and collaborators using secure links.
-            </Text>
-            
-            <View style={viewStyles.shareButtonsContainer}>
+          <View style={viewStyles.stickyButtonContainer}>
               <TouchableOpacity 
-                style={[viewStyles.shareButton, viewStyles.shareButtonPrimary]}
-                onPress={copySecureLink}
-                disabled={shareLoading}
+                style={viewStyles.stickyActionButton}
+                onPress={() => router.push('/portfolio')}
               >
-                {shareLoading ? (
-                  <ActivityIndicator size="small" color="#ffffff" />
-                ) : (
-                  <Ionicons name="link-outline" size={20} color="#ffffff" />
-                )}
-                <Text style={textStyles.shareButtonText}>Copy Secure Link</Text>
+                <Ionicons name="eye-outline" size={24} color="#ffffff" />
+                <Text style={textStyles.stickyButtonText}>View Portfolio</Text>
+                <Ionicons name="chevron-forward" size={20} color="#ffffff" />
               </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[viewStyles.shareButton, viewStyles.shareButtonSecondary]}
-                onPress={shareToLinkedIn}
-                disabled={shareLoading}
-              >
-                <Ionicons name="logo-linkedin" size={20} color="#2563eb" />
-                <Text style={textStyles.shareButtonTextSecondary}>Share to LinkedIn</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[viewStyles.shareButton, viewStyles.shareButtonSecondary]}
-                onPress={shareToFacebook}
-                disabled={shareLoading}
-              >
-                <Ionicons name="logo-facebook" size={20} color="#2563eb" />
-                <Text style={textStyles.shareButtonTextSecondary}>Share to Facebook</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[viewStyles.shareButton, viewStyles.shareButtonSecondary]}
-                onPress={shareViaDevice}
-                disabled={shareLoading}
-              >
-                <Ionicons name="share-outline" size={20} color="#2563eb" />
-                <Text style={textStyles.shareButtonTextSecondary}>More Options</Text>
-              </TouchableOpacity>
-            </View>
-
-            {shareToken && (
-              <View style={viewStyles.shareTokenContainer}>
-                <View style={viewStyles.shareTokenHeader}>
-                  <Text style={textStyles.shareTokenTitle}>Your Secure Token</Text>
-                  <TouchableOpacity 
-                    style={viewStyles.regenerateTokenButton}
-                    onPress={regenerateShareToken}
-                    disabled={shareLoading}
-                  >
-                    <Ionicons name="refresh-outline" size={16} color={theme.colors.primary} />
-                    <Text style={textStyles.regenerateTokenText}>Regenerate</Text>
-                  </TouchableOpacity>
-                </View>
-                <Text style={textStyles.shareTokenText}>
-                  {shareToken.substring(0, 8)}...{shareToken.slice(-4)}
-                </Text>
-                <Text style={textStyles.shareTokenNote}>
-                  This token is used to authenticate secure access to your portfolio. Regenerating will invalidate old links.
-                </Text>
-              </View>
-            )}
           </View>
         )}
-        </ScrollView>
-      </SafeAreaView>
-      
-      {/* Sticky View Portfolio Button */}
-      {portfolio && (
-        <View style={viewStyles.stickyButtonContainer}>
-          <SafeAreaView style={viewStyles.stickyButtonSafeArea}>
-            <TouchableOpacity 
-              style={viewStyles.stickyActionButton}
-              onPress={() => router.push('/portfolio')}
-            >
-              <Ionicons name="eye-outline" size={24} color="#ffffff" />
-              <Text style={textStyles.stickyButtonText}>View Portfolio</Text>
-              <Ionicons name="chevron-forward" size={20} color="#ffffff" />
-            </TouchableOpacity>
-          </SafeAreaView>
+        
+        {/* Bottom Navigation */}
+        <View style={viewStyles.bottomNavContainer}>
+            <View style={viewStyles.bottomNav}>
+              <TouchableOpacity 
+                style={viewStyles.bottomNavItem} 
+                onPress={() => router.push('/graduatehomepage')}
+              >
+                <Ionicons name="home" size={24} color={theme.colors.primary} />
+                <Text style={textStyles.bottomNavText}>Home</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={viewStyles.bottomNavItem} 
+                onPress={() => router.push('/graduateprofile')}
+              >
+                <Ionicons name="settings-outline" size={24} color={theme.colors.text.secondary} />
+                <Text style={textStyles.bottomNavTextInactive}>Settings</Text>
+              </TouchableOpacity>
+            </View>
         </View>
-      )}
+      </ScrollView>
       
-      {/* Bottom Navigation - Fixed at bottom */}
-      <View style={viewStyles.bottomNavContainer}>
-        <SafeAreaView style={viewStyles.bottomNavSafeArea}>
-          <View style={viewStyles.bottomNav}>
-            <TouchableOpacity 
-              style={viewStyles.bottomNavItem} 
-              onPress={() => router.push('/graduatehomepage')}
-            >
-              <Ionicons name="home" size={24} color={theme.colors.primary} />
-              <Text style={textStyles.bottomNavText}>Home</Text>
-            </TouchableOpacity>
+      {/* Time Range Modal */}
+      <Modal
+        visible={showTimeRangeModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowTimeRangeModal(false)}
+      >
+        <Pressable 
+          style={viewStyles.modalOverlay}
+          onPress={() => setShowTimeRangeModal(false)}
+        >
+          <View style={viewStyles.modalContent}>
+            <View style={viewStyles.modalHeader}>
+              <Text style={textStyles.modalTitle}>Select Time Period</Text>
+              <TouchableOpacity onPress={() => setShowTimeRangeModal(false)}>
+                <Ionicons name="close" size={24} color={theme.colors.text.primary} />
+              </TouchableOpacity>
+            </View>
             
-            <TouchableOpacity 
-              style={viewStyles.bottomNavItem} 
-              onPress={() => router.push('/graduateprofile')}
-            >
-              <Ionicons name="settings-outline" size={24} color={theme.colors.text.secondary} />
-              <Text style={textStyles.bottomNavTextInactive}>Settings</Text>
-            </TouchableOpacity>
+            {timeRangeOptions.map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  viewStyles.modalOption,
+                  timeRange === option.value && viewStyles.modalOptionActive
+                ]}
+                onPress={() => {
+                  setTimeRange(option.value as 'week' | 'month' | 'year');
+                  setShowTimeRangeModal(false);
+                }}
+              >
+                <View style={viewStyles.modalOptionIcon}>
+                  {option.icon}
+                </View>
+                <Text style={[
+                  textStyles.modalOptionText,
+                  timeRange === option.value && textStyles.modalOptionTextActive
+                ]}>
+                  {option.label}
+                </Text>
+                {timeRange === option.value && (
+                  <Ionicons name="checkmark" size={24} color={theme.colors.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
           </View>
-        </SafeAreaView>
-      </View>
-    </View>
+        </Pressable>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
@@ -1095,16 +899,13 @@ const theme = {
 
 const viewStyles = StyleSheet.create<Record<string, ViewStyle>>({
   // Layout
-  safeArea: {
+  rootContainer: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    // Add extra padding for sticky button and bottom navigation
-    paddingBottom: Platform.OS === 'ios' ? 140 : 120,
   },
   
   // Loading State
@@ -1275,6 +1076,30 @@ const viewStyles = StyleSheet.create<Record<string, ViewStyle>>({
     borderTopColor: theme.colors.border.light,
     gap: theme.spacing.md,
   },
+  dropdownContainer: {
+    gap: theme.spacing.sm,
+  },
+  dropdown: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radii.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border.default,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    minHeight: 48,
+    ...theme.shadows.sm,
+  },
+  dropdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  dropdownIcon: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   controlRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1371,22 +1196,11 @@ const viewStyles = StyleSheet.create<Record<string, ViewStyle>>({
 
   // Sticky Action Button
   stickyButtonContainer: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 95 : 85, // Above bottom navigation
-    left: 0,
-    right: 0,
-    backgroundColor: theme.colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border.light,
-    ...theme.shadows.lg,
-    shadowOffset: { width: 0, height: -3 },
-    elevation: 10,
-  },
-  stickyButtonSafeArea: {
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-    paddingBottom: Platform.OS === 'ios' ? theme.spacing.sm : theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.background,
   },
+
   stickyActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1396,7 +1210,7 @@ const viewStyles = StyleSheet.create<Record<string, ViewStyle>>({
     paddingVertical: theme.spacing.lg,
     paddingHorizontal: theme.spacing.xl,
     gap: theme.spacing.md,
-    ...theme.shadows.md,
+    ...theme.shadows.lg,
     minHeight: 56,
   },
 
@@ -1522,38 +1336,74 @@ const viewStyles = StyleSheet.create<Record<string, ViewStyle>>({
     opacity: 0.8,
   },
 
-  // Logout Section
   // Bottom Navigation
   bottomNavContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border.light,
     ...theme.shadows.lg,
     shadowOffset: { width: 0, height: -3 },
     elevation: 10,
-    // Handle iPhone X+ bottom area
-    paddingBottom: Platform.OS === 'ios' ? 10 : 0,
+    paddingBottom: 0,
+    marginBottom: 0,
   },
-  bottomNavSafeArea: {
-    backgroundColor: theme.colors.surface,
-  },
+
   bottomNav: {
     flexDirection: 'row',
-    paddingTop: theme.spacing.sm,
-    paddingBottom: Platform.OS === 'ios' ? theme.spacing.sm : theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
     justifyContent: 'space-around',
     alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    minHeight: 60,
   },
   bottomNavItem: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: theme.spacing.sm,
     minWidth: 80,
+  },
+  
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: theme.colors.surface,
+    borderTopLeftRadius: theme.radii.xl,
+    borderTopRightRadius: theme.radii.xl,
+    paddingBottom: Platform.OS === 'ios' ? 34 : theme.spacing.lg,
+    ...theme.shadows.lg,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border.light,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.lg,
+    gap: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border.light,
+  },
+  modalOptionActive: {
+    backgroundColor: theme.colors.primary + '10',
+  },
+  modalOptionIcon: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
@@ -1658,6 +1508,13 @@ const textStyles = StyleSheet.create<Record<string, TextStyle>>({
     fontWeight: '600' as TextStyle['fontWeight'],
     color: theme.colors.text.primary,
     minWidth: 80,
+  },
+  dropdownText: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '500' as TextStyle['fontWeight'],
+    color: theme.colors.text.primary,
   },
   emptyTitle: {
     fontSize: 16,
@@ -1821,6 +1678,21 @@ const textStyles = StyleSheet.create<Record<string, TextStyle>>({
     color: theme.colors.text.secondary,
     fontStyle: 'italic',
   },
+  
+  // Modal Text Styles
+  modalTitle: {
+    fontSize: theme.typography.heading3.fontSize,
+    fontWeight: theme.typography.heading3.fontWeight,
+    color: theme.colors.text.primary,
+  },
+  modalOptionText: {
+    flex: 1,
+    fontSize: theme.typography.body1.fontSize,
+    fontWeight: '500' as TextStyle['fontWeight'],
+    color: theme.colors.text.primary,
+  },
+  modalOptionTextActive: {
+    fontWeight: '600' as TextStyle['fontWeight'],
+    color: theme.colors.primary,
+  },
 });
-
-

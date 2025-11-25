@@ -1,5 +1,5 @@
 import { useState, forwardRef } from "react"
-import { View, Text, TextInput, StyleSheet, type TextInputProps, TouchableWithoutFeedback, Keyboard } from "react-native"
+import { View, Text, TextInput, StyleSheet, Platform, type TextInputProps, TouchableWithoutFeedback, Keyboard } from "react-native"
 
 type TextFieldProps = {
   label?: string
@@ -83,7 +83,14 @@ const TextField = forwardRef<TextInput, TextFieldProps>(
               autoComplete={props.autoComplete ?? "off"}
               textContentType={props.textContentType}
               enablesReturnKeyAutomatically={true}
-              clearButtonMode="while-editing"
+              {...Platform.select({
+                ios: {
+                  clearButtonMode: "while-editing",
+                },
+                android: {
+                  underlineColorAndroid: "transparent",
+                },
+              })}
               {...props}
             />
             {rightIcon && <View style={styles.iconContainer}>{rightIcon}</View>}
@@ -153,29 +160,47 @@ const styles = StyleSheet.create({
   borderDefault: {
     borderColor: "#d1d5db",
     backgroundColor: "#ffffff",
-    shadowColor: "#000000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 3,
-    elevation: 1,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000000",
+        shadowOpacity: 0.05,
+        shadowOffset: { width: 0, height: 1 },
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
   },
   borderFocused: {
     borderColor: "#3b82f6",
     backgroundColor: "#ffffff",
-    shadowColor: "#3b82f6",
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#3b82f6",
+        shadowOpacity: 0.15,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   borderError: {
     borderColor: "#ef4444",
     backgroundColor: "#fef2f2",
-    shadowColor: "#ef4444",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#ef4444",
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   input: {
     flex: 1,

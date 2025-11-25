@@ -48,7 +48,6 @@ export default function GraduateProfile() {
   
   // Handle profile picture selection
   const pickImage = async () => {
-    console.log("Starting pickImage function");
     try {
       // Check and request permissions first
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -62,7 +61,6 @@ export default function GraduateProfile() {
       const token = await AsyncStorage.getItem("authToken");
       
       if (!username || !token) {
-        console.error("Missing credentials: username or token is missing");
         Alert.alert(
           "Session Error",
           "You need to be logged in to change your profile picture.",
@@ -72,7 +70,6 @@ export default function GraduateProfile() {
       }
       
       // Skip token validation before image selection to minimize issues
-      console.log("Launching image picker");
       
       // Launch the image picker
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -113,11 +110,8 @@ export default function GraduateProfile() {
           
           // Process the image after refresh
           try {
-            console.log("Starting upload process...");
             await uploadProfileImage(selectedAsset.uri);
-            console.log("Upload completed successfully");
           } catch (uploadError) {
-            console.error("Upload error in pickImage:", uploadError);
             const errorMessage = uploadError instanceof Error ? uploadError.message : 'Unknown upload error';
             
             // Only show error if it's not an authentication error (which is handled in uploadProfileImage)
@@ -530,8 +524,20 @@ export default function GraduateProfile() {
           text: 'Logout',
           style: 'destructive',
           onPress: async () => {
-            await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username']);
-            router.replace('/logingraduate');
+            try {
+              console.log('GraduateProfile - Starting logout process...');
+              
+              // Clear all authentication related data
+              const keysToRemove = ['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId'];
+              await AsyncStorage.multiRemove(keysToRemove);
+              
+              console.log('GraduateProfile - Cleared AsyncStorage keys:', keysToRemove);
+              console.log('GraduateProfile - Redirecting to graduate login...');
+              
+              router.replace('/logingraduate');
+            } catch (error) {
+              console.error('GraduateProfile - Error during logout:', error);
+            }
           }
         }
       ]
@@ -558,7 +564,7 @@ export default function GraduateProfile() {
         <View className="flex-1 items-center justify-center px-6">
           <Ionicons name="alert-circle" size={48} color="#ef4444" />
           <Text className="text-red-600 text-center mt-4 text-base">{error}</Text>
-          <TouchableOpacity onPress={() => router.back()} className="mt-6 bg-blue-600 px-6 py-3 rounded-xl">
+          <TouchableOpacity onPress={() => router.push('/graduatehomepage')} className="mt-6 bg-blue-600 px-6 py-3 rounded-xl">
             <Text className="text-white font-semibold">Go Back</Text>
           </TouchableOpacity>
         </View>

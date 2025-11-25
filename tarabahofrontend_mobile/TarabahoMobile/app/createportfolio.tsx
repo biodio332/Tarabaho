@@ -1036,7 +1036,7 @@ export default function CreatePortfolio() {
         {/* Back button */}
         <View className="absolute left-4 top-4 z-20">
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => router.push('/graduatehomepage')}
             className="w-10 h-10 rounded-full bg-white items-center justify-center shadow-md active:opacity-90 border border-gray-200"
           >
             <Ionicons name="chevron-back" size={22} color="#1D4ED8" />
@@ -1252,11 +1252,11 @@ export default function CreatePortfolio() {
                 placeholder="e.g., Full Scholarship"
               />
               
-              <TextField
+              <DatePicker
                 label="Training Duration"
-                value={formData.trainingDuration}
-                onChangeText={(text) => handleInputChange("trainingDuration", text)}
-                placeholder="e.g., January 2023 - June 2023"
+                value={parseDate(formData.trainingDuration)}
+                onChange={(date) => handleInputChange("trainingDuration", date.toISOString().split('T')[0])}
+                placeholder="Select training duration"
               />
               
               <TextField

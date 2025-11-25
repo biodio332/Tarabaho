@@ -1,4 +1,4 @@
-import { Pressable, ActivityIndicator, Text, StyleSheet, type ViewStyle, type TextStyle, type PressableProps } from "react-native"
+import { Pressable, ActivityIndicator, Text, StyleSheet, Platform, type ViewStyle, type TextStyle, type PressableProps } from "react-native"
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "danger"
 
@@ -72,39 +72,63 @@ const styles = StyleSheet.create({
   },
   primary: {
     backgroundColor: '#3b82f6',
-    shadowColor: '#3b82f6',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 12,
-    elevation: 6,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#3b82f6',
+        shadowOpacity: 0.3,
+        shadowOffset: { width: 0, height: 6 },
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
   },
   secondary: {
     backgroundColor: '#f8fafc',
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
-    shadowColor: '#000000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOpacity: 0.05,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   danger: {
     backgroundColor: '#ef4444',
-    shadowColor: '#ef4444',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 12,
-    elevation: 6,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#ef4444',
+        shadowOpacity: 0.3,
+        shadowOffset: { width: 0, height: 6 },
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
   },
   outline: {
     borderWidth: 2,
     borderColor: '#3b82f6',
     backgroundColor: '#ffffff',
-    shadowColor: '#000000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOpacity: 0.05,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   disabled: {
     opacity: 0.5,

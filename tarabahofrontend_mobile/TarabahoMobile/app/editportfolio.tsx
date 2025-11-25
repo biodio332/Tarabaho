@@ -349,7 +349,6 @@ export default function EditPortfolioScreen() {
         setPreviewAvatar(fetchedPortfolio.avatar || "")
         
         // Fetch certificates
-        console.log("Fetching certificates for graduate ID:", graduateId)
         const certificateResponse = await fetch(
           `${BACKEND_URL}/api/certificate/graduate/${graduateId}`,
           {
@@ -375,7 +374,6 @@ export default function EditPortfolioScreen() {
         
         // Fetch projects
         if (fetchedPortfolio.id) {
-          console.log("Fetching projects for portfolio ID:", fetchedPortfolio.id)
           const projectsResponse = await fetch(
             `${BACKEND_URL}/api/project/portfolio/${fetchedPortfolio.id}`,
             {
@@ -1017,7 +1015,7 @@ export default function EditPortfolioScreen() {
       <View style={{ paddingTop: insets.top }} className="bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200">
         <View className="flex-row items-center justify-between px-4 py-4">
           <TouchableOpacity 
-            onPress={() => router.back()} 
+            onPress={() => router.push('/graduatehomepage')} 
             className="rounded-full p-2 bg-gray-100"
           >
             <Ionicons name="arrow-back" size={24} color="#374151" />
@@ -1322,12 +1320,11 @@ export default function EditPortfolioScreen() {
             size="medium"
           />
           
-          <TextField
+          <DatePicker
             label="Training Duration"
-            value={portfolio?.trainingDuration || ""}
-            onChangeText={(text) => handlePortfolioChange("trainingDuration", text)}
-            placeholder="Enter training duration"
-            size="medium"
+            value={parseDate(portfolio?.trainingDuration)}
+            onChange={(date) => handlePortfolioChange("trainingDuration", date.toISOString().split('T')[0])}
+            placeholder="Select training duration"
           />
           
           <TextField
@@ -1357,7 +1354,11 @@ export default function EditPortfolioScreen() {
           
           <View>
             <Text className="text-sm font-medium text-gray-600 mb-1">Training Duration</Text>
-            <Text className="text-base text-gray-800">{portfolio?.trainingDuration || "Not provided"}</Text>
+            <Text className="text-base text-gray-800">
+              {portfolio?.trainingDuration 
+                ? new Date(portfolio.trainingDuration).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                : "Not provided"}
+            </Text>
           </View>
           
           <View>
@@ -2413,13 +2414,13 @@ export default function EditPortfolioScreen() {
         >
           <View className="px-4 bg-white" style={{ minHeight: '100%' }}>
             <TouchableOpacity 
-              onPress={() => router.back()}
+              onPress={() => router.push('/graduatehomepage')}
               className="mb-4 flex-row items-center pt-2"
             >
               <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-2">
                 <Ionicons name="chevron-back" size={18} color="#2563EB" />
               </View>
-              <Text className="text-blue-600 font-medium">Back to Portfolio</Text>
+              <Text className="text-blue-600 font-medium">Back to Home</Text>
             </TouchableOpacity>
             
             {error && (
@@ -2449,7 +2450,7 @@ export default function EditPortfolioScreen() {
             <View className="flex-row justify-between mt-6 mb-4" style={{ gap: 12 }}>
               <Button
                 title="Cancel"
-                onPress={() => router.back()}
+                onPress={() => router.push('/graduatehomepage')}
                 variant="secondary"
                 style={{ flex: 1 }}
               />

@@ -42,7 +42,6 @@ export default function RegisterGraduate() {
     contactNo: '',
     birthday: '',
     address: '',
-    hourly: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -60,7 +59,6 @@ export default function RegisterGraduate() {
     if (!form.contactNo.trim()) return 'Contact number is required';
     if (!form.birthday) return 'Birthday is required';
     if (!form.address.trim()) return 'Address is required';
-    if (!form.hourly || isNaN(Number(form.hourly)) || Number(form.hourly) <= 0) return 'Hourly rate must be greater than 0';
     return '';
   };
 
@@ -107,7 +105,6 @@ export default function RegisterGraduate() {
       phoneNumber: form.contactNo,
       birthday: form.birthday,
       address: form.address,
-      hourly: Number(form.hourly),
     };
     try {
       const res = await fetch(`${BACKEND_URL}/api/graduate/register`, {
@@ -191,12 +188,7 @@ export default function RegisterGraduate() {
           icon: <Ionicons name="mail-outline" size={20} color="#6b7280" />,
           keyboardType: 'email-address',
           autoCapitalize: 'none'
-        }
-      ]
-    },
-    {
-      title: 'Contact & Location',
-      fields: [
+        },
         {
           field: 'address',
           placeholder: 'Address',
@@ -204,28 +196,14 @@ export default function RegisterGraduate() {
         },
         {
           field: 'contactNo',
-          placeholder: 'Contact Number',
+          placeholder: 'Phone Number',
           icon: <Ionicons name="call-outline" size={20} color="#6b7280" />,
-          keyboardType: 'phone-pad',
-          halfWidth: true
+          keyboardType: 'phone-pad'
         },
         {
           field: 'birthday',
           placeholder: 'Birthday (YYYY-MM-DD)',
-          icon: <Ionicons name="calendar-outline" size={20} color="#6b7280" />,
-          halfWidth: true
-        }
-      ]
-    },
-    {
-      title: 'Professional Details',
-      fields: [
-        {
-          field: 'hourly',
-          placeholder: 'Hourly Rate (PHP)',
-          icon: <Ionicons name="cash-outline" size={20} color="#6b7280" />,
-          keyboardType: 'numeric',
-          helperText: 'Enter your desired hourly rate'
+          icon: <Ionicons name="calendar-outline" size={20} color="#6b7280" />
         }
       ]
     }
@@ -243,7 +221,7 @@ export default function RegisterGraduate() {
           showsVerticalScrollIndicator={false}
         >
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => router.push('/logingraduate')}
             className="absolute left-4 top-4 w-10 h-10 rounded-full bg-white/90 shadow-sm items-center justify-center z-50"
             style={{
               elevation: 2,

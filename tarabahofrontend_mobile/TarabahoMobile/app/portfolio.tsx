@@ -21,6 +21,8 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { Ionicons } from "@expo/vector-icons"
+import * as Clipboard from 'expo-clipboard'
+import { Share } from 'react-native'
 
 interface Certificate {
   id: string
@@ -347,6 +349,191 @@ export default function PortfolioScreen() {
   const [authToken, setAuthToken] = useState<string | null>(null)
   const [certificates, setCertificates] = useState<Certificate[]>([])
   const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null)
+  const [shareToken, setShareToken] = useState<string | null>(null)
+  const [shareLoading, setShareLoading] = useState(false)
+
+  // Share functionality
+  const fetchShareToken = async () => {
+    if (!authToken || !graduateId) return null
+    
+    try {
+      setShareLoading(true)
+      const response = await fetch(`${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio/share-token`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch share token')
+      }
+
+      const data = await response.json()
+      setShareToken(data.shareToken)
+      return data.shareToken
+    } catch (error) {
+      console.error('❌ Error fetching share token:', error)
+      Alert.alert('Error', 'Failed to generate share token. Please try again.')
+      return null
+    } finally {
+      setShareLoading(false)
+    }
+  }
+
+  const regenerateShareToken = async () => {
+    if (!authToken || !graduateId) return null
+    
+    Alert.alert(
+      'Regenerate Share Token',
+      'This will create a NEW share link and INVALIDATE ALL EXISTING LINKS!\n\nAnyone with old links will see "Portfolio not found" errors.\n\nAre you sure you want to continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Yes, Regenerate',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setShareLoading(true)
+              console.log('🔄 Regenerating share token for graduate ID:', graduateId)
+              
+              const response = await fetch(`${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio/regenerate-token`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${authToken}`,
+                  'Content-Type': 'application/json',
+                },
+              })
+
+              if (!response.ok) {
+                throw new Error('Failed to regenerate share token')
+              }
+
+              const data = await response.json()
+              console.log('✅ New token generated:', data.shareToken.substring(0, 8) + '...')
+              setShareToken(data.shareToken)
+              
+              Alert.alert(
+                '✅ New Share Link Created!',
+                'New secure share link generated successfully!\n\n⚠️ All previous share links are now invalid.',
+                [{ text: 'OK' }]
+              )
+              
+              return data.shareToken
+            } catch (error) {
+              console.error('❌ Error regenerating share token:', error)
+              Alert.alert('Error', 'Failed to generate new share token. Please try again.')
+              return null
+            } finally {
+              setShareLoading(false)
+            }
+          }
+        }
+      ]
+    )
+  }
+
+  const getShareableUrl = (token: string) => {
+    const baseUrl = __DEV__ ? 'http://localhost:3000' : 'https://your-domain.com'
+    return `${baseUrl}/portfolio/${graduateId}?share=${token}`
+  }
+
+  const copySecureLink = async () => {
+    try {
+      let currentToken = shareToken
+      if (!currentToken) {
+        currentToken = await fetchShareToken()
+        if (!currentToken) return
+      }
+
+      const shareableUrl = getShareableUrl(currentToken)
+      await Clipboard.setStringAsync(shareableUrl)
+      
+      Alert.alert(
+        '✅ Link Copied!',
+        'Secure share link copied to clipboard!\n\n🔒 Only people with this exact link can view your portfolio.\n💡 Links remain valid until you generate a new one.',
+        [{ text: 'OK' }]
+      )
+    } catch (error) {
+      console.error('❌ Error copying link:', error)
+      Alert.alert('Error', 'Failed to copy link. Please try again.')
+    }
+  }
+
+  const shareToLinkedIn = async () => {
+    try {
+      let currentToken = shareToken
+      if (!currentToken) {
+        currentToken = await fetchShareToken()
+        if (!currentToken) return
+      }
+
+      const shareableUrl = getShareableUrl(currentToken)
+      const title = `${portfolio?.fullName || 'Portfolio'} - Professional Portfolio`
+      const summary = 'Check out my professional portfolio showcasing my skills, experiences, and achievements!'
+      
+      const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableUrl)}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(summary)}`
+      
+      const supported = await Linking.canOpenURL(linkedInUrl)
+      if (supported) {
+        await Linking.openURL(linkedInUrl)
+      } else {
+        Alert.alert('Error', 'Unable to open LinkedIn. Please try again.')
+      }
+    } catch (error) {
+      console.error('❌ Error sharing to LinkedIn:', error)
+      Alert.alert('Error', 'Failed to share to LinkedIn. Please try again.')
+    }
+  }
+
+  const shareToFacebook = async () => {
+    try {
+      let currentToken = shareToken
+      if (!currentToken) {
+        currentToken = await fetchShareToken()
+        if (!currentToken) return
+      }
+
+      const shareableUrl = getShareableUrl(currentToken)
+      const title = `${portfolio?.fullName || 'Portfolio'} - Professional Portfolio`
+      const summary = 'Check out my professional portfolio showcasing my skills, experiences, and achievements!'
+      
+      const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareableUrl)}&quote=${encodeURIComponent(summary)}&title=${encodeURIComponent(title)}`
+      
+      const supported = await Linking.canOpenURL(facebookUrl)
+      if (supported) {
+        await Linking.openURL(facebookUrl)
+      } else {
+        Alert.alert('Error', 'Unable to open Facebook. Please try again.')
+      }
+    } catch (error) {
+      console.error('❌ Error sharing to Facebook:', error)
+      Alert.alert('Error', 'Failed to share to Facebook. Please try again.')
+    }
+  }
+
+  const shareViaDevice = async () => {
+    try {
+      let currentToken = shareToken
+      if (!currentToken) {
+        currentToken = await fetchShareToken()
+        if (!currentToken) return
+      }
+
+      const shareableUrl = getShareableUrl(currentToken)
+      const title = `${portfolio?.fullName || 'Portfolio'} - Professional Portfolio`
+      const message = `Check out my professional portfolio: ${shareableUrl}`
+
+      await Share.share({
+        message: message,
+        url: shareableUrl,
+        title: title,
+      })
+    } catch (error) {
+      console.error('❌ Error sharing via device:', error)
+    }
+  }
 
   const renderProfileHeader = () => (
     <View className="mx-4 mt-14 mb-4 overflow-hidden">
@@ -527,6 +714,23 @@ export default function PortfolioScreen() {
           setCertificates(Array.isArray(certs) ? certs : [])
         }
 
+        // Load share token
+        if (graduateId) {
+          try {
+            const shareTokenRes = await fetch(`${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio/share-token`, {
+              credentials: "include",
+              headers: { Authorization: `Bearer ${token}` },
+            })
+
+            if (shareTokenRes.ok) {
+              const shareTokenData = await shareTokenRes.json()
+              setShareToken(shareTokenData.shareToken)
+            }
+          } catch (shareTokenErr) {
+            console.error('⚠️ Share token fetch error:', shareTokenErr)
+          }
+        }
+
         setAuthToken(token)
       } catch (e) {
         setError(e instanceof Error ? e.message : "Unknown error")
@@ -603,7 +807,7 @@ export default function PortfolioScreen() {
   const renderBackButton = () => (
     <View className="absolute top-12 left-4 z-20">
       <TouchableOpacity
-        onPress={() => router.back()}
+        onPress={() => router.push('/graduatehomepage')}
         className="w-10 h-10 rounded-full bg-white items-center justify-center shadow-md active:opacity-90 border border-gray-200"
       >
         <Ionicons name="chevron-back" size={22} color="#1D4ED8" />
@@ -975,7 +1179,6 @@ export default function PortfolioScreen() {
                                   height: screenWidth * 0.5,
                                 }}
                                 resizeMode="cover"
-                                onError={(e) => console.log("Image loading error:", e.nativeEvent.error)}
                               />
                             </View>
                           ) : (
@@ -1210,6 +1413,97 @@ export default function PortfolioScreen() {
                 </View>
               )}
               
+              {/* Share Portfolio Section */}
+              <View className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200">
+                <View className="px-5 py-4 border-b border-gray-100">
+                  <View className="flex-row items-center">
+                    <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3">
+                      <Ionicons name="share-social-outline" size={20} color="#2563EB" />
+                    </View>
+                    <Text className="text-lg font-bold text-gray-900" style={{ fontFamily: "Roboto" }}>
+                      Share Your Portfolio
+                    </Text>
+                  </View>
+                </View>
+                
+                <View className="p-5">
+                  <Text className="text-gray-600 text-sm mb-4 leading-6" style={{ fontFamily: "Roboto" }}>
+                    Share your professional portfolio with potential employers and collaborators using secure links.
+                  </Text>
+                  
+                  <View className="space-y-3">
+                    <TouchableOpacity 
+                      className="bg-blue-600 flex-row items-center justify-center py-3.5 rounded-lg mb-3 active:opacity-90"
+                      onPress={copySecureLink}
+                      disabled={shareLoading}
+                      style={{
+                        elevation: 2,
+                        shadowColor: "#3B82F6",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.2,
+                        shadowRadius: 3,
+                      }}
+                    >
+                      {shareLoading ? (
+                        <ActivityIndicator size="small" color="#ffffff" />
+                      ) : (
+                        <Ionicons name="link-outline" size={20} color="#ffffff" />
+                      )}
+                      <Text className="text-white font-semibold text-base ml-2" style={{ fontFamily: "Roboto" }}>Copy Secure Link</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                      className="bg-white border border-blue-600 flex-row items-center justify-center py-3.5 rounded-lg mb-3 active:opacity-90"
+                      onPress={shareToLinkedIn}
+                      disabled={shareLoading}
+                    >
+                      <Ionicons name="logo-linkedin" size={20} color="#2563eb" />
+                      <Text className="text-blue-600 font-semibold text-base ml-2" style={{ fontFamily: "Roboto" }}>Share to LinkedIn</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                      className="bg-white border border-blue-600 flex-row items-center justify-center py-3.5 rounded-lg mb-3 active:opacity-90"
+                      onPress={shareToFacebook}
+                      disabled={shareLoading}
+                    >
+                      <Ionicons name="logo-facebook" size={20} color="#2563eb" />
+                      <Text className="text-blue-600 font-semibold text-base ml-2" style={{ fontFamily: "Roboto" }}>Share to Facebook</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                      className="bg-white border border-blue-600 flex-row items-center justify-center py-3.5 rounded-lg mb-3 active:opacity-90"
+                      onPress={shareViaDevice}
+                      disabled={shareLoading}
+                    >
+                      <Ionicons name="share-outline" size={20} color="#2563eb" />
+                      <Text className="text-blue-600 font-semibold text-base ml-2" style={{ fontFamily: "Roboto" }}>More Options</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {shareToken && (
+                    <View className="mt-5 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <View className="flex-row justify-between items-center mb-2">
+                        <Text className="text-blue-900 font-semibold text-base" style={{ fontFamily: "Roboto" }}>Your Secure Token</Text>
+                        <TouchableOpacity 
+                          className="flex-row items-center py-1.5 px-3 rounded-lg bg-white border border-blue-300 active:opacity-80"
+                          onPress={regenerateShareToken}
+                          disabled={shareLoading}
+                        >
+                          <Ionicons name="refresh-outline" size={14} color="#2563EB" />
+                          <Text className="text-blue-600 text-xs font-medium ml-1" style={{ fontFamily: "Roboto" }}>Regenerate</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <Text className="text-gray-700 text-sm font-mono mb-2" style={{ fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>
+                        {shareToken.substring(0, 8)}...{shareToken.slice(-4)}
+                      </Text>
+                      <Text className="text-gray-600 text-xs italic leading-5" style={{ fontFamily: "Roboto" }}>
+                        This token is used to authenticate secure access to your portfolio. Regenerating will invalidate old links.
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+
               {/* Profile Action Buttons */}
               <View className="mb-8 mt-4 px-2">
                 <View className="flex-row gap-4">

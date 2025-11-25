@@ -9,7 +9,6 @@ import {
   TextInput,
   ImageBackground,
   Alert,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -60,7 +59,6 @@ export default function UserHomePage() {
   };
 
   useEffect(() => {
-    console.log('UserHomePage - useEffect triggered, loading data...');
     loadUserData();
     loadPopularGraduates();
   }, []);
@@ -72,40 +70,29 @@ export default function UserHomePage() {
       const username = await AsyncStorage.getItem('username');
       const authToken = await AsyncStorage.getItem('authToken');
       
-      console.log('UserHomePage - Auth check:', { isLoggedIn, userType, username, hasToken: !!authToken });
-      
       if (!isLoggedIn || userType !== 'user' || !authToken) {
-        console.log('UserHomePage - Redirecting to login, auth failed');
         router.replace('/login');
         return;
       }
 
-      console.log('UserHomePage - Auth passed, loading user data...');
-
       // Try to fetch user profile using Authorization header
-      console.log('UserHomePage - Fetching user profile for username:', username);
       const response = await fetch(`${BACKEND_URL}/api/user/profile/${username}`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
       });
-
-      console.log('UserHomePage - API response status:', response.status);
       
       if (response.ok) {
         const userData = await response.json();
-        console.log('UserHomePage - User data loaded successfully:', userData);
         setUser(userData);
       } else if (response.status === 401 || response.status === 403) {
         // Token expired or invalid, redirect to login
-        console.log('UserHomePage - Auth error, redirecting to login');
         await AsyncStorage.multiRemove(['isLoggedIn', 'userType', 'username', 'authToken']);
         router.replace('/login');
         return;
       } else {
         // If profile endpoint doesn't work, create basic user object from stored data
-        console.log('UserHomePage - Profile API failed, using stored username');
         const basicUser = {
           id: Date.now(), // temporary ID
           firstName: username?.split('')[0]?.toUpperCase() + (username?.slice(1) || ''),
@@ -131,102 +118,147 @@ export default function UserHomePage() {
         setUser(basicUser);
       }
     } finally {
-      console.log('UserHomePage - Setting loading to false');
       setLoading(false);
     }
   };
 
   const loadPopularGraduates = async () => {
     try {
-      console.log('UserHomePage - Loading portfolios...');
-      
       const authToken = await AsyncStorage.getItem('authToken');
       if (!authToken) {
-        console.log('UserHomePage - No auth token, cannot load portfolios');
         return;
       }
       
       let allPortfolios: any[] = [];
       
-      // Try multiple search terms to find portfolios
-      const searchTerms = ['developer', 'designer', 'engineer', 'professional', 'student', 'graduate'];
-      
-      console.log('UserHomePage - Searching for portfolios with multiple terms...');
-      
-      for (const term of searchTerms) {
-        try {
-          const response = await fetch(`${BACKEND_URL}/api/portfolio/search?query=${encodeURIComponent(term)}`, {
-            headers: {
-              'Authorization': `Bearer ${authToken}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          console.log(`UserHomePage - Search response for "${term}":`, response.status);
-
-          if (response.ok) {
-            const portfolios = await response.json();
-            console.log(`UserHomePage - Found ${Array.isArray(portfolios) ? portfolios.length : 0} portfolios for "${term}"`);
-            
-            if (Array.isArray(portfolios) && portfolios.length > 0) {
-              // Add portfolios with real view counts
-              const portfoliosWithViews = portfolios.map(portfolio => ({
-                ...portfolio,
-                viewCount: portfolio.viewCount || portfolio.views || Math.floor(Math.random() * 100) + 1,
-                hasPortfolio: true,
-                fullName: portfolio.fullName || portfolio.graduateName || 'Professional',
-                professionalTitle: portfolio.professionalTitle || portfolio.profession || 'Professional'
-              }));
-              allPortfolios = allPortfolios.concat(portfoliosWithViews);
-              
-              // Stop if we have enough portfolios
-              if (allPortfolios.length >= 5) break;
-            }
-          }
-        } catch (error) {
-          console.log(`UserHomePage - Search failed for term: ${term}`, error);
-        }
-      }
-      
-      // If no portfolios found through search, try the graduates approach
-      if (allPortfolios.length === 0) {
-        console.log('UserHomePage - No portfolios found through search, trying graduates approach...');
-        
-        const graduatesResponse = await fetch(`${BACKEND_URL}/api/graduate/available`, {
+      // First, get all graduates and check which ones have portfolios
+      try {
+        const graduatesResponse = await fetch(`${BACKEND_URL}/api/graduate/all`, {
           headers: {
             'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json',
           },
         });
 
-        
         if (graduatesResponse.ok) {
           const graduates = await graduatesResponse.json();
-          console.log('UserHomePage - Found graduates:', graduates.length);
           
-          // Transform graduates to portfolio format
           if (Array.isArray(graduates) && graduates.length > 0) {
-            const transformedGraduates = graduates.slice(0, 5).map((graduate: any) => ({
-              id: graduate.id,
-              fullName: graduate.fullName || `${graduate.firstname || ''} ${graduate.lastname || ''}`.trim() || 'Professional',
-              professionalTitle: graduate.professionalTitle || graduate.profession || 'Professional',
-              primaryCourseType: graduate.primaryCourseType || graduate.specialization || 'General',
-              professionalSummary: graduate.professionalSummary || graduate.bio || 'Experienced professional with diverse skills.',
-              avatar: graduate.profilePicture,
-              profilePicture: graduate.profilePicture,
-              graduateId: graduate.id,
-              shareToken: graduate.shareToken,
-              viewCount: Math.floor(Math.random() * 150) + 10, // Random view count for demo
-              rating: Math.floor(Math.random() * 2) + 4, // Rating between 4-5
-              hasPortfolio: true
-            }));
+            // Filter graduates who have portfolios
+            const graduatesWithPortfolios = graduates.filter((grad: any) => 
+              grad.hasPortfolio === true || grad.portfolio != null
+            );
             
-            allPortfolios = allPortfolios.concat(transformedGraduates);
+            if (graduatesWithPortfolios.length > 0) {
+              allPortfolios = graduatesWithPortfolios.map((graduate: any) => {
+                // Backend returns full Supabase URLs - use directly
+                const avatarUrl = graduate.profilePicture || graduate.avatar || null;
+                
+                return {
+                  id: graduate.portfolioId || graduate.id,
+                  fullName: graduate.fullName || `${graduate.firstname || ''} ${graduate.lastname || ''}`.trim() || 'Professional',
+                  professionalTitle: graduate.professionalTitle || graduate.profession || 'Professional',
+                  primaryCourseType: graduate.primaryCourseType || graduate.courseType || 'General',
+                  professionalSummary: graduate.professionalSummary || graduate.summary || 'Experienced professional',
+                  avatar: avatarUrl,
+                  profilePicture: avatarUrl,
+                  graduateId: graduate.id,
+                  shareToken: graduate.shareToken,
+                  viewCount: graduate.viewCount || graduate.views || 0,
+                  rating: graduate.rating || 0,
+                  hasPortfolio: true
+                };
+              });
+            }
           }
         }
+      } catch (error) {
+        // Failed to fetch graduates
       }
+      
+      // If no graduates found, try search with broad terms
+      if (allPortfolios.length === 0) {
+        const searchTerms = ['software', 'engineer', 'developer', 'designer', 'professional', 'graduate'];
+        
+        for (const term of searchTerms) {
+          try {
+            const response = await fetch(`${BACKEND_URL}/api/portfolio/search?query=${encodeURIComponent(term)}`, {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+              'Content-Type': 'application/json',
+            },
+          });
 
-      console.log('UserHomePage - Total portfolios found:', allPortfolios.length);
+          if (response.ok) {
+            const portfolios = await response.json();
+            
+            if (Array.isArray(portfolios) && portfolios.length > 0) {
+              const portfoliosWithViews = portfolios.map(portfolio => {
+                // Backend returns full Supabase URLs - use directly
+                const avatarUrl = portfolio.avatar || portfolio.profilePicture || null;
+                
+                return {
+                  ...portfolio,
+                  avatar: avatarUrl,
+                  profilePicture: avatarUrl,
+                  viewCount: portfolio.viewCount || portfolio.views || 0,
+                  hasPortfolio: true,
+                  fullName: portfolio.fullName || portfolio.graduateName || 'Professional',
+                  professionalTitle: portfolio.professionalTitle || portfolio.profession || 'Professional'
+                };
+              });
+              allPortfolios = allPortfolios.concat(portfoliosWithViews);
+              
+              if (allPortfolios.length >= 10) break;
+            }
+          }
+        } catch (error) {
+          // Search failed for term
+        }
+      }
+      }
+      
+      // If still no portfolios, try the graduates endpoint with portfolios (legacy fallback)
+      if (allPortfolios.length === 0) {
+        try {
+          const graduatesResponse = await fetch(`${BACKEND_URL}/api/graduate/with-portfolio`, {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (graduatesResponse.ok) {
+            const graduates = await graduatesResponse.json();
+            
+            if (Array.isArray(graduates) && graduates.length > 0) {
+              const transformedGraduates = graduates.map((graduate: any) => {
+                // Backend returns full Supabase URLs - use directly
+                const avatarUrl = graduate.profilePicture || graduate.avatar || null;
+                
+                return {
+                  id: graduate.portfolioId || graduate.id,
+                  fullName: graduate.fullName || `${graduate.firstname || graduate.firstName || ''} ${graduate.lastname || graduate.lastName || ''}`.trim() || 'Professional',
+                  professionalTitle: graduate.professionalTitle || graduate.profession || graduate.title || 'Professional',
+                  primaryCourseType: graduate.primaryCourseType || graduate.courseType || graduate.specialization || 'General',
+                  professionalSummary: graduate.professionalSummary || graduate.summary || graduate.bio || 'Experienced professional',
+                  avatar: avatarUrl,
+                  profilePicture: avatarUrl,
+                  graduateId: graduate.graduateId || graduate.id,
+                  shareToken: graduate.shareToken,
+                  viewCount: graduate.viewCount || graduate.views || 0,
+                  rating: graduate.rating || 0,
+                  hasPortfolio: true
+                };
+              });
+              
+              allPortfolios = transformedGraduates;
+            }
+          }
+        } catch (error) {
+          // Failed to fetch graduates with portfolios
+        }
+      }
 
       if (allPortfolios.length > 0) {
         // Remove duplicates based on graduateId or id
@@ -234,103 +266,23 @@ export default function UserHomePage() {
           index === self.findIndex(p => (p.graduateId || p.id) === (portfolio.graduateId || portfolio.id))
         );
         
-        // Take only the first 3-5 portfolios for featured section
-        const featuredPortfolios = uniquePortfolios.slice(0, 3);
+        // Randomly shuffle portfolios to display any available portfolios
+        const shuffledPortfolios = [...uniquePortfolios].sort(() => Math.random() - 0.5);
+        const featuredPortfolios = shuffledPortfolios.slice(0, 6);
         
         setPopularGraduates(featuredPortfolios);
         
         // Extract and set available categories
         const categories = extractAvailableCategories(featuredPortfolios);
         setAvailableCategories(categories);
-        
-        console.log('UserHomePage - Portfolios loaded successfully:', featuredPortfolios.length);
-        console.log('UserHomePage - Available categories:', categories);
-        if (featuredPortfolios.length > 0) {
-          console.log('UserHomePage - Sample portfolio data:', featuredPortfolios[0]);
-        }
       } else {
-        // Create some sample portfolios for demonstration
-        console.log('UserHomePage - No portfolios found, creating sample data...');
-        const samplePortfolios = [
-          {
-            id: 1,
-            fullName: 'John Developer',
-            professionalTitle: 'Full Stack Developer',
-            primaryCourseType: 'Computer Science',
-            professionalSummary: 'Experienced developer with expertise in React and Node.js',
-            avatar: null,
-            profilePicture: null,
-            graduateId: 1,
-            shareToken: 'sample-token-1',
-            viewCount: 145,
-            rating: 4.8,
-            hasPortfolio: true
-          },
-          {
-            id: 2,
-            fullName: 'Sarah Designer',
-            professionalTitle: 'UI/UX Designer',
-            primaryCourseType: 'Graphic Design',
-            professionalSummary: 'Creative designer focused on user-centered design principles',
-            avatar: null,
-            profilePicture: null,
-            graduateId: 2,
-            shareToken: 'sample-token-2',
-            viewCount: 89,
-            rating: 4.9,
-            hasPortfolio: true
-          },
-          {
-            id: 3,
-            fullName: 'Mike Engineer',
-            professionalTitle: 'Software Engineer',
-            primaryCourseType: 'Software Engineering',
-            professionalSummary: 'Backend specialist with cloud computing expertise',
-            avatar: null,
-            profilePicture: null,
-            graduateId: 3,
-            shareToken: 'sample-token-3',
-            viewCount: 67,
-            rating: 4.7,
-            hasPortfolio: true
-          }
-        ];
-        
-        setPopularGraduates(samplePortfolios);
-        
-        // Extract and set available categories for sample data
-        const categories = extractAvailableCategories(samplePortfolios);
-        setAvailableCategories(categories);
-        
-        console.log('UserHomePage - Sample portfolios set:', samplePortfolios.length);
-        console.log('UserHomePage - Sample categories:', categories);
+        setPopularGraduates([]);
+        setAvailableCategories([]);
       }
     } catch (error) {
       console.error('Error loading portfolios:', error);
-      
-      // Set sample data as fallback
-      const fallbackPortfolios = [
-        {
-          id: 1,
-          fullName: 'Demo Professional',
-          professionalTitle: 'Professional',
-          primaryCourseType: 'General',
-          professionalSummary: 'Talented professional with diverse skills',
-          avatar: null,
-          profilePicture: null,
-          graduateId: 1,
-          shareToken: 'demo-token',
-          viewCount: 25,
-          rating: 4.5,
-          hasPortfolio: true
-        }
-      ];
-      
-      setPopularGraduates(fallbackPortfolios);
-      
-      // Extract and set available categories for fallback data
-      const categories = extractAvailableCategories(fallbackPortfolios);
-      setAvailableCategories(categories);
+      setPopularGraduates([]);
+      setAvailableCategories([]);
     }
   };
 
@@ -345,13 +297,14 @@ export default function UserHomePage() {
     setSearchResults([]);
 
     try {
-      console.log('UserHomePage - Searching for:', searchQuery);
-      
       const authToken = await AsyncStorage.getItem('authToken');
       if (!authToken) {
         Alert.alert('Authentication Error', 'Please login again to search.');
         return;
       }
+      
+      // Split search query into individual words for more flexible matching
+      const searchWords = searchQuery.toLowerCase().trim().split(/\s+/);
       
       // Try the portfolio search endpoint with Authorization header
       const response = await fetch(`${BACKEND_URL}/api/portfolio/search?query=${encodeURIComponent(searchQuery)}`, {
@@ -361,16 +314,11 @@ export default function UserHomePage() {
         },
       });
 
-      console.log('UserHomePage - Search API response:', response.status);
-
       if (response.ok) {
         const results = await response.json();
-        console.log('UserHomePage - Search results received:', results);
         setSearchResults(Array.isArray(results) ? results : []);
       } else {
-        // Fallback to filtering available graduates by search query
-        console.log('UserHomePage - Portfolio search failed, trying to filter graduates');
-        
+        // Fallback to filtering available graduates by search query with enhanced matching
         const fallbackResponse = await fetch(`${BACKEND_URL}/api/graduate/available`, {
           headers: {
             'Authorization': `Bearer ${authToken}`,
@@ -381,36 +329,43 @@ export default function UserHomePage() {
         if (fallbackResponse.ok) {
           const allGraduates = await fallbackResponse.json();
           
-          // Filter graduates based on search query
+          // Filter graduates based on search query with flexible word matching
           const filteredGraduates = (Array.isArray(allGraduates) ? allGraduates : [])
             .filter((grad: any) => {
-              const searchText = searchQuery.toLowerCase();
               const fullName = `${grad.firstname || grad.firstName || ''} ${grad.lastname || grad.lastName || ''}`.toLowerCase();
               const profession = (grad.professionalTitle || grad.title || grad.profession || '').toLowerCase();
               const field = (grad.primaryCourseType || grad.course || grad.field || grad.specialization || '').toLowerCase();
               const summary = (grad.professionalSummary || grad.summary || grad.description || grad.bio || '').toLowerCase();
               
-              return fullName.includes(searchText) || 
-                     profession.includes(searchText) || 
-                     field.includes(searchText) || 
-                     summary.includes(searchText);
+              // Combine all searchable text
+              const searchableText = `${fullName} ${profession} ${field} ${summary}`;
+              
+              // Check if ANY of the search words match ANY part of the searchable text
+              return searchWords.some(word => {
+                if (word.length < 2) return false; // Skip very short words
+                return searchableText.includes(word);
+              });
             });
 
           // Transform graduate data to search result format
-          const transformedResults = filteredGraduates.map((grad: any) => ({
-            id: grad.id,
-            fullName: `${grad.firstname || grad.firstName || ''} ${grad.lastname || grad.lastName || ''}`.trim(),
-            professionalTitle: grad.professionalTitle || grad.title || grad.profession || 'Professional',
-            primaryCourseType: grad.primaryCourseType || grad.course || grad.field || grad.specialization,
-            professionalSummary: grad.professionalSummary || grad.summary || grad.description || grad.bio,
-            avatar: grad.avatar || grad.profilePicture,
-            profilePicture: grad.profilePicture || grad.avatar,
-            graduateId: grad.id,
-            shareToken: grad.shareToken
-          }));
+          const transformedResults = filteredGraduates.map((grad: any) => {
+            // Backend returns full Supabase URLs - use directly
+            const avatarUrl = grad.profilePicture || grad.avatar || null;
+            
+            return {
+              id: grad.id,
+              fullName: `${grad.firstname || grad.firstName || ''} ${grad.lastname || grad.lastName || ''}`.trim(),
+              professionalTitle: grad.professionalTitle || grad.title || grad.profession || 'Professional',
+              primaryCourseType: grad.primaryCourseType || grad.course || grad.field || grad.specialization,
+              professionalSummary: grad.professionalSummary || grad.summary || grad.description || grad.bio,
+              avatar: avatarUrl,
+              profilePicture: avatarUrl,
+              graduateId: grad.id,
+              shareToken: grad.shareToken
+            };
+          });
           
           setSearchResults(transformedResults);
-          console.log('UserHomePage - Filtered search results:', transformedResults.length);
         } else {
           throw new Error('Graduate search failed');
         }
@@ -450,7 +405,10 @@ export default function UserHomePage() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.multiRemove(['isLoggedIn', 'userType', 'username', 'authToken']);
+              // Clear all authentication related data
+              const keysToRemove = ['isLoggedIn', 'userType', 'username', 'authToken', 'userId', 'graduateId'];
+              await AsyncStorage.multiRemove(keysToRemove);
+              
               router.replace('/login');
             } catch (error) {
               console.error('Error during logout:', error);
@@ -469,10 +427,7 @@ export default function UserHomePage() {
     router.push(url as any);
   };
 
-  console.log('UserHomePage - Render state:', { loading, user, popularGraduatesCount: popularGraduates.length });
-
   if (loading) {
-    console.log('UserHomePage - Showing loading spinner');
     return (
       <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#007bff" />
@@ -480,8 +435,6 @@ export default function UserHomePage() {
       </SafeAreaView>
     );
   }
-
-  console.log('UserHomePage - Rendering main content');
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
@@ -879,113 +832,183 @@ export default function UserHomePage() {
                 </View>
               ) : (
                 <View style={{ gap: 16 }}>
-                  {popularGraduates.slice(0, 3).map((graduate, index) => (
-                    <TouchableOpacity
-                      key={graduate.id || index}
-                      style={{
-                        backgroundColor: '#ffffff',
-                        borderRadius: 20,
-                        padding: 20,
-                        shadowColor: '#000000',
-                        shadowOpacity: 0.08,
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowRadius: 12,
-                        elevation: 4,
-                        borderWidth: 1,
-                        borderColor: '#f8fafc',
-                        transform: [{ scale: 1 }]
-                      }}
-                      onPress={() => navigateToGraduateProfile(graduate.graduateId, graduate.shareToken)}
-                      activeOpacity={0.95}
-                    >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                        <View style={{
-                          width: 60,
-                          height: 60,
+                  {popularGraduates.slice(0, 3).map((graduate, index) => {
+                    // Color schemes for different cards
+                    const colorSchemes = [
+                      { primary: '#3b82f6', secondary: '#60a5fa', bg: '#eff6ff', icon: 'briefcase' },
+                      { primary: '#8b5cf6', secondary: '#a78bfa', bg: '#f5f3ff', icon: 'code-slash' },
+                      { primary: '#10b981', secondary: '#34d399', bg: '#d1fae5', icon: 'bulb' }
+                    ];
+                    const colors = colorSchemes[index % 3];
+                    
+                    return (
+                      <TouchableOpacity
+                        key={graduate.id || index}
+                        style={{
+                          backgroundColor: '#ffffff',
                           borderRadius: 20,
-                          backgroundColor: graduate.hasPortfolio ? '#1e40af' : '#6b7280',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginRight: 16,
-                          position: 'relative',
                           overflow: 'hidden',
-                          shadowColor: '#000',
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.1,
-                          shadowRadius: 4,
-                          elevation: 2
+                          shadowColor: '#000000',
+                          shadowOpacity: 0.08,
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowRadius: 12,
+                          elevation: 4,
+                          borderWidth: 1,
+                          borderColor: '#f8fafc',
+                        }}
+                        onPress={() => navigateToGraduateProfile(graduate.graduateId, graduate.shareToken)}
+                        activeOpacity={0.95}
+                      >
+                        {/* Top colored bar with icon */}
+                        <View style={{
+                          backgroundColor: colors.primary,
+                          paddingVertical: 20,
+                          paddingHorizontal: 20,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between'
                         }}>
-                          {graduate.avatar || graduate.profilePicture ? (
-                            <Image
-                              source={{ uri: graduate.avatar || graduate.profilePicture }}
-                              style={{
-                                width: 60,
-                                height: 60,
-                                borderRadius: 20,
-                              }}
-                              resizeMode="cover"
-                              onError={(error) => console.log('UserHomePage - Image load error:', error.nativeEvent.error)}
-                              onLoad={() => console.log('UserHomePage - Image loaded successfully:', graduate.avatar || graduate.profilePicture)}
-                            />
-                          ) : (
-                            <Text style={{ color: 'white', fontSize: 22, fontWeight: '700' }}>
-                              {graduate.fullName?.[0]?.toUpperCase() || '?'}
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ 
+                              fontSize: 20, 
+                              fontWeight: '700', 
+                              color: '#ffffff',
+                              marginBottom: 6
+                            }} numberOfLines={1}>
+                              {graduate.fullName}
                             </Text>
-                          )}
+                            <View style={{
+                              flexDirection: 'row',
+                              alignItems: 'center'
+                            }}>
+                              <Ionicons name={colors.icon as any} size={16} color="rgba(255,255,255,0.9)" />
+                              <Text style={{ 
+                                fontSize: 14, 
+                                color: 'rgba(255,255,255,0.95)',
+                                marginLeft: 8,
+                                fontWeight: '600'
+                              }} numberOfLines={1}>
+                                {graduate.professionalTitle || 'Professional'}
+                              </Text>
+                            </View>
+                          </View>
+                          <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.8)" />
                         </View>
                         
-                        <View style={{ flex: 1 }}>
-                          <Text style={{ 
-                            fontSize: 17, 
-                            fontWeight: '700', 
-                            color: '#1e293b', 
-                            marginBottom: 4 
-                          }}>
-                            {graduate.fullName}
-                          </Text>
+                        {/* Content section */}
+                        <View style={{ padding: 20 }}>
+                          {/* Course/Field Badge */}
+                          {graduate.primaryCourseType && (
+                            <View style={{
+                              alignSelf: 'flex-start',
+                              backgroundColor: colors.bg,
+                              paddingHorizontal: 12,
+                              paddingVertical: 6,
+                              borderRadius: 12,
+                              marginBottom: 12,
+                              borderWidth: 1,
+                              borderColor: colors.secondary + '30'
+                            }}>
+                              <Text style={{ 
+                                fontSize: 12, 
+                                color: colors.primary,
+                                fontWeight: '700'
+                              }}>
+                                {graduate.primaryCourseType}
+                              </Text>
+                            </View>
+                          )}
                           
-                          <Text style={{ 
-                            fontSize: 14, 
-                            color: '#3b82f6',
-                            marginBottom: 6,
-                            fontWeight: '600'
-                          }}>
-                            {graduate.professionalTitle || 'Professional'}
-                          </Text>
+                          {/* Summary */}
+                          {graduate.professionalSummary && (
+                            <Text style={{ 
+                              fontSize: 14, 
+                              color: '#64748b',
+                              lineHeight: 20,
+                              marginBottom: 16
+                            }} numberOfLines={2}>
+                              {graduate.professionalSummary}
+                            </Text>
+                          )}
                           
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                          {/* Stats row */}
+                          <View style={{ 
+                            flexDirection: 'row', 
+                            alignItems: 'center',
+                            gap: 16,
+                            paddingTop: 12,
+                            borderTopWidth: 1,
+                            borderTopColor: '#f1f5f9'
+                          }}>
                             {graduate.viewCount > 0 && (
                               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Ionicons name="eye-outline" size={14} color="#94a3b8" />
-                                <Text style={{ 
-                                  fontSize: 12, 
-                                  color: '#94a3b8',
-                                  marginLeft: 4,
-                                  fontWeight: '500'
+                                <View style={{
+                                  width: 28,
+                                  height: 28,
+                                  borderRadius: 14,
+                                  backgroundColor: colors.bg,
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  marginRight: 6
                                 }}>
-                                  {graduate.viewCount} views
+                                  <Ionicons name="eye" size={14} color={colors.primary} />
+                                </View>
+                                <Text style={{ 
+                                  fontSize: 13, 
+                                  color: '#64748b',
+                                  fontWeight: '600'
+                                }}>
+                                  {graduate.viewCount}
                                 </Text>
                               </View>
                             )}
                             
                             {graduate.rating > 0 && (
                               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Ionicons name="star" size={14} color="#fbbf24" />
+                                <View style={{
+                                  width: 28,
+                                  height: 28,
+                                  borderRadius: 14,
+                                  backgroundColor: '#fef3c7',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  marginRight: 6
+                                }}>
+                                  <Ionicons name="star" size={14} color="#f59e0b" />
+                                </View>
                                 <Text style={{ 
-                                  fontSize: 12, 
-                                  color: '#94a3b8',
-                                  marginLeft: 4,
-                                  fontWeight: '500'
+                                  fontSize: 13, 
+                                  color: '#64748b',
+                                  fontWeight: '600'
                                 }}>
                                   {graduate.rating.toFixed(1)}
                                 </Text>
                               </View>
                             )}
+                            
+                            <View style={{ flex: 1 }} />
+                            
+                            <View style={{
+                              backgroundColor: colors.bg,
+                              paddingHorizontal: 12,
+                              paddingVertical: 6,
+                              borderRadius: 8
+                            }}>
+                              <Text style={{ 
+                                fontSize: 11, 
+                                color: colors.primary,
+                                fontWeight: '700',
+                                textTransform: 'uppercase',
+                                letterSpacing: 0.5
+                              }}>
+                                View Portfolio
+                              </Text>
+                            </View>
                           </View>
                         </View>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               )}
             </View>
@@ -1079,91 +1102,112 @@ export default function UserHomePage() {
               </View>
             ) : (
               <View style={{ gap: 16 }}>
-                {searchResults.map((result, index) => (
-                  <TouchableOpacity
-                    key={result.id || index}
-                    style={{
-                      backgroundColor: '#ffffff',
-                      borderRadius: 20,
-                      padding: 20,
-                      shadowColor: '#000000',
-                      shadowOpacity: 0.08,
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowRadius: 12,
-                      elevation: 4,
-                      borderWidth: 1,
-                      borderColor: '#f8fafc'
-                    }}
-                    onPress={() => navigateToGraduateProfile(result.graduateId, result.shareToken)}
-                    activeOpacity={0.95}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                      <View style={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: 20,
-                        backgroundColor: '#1e40af',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginRight: 16,
+                {searchResults.map((result, index) => {
+                  // Alternate color schemes for search results
+                  const colors = index % 2 === 0 
+                    ? { primary: '#1e40af', bg: '#eff6ff', border: '#93c5fd' }
+                    : { primary: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd' };
+                  
+                  return (
+                    <TouchableOpacity
+                      key={result.id || index}
+                      style={{
+                        backgroundColor: '#ffffff',
+                        borderRadius: 16,
                         overflow: 'hidden',
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 4,
-                        elevation: 2
-                      }}>
-                        {result.avatar || result.profilePicture ? (
-                          <Image
-                            source={{ uri: result.avatar || result.profilePicture }}
-                            style={{
-                              width: 60,
-                              height: 60,
-                              borderRadius: 20,
-                            }}
-                            resizeMode="cover"
-                            onError={(error) => console.log('UserHomePage - Search image load error:', error.nativeEvent.error)}
-                            onLoad={() => console.log('UserHomePage - Search image loaded:', result.avatar || result.profilePicture)}
-                          />
-                        ) : (
-                          <Text style={{ color: 'white', fontSize: 22, fontWeight: '700' }}>
-                            {result.fullName?.[0]?.toUpperCase() || '?'}
-                          </Text>
-                        )}
+                        shadowColor: '#000000',
+                        shadowOpacity: 0.08,
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowRadius: 12,
+                        elevation: 4,
+                        borderWidth: 2,
+                        borderColor: colors.border + '30'
+                      }}
+                      onPress={() => navigateToGraduateProfile(result.graduateId, result.shareToken)}
+                      activeOpacity={0.95}
+                    >
+                      <View style={{ padding: 20 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                          {/* Avatar with initial */}
+                          <View style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: 16,
+                            backgroundColor: colors.bg,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginRight: 16,
+                            borderWidth: 2,
+                            borderColor: colors.primary + '20'
+                          }}>
+                            <Text style={{ color: colors.primary, fontSize: 22, fontWeight: '700' }}>
+                              {result.fullName?.[0]?.toUpperCase() || '?'}
+                            </Text>
+                          </View>
+                          
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ 
+                              fontSize: 17, 
+                              fontWeight: '700', 
+                              color: '#1e293b', 
+                              marginBottom: 6
+                            }}>
+                              {result.fullName}
+                            </Text>
+                            
+                            <View style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              marginBottom: 8
+                            }}>
+                              <Ionicons name="briefcase" size={14} color={colors.primary} />
+                              <Text style={{ 
+                                fontSize: 14, 
+                                color: colors.primary,
+                                marginLeft: 6,
+                                fontWeight: '600',
+                                flex: 1
+                              }} numberOfLines={1}>
+                                {result.professionalTitle || 'Professional'}
+                              </Text>
+                            </View>
+                            
+                            {result.primaryCourseType && (
+                              <View style={{
+                                alignSelf: 'flex-start',
+                                backgroundColor: colors.bg,
+                                paddingHorizontal: 10,
+                                paddingVertical: 4,
+                                borderRadius: 8,
+                                marginBottom: 8
+                              }}>
+                                <Text style={{ 
+                                  fontSize: 11, 
+                                  color: colors.primary,
+                                  fontWeight: '600'
+                                }}>
+                                  {result.primaryCourseType}
+                                </Text>
+                              </View>
+                            )}
+                            
+                            {result.professionalSummary && (
+                              <Text style={{ 
+                                fontSize: 13, 
+                                color: '#64748b',
+                                lineHeight: 18
+                              }} numberOfLines={2}>
+                                {result.professionalSummary}
+                              </Text>
+                            )}
+                          </View>
+                          
+                          <Ionicons name="chevron-forward" size={20} color="#cbd5e1" style={{ marginLeft: 8 }} />
+                        </View>
                       </View>
-                      
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ 
-                          fontSize: 17, 
-                          fontWeight: '700', 
-                          color: '#1e293b', 
-                          marginBottom: 4 
-                        }}>
-                          {result.fullName}
-                        </Text>
-                        
-                        <Text style={{ 
-                          fontSize: 14, 
-                          color: '#3b82f6',
-                          marginBottom: 6,
-                          fontWeight: '600'
-                        }}>
-                          {result.professionalTitle || 'Professional'}
-                        </Text>
-                        
-                        {result.professionalSummary && (
-                          <Text style={{ 
-                            fontSize: 13, 
-                            color: '#64748b',
-                            lineHeight: 18
-                          }} numberOfLines={2}>
-                            {result.professionalSummary}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             )}
           </View>

@@ -39,7 +39,6 @@ export default function Login() {
       }
 
       const data = await res.json()
-      console.log("User login successful, token received:", data)
 
       // Store auth data including token in AsyncStorage
       await AsyncStorage.multiSet([
@@ -49,23 +48,17 @@ export default function Login() {
         ["authToken", data.token], // Store the JWT token
       ])
 
-      console.log("AsyncStorage data stored successfully with token")
       setSuccessMessage(`Welcome, ${username}!`)
       
       // Navigate to user homepage 
       setTimeout(() => {
-        console.log("Attempting to navigate to userhomepage...")
         try {
           router.push("/userhomepage")
-          console.log("Navigation command executed successfully")
         } catch (navError) {
-          console.error("Navigation error:", navError)
-          // Fallback - try replace if push fails
           router.replace("/userhomepage")
         }
       }, 500) // Increased delay to ensure AsyncStorage is fully committed
     } catch (err: any) {
-      console.error("User login failed:", err.message)
       setError(err.message)
     } finally {
       setLoading(false)

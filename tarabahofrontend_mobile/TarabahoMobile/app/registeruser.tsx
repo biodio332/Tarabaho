@@ -154,12 +154,7 @@ export default function RegisterUser() {
           icon: <Ionicons name="mail-outline" size={20} color="#6b7280" />,
           keyboardType: 'email-address',
           autoCapitalize: 'none'
-        }
-      ]
-    },
-    {
-      title: 'Contact Information',
-      fields: [
+        },
         {
           field: 'address',
           placeholder: 'Address',
@@ -167,16 +162,14 @@ export default function RegisterUser() {
         },
         {
           field: 'contactNo',
-          placeholder: 'Contact Number',
+          placeholder: 'Phone Number',
           icon: <Ionicons name="call-outline" size={20} color="#6b7280" />,
-          keyboardType: 'phone-pad',
-          halfWidth: true
+          keyboardType: 'phone-pad'
         },
         {
           field: 'birthday',
           placeholder: 'Birthday (YYYY-MM-DD)',
-          icon: <Ionicons name="calendar-outline" size={20} color="#6b7280" />,
-          halfWidth: true
+          icon: <Ionicons name="calendar-outline" size={20} color="#6b7280" />
         }
       ]
     }
@@ -190,7 +183,7 @@ export default function RegisterUser() {
       >
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="bg-white">
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => router.push('/login')}
             className="absolute left-4 top-4 w-10 h-10 rounded-full bg-white/90 shadow-sm items-center justify-center z-50"
             style={{
               elevation: 2,
