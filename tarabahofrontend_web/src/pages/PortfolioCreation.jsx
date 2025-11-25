@@ -119,191 +119,236 @@ const PortfolioCreation = () => {
   const projectFileInputRef = useRef(null)
   const certificateFileInputRef = useRef(null)
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080"
+  
+  // State for managing "Show More" functionality and collapsible sections
+  const [showAllCertificates, setShowAllCertificates] = useState(false)
+  const [showAllExperiences, setShowAllExperiences] = useState(false)
+  const [showAllProjects, setShowAllProjects] = useState(false)
+  const [showAllAwards, setShowAllAwards] = useState(false)
+  const [showAllEducation, setShowAllEducation] = useState(false)
+  const [showAllMemberships, setShowAllMemberships] = useState(false)
+  const [showAllReferences, setShowAllReferences] = useState(false)
+  
+  // Items to show initially (before "Show More")
+  const INITIAL_ITEMS_LIMIT = 6
 
   const validSkillTypes = ["TECHNICAL", "LANGUAGE", "DIGITAL", "SOFT", "INDUSTRY_SPECIFIC"]
 
   // Course type to design template mapping
   const courseTypeTemplates = {
-    "Bread and Pastry Production": "bread-pastry",
-    "Cookery": "cookery",
-    "Housekeeping": "housekeeping",
-    "Food & Beverage Services": "food-beverage",
-    "Bartending and Barista": "bartending-barista"
+    "Agriculture and Fishery": "food-beverage",
+    "Automotive and Land Transportation": "housekeeping",
+    "Decorative Crafts": "bread-pastry",
+    "Maritime": "housekeeping",
+    "Tourism": "bartending-barista"
   }
 
-  // Get design theme for preview - unique designs for each course type
+  // Get design theme for preview (matching ViewPortfolio.jsx)
   const getDesignTheme = (template) => {
     const themes = {
       "bread-pastry": {
-        // Warm amber/orange theme - Centered card-based layout
-        headerBg: "bg-gradient-to-br from-amber-600 via-orange-600 to-amber-700",
-        sidebarBg: "bg-gradient-to-br from-amber-600 via-orange-600 to-amber-700",
-        headerBarBg: "bg-gray-800",
+        headerGradient: "from-amber-500 via-orange-500 to-amber-600",
+        headerBg: "bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600",
         accentColor: "amber",
         textColor: "text-amber-600",
-        pageBg: "bg-amber-50",
-        borderColor: "border-amber-300",
-        // Unique layout: Centered card-based design
-        layoutType: "centered-cards", // centered-cards, top-header, left-sidebar, right-sidebar, split-view
-        headerLayout: "centered",
+        borderColor: "border-amber-200",
+        bgColor: "bg-amber-50",
+        cardBorder: "border-amber-100",
+        buttonColor: "amber",
+        lightBg: "bg-amber-50",
+        mediumBg: "bg-amber-100",
+        darkBg: "bg-amber-200",
+        // Layout properties
+        headerLayout: "centered", // centered, left-right, right-left
         headerTextAlign: "text-center",
         headerFlexDirection: "flex-col items-center",
-        avatarSize: "w-40 h-40",
+        avatarSize: "w-64 h-64",
         avatarPosition: "mb-6",
-        cardStyle: "rounded-3xl shadow-xl border-2 border-amber-200",
+        cardStyle: "rounded-2xl shadow-lg",
         cardPadding: "p-8",
-        contentGrid: "grid-cols-1 md:grid-cols-2",
-        sectionSpacing: "space-y-8",
-        typographySize: "text-4xl md:text-5xl",
+        contentGrid: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
+        sectionSpacing: "space-y-10",
+        typographySize: "text-4xl md:text-5xl lg:text-6xl",
         titleWeight: "font-bold",
-        sectionHeaderStyle: "rounded-t-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-4",
-        sectionContentStyle: "rounded-b-2xl bg-white p-6 border-2 border-amber-200",
-        useCardSections: true,
       },
       "cookery": {
-        // Bold red/pink theme - Top header with two-column content
-        headerBg: "bg-gradient-to-br from-red-600 via-pink-600 to-red-700",
-        sidebarBg: "bg-gradient-to-br from-red-600 via-pink-600 to-red-700",
-        headerBarBg: "bg-red-700",
+        headerGradient: "from-red-500 via-pink-500 to-red-600",
+        headerBg: "bg-gradient-to-br from-red-500 via-pink-500 to-red-600",
         accentColor: "red",
         textColor: "text-red-600",
-        pageBg: "bg-red-50",
-        borderColor: "border-red-300",
-        // Unique layout: Top header with two-column content below
-        layoutType: "top-header",
-        headerLayout: "centered",
-        headerTextAlign: "text-center",
-        headerFlexDirection: "flex-col items-center",
-        avatarSize: "w-48 h-48",
-        avatarPosition: "mb-8",
-        cardStyle: "rounded-xl shadow-lg border-l-4 border-red-500",
-        cardPadding: "p-6",
-        contentGrid: "grid-cols-1 lg:grid-cols-2",
-        sectionSpacing: "space-y-6",
-        typographySize: "text-5xl md:text-6xl",
-        titleWeight: "font-extrabold",
-        sectionHeaderStyle: "bg-red-600 text-white px-5 py-3 rounded-t-lg font-bold uppercase text-sm",
-        sectionContentStyle: "bg-white p-6 rounded-b-lg border-2 border-red-200",
-        useCardSections: true,
-      },
-      "housekeeping": {
-        // Professional design matching the image - Dark gray header, light gray sidebar, white content
-        headerBg: "bg-gray-700", // Dark gray header
-        sidebarBg: "bg-gray-200", // Light gray sidebar
-        headerBarBg: "bg-gray-700", // Dark gray for header bar
-        accentColor: "gray",
-        textColor: "text-gray-800", // Dark gray text
-        pageBg: "bg-white",
-        borderColor: "border-gray-400", // Gray borders
-        // Unique layout: Top header + Left sidebar + Right content (matching image)
-        layoutType: "housekeeping-layout", // Special layout for housekeeping
-        headerLayout: "centered",
-        headerTextAlign: "text-center",
-        headerFlexDirection: "flex-col items-center",
-        avatarSize: "w-32 h-32",
-        avatarPosition: "mb-6",
-        cardStyle: "rounded-none shadow-none", // No rounded corners, no shadow
-        cardPadding: "p-6",
-        contentGrid: "grid-cols-1",
-        sectionSpacing: "space-y-6",
-        typographySize: "text-4xl md:text-5xl",
-        titleWeight: "font-bold",
-        sectionHeaderStyle: "text-gray-800 font-bold uppercase text-sm mb-2 pb-2 border-b border-gray-600", // Dark gray text with line underneath
-        sectionContentStyle: "bg-transparent p-0", // No background, no padding
-        useCardSections: false,
-        headerTextColor: "text-white", // White text in header
-        sidebarTextColor: "text-gray-800", // Dark gray text in sidebar
-        mainTextColor: "text-gray-800", // Dark gray text in main content
-      },
-      "food-beverage": {
-        // Fresh green/teal theme - Right sidebar layout
-        headerBg: "bg-gradient-to-br from-green-600 via-teal-600 to-green-700",
-        sidebarBg: "bg-gradient-to-br from-green-600 via-teal-600 to-green-700",
-        headerBarBg: "bg-green-700",
-        accentColor: "green",
-        textColor: "text-green-600",
-        pageBg: "bg-green-50",
-        borderColor: "border-green-300",
-        // Unique layout: Right sidebar with main content on left
-        layoutType: "right-sidebar",
-        headerLayout: "right-left",
-        headerTextAlign: "text-right",
-        headerFlexDirection: "flex-row-reverse items-center",
-        avatarSize: "w-32 h-32",
-        avatarPosition: "mb-6",
-        cardStyle: "rounded-2xl shadow-xl border-2 border-green-200",
-        cardPadding: "p-6",
-        contentGrid: "grid-cols-1",
-        sectionSpacing: "space-y-8",
-        typographySize: "text-4xl md:text-5xl",
-        titleWeight: "font-semibold",
-        sectionHeaderStyle: "bg-gradient-to-r from-green-600 to-teal-600 text-white px-5 py-3 rounded-t-2xl font-bold uppercase text-sm",
-        sectionContentStyle: "bg-white p-6 rounded-b-2xl border-2 border-green-200",
-        useCardSections: true,
-      },
-      "bartending-barista": {
-        // Clean blue theme - Split view with left sidebar
-        headerBg: "bg-blue-500",
-        sidebarBg: "bg-blue-500",
-        headerBarBg: "bg-transparent",
-        accentColor: "blue",
-        textColor: "text-gray-800",
-        pageBg: "bg-gray-50",
-        borderColor: "border-gray-300",
-        // Unique layout: Split view with simple headers
-        layoutType: "split-view",
-        headerLayout: "centered",
-        headerTextAlign: "text-left",
-        headerFlexDirection: "flex-col items-center",
-        avatarSize: "w-32 h-32",
-        avatarPosition: "mb-8",
-        cardStyle: "rounded-lg shadow-md",
-        cardPadding: "p-6",
-        contentGrid: "grid-cols-1",
-        sectionSpacing: "space-y-8",
-        typographySize: "text-3xl",
-        titleWeight: "font-bold",
-        sectionHeaderStyle: "text-gray-800 font-bold uppercase text-sm mb-2",
-        sectionContentStyle: "bg-white border-t border-gray-300 pt-4",
-        useCardSections: false,
-        useSimpleHeaders: true, // Flag to use simple text headers with lines
-      },
-      "default": {
-        // Default blue theme - Left sidebar
-        headerBg: "bg-gradient-to-br from-blue-700 via-blue-800 to-blue-900",
-        sidebarBg: "bg-gradient-to-br from-blue-700 via-blue-800 to-blue-900",
-        headerBarBg: "bg-blue-800",
-        accentColor: "blue",
-        textColor: "text-blue-600",
-        pageBg: "bg-gray-50",
-        borderColor: "border-blue-300",
-        layoutType: "left-sidebar",
+        borderColor: "border-red-200",
+        bgColor: "bg-red-50",
+        cardBorder: "border-red-100",
+        buttonColor: "red",
+        lightBg: "bg-red-50",
+        mediumBg: "bg-red-100",
+        darkBg: "bg-red-200",
+        // Layout properties
         headerLayout: "left-right",
         headerTextAlign: "text-left",
         headerFlexDirection: "flex-row items-center",
-        avatarSize: "w-32 h-32",
-        avatarPosition: "mb-6",
-        cardStyle: "rounded-lg shadow-md",
+        avatarSize: "w-72 h-72",
+        avatarPosition: "mr-8",
+        cardStyle: "rounded-xl shadow-md border-2",
         cardPadding: "p-6",
-        contentGrid: "grid-cols-1",
+        contentGrid: "grid-cols-1 lg:grid-cols-2",
+        sectionSpacing: "space-y-8",
+        typographySize: "text-5xl md:text-6xl lg:text-7xl",
+        titleWeight: "font-extrabold",
+      },
+      "housekeeping": {
+        headerGradient: "from-blue-500 via-indigo-500 to-blue-600",
+        headerBg: "bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800",
+        accentColor: "blue",
+        textColor: "text-blue-600",
+        borderColor: "border-blue-200",
+        bgColor: "bg-blue-50",
+        cardBorder: "border-blue-100",
+        buttonColor: "blue",
+        lightBg: "bg-blue-50",
+        mediumBg: "bg-blue-100",
+        darkBg: "bg-blue-200",
+        // Layout properties
+        headerLayout: "left-right",
+        headerTextAlign: "text-left",
+        headerFlexDirection: "flex-row items-center",
+        avatarSize: "w-80 h-80",
+        avatarPosition: "mr-12",
+        cardStyle: "rounded-lg shadow-xl",
+        cardPadding: "p-6",
+        contentGrid: "grid-cols-1 lg:grid-cols-4",
+        sectionSpacing: "space-y-12",
+        typographySize: "text-5xl md:text-6xl lg:text-7xl",
+        titleWeight: "font-extralight",
+      },
+      "food-beverage": {
+        headerGradient: "from-gray-800 via-gray-700 to-gray-900",
+        headerBg: "bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900",
+        accentColor: "gray",
+        textColor: "text-gray-900",
+        borderColor: "border-gray-400",
+        bgColor: "bg-gray-50",
+        cardBorder: "border-gray-300",
+        buttonColor: "gray",
+        lightBg: "bg-gray-50",
+        mediumBg: "bg-gray-100",
+        darkBg: "bg-gray-200",
+        // Layout properties
+        headerLayout: "left-right",
+        headerTextAlign: "text-left",
+        headerFlexDirection: "flex-row items-center",
+        avatarSize: "w-48 h-48",
+        avatarPosition: "mr-8",
+        cardStyle: "rounded-xl shadow-lg border-2",
+        cardPadding: "p-6",
+        contentGrid: "grid-cols-1 lg:grid-cols-2",
+        sectionSpacing: "space-y-8",
+        typographySize: "text-3xl md:text-4xl lg:text-5xl",
+        titleWeight: "font-bold",
+      },
+      "bartending-barista": {
+        headerGradient: "from-purple-500 via-violet-500 to-purple-600",
+        headerBg: "bg-gradient-to-br from-purple-500 via-violet-500 to-purple-600",
+        accentColor: "purple",
+        textColor: "text-purple-600",
+        borderColor: "border-purple-200",
+        bgColor: "bg-purple-50",
+        cardBorder: "border-purple-100",
+        buttonColor: "purple",
+        lightBg: "bg-purple-50",
+        mediumBg: "bg-purple-100",
+        darkBg: "bg-purple-200",
+        // Layout properties
+        headerLayout: "centered",
+        headerTextAlign: "text-center",
+        headerFlexDirection: "flex-col items-center",
+        avatarSize: "w-56 h-56",
+        avatarPosition: "mb-8",
+        cardStyle: "rounded-full shadow-lg border-4",
+        cardPadding: "p-10",
+        contentGrid: "grid-cols-1 md:grid-cols-3",
         sectionSpacing: "space-y-6",
-        typographySize: "text-3xl md:text-4xl",
-        titleWeight: "font-semibold",
-        sectionHeaderStyle: "bg-blue-800 text-white px-4 py-3 font-bold uppercase text-sm",
-        sectionContentStyle: "bg-white p-6 border-t-2 border-blue-300",
-        useCardSections: false,
+        typographySize: "text-3xl md:text-4xl lg:text-5xl",
+        titleWeight: "font-light",
+      },
+      "default": {
+        headerGradient: "from-blue-600 via-blue-700 to-blue-800",
+        headerBg: "bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800",
+        accentColor: "blue",
+        textColor: "text-blue-600",
+        borderColor: "border-blue-200",
+        bgColor: "bg-blue-50",
+        cardBorder: "border-blue-100",
+        buttonColor: "blue",
+        lightBg: "bg-blue-50",
+        mediumBg: "bg-blue-100",
+        darkBg: "bg-blue-200",
+        // Layout properties
+        headerLayout: "left-right",
+        headerTextAlign: "text-left",
+        headerFlexDirection: "flex-row items-center",
+        avatarSize: "w-80 h-80",
+        avatarPosition: "mr-12",
+        cardStyle: "rounded-lg shadow-xl",
+        cardPadding: "p-6",
+        contentGrid: "grid-cols-1 lg:grid-cols-4",
+        sectionSpacing: "space-y-12",
+        typographySize: "text-5xl md:text-6xl lg:text-7xl",
+        titleWeight: "font-extralight",
       },
     }
     return themes[template] || themes["default"]
   }
 
+  // Get layout properties for preview
+  const getPreviewLayout = (template) => {
+    const layouts = {
+      "bread-pastry": {
+        headerLayout: "flex-col items-center text-center",
+        avatarSize: "w-16 h-16",
+        cardStyle: "rounded-2xl",
+        cardPadding: "p-6",
+      },
+      "cookery": {
+        headerLayout: "flex-row items-center text-left",
+        avatarSize: "w-20 h-20",
+        cardStyle: "rounded-xl border-2",
+        cardPadding: "p-5",
+      },
+      "housekeeping": {
+        headerLayout: "flex-row items-center text-left",
+        avatarSize: "w-20 h-20",
+        cardStyle: "rounded-lg",
+        cardPadding: "p-5",
+      },
+      "food-beverage": {
+        headerLayout: "flex-row-reverse items-center text-right",
+        avatarSize: "w-16 h-16",
+        cardStyle: "rounded-3xl",
+        cardPadding: "p-6",
+      },
+      "bartending-barista": {
+        headerLayout: "flex-col items-center text-center",
+        avatarSize: "w-14 h-14",
+        cardStyle: "rounded-full border-4",
+        cardPadding: "p-6",
+      },
+      "default": {
+        headerLayout: "flex-row items-center text-left",
+        avatarSize: "w-20 h-20",
+        cardStyle: "rounded-lg",
+        cardPadding: "p-5",
+      },
+    }
+    return layouts[template] || layouts["default"]
+  }
 
   const courseTypes = [
-    "Bread and Pastry Production",
-    "Cookery",
-    "Housekeeping",
-    "Food & Beverage Services",
-    "Bartending and Barista"
+    "Agriculture and Fishery",
+    "Automotive and Land Transportation",
+    "Decorative Crafts",
+    "Maritime",
+    "Tourism"
   ]
 
   const steps = [
@@ -729,8 +774,8 @@ const PortfolioCreation = () => {
           if (showError) setError("Please fill in your professional summary. This field is required.")
           return false
         }
-        if (formData.professionalSummary.length > 1000) {
-          if (showError) setError("Professional summary cannot exceed 1000 characters.")
+        if (formData.professionalSummary.length > 300) {
+          if (showError) setError("Professional summary cannot exceed 300 characters.")
           return false
         }
         return true
@@ -923,8 +968,8 @@ const PortfolioCreation = () => {
       }
 
             // Validate professional summary length
-      if (formData.professionalSummary.length > 1000) {
-        setError("Professional summary cannot exceed 1000 characters.")
+      if (formData.professionalSummary.length > 300) {
+        setError("Professional summary cannot exceed 300 characters.")
         setIsLoading(false)
         return
       }
@@ -1255,15 +1300,15 @@ const PortfolioCreation = () => {
                 disabled={isLoading}
                 className="!border-gray-300 focus:!border-blue-500"
                 rows={4}
-                maxLength={1000} // Enforces max input length
+                maxLength={300} // Enforces max input length
               />
               <div className="flex justify-between items-center mt-1">
                 <Typography variant="small" className="text-gray-500">
-                  {formData.professionalSummary.length}/1000 characters
+                  {formData.professionalSummary.length}/300 characters
                 </Typography>
-                {formData.professionalSummary.length > 1000 && (
+                {formData.professionalSummary.length > 300 && (
                   <Typography variant="small" color="red">
-                    Summary cannot exceed 1000 characters.
+                    Summary cannot exceed 300 characters.
                   </Typography>
                 )}
               </div>
@@ -2856,1670 +2901,1296 @@ const PortfolioCreation = () => {
 
               {formData.primaryCourseType ? (
                 <div className="space-y-6">
-                  <Typography variant="small" className="mb-4 text-gray-700 font-medium">
+                  <Typography variant="small" className="mb-4 text-gray-900 font-semibold" style={{ fontFamily: "'Inter', sans-serif" }}>
                     Preview of your portfolio - This is how it will appear to viewers
                   </Typography>
-                  <div className={`min-h-screen ${getDesignTheme(formData.designTemplate).pageBg} py-8 px-4`}>
-                    <div className={`mx-auto bg-white shadow-2xl overflow-hidden ${
-                      getDesignTheme(formData.designTemplate).layoutType === "centered-cards" ? "max-w-5xl rounded-3xl" :
-                      getDesignTheme(formData.designTemplate).layoutType === "top-header" ? "max-w-6xl rounded-xl" :
-                      "max-w-6xl rounded-lg"
-                    }`}>
+                  <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 py-8 px-4">
+                    <div className="max-w-7xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
                       {(() => {
                         const designTheme = getDesignTheme(formData.designTemplate)
-                        
-                        // Centered Cards Layout (Bread & Pastry)
-                        if (designTheme.layoutType === "centered-cards") {
-                          return (
-                            <div className="p-8">
-                              {/* Header Section - Centered */}
-                              <div className={`${designTheme.headerFlexDirection} ${designTheme.headerTextAlign} mb-12`}>
-                                {(previewAvatar && previewAvatar !== "/placeholder.svg") && (
-                                  <div className={`${designTheme.avatarPosition}`}>
-                                    <Avatar
-                                      src={previewAvatar}
-                                      alt={formData.fullName || "Profile"}
-                                      size="xxl"
-                                      className={`${designTheme.avatarSize} rounded-full border-4 border-amber-300 shadow-xl`}
-                                    />
-                                  </div>
-                                )}
-                                <div>
-                                  <Typography variant="h1" className={`${designTheme.typographySize} ${designTheme.titleWeight} ${designTheme.textColor} mb-2`}>
-                                    {formData.fullName || "Your Name"}
-                                  </Typography>
-                                  {formData.professionalTitle && (
-                                    <Typography variant="h6" className={`${designTheme.textColor} text-xl font-medium`}>
-                                      {formData.professionalTitle}
-                                    </Typography>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Contact & Info Cards */}
-                              <div className={`grid ${designTheme.contentGrid} gap-6 mb-8`}>
-                                {/* Contact Card */}
-                                <div className={`${designTheme.cardStyle} ${designTheme.cardPadding} ${designTheme.sectionHeaderStyle}`}>
-                                  <Typography variant="h6" className="text-white font-bold text-sm uppercase mb-4">
-                                    CONTACT
-                                  </Typography>
-                                  <div className={`${designTheme.sectionContentStyle} space-y-3`}>
-                                    {formData.phone && (
-                                      <Typography variant="small" className="text-gray-700">📞 {formData.phone}</Typography>
-                                    )}
-                                    {formData.email && (
-                                      <Typography variant="small" className="text-gray-700 break-all">✉️ {formData.email}</Typography>
-                                    )}
-                                    {(formData.preferredWorkLocation || formData.website) && (
-                                      <Typography variant="small" className="text-gray-700">📍 {formData.preferredWorkLocation || formData.website}</Typography>
-                                    )}
-                                    {!formData.phone && !formData.email && !formData.preferredWorkLocation && !formData.website && (
-                                      <Typography variant="small" className="text-gray-500 italic">No contact information</Typography>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Education Card */}
-                                {(formData.trainingCenter || formData.ncLevel) && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding} ${designTheme.sectionHeaderStyle}`}>
-                                    <Typography variant="h6" className="text-white font-bold text-sm uppercase mb-4">
-                                      EDUCATION
-                                    </Typography>
-                                    <div className={`${designTheme.sectionContentStyle} space-y-2`}>
-                                      {formData.trainingCenter && (
-                                        <Typography variant="small" className="text-gray-700 font-medium">{formData.trainingCenter}</Typography>
+                        return (
+                          <>
+                            {formData.designTemplate === "food-beverage" ? (
+                              /* Agriculture and Fishery - Custom Layout */
+                              <div className="px-6 py-8 bg-gradient-to-br from-gray-50 via-gray-100 via-gray-200 to-gray-100" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                  {/* Left Sidebar - Profile Image, Contact, Skills, TESDA */}
+                                  <div className="lg:col-span-1 space-y-6">
+                                    {/* Profile Image Container */}
+                                    <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 flex justify-center items-center border-2 border-gray-300 shadow-md">
+                                      <Avatar
+                                        src={previewAvatar || "/placeholder.svg"}
+                                        alt={formData.fullName || "Profile"}
+                                        size="xxl"
+                                        className="w-48 h-48 shadow-xl ring-4 ring-gray-300"
+                                      />
+                                    </div>
+                                    
+                                    {/* Contact Information */}
+                                    <div className={`bg-white border-2 ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding} shadow-md`}>
+                                      <Typography variant="h6" className={`font-bold ${designTheme.textColor} text-xl mb-5`} style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.01em" }}>
+                                        Contact
+                                      </Typography>
+                                      {(formData.email || formData.phone || formData.website) ? (
+                                        <div className="space-y-3">
+                                          {formData.email && (
+                                            <div>
+                                              <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                Email
+                                              </Typography>
+                                              <Typography variant="small" className="text-gray-900 break-all font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                {formData.email}
+                                              </Typography>
+                                            </div>
+                                          )}
+                                          {formData.phone && (
+                                            <div>
+                                              <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                Phone
+                                              </Typography>
+                                              <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                {formData.phone}
+                                              </Typography>
+                                            </div>
+                                          )}
+                                          {formData.website && (
+                                            <div>
+                                              <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                Website
+                                              </Typography>
+                                              <Typography variant="small" className="text-gray-900 break-all font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                {formData.website}
+                                              </Typography>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                          You haven't filled up details in this section.
+                                        </Typography>
                                       )}
-                                      {formData.ncLevel && (
-                                        <Typography variant="small" className="text-gray-600">{formData.ncLevel}</Typography>
+                                    </div>
+
+                                    {/* Skills */}
+                                    <div className={`bg-white border-2 ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding} shadow-md`}>
+                                      <Typography variant="h6" className={`font-bold ${designTheme.textColor} text-xl mb-5`} style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.01em" }}>
+                                        Skills
+                                      </Typography>
+                                      {skills.length > 0 ? (
+                                        <div className="space-y-3">
+                                          {skills.map((skill, index) => (
+                                            <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
+                                              <Typography variant="small" className="font-bold text-gray-900 mb-1 text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                {skill.name}
+                                              </Typography>
+                                              <div className="flex items-center space-x-2">
+                                                <Chip size="sm" value={skill.type || "TECHNICAL"} color={designTheme.buttonColor} className="text-xs font-semibold" />
+                                                {skill.proficiencyLevel && (
+                                                  <Typography variant="small" className="text-gray-600 text-xs font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                    {skill.proficiencyLevel}
+                                                  </Typography>
+                                                )}
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                          You haven't filled up details in this section.
+                                        </Typography>
                                       )}
-                                      {formData.scholarshipType && (
-                                        <Typography variant="small" className="text-gray-500 text-xs">{formData.scholarshipType}</Typography>
+                                    </div>
+
+                                    {/* TESDA Information */}
+                                    <div className={`bg-white border-2 ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding} shadow-md`}>
+                                      <Typography variant="h6" className={`font-bold ${designTheme.textColor} text-xl mb-5`} style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.01em" }}>
+                                        TESDA Information
+                                      </Typography>
+                                      {(formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration || formData.tesdaRegistrationNumber) ? (
+                                        <div className="space-y-3">
+                                          {formData.ncLevel && (
+                                            <div>
+                                              <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                NC Level
+                                              </Typography>
+                                              <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                {formData.ncLevel}
+                                              </Typography>
+                                            </div>
+                                          )}
+                                          {formData.trainingCenter && (
+                                            <div>
+                                              <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                Training Center
+                                              </Typography>
+                                              <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                {formData.trainingCenter}
+                                              </Typography>
+                                            </div>
+                                          )}
+                                          {formData.scholarshipType && (
+                                            <div>
+                                              <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                Scholarship Type
+                                              </Typography>
+                                              <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                {formData.scholarshipType}
+                                              </Typography>
+                                            </div>
+                                          )}
+                                          {formData.trainingDuration && (
+                                            <div>
+                                              <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                Training Duration
+                                              </Typography>
+                                              <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                {formData.trainingDuration}
+                                              </Typography>
+                                            </div>
+                                          )}
+                                          {formData.tesdaRegistrationNumber && (
+                                            <div>
+                                              <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                Registration Number
+                                              </Typography>
+                                              <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                {formData.tesdaRegistrationNumber}
+                                              </Typography>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                          You haven't filled up details in this section.
+                                        </Typography>
                                       )}
                                     </div>
                                   </div>
-                                )}
 
-                                {/* Skills Card */}
-                                <div className={`${designTheme.cardStyle} ${designTheme.cardPadding} ${designTheme.sectionHeaderStyle}`}>
-                                  <Typography variant="h6" className="text-white font-bold text-sm uppercase mb-4">
-                                    SKILLS
-                                  </Typography>
-                                  <div className={`${designTheme.sectionContentStyle}`}>
-                                    {skills.length > 0 ? (
-                                      <div className="flex flex-wrap gap-2">
-                                        {skills.map((skill, index) => (
-                                          <Chip key={index} value={skill.name} className={`bg-amber-100 text-amber-700`} />
-                                        ))}
+                                  {/* Right Side - Name and Main Content */}
+                                  <div className="lg:col-span-2 space-y-6">
+                                    {/* Name Container */}
+                                    <div className="bg-white border-2 border-gray-300 rounded-xl shadow-lg p-8 bg-gradient-to-br from-white to-gray-50/30">
+                                      <Typography
+                                        variant="h1"
+                                        className={`${designTheme.titleWeight} ${designTheme.typographySize} tracking-tight text-gray-900 break-words`}
+                                        style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.02em" }}
+                                      >
+                                        {formData.fullName || "Your Name"}
+                                      </Typography>
+                                      {formData.professionalTitle && (
+                                        <Typography
+                                          variant="h6"
+                                          className="text-gray-700 font-semibold mt-3 text-lg"
+                                          style={{ fontFamily: "'Inter', sans-serif" }}
+                                        >
+                                          {formData.professionalTitle}
+                                        </Typography>
+                                      )}
+                                      {formData.professionalSummary && (
+                                        <Typography
+                                          variant="lead"
+                                          className="text-gray-800 leading-relaxed mt-5 break-words overflow-wrap-anywhere text-base"
+                                          style={{ fontFamily: "'Inter', sans-serif", lineHeight: "1.75" }}
+                                        >
+                                          {formData.professionalSummary}
+                                        </Typography>
+                                      )}
+                                    </div>
+
+                                    {/* Main Content Container */}
+                                    <div className={`bg-white border-2 ${designTheme.cardBorder} rounded-xl shadow-lg p-10 space-y-10`}>
+                                  
+
+                                      {/* Certificates */}
+                                      <div>
+                                       
+                                    <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl mb-6`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
+                                      Certificates
+                                    </Typography>
+                                    {certificates.length > 0 ? (
+                                      <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                          {(showAllCertificates ? certificates : certificates.slice(0, INITIAL_ITEMS_LIMIT)).map((certificate, index) => (
+                                            <Card key={index} className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-300 shadow-md hover:shadow-lg transition-shadow duration-300">
+                                              <CardBody className="flex flex-col items-start gap-3">
+                                                <div className="flex items-center gap-3 w-full">
+                                                  {certificate.certificateFile && (
+                                                    <Avatar
+                                                      src={URL.createObjectURL(certificate.certificateFile)}
+                                                      alt="Certificate Preview"
+                                                      size="md"
+                                                      className={`ring-2 ring-gray-400 shadow-md flex-shrink-0`}
+                                                    />
+                                                  )}
+                                                  <div className="flex-grow min-w-0">
+                                                    <Typography variant="h6" className="text-gray-900 font-bold text-sm truncate" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                      {certificate.courseName}
+                                                    </Typography>
+                                                    {certificate.certificateNumber && (
+                                                      <Typography variant="small" className="text-gray-700 font-medium mt-1 text-xs">
+                                                        #{certificate.certificateNumber}
+                                                      </Typography>
+                                                    )}
+                                                    {certificate.issueDate && (
+                                                      <Typography variant="small" className="text-gray-600 mt-1 text-xs">
+                                                        {new Date(certificate.issueDate).toLocaleDateString()}
+                                                      </Typography>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </CardBody>
+                                            </Card>
+                                          ))}
+                                        </div>
+                                        {certificates.length > INITIAL_ITEMS_LIMIT && (
+                                          <div className="flex justify-center pt-2">
+                                            <Button
+                                              variant="text"
+                                              size="sm"
+                                              onClick={() => setShowAllCertificates(!showAllCertificates)}
+                                              className={`${designTheme.textColor} font-semibold`}
+                                            >
+                                              {showAllCertificates ? "Show Less" : `Show All (${certificates.length})`}
+                                            </Button>
+                                          </div>
+                                        )}
                                       </div>
                                     ) : (
-                                      <Typography variant="small" className="text-gray-500 italic">You haven't filled up details in this section.</Typography>
+                                      <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
+                                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                          You haven't filled up details in this section.
+                                        </Typography>
+                                      </div>
                                     )}
-                                  </div>
-                                </div>
-                              </div>
+                                      </div>
 
-                              {/* Main Content Sections */}
-                              <div className={`${designTheme.sectionSpacing}`}>
-                                {/* Professional Summary */}
-                                {formData.professionalSummary && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                    <div className={designTheme.sectionHeaderStyle}>
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                        PROFESSIONAL SUMMARY
-                                      </Typography>
-                                    </div>
-                                    <div className={designTheme.sectionContentStyle}>
-                                      <Typography variant="small" className="text-gray-700 leading-relaxed">
-                                        {formData.professionalSummary}
-                                      </Typography>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Work Experience */}
-                                <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                  <div className={designTheme.sectionHeaderStyle}>
-                                    <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                      WORK EXPERIENCE
-                                    </Typography>
-                                  </div>
-                                  <div className={designTheme.sectionContentStyle}>
+                                      {/* Experience */}
+                                      <div>
+                                        <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl mb-6`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
+                                          Experience
+                                        </Typography>
                                     {experiences.length > 0 ? (
-                                      <div className="space-y-4">
-                                        {experiences.map((exp, index) => (
-                                          <div key={index} className="border-l-4 border-amber-400 pl-4">
-                                            <Typography variant="h6" className="text-gray-800 font-semibold">
-                                              {exp.jobTitle || "Position"}
+                                      <div className="space-y-6">
+                                        {(showAllExperiences ? experiences : experiences.slice(0, INITIAL_ITEMS_LIMIT)).map((exp, index) => (
+                                          <div key={index} className={`border-l-4 border-gray-600 pl-6 pb-6 relative bg-gradient-to-r from-gray-50/50 to-transparent rounded-r-lg p-5`}>
+                                            <Typography variant="h6" className="font-bold text-gray-900 mb-1 break-words text-base" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                              {exp.jobTitle}
                                             </Typography>
-                                            <Typography variant="small" className="text-gray-600">
-                                              {exp.company || "Company"} {exp.duration && ` • ${exp.duration}`}
-                                            </Typography>
+                                            {exp.company && (
+                                              <Typography variant="small" className={`${designTheme.textColor} font-semibold mb-1 break-words text-sm`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                {exp.company}
+                                              </Typography>
+                                            )}
+                                            {exp.duration && (
+                                              <Typography variant="small" className="text-gray-600 font-medium mb-3 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                {exp.duration}
+                                              </Typography>
+                                            )}
                                             {exp.responsibilities && (
-                                              <Typography variant="small" className="text-gray-700 mt-2">
+                                              <Typography
+                                                variant="small"
+                                                className="text-gray-800 leading-relaxed break-words overflow-wrap-anywhere text-xs"
+                                                style={{ fontFamily: "'Inter', sans-serif", lineHeight: "1.6" }}
+                                              >
                                                 {exp.responsibilities}
                                               </Typography>
                                             )}
                                           </div>
                                         ))}
+                                        {experiences.length > INITIAL_ITEMS_LIMIT && (
+                                          <div className="flex justify-center pt-2">
+                                            <Button
+                                              variant="text"
+                                              size="sm"
+                                              onClick={() => setShowAllExperiences(!showAllExperiences)}
+                                              className={`${designTheme.textColor} font-semibold`}
+                                            >
+                                              {showAllExperiences ? "Show Less" : `Show All (${experiences.length})`}
+                                            </Button>
+                                          </div>
+                                        )}
                                       </div>
                                     ) : (
-                                      <Typography variant="small" className="text-gray-500 italic">You haven't filled up details in this section.</Typography>
+                                      <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
+                                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                          You haven't filled up details in this section.
+                                        </Typography>
+                                      </div>
                                     )}
                                   </div>
-                                </div>
 
-                                {/* Certificates */}
-                                {certificates.length > 0 && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                    <div className={designTheme.sectionHeaderStyle}>
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                        CERTIFICATES
-                                      </Typography>
-                                    </div>
-                                    <div className={designTheme.sectionContentStyle}>
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {certificates.map((certificate, index) => (
-                                          <div key={index} className="border-2 border-amber-200 rounded-lg p-4 bg-amber-50">
-                                            <Typography variant="small" className="text-gray-800 font-medium">
-                                              {certificate.courseName}
-                                            </Typography>
-                                            {certificate.certificateNumber && (
-                                              <Typography variant="small" className="text-gray-600 text-xs">
-                                                #{certificate.certificateNumber}
-                                              </Typography>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Projects */}
-                                {projects.length > 0 && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                    <div className={designTheme.sectionHeaderStyle}>
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                        PROJECTS
-                                      </Typography>
-                                    </div>
-                                    <div className={designTheme.sectionContentStyle}>
+                                      {/* Projects */}
+                                      <div>
+                                        <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl mb-6`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
+                                          Projects
+                                        </Typography>
+                                    {projects.length > 0 ? (
                                       <div className="space-y-4">
-                                        {projects.map((project, index) => (
-                                          <div key={index} className="border-l-4 border-amber-400 pl-4">
-                                            <Typography variant="small" className="text-gray-800 font-semibold">
-                                              {project.title}
-                                            </Typography>
-                                            {project.description && (
-                                              <Typography variant="small" className="text-gray-600 text-xs mt-1">
-                                                {project.description}
-                                              </Typography>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Awards */}
-                                {awardsRecognitions.length > 0 && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                    <div className={designTheme.sectionHeaderStyle}>
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                        AWARDS & RECOGNITION
-                                      </Typography>
-                                    </div>
-                                    <div className={designTheme.sectionContentStyle}>
-                                      <div className="space-y-3">
-                                        {awardsRecognitions.map((award, index) => (
-                                          <div key={index}>
-                                            <Typography variant="small" className="text-gray-800 font-medium">
-                                              {award.title}
-                                            </Typography>
-                                            {award.issuer && (
-                                              <Typography variant="small" className="text-gray-600 text-xs">
-                                                {award.issuer}
-                                              </Typography>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Continuing Education */}
-                                {continuingEducations.length > 0 && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                    <div className={designTheme.sectionHeaderStyle}>
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                        CONTINUING EDUCATION
-                                      </Typography>
-                                    </div>
-                                    <div className={designTheme.sectionContentStyle}>
-                                      <div className="space-y-3">
-                                        {continuingEducations.map((edu, index) => (
-                                          <div key={index}>
-                                            <Typography variant="small" className="text-gray-800 font-medium">
-                                              {edu.courseName}
-                                            </Typography>
-                                            {edu.institution && (
-                                              <Typography variant="small" className="text-gray-600 text-xs">
-                                                {edu.institution}
-                                              </Typography>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Professional Memberships */}
-                                {professionalMemberships.length > 0 && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                    <div className={designTheme.sectionHeaderStyle}>
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                        PROFESSIONAL MEMBERSHIPS
-                                      </Typography>
-                                    </div>
-                                    <div className={designTheme.sectionContentStyle}>
-                                      <div className="space-y-3">
-                                        {professionalMemberships.map((mem, index) => (
-                                          <div key={index}>
-                                            <Typography variant="small" className="text-gray-800 font-medium">
-                                              {mem.organization}
-                                            </Typography>
-                                            {mem.membershipType && (
-                                              <Typography variant="small" className="text-gray-600 text-xs">
-                                                {mem.membershipType}
-                                              </Typography>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* References */}
-                                {references.length > 0 && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                    <div className={designTheme.sectionHeaderStyle}>
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                        REFERENCES
-                                      </Typography>
-                                    </div>
-                                    <div className={designTheme.sectionContentStyle}>
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {references.map((ref, index) => (
-                                          <div key={index} className="border-2 border-amber-200 rounded-lg p-3 bg-amber-50">
-                                            <Typography variant="small" className="text-gray-800 font-medium">
-                                              {ref.name}
-                                            </Typography>
-                                            {ref.position && (
-                                              <Typography variant="small" className="text-gray-600 text-xs">
-                                                {ref.position}
-                                              </Typography>
-                                            )}
-                                            {ref.company && (
-                                              <Typography variant="small" className="text-gray-600 text-xs">
-                                                {ref.company}
-                                              </Typography>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        }
-                        
-                        // Top Header Layout (Cookery)
-                        if (designTheme.layoutType === "top-header") {
-                          return (
-                            <div>
-                              {/* Top Header Section */}
-                              <div className={`${designTheme.headerBg} text-white p-12 ${designTheme.headerFlexDirection} ${designTheme.headerTextAlign}`}>
-                                {(previewAvatar && previewAvatar !== "/placeholder.svg") && (
-                                  <div className={`${designTheme.avatarPosition}`}>
-                                    <Avatar
-                                      src={previewAvatar}
-                                      alt={formData.fullName || "Profile"}
-                                      size="xxl"
-                                      className={`${designTheme.avatarSize} rounded-full border-4 border-white shadow-2xl`}
-                                    />
-                                  </div>
-                                )}
-                                <div className="flex-1">
-                                  <Typography variant="h1" className={`${designTheme.typographySize} ${designTheme.titleWeight} text-white mb-2`}>
-                                    {formData.fullName || "Your Name"}
-                                  </Typography>
-                                  {formData.professionalTitle && (
-                                    <Typography variant="h6" className="text-white/90 text-2xl font-medium">
-                                      {formData.professionalTitle}
-                                    </Typography>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Two Column Content */}
-                              <div className="p-8">
-                                <div className={`grid ${designTheme.contentGrid} gap-8`}>
-                                  {/* Left Column */}
-                                  <div className="space-y-6">
-                                    {/* Contact */}
-                                    <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                      <div className={designTheme.sectionHeaderStyle}>
-                                        <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                          CONTACT
-                                        </Typography>
-                                      </div>
-                                      <div className={designTheme.sectionContentStyle}>
-                                        {formData.phone && (
-                                          <Typography variant="small" className="text-gray-700 mb-2">📞 {formData.phone}</Typography>
-                                        )}
-                                        {formData.email && (
-                                          <Typography variant="small" className="text-gray-700 mb-2 break-all">✉️ {formData.email}</Typography>
-                                        )}
-                                        {(formData.preferredWorkLocation || formData.website) && (
-                                          <Typography variant="small" className="text-gray-700">📍 {formData.preferredWorkLocation || formData.website}</Typography>
-                                        )}
-                                        {!formData.phone && !formData.email && !formData.preferredWorkLocation && !formData.website && (
-                                          <Typography variant="small" className="text-gray-500 italic">No contact information</Typography>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {/* Education */}
-                                    {(formData.trainingCenter || formData.ncLevel) && (
-                                      <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                        <div className={designTheme.sectionHeaderStyle}>
-                                          <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                            EDUCATION
-                                          </Typography>
-                                        </div>
-                                        <div className={designTheme.sectionContentStyle}>
-                                          {formData.trainingCenter && (
-                                            <Typography variant="small" className="text-gray-700 font-medium">{formData.trainingCenter}</Typography>
-                                          )}
-                                          {formData.ncLevel && (
-                                            <Typography variant="small" className="text-gray-600">{formData.ncLevel}</Typography>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Skills */}
-                                    <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                      <div className={designTheme.sectionHeaderStyle}>
-                                        <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                          SKILLS
-                                        </Typography>
-                                      </div>
-                                      <div className={designTheme.sectionContentStyle}>
-                                        {skills.length > 0 ? (
-                                          <ul className="space-y-2 list-disc list-inside">
-                                            {skills.map((skill, index) => (
-                                              <li key={index}>
-                                                <Typography variant="small" className="text-gray-700">{skill.name}</Typography>
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        ) : (
-                                          <Typography variant="small" className="text-gray-500 italic">You haven't filled up details in this section.</Typography>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Right Column */}
-                                  <div className="space-y-6">
-                                    {/* Professional Summary */}
-                                    {formData.professionalSummary && (
-                                      <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                        <div className={designTheme.sectionHeaderStyle}>
-                                          <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                            PROFESSIONAL SUMMARY
-                                          </Typography>
-                                        </div>
-                                        <div className={designTheme.sectionContentStyle}>
-                                          <Typography variant="small" className="text-gray-700 leading-relaxed">
-                                            {formData.professionalSummary}
-                                          </Typography>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Work Experience */}
-                                    <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                      <div className={designTheme.sectionHeaderStyle}>
-                                        <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                          WORK EXPERIENCE
-                                        </Typography>
-                                      </div>
-                                      <div className={designTheme.sectionContentStyle}>
-                                        {experiences.length > 0 ? (
-                                          <div className="space-y-4">
-                                            {experiences.map((exp, index) => (
-                                              <div key={index} className="border-l-4 border-red-500 pl-4">
-                                                <Typography variant="h6" className="text-gray-800 font-semibold">
-                                                  {exp.jobTitle || "Position"}
-                                                </Typography>
-                                                <Typography variant="small" className="text-gray-600">
-                                                  {exp.company || "Company"} {exp.duration && ` • ${exp.duration}`}
-                                                </Typography>
-                                                {exp.responsibilities && (
-                                                  <Typography variant="small" className="text-gray-700 mt-2">
-                                                    {exp.responsibilities}
-                                                  </Typography>
-                                                )}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        ) : (
-                                          <Typography variant="small" className="text-gray-500 italic">You haven't filled up details in this section.</Typography>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {/* Certificates */}
-                                    {certificates.length > 0 && (
-                                      <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                        <div className={designTheme.sectionHeaderStyle}>
-                                          <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                            CERTIFICATES
-                                          </Typography>
-                                        </div>
-                                        <div className={designTheme.sectionContentStyle}>
-                                          <div className="grid grid-cols-1 gap-4">
-                                            {certificates.map((certificate, index) => (
-                                              <div key={index} className="border-l-4 border-red-500 pl-4">
-                                                <Typography variant="small" className="text-gray-800 font-medium">
-                                                  {certificate.courseName}
-                                                </Typography>
-                                                {certificate.certificateNumber && (
-                                                  <Typography variant="small" className="text-gray-600 text-xs">
-                                                    #{certificate.certificateNumber}
-                                                  </Typography>
-                                                )}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Projects */}
-                                    {projects.length > 0 && (
-                                      <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                        <div className={designTheme.sectionHeaderStyle}>
-                                          <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                            PROJECTS
-                                          </Typography>
-                                        </div>
-                                        <div className={designTheme.sectionContentStyle}>
-                                          <div className="space-y-4">
-                                            {projects.map((project, index) => (
-                                              <div key={index} className="border-l-4 border-red-500 pl-4">
-                                                <Typography variant="small" className="text-gray-800 font-semibold">
-                                                  {project.title}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                          {(showAllProjects ? projects : projects.slice(0, INITIAL_ITEMS_LIMIT)).map((project, index) => (
+                                            <Card key={index} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+                                              {project.projectImageFile && (
+                                                <div className="relative h-40 overflow-hidden">
+                                                  <img
+                                                    src={URL.createObjectURL(project.projectImageFile)}
+                                                    alt={project.title || "Project"}
+                                                    className="w-full h-full object-cover"
+                                                  />
+                                                </div>
+                                              )}
+                                              <CardBody className="p-4 bg-gradient-to-br from-white to-gray-50/30">
+                                                <Typography variant="h6" className="font-bold text-gray-900 mb-2 break-words text-base" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                  {project.title || "Unnamed Project"}
                                                 </Typography>
                                                 {project.description && (
-                                                  <Typography variant="small" className="text-gray-600 text-xs mt-1">
+                                                  <Typography
+                                                    variant="small"
+                                                    className="text-gray-700 mb-3 leading-relaxed break-words overflow-wrap-anywhere text-xs line-clamp-3"
+                                                    style={{ fontFamily: "'Inter', sans-serif", lineHeight: "1.6" }}
+                                                  >
                                                     {project.description}
                                                   </Typography>
                                                 )}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Awards */}
-                                    {awardsRecognitions.length > 0 && (
-                                      <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                        <div className={designTheme.sectionHeaderStyle}>
-                                          <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                            AWARDS & RECOGNITION
-                                          </Typography>
-                                        </div>
-                                        <div className={designTheme.sectionContentStyle}>
-                                          <div className="space-y-3">
-                                            {awardsRecognitions.map((award, index) => (
-                                              <div key={index}>
-                                                <Typography variant="small" className="text-gray-800 font-medium">
-                                                  {award.title}
-                                                </Typography>
-                                                {award.issuer && (
-                                                  <Typography variant="small" className="text-gray-600 text-xs">
-                                                    {award.issuer}
+                                                {project.startDate && project.endDate && (
+                                                  <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                    {new Date(project.startDate).toLocaleDateString()} -{" "}
+                                                    {new Date(project.endDate).toLocaleDateString()}
                                                   </Typography>
                                                 )}
-                                              </div>
-                                            ))}
-                                          </div>
+                                              </CardBody>
+                                            </Card>
+                                          ))}
                                         </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        }
-                        
-                        // Right Sidebar Layout (Food & Beverage)
-                        if (designTheme.layoutType === "right-sidebar") {
-                          return (
-                            <div className="flex flex-col lg:flex-row-reverse">
-                              {/* Right Sidebar */}
-                              <div className={`${designTheme.sidebarBg} text-white w-full lg:w-80 flex-shrink-0 p-8`}>
-                                {(previewAvatar && previewAvatar !== "/placeholder.svg") && (
-                                  <div className="flex justify-center mb-8">
-                                    <Avatar
-                                      src={previewAvatar}
-                                      alt={formData.fullName || "Profile"}
-                                      size="xxl"
-                                      className={`${designTheme.avatarSize} rounded-full border-4 border-white shadow-lg`}
-                                    />
-                                  </div>
-                                )}
-                                <div className="space-y-6">
-                                  {/* Contact */}
-                                  <div className="border-t border-white/30 pt-6">
-                                    <Typography variant="h6" className="text-white font-bold text-sm uppercase mb-4">
-                                      CONTACT
-                                    </Typography>
-                                    <div className="space-y-3">
-                                      {formData.phone && (
-                                        <Typography variant="small" className="text-white/90 text-sm">📞 {formData.phone}</Typography>
-                                      )}
-                                      {formData.email && (
-                                        <Typography variant="small" className="text-white/90 text-sm break-all">✉️ {formData.email}</Typography>
-                                      )}
-                                      {(formData.preferredWorkLocation || formData.website) && (
-                                        <Typography variant="small" className="text-white/90 text-sm">📍 {formData.preferredWorkLocation || formData.website}</Typography>
-                                      )}
-                                      {!formData.phone && !formData.email && !formData.preferredWorkLocation && !formData.website && (
-                                        <Typography variant="small" className="text-white/70 italic text-xs">No contact information</Typography>
-                                      )}
-                                    </div>
-                                  </div>
-                                  {/* Education */}
-                                  {(formData.trainingCenter || formData.ncLevel) && (
-                                    <div className="border-t border-white/30 pt-6">
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase mb-4">
-                                        EDUCATION
-                                      </Typography>
-                                      <div className="space-y-2">
-                                        {formData.trainingCenter && (
-                                          <Typography variant="small" className="text-white/90 text-sm">{formData.trainingCenter}</Typography>
-                                        )}
-                                        {formData.ncLevel && (
-                                          <Typography variant="small" className="text-white/90 text-sm">{formData.ncLevel}</Typography>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-                                  {/* Skills */}
-                                  <div className="border-t border-white/30 pt-6">
-                                    <Typography variant="h6" className="text-white font-bold text-sm uppercase mb-4">
-                                      SKILLS
-                                    </Typography>
-                                    {skills.length > 0 ? (
-                                      <ul className="space-y-2 list-disc list-inside">
-                                        {skills.map((skill, index) => (
-                                          <li key={index}>
-                                            <Typography variant="small" className="text-white/90 text-sm">{skill.name}</Typography>
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    ) : (
-                                      <Typography variant="small" className="text-white/70 italic text-xs">You haven't filled up details in this section.</Typography>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Left Main Content */}
-                              <div className="flex-1 bg-white p-8">
-                                <div className={`${designTheme.headerBarBg} text-white p-6 mb-6 rounded-t-2xl`}>
-                                  <Typography variant="h1" className={`${designTheme.typographySize} ${designTheme.titleWeight} text-white mb-2`}>
-                                    {formData.fullName || "Your Name"}
-                                  </Typography>
-                                  {formData.professionalTitle && (
-                                    <Typography variant="h6" className="text-white/90 text-lg font-normal">
-                                      {formData.professionalTitle}
-                                    </Typography>
-                                  )}
-                                </div>
-
-                                {/* Sections with gradient headers */}
-                                {formData.professionalSummary && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding} mb-6`}>
-                                    <div className={designTheme.sectionHeaderStyle}>
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                        PROFESSIONAL SUMMARY
-                                      </Typography>
-                                    </div>
-                                    <div className={designTheme.sectionContentStyle}>
-                                      <Typography variant="small" className="text-gray-700 leading-relaxed">
-                                        {formData.professionalSummary}
-                                      </Typography>
-                                    </div>
-                                  </div>
-                                )}
-
-                                <div className={`${designTheme.cardStyle} ${designTheme.cardPadding} mb-6`}>
-                                  <div className={designTheme.sectionHeaderStyle}>
-                                    <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                      WORK EXPERIENCE
-                                    </Typography>
-                                  </div>
-                                  <div className={designTheme.sectionContentStyle}>
-                                    {experiences.length > 0 ? (
-                                      <div className="space-y-4">
-                                        {experiences.map((exp, index) => (
-                                          <div key={index} className="border-l-4 border-green-500 pl-4">
-                                            <Typography variant="h6" className="text-gray-800 font-semibold">
-                                              {exp.jobTitle || "Position"}
-                                            </Typography>
-                                            <Typography variant="small" className="text-gray-600">
-                                              {exp.company || "Company"} {exp.duration && ` • ${exp.duration}`}
-                                            </Typography>
-                                            {exp.responsibilities && (
-                                              <Typography variant="small" className="text-gray-700 mt-2">
-                                                {exp.responsibilities}
-                                              </Typography>
-                                            )}
+                                        {projects.length > INITIAL_ITEMS_LIMIT && (
+                                          <div className="flex justify-center pt-2">
+                                            <Button
+                                              variant="text"
+                                              size="sm"
+                                              onClick={() => setShowAllProjects(!showAllProjects)}
+                                              className={`${designTheme.textColor} font-semibold`}
+                                            >
+                                              {showAllProjects ? "Show Less" : `Show All (${projects.length})`}
+                                            </Button>
                                           </div>
-                                        ))}
+                                        )}
                                       </div>
                                     ) : (
-                                      <Typography variant="small" className="text-gray-500 italic">You haven't filled up details in this section.</Typography>
+                                      <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
+                                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                          You haven't filled up details in this section.
+                                        </Typography>
+                                      </div>
                                     )}
                                   </div>
-                                </div>
 
-                                {certificates.length > 0 && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding} mb-6`}>
-                                    <div className={designTheme.sectionHeaderStyle}>
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                        CERTIFICATES
-                                      </Typography>
-                                    </div>
-                                    <div className={designTheme.sectionContentStyle}>
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {certificates.map((certificate, index) => (
-                                          <div key={index} className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
-                                            <Typography variant="small" className="text-gray-800 font-medium">
-                                              {certificate.courseName}
-                                            </Typography>
-                                            {certificate.certificateNumber && (
-                                              <Typography variant="small" className="text-gray-600 text-xs">
-                                                #{certificate.certificateNumber}
-                                              </Typography>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {projects.length > 0 && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding} mb-6`}>
-                                    <div className={designTheme.sectionHeaderStyle}>
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                        PROJECTS
-                                      </Typography>
-                                    </div>
-                                    <div className={designTheme.sectionContentStyle}>
-                                      <div className="space-y-4">
-                                        {projects.map((project, index) => (
-                                          <div key={index} className="border-l-4 border-green-500 pl-4">
-                                            <Typography variant="small" className="text-gray-800 font-semibold">
-                                              {project.title}
-                                            </Typography>
-                                            {project.description && (
-                                              <Typography variant="small" className="text-gray-600 text-xs mt-1">
-                                                {project.description}
-                                              </Typography>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {awardsRecognitions.length > 0 && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding} mb-6`}>
-                                    <div className={designTheme.sectionHeaderStyle}>
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                        AWARDS & RECOGNITION
-                                      </Typography>
-                                    </div>
-                                    <div className={designTheme.sectionContentStyle}>
+                                      {/* Awards & Recognition */}
+                                      <div>
+                                        <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl mb-6`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
+                                          Awards & Recognition
+                                        </Typography>
+                                    {awardsRecognitions.length > 0 ? (
                                       <div className="space-y-3">
-                                        {awardsRecognitions.map((award, index) => (
-                                          <div key={index}>
-                                            <Typography variant="small" className="text-gray-800 font-medium">
-                                              {award.title}
-                                            </Typography>
-                                            {award.issuer && (
-                                              <Typography variant="small" className="text-gray-600 text-xs">
-                                                {award.issuer}
-                                              </Typography>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {continuingEducations.length > 0 && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding} mb-6`}>
-                                    <div className={designTheme.sectionHeaderStyle}>
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                        CONTINUING EDUCATION
-                                      </Typography>
-                                    </div>
-                                    <div className={designTheme.sectionContentStyle}>
-                                      <div className="space-y-3">
-                                        {continuingEducations.map((edu, index) => (
-                                          <div key={index}>
-                                            <Typography variant="small" className="text-gray-800 font-medium">
-                                              {edu.courseName}
-                                            </Typography>
-                                            {edu.institution && (
-                                              <Typography variant="small" className="text-gray-600 text-xs">
-                                                {edu.institution}
-                                              </Typography>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {professionalMemberships.length > 0 && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding} mb-6`}>
-                                    <div className={designTheme.sectionHeaderStyle}>
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                        PROFESSIONAL MEMBERSHIPS
-                                      </Typography>
-                                    </div>
-                                    <div className={designTheme.sectionContentStyle}>
-                                      <div className="space-y-3">
-                                        {professionalMemberships.map((mem, index) => (
-                                          <div key={index}>
-                                            <Typography variant="small" className="text-gray-800 font-medium">
-                                              {mem.organization}
-                                            </Typography>
-                                            {mem.membershipType && (
-                                              <Typography variant="small" className="text-gray-600 text-xs">
-                                                {mem.membershipType}
-                                              </Typography>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {references.length > 0 && (
-                                  <div className={`${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                    <div className={designTheme.sectionHeaderStyle}>
-                                      <Typography variant="h6" className="text-white font-bold text-sm uppercase">
-                                        REFERENCES
-                                      </Typography>
-                                    </div>
-                                    <div className={designTheme.sectionContentStyle}>
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {references.map((ref, index) => (
-                                          <div key={index} className="border-2 border-green-200 rounded-lg p-3 bg-green-50">
-                                            <Typography variant="small" className="text-gray-800 font-medium">
-                                              {ref.name}
-                                            </Typography>
-                                            {ref.position && (
-                                              <Typography variant="small" className="text-gray-600 text-xs">
-                                                {ref.position}
-                                              </Typography>
-                                            )}
-                                            {ref.company && (
-                                              <Typography variant="small" className="text-gray-600 text-xs">
-                                                {ref.company}
-                                              </Typography>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        }
-                        
-                        // Housekeeping Layout: Top header + Left sidebar + Right content
-                        if (designTheme.layoutType === "housekeeping-layout") {
-                          return (
-                            <div>
-                              {/* Top Header - Full Width Dark Gray */}
-                              <div className={`${designTheme.headerBg} text-white p-8 ${designTheme.headerFlexDirection} ${designTheme.headerTextAlign}`}>
-                                <Typography variant="h1" className={`${designTheme.typographySize} ${designTheme.titleWeight} text-white uppercase tracking-wide mb-2`}>
-                                  {formData.fullName || "Your Name"}
-                                </Typography>
-                                {formData.professionalTitle && (
-                                  <Typography variant="h6" className="text-white text-lg font-normal uppercase tracking-wide">
-                                    {formData.professionalTitle}
-                                  </Typography>
-                                )}
-                              </div>
-
-                              {/* Main Content: Left Sidebar + Right Content */}
-                              <div className="flex flex-col lg:flex-row">
-                                {/* Left Sidebar - Light Gray Background */}
-                                <div className={`${designTheme.sidebarBg} w-full lg:w-80 flex-shrink-0 p-8 border-r border-gray-400`}>
-                                  {/* Contact Section */}
-                                  <div className="mb-6">
-                                    <Typography variant="h6" className={`${designTheme.sidebarTextColor} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                                      CONTACT
-                                    </Typography>
-                                    <div className="space-y-3 mt-3">
-                                      {formData.phone && (
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-gray-700">📞</span>
-                                          <Typography variant="small" className={`${designTheme.sidebarTextColor} text-sm`}>
-                                            {formData.phone}
-                                          </Typography>
-                                        </div>
-                                      )}
-                                      {formData.email && (
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-gray-700">✉️</span>
-                                          <Typography variant="small" className={`${designTheme.sidebarTextColor} text-sm break-all`}>
-                                            {formData.email}
-                                          </Typography>
-                                        </div>
-                                      )}
-                                      {(formData.preferredWorkLocation || formData.website) && (
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-gray-700">📍</span>
-                                          <Typography variant="small" className={`${designTheme.sidebarTextColor} text-sm`}>
-                                            {formData.preferredWorkLocation || formData.website}
-                                          </Typography>
-                                        </div>
-                                      )}
-                                      {!formData.phone && !formData.email && !formData.preferredWorkLocation && !formData.website && (
-                                        <Typography variant="small" className={`${designTheme.sidebarTextColor} italic text-xs`}>
-                                          No contact information
-                                        </Typography>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Education Section */}
-                                  {(formData.trainingCenter || formData.ncLevel) && (
-                                    <div className="mb-6">
-                                      <Typography variant="h6" className={`${designTheme.sidebarTextColor} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                                        EDUCATION
-                                      </Typography>
-                                      <div className="space-y-2 mt-3">
-                                        {formData.trainingCenter && (
-                                          <Typography variant="small" className={`${designTheme.sidebarTextColor} text-sm font-semibold`}>
-                                            {formData.trainingCenter}
-                                          </Typography>
-                                        )}
-                                        {formData.ncLevel && (
-                                          <Typography variant="small" className={`${designTheme.sidebarTextColor} text-sm`}>
-                                            • {formData.ncLevel}
-                                          </Typography>
-                                        )}
-                                        {formData.scholarshipType && (
-                                          <Typography variant="small" className={`${designTheme.sidebarTextColor} text-sm`}>
-                                            • {formData.scholarshipType}
-                                          </Typography>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Skills Section */}
-                                  <div className="mb-6">
-                                    <Typography variant="h6" className={`${designTheme.sidebarTextColor} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                                      SKILLS
-                                    </Typography>
-                                    <div className="mt-3">
-                                      {skills.length > 0 ? (
-                                        <ul className="space-y-1 list-disc list-inside">
-                                          {skills.map((skill, index) => (
-                                            <li key={index}>
-                                              <Typography variant="small" className={`${designTheme.sidebarTextColor} text-sm`}>
-                                                {skill.name}
-                                              </Typography>
-                                            </li>
-                                          ))}
-                                        </ul>
-                                      ) : (
-                                        <Typography variant="small" className={`${designTheme.sidebarTextColor} italic text-xs`}>
-                                          You haven't filled up details in this section.
-                                        </Typography>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* TESDA Information */}
-                                  {(formData.trainingDuration || formData.tesdaRegistrationNumber) && (
-                                    <div>
-                                      <Typography variant="h6" className={`${designTheme.sidebarTextColor} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                                        TESDA
-                                      </Typography>
-                                      <div className="space-y-2 mt-3">
-                                        {formData.trainingDuration && (
-                                          <Typography variant="small" className={`${designTheme.sidebarTextColor} text-sm`}>
-                                            • Duration: {formData.trainingDuration}
-                                          </Typography>
-                                        )}
-                                        {formData.tesdaRegistrationNumber && (
-                                          <Typography variant="small" className={`${designTheme.sidebarTextColor} text-sm`}>
-                                            • Reg. #: {formData.tesdaRegistrationNumber}
-                                          </Typography>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Right Main Content - White Background */}
-                                <div className="flex-1 bg-white p-8">
-                                  {/* Professional Summary */}
-                                  {formData.professionalSummary && (
-                                    <div className="mb-8">
-                                      <Typography variant="h6" className={`${designTheme.mainTextColor} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                                        PROFESSIONAL SUMMARY
-                                      </Typography>
-                                      <div className="mt-3">
-                                        <Typography variant="small" className={`${designTheme.mainTextColor} leading-relaxed`}>
-                                          {formData.professionalSummary}
-                                        </Typography>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Work Experience */}
-                                  <div className="mb-8">
-                                    <Typography variant="h6" className={`${designTheme.mainTextColor} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                                      WORK EXPERIENCE
-                                    </Typography>
-                                    <div className="mt-3">
-                                      {experiences.length > 0 ? (
-                                        <div className="space-y-6">
-                                          {experiences.map((exp, index) => (
-                                            <div key={index} className="mb-4">
-                                              <div className="flex justify-between items-start mb-2">
-                                                <div>
-                                                  <Typography variant="small" className={`${designTheme.mainTextColor} font-semibold`}>
-                                                    {exp.company || "Company"}
-                                                  </Typography>
-                                                  <Typography variant="small" className={`${designTheme.mainTextColor}`}>
-                                                    {exp.jobTitle || "Position"}
-                                                  </Typography>
-                                                </div>
-                                                {exp.duration && (
-                                                  <Typography variant="small" className={`${designTheme.mainTextColor} text-right`}>
-                                                    {exp.duration}
-                                                  </Typography>
-                                                )}
-                                              </div>
-                                              {exp.responsibilities && (
-                                                <ul className="list-disc list-inside mt-2">
-                                                  <li>
-                                                    <Typography variant="small" className={`${designTheme.mainTextColor}`}>
-                                                      {exp.responsibilities}
-                                                    </Typography>
-                                                  </li>
-                                                </ul>
-                                              )}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      ) : (
-                                        <Typography variant="small" className={`${designTheme.mainTextColor} italic`}>
-                                          You haven't filled up details in this section.
-                                        </Typography>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Certificates */}
-                                  {certificates.length > 0 && (
-                                    <div className="mb-8">
-                                      <Typography variant="h6" className={`${designTheme.mainTextColor} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                                        CERTIFICATES
-                                      </Typography>
-                                      <div className="mt-3">
-                                        <div className="space-y-3">
-                                          {certificates.map((certificate, index) => (
-                                            <div key={index}>
-                                              <Typography variant="small" className={`${designTheme.mainTextColor} font-medium`}>
-                                                {certificate.courseName}
-                                              </Typography>
-                                              {certificate.certificateNumber && (
-                                                <Typography variant="small" className={`${designTheme.mainTextColor} text-xs`}>
-                                                  #{certificate.certificateNumber}
-                                                </Typography>
-                                              )}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Projects */}
-                                  {projects.length > 0 && (
-                                    <div className="mb-8">
-                                      <Typography variant="h6" className={`${designTheme.mainTextColor} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                                        PROJECTS
-                                      </Typography>
-                                      <div className="mt-3">
-                                        <div className="space-y-4">
-                                          {projects.map((project, index) => (
-                                            <div key={index}>
-                                              <Typography variant="small" className={`${designTheme.mainTextColor} font-semibold`}>
-                                                {project.title}
-                                              </Typography>
-                                              {project.description && (
-                                                <Typography variant="small" className={`${designTheme.mainTextColor} text-xs mt-1`}>
-                                                  {project.description}
-                                                </Typography>
-                                              )}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Awards */}
-                                  {awardsRecognitions.length > 0 && (
-                                    <div className="mb-8">
-                                      <Typography variant="h6" className={`${designTheme.mainTextColor} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                                        AWARDS & RECOGNITION
-                                      </Typography>
-                                      <div className="mt-3">
-                                        <div className="space-y-3">
-                                          {awardsRecognitions.map((award, index) => (
-                                            <div key={index}>
-                                              <Typography variant="small" className={`${designTheme.mainTextColor} font-medium`}>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                          {(showAllAwards ? awardsRecognitions : awardsRecognitions.slice(0, INITIAL_ITEMS_LIMIT)).map((award, index) => (
+                                            <div key={index} className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow duration-300">
+                                              <Typography variant="h6" className="font-bold text-gray-900 mb-2 text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
                                                 {award.title}
                                               </Typography>
                                               {award.issuer && (
-                                                <Typography variant="small" className={`${designTheme.mainTextColor} text-xs`}>
+                                                <Typography variant="small" className="text-gray-700 font-medium mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
                                                   {award.issuer}
                                                 </Typography>
                                               )}
+                                              {award.dateReceived && (
+                                                <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                  {award.dateReceived}
+                                                </Typography>
+                                              )}
                                             </div>
                                           ))}
                                         </div>
+                                        {awardsRecognitions.length > INITIAL_ITEMS_LIMIT && (
+                                          <div className="flex justify-center pt-2">
+                                            <Button
+                                              variant="text"
+                                              size="sm"
+                                              onClick={() => setShowAllAwards(!showAllAwards)}
+                                              className={`${designTheme.textColor} font-semibold`}
+                                            >
+                                              {showAllAwards ? "Show Less" : `Show All (${awardsRecognitions.length})`}
+                                            </Button>
+                                          </div>
+                                        )}
                                       </div>
-                                    </div>
-                                  )}
+                                    ) : (
+                                      <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
+                                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                          You haven't filled up details in this section.
+                                        </Typography>
+                                      </div>
+                                    )}
+                                  </div>
 
-                                  {/* Continuing Education */}
-                                  {continuingEducations.length > 0 && (
-                                    <div className="mb-8">
-                                      <Typography variant="h6" className={`${designTheme.mainTextColor} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                                        CONTINUING EDUCATION
-                                      </Typography>
-                                      <div className="mt-3">
+                                  {/* Education & Memberships */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                      {/* Continuing Education */}
+                                      <div>
+                                        <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-xl md:text-2xl mb-5`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
+                                          Continuing Education
+                                        </Typography>
+                                      {continuingEducations.length > 0 ? (
                                         <div className="space-y-3">
-                                          {continuingEducations.map((edu, index) => (
-                                            <div key={index}>
-                                              <Typography variant="small" className={`${designTheme.mainTextColor} font-medium`}>
+                                          {(showAllEducation ? continuingEducations : continuingEducations.slice(0, INITIAL_ITEMS_LIMIT)).map((edu, index) => (
+                                            <div key={index} className={`border-l-4 border-gray-600 pl-4 py-2 bg-gradient-to-r from-gray-50/50 to-transparent rounded-r-lg`}>
+                                              <Typography variant="small" className="font-bold text-gray-900 mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
                                                 {edu.courseName}
                                               </Typography>
                                               {edu.institution && (
-                                                <Typography variant="small" className={`${designTheme.mainTextColor} text-xs`}>
+                                                <Typography variant="small" className="text-gray-700 font-medium mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
                                                   {edu.institution}
                                                 </Typography>
                                               )}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Professional Memberships */}
-                                  {professionalMemberships.length > 0 && (
-                                    <div className="mb-8">
-                                      <Typography variant="h6" className={`${designTheme.mainTextColor} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                                        PROFESSIONAL MEMBERSHIPS
-                                      </Typography>
-                                      <div className="mt-3">
-                                        <div className="space-y-3">
-                                          {professionalMemberships.map((mem, index) => (
-                                            <div key={index}>
-                                              <Typography variant="small" className={`${designTheme.mainTextColor} font-medium`}>
-                                                {mem.organization}
-                                              </Typography>
-                                              {mem.membershipType && (
-                                                <Typography variant="small" className={`${designTheme.mainTextColor} text-xs`}>
-                                                  {mem.membershipType}
+                                              {edu.completionDate && (
+                                                <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                  {edu.completionDate}
                                                 </Typography>
                                               )}
                                             </div>
                                           ))}
+                                          {continuingEducations.length > INITIAL_ITEMS_LIMIT && (
+                                            <div className="flex justify-center pt-2">
+                                              <Button
+                                                variant="text"
+                                                size="sm"
+                                                onClick={() => setShowAllEducation(!showAllEducation)}
+                                                className={`${designTheme.textColor} font-semibold text-xs`}
+                                              >
+                                                {showAllEducation ? "Show Less" : `Show All (${continuingEducations.length})`}
+                                              </Button>
+                                            </div>
+                                          )}
                                         </div>
-                                      </div>
+                                      ) : (
+                                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                          You haven't filled up details in this section.
+                                        </Typography>
+                                      )}
                                     </div>
-                                  )}
 
-                                  {/* References */}
-                                  {references.length > 0 && (
-                                    <div>
-                                      <Typography variant="h6" className={`${designTheme.mainTextColor} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                                        REFERENCES
-                                      </Typography>
-                                      <div className="mt-3">
+                                      {/* Professional Memberships */}
+                                      <div>
+                                        <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-xl md:text-2xl mb-5`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
+                                          Professional Memberships
+                                        </Typography>
+                                      {professionalMemberships.length > 0 ? (
                                         <div className="space-y-3">
-                                          {references.map((ref, index) => (
-                                            <div key={index}>
-                                              <Typography variant="small" className={`${designTheme.mainTextColor} font-medium`}>
+                                          {(showAllMemberships ? professionalMemberships : professionalMemberships.slice(0, INITIAL_ITEMS_LIMIT)).map((mem, index) => (
+                                            <div key={index} className={`border-l-4 border-gray-600 pl-4 py-2 bg-gradient-to-r from-gray-50/50 to-transparent rounded-r-lg`}>
+                                              <Typography variant="small" className="font-bold text-gray-900 mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                {mem.organization}
+                                              </Typography>
+                                              {mem.membershipType && (
+                                                <Typography variant="small" className="text-gray-700 font-medium mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                  {mem.membershipType}
+                                                </Typography>
+                                              )}
+                                              {mem.startDate && (
+                                                <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                  Since {mem.startDate}
+                                                </Typography>
+                                              )}
+                                            </div>
+                                          ))}
+                                          {professionalMemberships.length > INITIAL_ITEMS_LIMIT && (
+                                            <div className="flex justify-center pt-2">
+                                              <Button
+                                                variant="text"
+                                                size="sm"
+                                                onClick={() => setShowAllMemberships(!showAllMemberships)}
+                                                className={`${designTheme.textColor} font-semibold text-xs`}
+                                              >
+                                                {showAllMemberships ? "Show Less" : `Show All (${professionalMemberships.length})`}
+                                              </Button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                          You haven't filled up details in this section.
+                                        </Typography>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                      {/* References */}
+                                      <div>
+                                        <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl mb-6`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
+                                          References
+                                        </Typography>
+                                    {references.length > 0 ? (
+                                      <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                          {(showAllReferences ? references : references.slice(0, INITIAL_ITEMS_LIMIT)).map((ref, index) => (
+                                            <div key={index} className="bg-gradient-to-br from-white to-gray-50/30 border-2 border-gray-300 rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow duration-300">
+                                              <Typography variant="h6" className="font-bold text-gray-900 mb-2 break-words text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
                                                 {ref.name}
                                               </Typography>
                                               {ref.position && (
-                                                <Typography variant="small" className={`${designTheme.mainTextColor} text-xs`}>
+                                                <Typography variant="small" className="text-gray-700 font-medium mb-1 break-words text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
                                                   {ref.position}
                                                 </Typography>
                                               )}
                                               {ref.company && (
-                                                <Typography variant="small" className={`${designTheme.mainTextColor} text-xs`}>
+                                                <Typography variant="small" className={`${designTheme.textColor} mb-2 break-words font-semibold text-xs`} style={{ fontFamily: "'Inter', sans-serif" }}>
                                                   {ref.company}
+                                                </Typography>
+                                              )}
+                                              <div className="space-y-1">
+                                                {ref.email && (
+                                                  <Typography variant="small" className="text-gray-600 break-all font-medium text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                    {ref.email}
+                                                  </Typography>
+                                                )}
+                                                {ref.contact && (
+                                                  <Typography variant="small" className="text-gray-600 break-words font-medium text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                                    {ref.contact}
+                                                  </Typography>
+                                                )}
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                        {references.length > INITIAL_ITEMS_LIMIT && (
+                                          <div className="flex justify-center pt-2">
+                                            <Button
+                                              variant="text"
+                                              size="sm"
+                                              onClick={() => setShowAllReferences(!showAllReferences)}
+                                              className={`${designTheme.textColor} font-semibold`}
+                                            >
+                                              {showAllReferences ? "Show Less" : `Show All (${references.length})`}
+                                            </Button>
+                                          </div>
+                                        )}
+                                      </div>
+                                      ) : (
+                                        <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
+                                          <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                            You haven't filled up details in this section.
+                                          </Typography>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              </div>
+                            ) : formData.designTemplate === "bartending-barista" ? (
+                              /* Tourism - Modern Centered Layout with Grayscale Theme */
+                              <div className="bg-white min-h-screen" style={{ fontFamily: "'Montserrat', 'Roboto', 'Inter', sans-serif" }}>
+                                {/* Header Section - Clean Modern Résumé Style */}
+                                <div className="relative bg-white pt-16 pb-16 md:pt-20 md:pb-20 px-6 md:px-12 lg:px-16 border-b-2 border-gray-200">
+                                  <div className="max-w-7xl mx-auto">
+                                    {/* Centered Layout */}
+                                    <div className="flex flex-col items-center text-center space-y-6 md:space-y-8">
+                                      {/* Profile Photo - Centered */}
+                                      <div className="flex-shrink-0 pt-4 md:pt-6 lg:pt-8">
+                                        <div className="relative">
+                                          <Avatar
+                                            src={previewAvatar || "/placeholder.svg"}
+                                            alt={formData.fullName || "Profile"}
+                                            size="xxl"
+                                            className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-none border-2 border-black shadow-lg"
+                                            style={{ filter: 'grayscale(100%)' }}
+                                          />
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Name - Large Bold Red, Centered */}
+                                      <div>
+                                        <Typography
+                                          variant="h1"
+                                          className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-red-600 tracking-tight leading-none"
+                                          style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 900, letterSpacing: "-0.02em" }}
+                                        >
+                                          {formData.fullName || "Your Name"}
+                                        </Typography>
+                                      </div>
+                                      
+                                      {/* Professional Title - Black Text, Centered */}
+                                      {formData.professionalTitle && (
+                                        <div>
+                                          <Typography
+                                            variant="h5"
+                                            className="text-xl md:text-2xl text-black font-medium tracking-normal"
+                                            style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 500 }}
+                                          >
+                                            {formData.professionalTitle}
+                                          </Typography>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Professional Summary - Black Body Text, Centered */}
+                                      <div className="max-w-3xl mx-auto px-4">
+                                        {formData.professionalSummary ? (
+                                          <Typography
+                                            variant="lead"
+                                            className="text-black leading-relaxed text-base md:text-lg break-words overflow-wrap-anywhere text-center"
+                                            style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.7", fontWeight: 400, wordWrap: "break-word", overflowWrap: "break-word" }}
+                                          >
+                                            {formData.professionalSummary}
+                                          </Typography>
+                                        ) : (
+                                          <Typography
+                                            variant="lead"
+                                            className="text-gray-500 leading-relaxed text-base md:text-lg italic text-center break-words overflow-wrap-anywhere"
+                                            style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.7", fontWeight: 400, wordWrap: "break-word", overflowWrap: "break-word" }}
+                                          >
+                                            You haven't filled up details in this section.
+                                          </Typography>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Main Content Section */}
+                                <div className="bg-white py-12 px-6">
+                                  <div className="max-w-6xl mx-auto space-y-12">
+                                    
+                                    {/* Contact & TESDA Info - Side by Side */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                      {/* Contact Information */}
+                                      <div className="bg-white p-6 border-l-4 border-red-600">
+                                        <Typography variant="h5" className="font-bold text-red-600 text-lg uppercase tracking-wide mb-4" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                                          Contact
+                                        </Typography>
+                                        {(formData.email || formData.phone || formData.website) ? (
+                                          <div className="space-y-3">
+                                            {formData.email && (
+                                              <div>
+                                                <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                                                  Email
+                                                </Typography>
+                                                <Typography variant="small" className="text-black break-all text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                  {formData.email}
+                                                </Typography>
+                                              </div>
+                                            )}
+                                            {formData.phone && (
+                                              <div>
+                                                <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                                                  Phone
+                                                </Typography>
+                                                <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                  {formData.phone}
+                                                </Typography>
+                                              </div>
+                                            )}
+                                            {formData.website && (
+                                              <div>
+                                                <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                                                  Website
+                                                </Typography>
+                                                <Typography variant="small" className="text-black break-all text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                  {formData.website}
+                                                </Typography>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                            You haven't filled up details in this section.
+                                          </Typography>
+                                        )}
+                                      </div>
+
+                                      {/* TESDA Information */}
+                                      <div className="bg-white p-6 border-l-4 border-red-600">
+                                        <Typography variant="h5" className="font-bold text-red-600 text-lg uppercase tracking-wide mb-4" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                                          TESDA Information
+                                        </Typography>
+                                        {(formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration || formData.tesdaRegistrationNumber) ? (
+                                          <div className="space-y-3">
+                                            {formData.ncLevel && (
+                                              <div>
+                                                <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                                                  NC Level
+                                                </Typography>
+                                                <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                  {formData.ncLevel}
+                                                </Typography>
+                                              </div>
+                                            )}
+                                            {formData.trainingCenter && (
+                                              <div>
+                                                <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                                                  Training Center
+                                                </Typography>
+                                                <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                  {formData.trainingCenter}
+                                                </Typography>
+                                              </div>
+                                            )}
+                                            {formData.scholarshipType && (
+                                              <div>
+                                                <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                                                  Scholarship Type
+                                                </Typography>
+                                                <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                  {formData.scholarshipType}
+                                                </Typography>
+                                              </div>
+                                            )}
+                                            {formData.trainingDuration && (
+                                              <div>
+                                                <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                                                  Training Duration
+                                                </Typography>
+                                                <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                  {formData.trainingDuration}
+                                                </Typography>
+                                              </div>
+                                            )}
+                                            {formData.tesdaRegistrationNumber && (
+                                              <div>
+                                                <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                                                  Registration Number
+                                                </Typography>
+                                                <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                  {formData.tesdaRegistrationNumber}
+                                                </Typography>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                            You haven't filled up details in this section.
+                                          </Typography>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Skills */}
+                                    <div>
+                                      <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide mb-6 text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                                        Skills
+                                      </Typography>
+                                      {skills.length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          {skills.map((skill, index) => (
+                                            <div key={index} className="flex items-center gap-3 py-2 border-b border-gray-200">
+                                              <Typography variant="small" className="font-bold text-black text-base uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600, minWidth: '80px' }}>
+                                                {skill.type || "TECHNICAL"}
+                                              </Typography>
+                                              <Typography variant="small" className="text-black text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                {skill.name}
+                                              </Typography>
+                                              {skill.proficiencyLevel && (
+                                                <Typography variant="small" className="text-gray-600 text-sm ml-auto" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                                  {skill.proficiencyLevel}
                                                 </Typography>
                                               )}
                                             </div>
                                           ))}
                                         </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        }
-                        
-                        // Default: Left Sidebar Layout (Bartending, Default)
-                        return (
-                          <div className="flex flex-col lg:flex-row">
-                            {/* Left Sidebar - Dark Background */}
-                            <div className={`${designTheme.sidebarBg} text-white w-full lg:w-80 flex-shrink-0 p-8`}>
-                              {/* Profile Picture */}
-                              {(previewAvatar && previewAvatar !== "/placeholder.svg") && (
-                                <div className="flex justify-center mb-8">
-                                  <Avatar
-                                    src={previewAvatar}
-                                    alt={formData.fullName || "Profile"}
-                                    size="xxl"
-                                    className="w-32 h-32 rounded-full border-4 border-white shadow-lg"
-                                  />
-                                </div>
-                              )}
-
-                              {/* Contact Section */}
-                              <div className="mb-6">
-                                <div className="border-t border-white/30 pt-6">
-                                  <Typography variant="h6" className="text-white font-bold text-sm uppercase mb-4">
-                                    CONTACT
-                                  </Typography>
-                                  <div className="space-y-3">
-                                    {formData.phone ? (
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-sm">📞</span>
-                                        <Typography variant="small" className="text-white/90 text-sm">
-                                          {formData.phone}
-                                        </Typography>
-                                      </div>
-                                    ) : (
-                                      <Typography variant="small" className="text-white/70 italic text-xs">
-                                        No phone number
-                                      </Typography>
-                                    )}
-                                    {formData.email ? (
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-sm">✉️</span>
-                                        <Typography variant="small" className="text-white/90 text-sm break-all">
-                                          {formData.email}
-                                        </Typography>
-                                      </div>
-                                    ) : (
-                                      <Typography variant="small" className="text-white/70 italic text-xs">
-                                        No email address
-                                      </Typography>
-                                    )}
-                                    {(formData.preferredWorkLocation || formData.website) && (
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-sm">📍</span>
-                                        <Typography variant="small" className="text-white/90 text-sm">
-                                          {formData.preferredWorkLocation || formData.website}
-                                        </Typography>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Education Section */}
-                              {(formData.trainingCenter || formData.ncLevel) && (
-                                <div className="mb-6">
-                                  <div className="border-t border-white/30 pt-6">
-                                    <Typography variant="h6" className="text-white font-bold text-sm uppercase mb-4">
-                                      EDUCATION
-                                    </Typography>
-                                    <div className="space-y-2">
-                                      {formData.trainingCenter && (
-                                        <Typography variant="small" className="text-white/90 text-sm">
-                                          {formData.trainingCenter}
-                                        </Typography>
-                                      )}
-                                      {formData.ncLevel && (
-                                        <Typography variant="small" className="text-white/90 text-sm">
-                                          {formData.ncLevel}
-                                        </Typography>
-                                      )}
-                                      {formData.scholarshipType && (
-                                        <Typography variant="small" className="text-white/70 text-xs">
-                                          {formData.scholarshipType}
-                                        </Typography>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Skills Section */}
-                              <div className="mb-6">
-                                <div className="border-t border-white/30 pt-6">
-                                  <Typography variant="h6" className="text-white font-bold text-sm uppercase mb-4">
-                                    SKILLS
-                                  </Typography>
-                                  {skills.length > 0 ? (
-                                    <ul className="space-y-2 list-disc list-inside">
-                                      {skills.map((skill, index) => (
-                                        <li key={index}>
-                                          <Typography variant="small" className="text-white/90 text-sm">
-                                            {skill.name}
+                                      ) : (
+                                        <div className="bg-white p-6 border-l-4 border-gray-300">
+                                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                            You haven't filled up details in this section.
                                           </Typography>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  ) : (
-                                    <Typography variant="small" className="text-white/70 italic text-xs">
-                                      You haven't filled up details in this section.
-                                    </Typography>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* TESDA Information */}
-                              {(formData.trainingDuration || formData.tesdaRegistrationNumber) && (
-                                <div>
-                                  <div className="border-t border-white/30 pt-6">
-                                    <Typography variant="h6" className="text-white font-bold text-sm uppercase mb-4">
-                                      TESDA
-                                    </Typography>
-                                    <div className="space-y-2">
-                                      {formData.trainingDuration && (
-                                        <Typography variant="small" className="text-white/90 text-sm">
-                                          Duration: {formData.trainingDuration}
-                                        </Typography>
-                                      )}
-                                      {formData.tesdaRegistrationNumber && (
-                                        <Typography variant="small" className="text-white/90 text-sm">
-                                          Reg. #: {formData.tesdaRegistrationNumber}
-                                        </Typography>
+                                        </div>
                                       )}
                                     </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
 
-                            {/* Right Main Content - White Background */}
-                            <div className="flex-1 bg-white p-8">
-                              {/* Name and Title Header Bar */}
-                              {formData.designTemplate === "bartending-barista" ? (
-                                <div className="mb-6">
-                                  <div className="flex justify-between items-center mb-4">
-                                    <Typography variant="h1" className="text-gray-800 text-3xl font-bold">
-                                      {formData.fullName || "Your Name"}
-                                    </Typography>
-                                  </div>
-                                  {formData.professionalTitle && (
-                                    <Typography variant="h6" className="text-gray-600 text-lg font-normal">
-                                      {formData.professionalTitle}
-                                    </Typography>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className={`${designTheme.headerBarBg} text-white p-6 mb-6`}>
-                                  <Typography variant="h1" className="text-white text-3xl font-bold mb-2">
-                                    {formData.fullName || "Your Name"}
-                                  </Typography>
-                                  {formData.professionalTitle && (
-                                    <Typography variant="h6" className="text-white/90 text-lg font-normal">
-                                      {formData.professionalTitle}
-                                    </Typography>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Professional Summary */}
-                              {formData.professionalSummary && (
-                                <div className="mb-8">
-                                  {formData.designTemplate === "bartending-barista" ? (
-                                    <>
-                                      <Typography variant="h6" className="text-gray-800 font-bold text-sm uppercase mb-2">
-                                        PROFESSIONAL SUMMARY
+                                    {/* Certificates */}
+                                    <div>
+                                      <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide mb-6 text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                                        Certificates
                                       </Typography>
-                                      <div className="border-t border-gray-300 mb-4"></div>
-                                      <Typography variant="small" className="text-gray-700 leading-relaxed">
-                                        {formData.professionalSummary}
-                                      </Typography>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Typography variant="h6" className={`${designTheme.headerBarBg} text-white font-bold text-sm uppercase mb-0 py-3 px-4`}>
-                                        PROFESSIONAL SUMMARY
-                                      </Typography>
-                                      <div className="border-t-2 border-gray-300 pt-4 bg-white">
-                                        <Typography variant="small" className="text-gray-700 leading-relaxed">
-                                          {formData.professionalSummary}
-                                        </Typography>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Work Experience */}
-                              <div className="mb-8">
-                                {formData.designTemplate === "bartending-barista" ? (
-                                  <>
-                                    <Typography variant="h6" className="text-gray-800 font-bold text-sm uppercase mb-2">
-                                      CAREER HISTORY
-                                    </Typography>
-                                    <div className="border-t border-gray-300 mb-4"></div>
-                                  </>
-                                ) : (
-                                  <Typography variant="h6" className={`${designTheme.headerBarBg} text-white font-bold text-sm uppercase mb-0 py-3 px-4`}>
-                                    WORK EXPERIENCE
-                                  </Typography>
-                                )}
-                                <div className={formData.designTemplate === "bartending-barista" ? "bg-white" : "border-t-2 border-gray-300 pt-4 bg-white"}>
-                                  {experiences.length > 0 ? (
-                                    <div className="space-y-6">
-                                      {experiences.map((exp, index) => (
-                                        <div key={index} className="mb-4">
-                                          <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                              <Typography variant="h6" className="text-gray-800 font-semibold">
-                                                {exp.jobTitle || "Position"}
+                                      {certificates.length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          {(showAllCertificates ? certificates : certificates.slice(0, INITIAL_ITEMS_LIMIT)).map((certificate, index) => (
+                                            <div key={index} className="pb-3 border-b border-gray-200">
+                                              <Typography variant="h6" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                                {certificate.courseName}
                                               </Typography>
-                                              <Typography variant="small" className="text-gray-600">
-                                                {exp.company || "Company"}
-                                              </Typography>
+                                              {certificate.certificateNumber && (
+                                                <Typography variant="small" className="text-black font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                  #{certificate.certificateNumber}
+                                                </Typography>
+                                              )}
+                                              {certificate.issueDate && (
+                                                <Typography variant="small" className="text-gray-600 text-sm mt-1" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                                  {new Date(certificate.issueDate).toLocaleDateString()}
+                                                </Typography>
+                                              )}
                                             </div>
-                                            {exp.duration && (
-                                              <Typography variant="small" className="text-gray-500 text-right">
-                                                {exp.duration}
+                                          ))}
+                                          {certificates.length > INITIAL_ITEMS_LIMIT && (
+                                            <div className="flex justify-left pt-2">
+                                              <Button
+                                                variant="text"
+                                                size="sm"
+                                                onClick={() => setShowAllCertificates(!showAllCertificates)}
+                                                className="text-black font-medium hover:text-red-600"
+                                                style={{ fontFamily: "'Open Sauce', sans-serif" }}
+                                              >
+                                                {showAllCertificates ? "Show Less" : `Show All (${certificates.length})`}
+                                              </Button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div className="bg-white p-6 border-l-4 border-gray-300">
+                                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                            You haven't filled up details in this section.
+                                          </Typography>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Experience */}
+                                    <div>
+                                      <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide mb-6 text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                                        Experience
+                                      </Typography>
+                                      {experiences.length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          {(showAllExperiences ? experiences : experiences.slice(0, INITIAL_ITEMS_LIMIT)).map((exp, index) => (
+                                            <div key={index} className="pb-3 border-b border-gray-200">
+                                              <Typography variant="h6" className="font-bold text-black mb-1 text-lg" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                                {exp.jobTitle}
                                               </Typography>
-                                            )}
-                                          </div>
-                                          {exp.responsibilities && (
-                                            <ul className="list-disc list-inside mt-2">
-                                              <li>
-                                                <Typography variant="small" className="text-gray-700">
+                                              {exp.company && (
+                                                <Typography variant="small" className="text-black font-medium mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 500 }}>
+                                                  {exp.company}
+                                                </Typography>
+                                              )}
+                                              {exp.duration && (
+                                                <Typography variant="small" className="text-gray-600 text-sm mb-2" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                                  {exp.duration}
+                                                </Typography>
+                                              )}
+                                              {exp.responsibilities && (
+                                                <Typography
+                                                  variant="small"
+                                                  className="text-black leading-relaxed text-base"
+                                                  style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.7", fontWeight: 400 }}
+                                                >
                                                   {exp.responsibilities}
                                                 </Typography>
-                                              </li>
-                                            </ul>
+                                              )}
+                                            </div>
+                                          ))}
+                                          {experiences.length > INITIAL_ITEMS_LIMIT && (
+                                            <div className="flex justify-left pt-2">
+                                              <Button
+                                                variant="text"
+                                                size="sm"
+                                                onClick={() => setShowAllExperiences(!showAllExperiences)}
+                                                className="text-black font-medium hover:text-red-600"
+                                                style={{ fontFamily: "'Open Sauce', sans-serif" }}
+                                              >
+                                                {showAllExperiences ? "Show Less" : `Show All (${experiences.length})`}
+                                              </Button>
+                                            </div>
                                           )}
                                         </div>
-                                      ))}
+                                      ) : (
+                                        <div className="bg-white p-6 border-l-4 border-gray-300">
+                                          <Typography variant="small" className="text-gray-500 italic font-medium" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                            You haven't filled up details in this section.
+                                          </Typography>
+                                        </div>
+                                      )}
                                     </div>
-                                  ) : (
-                                    <Typography variant="small" className="text-gray-500 italic">
-                                      You haven't filled up details in this section.
-                                    </Typography>
-                                  )}
+
+                                    {/* Projects */}
+                                    <div>
+                                      <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide mb-6 text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                                        Projects
+                                      </Typography>
+                                      {projects.length > 0 ? (
+                                        <div className="space-y-4">
+                                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {(showAllProjects ? projects : projects.slice(0, INITIAL_ITEMS_LIMIT)).map((project, index) => (
+                                              <Card key={index} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                                                {project.projectImageFile && (
+                                                  <div className="relative h-48 overflow-hidden">
+                                                    <img
+                                                      src={URL.createObjectURL(project.projectImageFile)}
+                                                      alt={project.title || "Project"}
+                                                      className="w-full h-full object-cover"
+                                                    />
+                                                  </div>
+                                                )}
+                                                <CardBody className="p-5">
+                                                  <Typography variant="h6" className="font-bold text-black mb-2 text-lg" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                                    {project.title || "Unnamed Project"}
+                                                  </Typography>
+                                                  {project.description && (
+                                                    <Typography
+                                                      variant="small"
+                                                      className="text-black mb-3 leading-relaxed text-base line-clamp-3"
+                                                      style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.6", fontWeight: 400 }}
+                                                    >
+                                                      {project.description}
+                                                    </Typography>
+                                                  )}
+                                                  {project.startDate && project.endDate && (
+                                                    <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                                      {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
+                                                    </Typography>
+                                                  )}
+                                                </CardBody>
+                                              </Card>
+                                            ))}
+                                          </div>
+                                          {projects.length > INITIAL_ITEMS_LIMIT && (
+                                            <div className="flex justify-left pt-2">
+                                              <Button
+                                                variant="text"
+                                                size="sm"
+                                                onClick={() => setShowAllProjects(!showAllProjects)}
+                                                className="text-black font-medium hover:text-red-600"
+                                                style={{ fontFamily: "'Open Sauce', sans-serif" }}
+                                              >
+                                                {showAllProjects ? "Show Less" : `Show All (${projects.length})`}
+                                              </Button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div className="bg-white p-6 border-l-4 border-gray-300">
+                                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                            You haven't filled up details in this section.
+                                          </Typography>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Awards & Recognition */}
+                                    <div>
+                                      <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide mb-6 text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                                        Awards & Recognition
+                                      </Typography>
+                                      {awardsRecognitions.length > 0 ? (
+                                        <div className="space-y-3">
+                                          {(showAllAwards ? awardsRecognitions : awardsRecognitions.slice(0, INITIAL_ITEMS_LIMIT)).map((award, index) => (
+                                            <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
+                                              <Typography variant="h6" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                                {award.title}
+                                              </Typography>
+                                              {award.issuer && (
+                                                <Typography variant="small" className="text-black font-medium mb-1 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                  {award.issuer}
+                                                </Typography>
+                                              )}
+                                              {award.dateReceived && (
+                                                <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                                  {award.dateReceived}
+                                                </Typography>
+                                              )}
+                                            </div>
+                                          ))}
+                                          {awardsRecognitions.length > INITIAL_ITEMS_LIMIT && (
+                                            <div className="flex justify-left pt-2">
+                                              <Button
+                                                variant="text"
+                                                size="sm"
+                                                onClick={() => setShowAllAwards(!showAllAwards)}
+                                                className="text-black font-medium hover:text-red-600"
+                                                style={{ fontFamily: "'Open Sauce', sans-serif" }}
+                                              >
+                                                {showAllAwards ? "Show Less" : `Show All (${awardsRecognitions.length})`}
+                                              </Button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div className="bg-white p-6 border-l-4 border-gray-300">
+                                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                            You haven't filled up details in this section.
+                                          </Typography>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Education & Memberships */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                      {/* Continuing Education */}
+                                      <div>
+                                        <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide mb-5 text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                                          Continuing Education
+                                        </Typography>
+                                        {continuingEducations.length > 0 ? (
+                                          <div className="space-y-3">
+                                            {(showAllEducation ? continuingEducations : continuingEducations.slice(0, INITIAL_ITEMS_LIMIT)).map((edu, index) => (
+                                              <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
+                                                <Typography variant="small" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                                  {edu.courseName}
+                                                </Typography>
+                                                {edu.institution && (
+                                                  <Typography variant="small" className="text-black font-medium mb-1 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                    {edu.institution}
+                                                  </Typography>
+                                                )}
+                                                {edu.completionDate && (
+                                                  <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                                    {edu.completionDate}
+                                                  </Typography>
+                                                )}
+                                              </div>
+                                            ))}
+                                            {continuingEducations.length > INITIAL_ITEMS_LIMIT && (
+                                              <div className="flex justify-left pt-2">
+                                                <Button
+                                                  variant="text"
+                                                  size="sm"
+                                                  onClick={() => setShowAllEducation(!showAllEducation)}
+                                                  className="text-black font-medium hover:text-red-600 text-xs"
+                                                  style={{ fontFamily: "'Open Sauce', sans-serif" }}
+                                                >
+                                                  {showAllEducation ? "Show Less" : `Show All (${continuingEducations.length})`}
+                                                </Button>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <div className="bg-white p-6 border-l-4 border-gray-300">
+                                            <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                              You haven't filled up details in this section.
+                                            </Typography>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Professional Memberships */}
+                                      <div>
+                                        <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide mb-5 text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                                          Professional Memberships
+                                        </Typography>
+                                        {professionalMemberships.length > 0 ? (
+                                          <div className="space-y-3">
+                                            {(showAllMemberships ? professionalMemberships : professionalMemberships.slice(0, INITIAL_ITEMS_LIMIT)).map((mem, index) => (
+                                              <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
+                                                <Typography variant="small" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                                  {mem.organization}
+                                                </Typography>
+                                                {mem.membershipType && (
+                                                  <Typography variant="small" className="text-black font-medium mb-1 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                    {mem.membershipType}
+                                                  </Typography>
+                                                )}
+                                                {mem.startDate && (
+                                                  <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                                    Since {mem.startDate}
+                                                  </Typography>
+                                                )}
+                                              </div>
+                                            ))}
+                                            {professionalMemberships.length > INITIAL_ITEMS_LIMIT && (
+                                              <div className="flex justify-left pt-2">
+                                                <Button
+                                                  variant="text"
+                                                  size="sm"
+                                                  onClick={() => setShowAllMemberships(!showAllMemberships)}
+                                                  className="text-black font-medium hover:text-red-600 text-xs"
+                                                  style={{ fontFamily: "'Open Sauce', sans-serif" }}
+                                                >
+                                                  {showAllMemberships ? "Show Less" : `Show All (${professionalMemberships.length})`}
+                                                </Button>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <div className="bg-white p-6 border-l-4 border-gray-300">
+                                            <Typography variant="small" className="text-gray-500 italic font-medium" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                              You haven't filled up details in this section.
+                                            </Typography>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* References */}
+                                    <div>
+                                      <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide mb-6 text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                                        References
+                                      </Typography>
+                                      {references.length > 0 ? (
+                                        <div className="space-y-4">
+                                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                            {(showAllReferences ? references : references.slice(0, INITIAL_ITEMS_LIMIT)).map((ref, index) => (
+                                              <div key={index} className="bg-white border-l-4 border-gray-300 p-5">
+                                                <Typography variant="h6" className="font-bold text-black mb-2 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                                  {ref.name}
+                                                </Typography>
+                                                {ref.position && (
+                                                  <Typography variant="small" className="text-black font-medium mb-1 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                    {ref.position}
+                                                  </Typography>
+                                                )}
+                                                {ref.company && (
+                                                  <Typography variant="small" className="text-black mb-3 font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 500 }}>
+                                                    {ref.company}
+                                                  </Typography>
+                                                )}
+                                                <div className="space-y-1 pt-2 border-t border-gray-200">
+                                                  {ref.email && (
+                                                    <Typography variant="small" className="text-black break-all text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                      {ref.email}
+                                                    </Typography>
+                                                  )}
+                                                  {ref.contact && (
+                                                    <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                      {ref.contact}
+                                                    </Typography>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                          {references.length > INITIAL_ITEMS_LIMIT && (
+                                            <div className="flex justify-left pt-2">
+                                              <Button
+                                                variant="text"
+                                                size="sm"
+                                                onClick={() => setShowAllReferences(!showAllReferences)}
+                                                className="text-black font-medium hover:text-red-600"
+                                                style={{ fontFamily: "'Open Sauce', sans-serif" }}
+                                              >
+                                                {showAllReferences ? "Show Less" : `Show All (${references.length})`}
+                                              </Button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div className="bg-white p-6 border-l-4 border-gray-300">
+                                          <Typography variant="small" className="text-gray-500 italic font-medium" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                            You haven't filled up details in this section.
+                                          </Typography>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-
-                              {/* Certificates */}
-                              {certificates.length > 0 && (
-                                <div className="mb-8">
-                                  {formData.designTemplate === "bartending-barista" ? (
-                                    <>
-                                      <Typography variant="h6" className="text-gray-800 font-bold text-sm uppercase mb-2">
-                                        CERTIFICATES
-                                      </Typography>
-                                      <div className="border-t border-gray-300 mb-4"></div>
-                                    </>
-                                  ) : (
-                                    <Typography variant="h6" className={`${designTheme.headerBarBg} text-white font-bold text-sm uppercase mb-0 py-3 px-4`}>
-                                      CERTIFICATES
-                                    </Typography>
-                                  )}
-                                  <div className={formData.designTemplate === "bartending-barista" ? "bg-white" : "border-t-2 border-gray-300 pt-4 bg-white"}>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      {certificates.map((certificate, index) => (
-                                        <div key={index} className="border border-gray-200 rounded p-4">
-                                          <Typography variant="small" className="text-gray-800 font-medium">
-                                            {certificate.courseName}
-                                          </Typography>
-                                          {certificate.certificateNumber && (
-                                            <Typography variant="small" className="text-gray-600 text-xs">
-                                              #{certificate.certificateNumber}
-                                            </Typography>
-                                          )}
+                            ) : (
+                              <>
+                                {/* Standard Header Section for other templates */}
+                                <div className={`${designTheme.headerBg} text-white relative overflow-hidden`}>
+                                  <div className="absolute inset-0 bg-white/5 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px]"></div>
+                                  <div className="px-6 py-8 relative">
+                                    <div className="flex flex-row items-center w-full gap-16">
+                                      {(previewAvatar && previewAvatar !== "/placeholder.svg") && (
+                                        <div className="relative flex-shrink-0 mr-8">
+                                          <Avatar
+                                            src={previewAvatar}
+                                            alt={formData.fullName || "Profile"}
+                                            size="xxl"
+                                            className={`relative shadow-2xl ${designTheme.avatarSize} backdrop-blur-sm rounded-none border-0`}
+                                          />
                                         </div>
-                                      ))}
+                                      )}
+                                      <div className="flex-1 min-w-0 text-left flex flex-col justify-start pt-8">
+                                        <div className="flex items-center gap-3 justify-start">
+                                          <Typography
+                                            variant="h1"
+                                            className={`${designTheme.titleWeight} ${designTheme.typographySize} tracking-tight text-white break-words`}
+                                          >
+                                            {formData.fullName || "Your Name"}
+                                          </Typography>
+                                        </div>
+                                        {formData.professionalTitle && (
+                                          <div className="relative mt-8 flex items-center gap-3">
+                                            <Typography
+                                              variant="h3"
+                                              className="font-light text-white/90 text-2xl md:text-3xl tracking-wide break-words"
+                                            >
+                                              {formData.professionalTitle}
+                                            </Typography>
+                                            <div className="w-0 h-0.5 bg-white/40 mt-4"></div>
+                                          </div>
+                                        )}
+                                        {formData.professionalSummary && (
+                                          <div className="mt-10 max-w-3xl overflow-hidden">
+                                            <Typography
+                                              variant="lead"
+                                              className="text-white/80 leading-relaxed text-xl md:text-2xl font-light tracking-wide break-words overflow-wrap-anywhere"
+                                            >
+                                              {formData.professionalSummary}
+                                            </Typography>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="absolute bottom-0 left-0 right-0">
+                                    <svg viewBox="0 0 1200 120" className="w-full h-12 fill-white">
+                                      <path d="M0,60 C300,120 900,0 1200,60 L1200,120 L0,120 Z"></path>
+                                    </svg>
+                                  </div>
+                                </div>
+                                <div className="px-6 py-16">
+                                  <div className={`grid ${designTheme.contentGrid} gap-12`}>
+                                    <div className={`${
+                                      designTheme.contentGrid.includes("lg:grid-cols-4") ? "lg:col-span-1" : 
+                                      designTheme.contentGrid.includes("lg:grid-cols-3") ? "lg:col-span-1" : 
+                                      designTheme.contentGrid.includes("lg:grid-cols-2") ? "lg:col-span-1" : 
+                                      ""
+                                    }`}>
+                                      <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding} mb-6`}>
+                                        <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>
+                                          Contact
+                                        </Typography>
+                                        {(formData.email || formData.phone || formData.website) ? (
+                                          <div className="space-y-4">
+                                            {formData.email && (
+                                              <div>
+                                                <Typography variant="small" color="gray" className="font-medium mb-1">
+                                                  Email
+                                                </Typography>
+                                                <Typography variant="small" className="text-gray-800 break-all">
+                                                  {formData.email}
+                                                </Typography>
+                                              </div>
+                                            )}
+                                            {formData.phone && (
+                                              <div>
+                                                <Typography variant="small" color="gray" className="font-medium mb-1">
+                                                  Phone
+                                                </Typography>
+                                                <Typography variant="small" className="text-gray-800">
+                                                  {formData.phone}
+                                                </Typography>
+                                              </div>
+                                            )}
+                                            {formData.website && (
+                                              <div>
+                                                <Typography variant="small" color="gray" className="font-medium mb-1">
+                                                  Website
+                                                </Typography>
+                                                <Typography variant="small" className="text-gray-800 break-all">
+                                                  {formData.website}
+                                                </Typography>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <Typography variant="small" className="text-gray-500 italic">
+                                            You haven't filled up details in this section.
+                                          </Typography>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
-                              )}
-
-                              {/* Projects */}
-                              {projects.length > 0 && (
-                                <div className="mb-8">
-                                  {formData.designTemplate === "bartending-barista" ? (
-                                    <>
-                                      <Typography variant="h6" className="text-gray-800 font-bold text-sm uppercase mb-2">
-                                        PROJECTS
-                                      </Typography>
-                                      <div className="border-t border-gray-300 mb-4"></div>
-                                    </>
-                                  ) : (
-                                    <Typography variant="h6" className={`${designTheme.headerBarBg} text-white font-bold text-sm uppercase mb-0 py-3 px-4`}>
-                                      PROJECTS
-                                    </Typography>
-                                  )}
-                                  <div className={formData.designTemplate === "bartending-barista" ? "bg-white" : "border-t-2 border-gray-300 pt-4 bg-white"}>
-                                    <div className="space-y-4">
-                                      {projects.map((project, index) => (
-                                        <div key={index} className="border-l-4 border-gray-300 pl-4">
-                                          <Typography variant="small" className="text-gray-800 font-semibold">
-                                            {project.title}
-                                          </Typography>
-                                          {project.description && (
-                                            <Typography variant="small" className="text-gray-600 text-xs mt-1">
-                                              {project.description}
-                                            </Typography>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Awards & Recognition */}
-                              {awardsRecognitions.length > 0 && (
-                                <div className="mb-8">
-                                  {formData.designTemplate === "bartending-barista" ? (
-                                    <>
-                                      <Typography variant="h6" className="text-gray-800 font-bold text-sm uppercase mb-2">
-                                        AWARDS & RECOGNITION
-                                      </Typography>
-                                      <div className="border-t border-gray-300 mb-4"></div>
-                                    </>
-                                  ) : (
-                                    <Typography variant="h6" className={`${designTheme.headerBarBg} text-white font-bold text-sm uppercase mb-0 py-3 px-4`}>
-                                      AWARDS & RECOGNITION
-                                    </Typography>
-                                  )}
-                                  <div className={formData.designTemplate === "bartending-barista" ? "bg-white" : "border-t-2 border-gray-300 pt-4 bg-white"}>
-                                    <div className="space-y-3">
-                                      {awardsRecognitions.map((award, index) => (
-                                        <div key={index}>
-                                          <Typography variant="small" className="text-gray-800 font-medium">
-                                            {award.title}
-                                          </Typography>
-                                          {award.issuer && (
-                                            <Typography variant="small" className="text-gray-600 text-xs">
-                                              {award.issuer}
-                                            </Typography>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Continuing Education */}
-                              {continuingEducations.length > 0 && (
-                                <div className="mb-8">
-                                  {formData.designTemplate === "bartending-barista" ? (
-                                    <>
-                                      <Typography variant="h6" className="text-gray-800 font-bold text-sm uppercase mb-2">
-                                        CONTINUING EDUCATION
-                                      </Typography>
-                                      <div className="border-t border-gray-300 mb-4"></div>
-                                    </>
-                                  ) : (
-                                    <Typography variant="h6" className={`${designTheme.headerBarBg} text-white font-bold text-sm uppercase mb-0 py-3 px-4`}>
-                                      CONTINUING EDUCATION
-                                    </Typography>
-                                  )}
-                                  <div className={formData.designTemplate === "bartending-barista" ? "bg-white" : "border-t-2 border-gray-300 pt-4 bg-white"}>
-                                    <div className="space-y-3">
-                                      {continuingEducations.map((edu, index) => (
-                                        <div key={index}>
-                                          <Typography variant="small" className="text-gray-800 font-medium">
-                                            {edu.courseName}
-                                          </Typography>
-                                          {edu.institution && (
-                                            <Typography variant="small" className="text-gray-600 text-xs">
-                                              {edu.institution}
-                                            </Typography>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Professional Memberships */}
-                              {professionalMemberships.length > 0 && (
-                                <div className="mb-8">
-                                  {formData.designTemplate === "bartending-barista" ? (
-                                    <>
-                                      <Typography variant="h6" className="text-gray-800 font-bold text-sm uppercase mb-2">
-                                        PROFESSIONAL MEMBERSHIPS
-                                      </Typography>
-                                      <div className="border-t border-gray-300 mb-4"></div>
-                                    </>
-                                  ) : (
-                                    <Typography variant="h6" className={`${designTheme.headerBarBg} text-white font-bold text-sm uppercase mb-0 py-3 px-4`}>
-                                      PROFESSIONAL MEMBERSHIPS
-                                    </Typography>
-                                  )}
-                                  <div className={formData.designTemplate === "bartending-barista" ? "bg-white" : "border-t-2 border-gray-300 pt-4 bg-white"}>
-                                    <div className="space-y-3">
-                                      {professionalMemberships.map((mem, index) => (
-                                        <div key={index}>
-                                          <Typography variant="small" className="text-gray-800 font-medium">
-                                            {mem.organization}
-                                          </Typography>
-                                          {mem.membershipType && (
-                                            <Typography variant="small" className="text-gray-600 text-xs">
-                                              {mem.membershipType}
-                                            </Typography>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* References */}
-                              {references.length > 0 && (
-                                <div>
-                                  {formData.designTemplate === "bartending-barista" ? (
-                                    <>
-                                      <Typography variant="h6" className="text-gray-800 font-bold text-sm uppercase mb-2">
-                                        REFERENCES
-                                      </Typography>
-                                      <div className="border-t border-gray-300 mb-4"></div>
-                                    </>
-                                  ) : (
-                                    <Typography variant="h6" className={`${designTheme.headerBarBg} text-white font-bold text-sm uppercase mb-0 py-3 px-4`}>
-                                      REFERENCES
-                                    </Typography>
-                                  )}
-                                  <div className={formData.designTemplate === "bartending-barista" ? "bg-white" : "border-t-2 border-gray-300 pt-4 bg-white"}>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      {references.map((ref, index) => (
-                                        <div key={index} className="border border-gray-200 rounded p-3">
-                                          <Typography variant="small" className="text-gray-800 font-medium">
-                                            {ref.name}
-                                          </Typography>
-                                          {ref.position && (
-                                            <Typography variant="small" className="text-gray-600 text-xs">
-                                              {ref.position}
-                                            </Typography>
-                                          )}
-                                          {ref.company && (
-                                            <Typography variant="small" className="text-gray-600 text-xs">
-                                              {ref.company}
-                                            </Typography>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                              </>
+                            )}
+                          </>
                         )
                       })()}
                     </div>

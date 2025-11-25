@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, Fragment } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
 import axios from "axios"
 import { FaPen, FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa"
@@ -78,6 +78,16 @@ const ViewPortfolio = () => {
   const certificateFileInputRef = useRef(null)
   const projectFileInputRef = useRef(null)
 
+  // Show More/Show Less state for content density
+  const INITIAL_ITEMS_LIMIT = 6
+  const [showAllCertificates, setShowAllCertificates] = useState(false)
+  const [showAllExperiences, setShowAllExperiences] = useState(false)
+  const [showAllProjects, setShowAllProjects] = useState(false)
+  const [showAllAwards, setShowAllAwards] = useState(false)
+  const [showAllEducation, setShowAllEducation] = useState(false)
+  const [showAllMemberships, setShowAllMemberships] = useState(false)
+  const [showAllReferences, setShowAllReferences] = useState(false)
+
   const urlParams = new URLSearchParams(window.location.search)
   const urlShareToken = urlParams.get("share")
 
@@ -96,197 +106,152 @@ const ViewPortfolio = () => {
       "bread-pastry": {
         headerGradient: "from-amber-500 via-orange-500 to-amber-600",
         headerBg: "bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600",
-        sidebarBg: "bg-gradient-to-br from-amber-600 via-orange-600 to-amber-700",
-        headerBarBg: "bg-gray-800",
         accentColor: "amber",
         textColor: "text-amber-600",
-        borderColor: "border-amber-300",
+        borderColor: "border-amber-200",
         bgColor: "bg-amber-50",
-        cardBorder: "border-amber-200",
+        cardBorder: "border-amber-100",
         buttonColor: "amber",
         lightBg: "bg-amber-50",
         mediumBg: "bg-amber-100",
         darkBg: "bg-amber-200",
-        pageBg: "bg-amber-50",
-        // Unique layout: Centered card-based design
-        layoutType: "centered-cards",
-        headerLayout: "centered",
+        // Layout properties
+        headerLayout: "centered", // centered, left-right, right-left
         headerTextAlign: "text-center",
         headerFlexDirection: "flex-col items-center",
-        avatarSize: "w-40 h-40",
+        avatarSize: "w-64 h-64",
         avatarPosition: "mb-6",
-        cardStyle: "rounded-3xl shadow-xl border-2 border-amber-200",
+        cardStyle: "rounded-2xl shadow-lg",
         cardPadding: "p-8",
-        contentGrid: "grid-cols-1 md:grid-cols-2",
-        sectionSpacing: "space-y-8",
-        typographySize: "text-4xl md:text-5xl",
+        contentGrid: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
+        sectionSpacing: "space-y-10",
+        typographySize: "text-4xl md:text-5xl lg:text-6xl",
         titleWeight: "font-bold",
-        sectionHeaderStyle: "rounded-t-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-4",
-        sectionContentStyle: "rounded-b-2xl bg-white p-6 border-2 border-amber-200",
-        useCardSections: true,
       },
       "cookery": {
         headerGradient: "from-red-500 via-pink-500 to-red-600",
         headerBg: "bg-gradient-to-br from-red-500 via-pink-500 to-red-600",
-        sidebarBg: "bg-gradient-to-br from-red-600 via-pink-600 to-red-700",
-        headerBarBg: "bg-red-700",
         accentColor: "red",
         textColor: "text-red-600",
-        borderColor: "border-red-300",
+        borderColor: "border-red-200",
         bgColor: "bg-red-50",
         cardBorder: "border-red-100",
         buttonColor: "red",
         lightBg: "bg-red-50",
         mediumBg: "bg-red-100",
         darkBg: "bg-red-200",
-        pageBg: "bg-red-50",
-        // Unique layout: Top header with two-column content below
-        layoutType: "top-header",
-        headerLayout: "centered",
-        headerTextAlign: "text-center",
-        headerFlexDirection: "flex-col items-center",
-        avatarSize: "w-48 h-48",
-        avatarPosition: "mb-8",
-        cardStyle: "rounded-xl shadow-lg border-l-4 border-red-500",
+        // Layout properties
+        headerLayout: "left-right",
+        headerTextAlign: "text-left",
+        headerFlexDirection: "flex-row items-center",
+        avatarSize: "w-72 h-72",
+        avatarPosition: "mr-8",
+        cardStyle: "rounded-xl shadow-md border-2",
         cardPadding: "p-6",
         contentGrid: "grid-cols-1 lg:grid-cols-2",
-        sectionSpacing: "space-y-6",
-        typographySize: "text-5xl md:text-6xl",
+        sectionSpacing: "space-y-8",
+        typographySize: "text-5xl md:text-6xl lg:text-7xl",
         titleWeight: "font-extrabold",
-        sectionHeaderStyle: "bg-red-600 text-white px-5 py-3 rounded-t-lg font-bold uppercase text-sm",
-        sectionContentStyle: "bg-white p-6 rounded-b-lg border-2 border-red-200",
-        useCardSections: true,
       },
       "housekeeping": {
-        headerGradient: "from-gray-700 to-gray-700",
-        headerBg: "bg-gray-700", // Dark gray header
-        sidebarBg: "bg-gray-200", // Light gray sidebar
-        headerBarBg: "bg-gray-700", // Dark gray for header bar
-        accentColor: "gray",
-        textColor: "text-gray-800", // Dark gray text
-        borderColor: "border-gray-400", // Gray borders
-        bgColor: "bg-white",
-        cardBorder: "border-gray-400",
-        buttonColor: "gray",
-        lightBg: "bg-gray-200",
-        mediumBg: "bg-gray-300",
-        darkBg: "bg-gray-400",
-        pageBg: "bg-white",
-        // Unique layout: Top header + Left sidebar + Right content (matching image)
-        layoutType: "housekeeping-layout", // Special layout for housekeeping
-        headerLayout: "centered",
-        headerTextAlign: "text-center",
-        headerFlexDirection: "flex-col items-center",
-        avatarSize: "w-32 h-32",
-        avatarPosition: "mb-6",
-        cardStyle: "rounded-none shadow-none", // No rounded corners, no shadow
-        cardPadding: "p-6",
-        contentGrid: "grid-cols-1",
-        sectionSpacing: "space-y-6",
-        typographySize: "text-4xl md:text-5xl",
-        titleWeight: "font-bold",
-        sectionHeaderStyle: "text-gray-800 font-bold uppercase text-sm mb-2 pb-2 border-b border-gray-600", // Dark gray text with line underneath
-        sectionContentStyle: "bg-transparent p-0", // No background, no padding
-        useCardSections: false,
-        headerTextColor: "text-white", // White text in header
-        sidebarTextColor: "text-gray-800", // Dark gray text in sidebar
-        mainTextColor: "text-gray-800", // Dark gray text in main content
-      },
-      "food-beverage": {
-        headerGradient: "from-green-500 via-teal-500 to-green-600",
-        headerBg: "bg-gradient-to-br from-green-500 via-teal-500 to-green-600",
-        sidebarBg: "bg-gradient-to-br from-green-600 via-teal-600 to-green-700",
-        headerBarBg: "bg-green-700",
-        accentColor: "green",
-        textColor: "text-green-600",
-        borderColor: "border-green-300",
-        bgColor: "bg-green-50",
-        cardBorder: "border-green-100",
-        buttonColor: "green",
-        lightBg: "bg-green-50",
-        mediumBg: "bg-green-100",
-        darkBg: "bg-green-200",
-        pageBg: "bg-green-50",
-        // Unique layout: Right sidebar with main content on left
-        layoutType: "right-sidebar",
-        headerLayout: "right-left",
-        headerTextAlign: "text-right",
-        headerFlexDirection: "flex-row-reverse items-center",
-        avatarSize: "w-32 h-32",
-        avatarPosition: "mb-6",
-        cardStyle: "rounded-2xl shadow-xl border-2 border-green-200",
-        cardPadding: "p-6",
-        contentGrid: "grid-cols-1",
-        sectionSpacing: "space-y-8",
-        typographySize: "text-4xl md:text-5xl",
-        titleWeight: "font-semibold",
-        sectionHeaderStyle: "bg-gradient-to-r from-green-600 to-teal-600 text-white px-5 py-3 rounded-t-2xl font-bold uppercase text-sm",
-        sectionContentStyle: "bg-white p-6 rounded-b-2xl border-2 border-green-200",
-        useCardSections: true,
-      },
-      "bartending-barista": {
-        headerGradient: "from-blue-500 via-blue-500 to-blue-500",
-        headerBg: "bg-blue-500",
-        sidebarBg: "bg-blue-500",
-        headerBarBg: "bg-transparent",
-        accentColor: "blue",
-        textColor: "text-gray-800",
-        borderColor: "border-gray-300",
-        bgColor: "bg-gray-50",
-        cardBorder: "border-gray-300",
-        buttonColor: "blue",
-        lightBg: "bg-gray-50",
-        mediumBg: "bg-gray-100",
-        darkBg: "bg-gray-200",
-        pageBg: "bg-gray-50",
-        // Unique layout: Split view with simple headers
-        layoutType: "split-view",
-        headerLayout: "centered",
-        headerTextAlign: "text-left",
-        headerFlexDirection: "flex-col items-center",
-        avatarSize: "w-32 h-32",
-        avatarPosition: "mb-8",
-        cardStyle: "rounded-lg shadow-md",
-        cardPadding: "p-6",
-        contentGrid: "grid-cols-1",
-        sectionSpacing: "space-y-8",
-        typographySize: "text-3xl",
-        titleWeight: "font-bold",
-        sectionHeaderStyle: "text-gray-800 font-bold uppercase text-sm mb-2",
-        sectionContentStyle: "bg-white border-t border-gray-300 pt-4",
-        useCardSections: false,
-        useSimpleHeaders: true,
-      },
-      "default": {
-        headerGradient: "from-blue-600 via-blue-700 to-blue-800",
+        headerGradient: "from-blue-500 via-indigo-500 to-blue-600",
         headerBg: "bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800",
-        sidebarBg: "bg-gradient-to-br from-blue-700 via-blue-800 to-blue-900",
-        headerBarBg: "bg-blue-800",
         accentColor: "blue",
         textColor: "text-blue-600",
-        borderColor: "border-blue-300",
+        borderColor: "border-blue-200",
         bgColor: "bg-blue-50",
         cardBorder: "border-blue-100",
         buttonColor: "blue",
         lightBg: "bg-blue-50",
         mediumBg: "bg-blue-100",
         darkBg: "bg-blue-200",
-        pageBg: "bg-gray-50",
-        layoutType: "left-sidebar",
+        // Layout properties
         headerLayout: "left-right",
         headerTextAlign: "text-left",
         headerFlexDirection: "flex-row items-center",
-        avatarSize: "w-32 h-32",
-        avatarPosition: "mb-6",
-        cardStyle: "rounded-lg shadow-md",
+        avatarSize: "w-80 h-80",
+        avatarPosition: "mr-12",
+        cardStyle: "rounded-lg shadow-xl",
         cardPadding: "p-6",
-        contentGrid: "grid-cols-1",
+        contentGrid: "grid-cols-1 lg:grid-cols-4",
+        sectionSpacing: "space-y-12",
+        typographySize: "text-5xl md:text-6xl lg:text-7xl",
+        titleWeight: "font-extralight",
+      },
+      "food-beverage": {
+        headerGradient: "from-gray-800 via-gray-700 to-gray-900",
+        headerBg: "bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900",
+        accentColor: "gray",
+        textColor: "text-gray-900",
+        borderColor: "border-gray-400",
+        bgColor: "bg-gray-50",
+        cardBorder: "border-gray-300",
+        buttonColor: "gray",
+        lightBg: "bg-gray-50",
+        mediumBg: "bg-gray-100",
+        darkBg: "bg-gray-200",
+        // Layout properties
+        headerLayout: "left-right",
+        headerTextAlign: "text-left",
+        headerFlexDirection: "flex-row items-center",
+        avatarSize: "w-48 h-48",
+        avatarPosition: "mr-8",
+        cardStyle: "rounded-xl shadow-lg border-2",
+        cardPadding: "p-6",
+        contentGrid: "grid-cols-1 lg:grid-cols-2",
+        sectionSpacing: "space-y-8",
+        typographySize: "text-3xl md:text-4xl lg:text-5xl",
+        titleWeight: "font-bold",
+      },
+      "bartending-barista": {
+        headerGradient: "from-purple-500 via-violet-500 to-purple-600",
+        headerBg: "bg-gradient-to-br from-purple-500 via-violet-500 to-purple-600",
+        accentColor: "purple",
+        textColor: "text-purple-600",
+        borderColor: "border-purple-200",
+        bgColor: "bg-purple-50",
+        cardBorder: "border-purple-100",
+        buttonColor: "purple",
+        lightBg: "bg-purple-50",
+        mediumBg: "bg-purple-100",
+        darkBg: "bg-purple-200",
+        // Layout properties
+        headerLayout: "centered",
+        headerTextAlign: "text-center",
+        headerFlexDirection: "flex-col items-center",
+        avatarSize: "w-56 h-56",
+        avatarPosition: "mb-8",
+        cardStyle: "rounded-full shadow-lg border-4",
+        cardPadding: "p-10",
+        contentGrid: "grid-cols-1 md:grid-cols-3",
         sectionSpacing: "space-y-6",
-        typographySize: "text-3xl md:text-4xl",
-        titleWeight: "font-semibold",
-        sectionHeaderStyle: "bg-blue-800 text-white px-4 py-3 font-bold uppercase text-sm",
-        sectionContentStyle: "bg-white p-6 border-t-2 border-blue-300",
-        useCardSections: false,
+        typographySize: "text-3xl md:text-4xl lg:text-5xl",
+        titleWeight: "font-light",
+      },
+      "default": {
+        headerGradient: "from-blue-600 via-blue-700 to-blue-800",
+        headerBg: "bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800",
+        accentColor: "blue",
+        textColor: "text-blue-600",
+        borderColor: "border-blue-200",
+        bgColor: "bg-blue-50",
+        cardBorder: "border-blue-100",
+        buttonColor: "blue",
+        lightBg: "bg-blue-50",
+        mediumBg: "bg-blue-100",
+        darkBg: "bg-blue-200",
+        // Layout properties
+        headerLayout: "left-right",
+        headerTextAlign: "text-left",
+        headerFlexDirection: "flex-row items-center",
+        avatarSize: "w-80 h-80",
+        avatarPosition: "mr-12",
+        cardStyle: "rounded-lg shadow-xl",
+        cardPadding: "p-6",
+        contentGrid: "grid-cols-1 lg:grid-cols-4",
+        sectionSpacing: "space-y-12",
+        typographySize: "text-5xl md:text-6xl lg:text-7xl",
+        titleWeight: "font-extralight",
       },
     }
     return themes[template] || themes["default"]
@@ -893,6 +858,19 @@ const fetchPublicDataWithToken = async () => {
   }
 
   const handleSectionEditToggle = (section) => {
+    // Initialize editingPortfolio if it's null
+    if (!editingPortfolio && portfolio) {
+      const portfolioCopy = {
+        ...portfolio,
+        skills: portfolio.skills ? [...portfolio.skills] : [],
+        experiences: portfolio.experiences ? [...portfolio.experiences] : [],
+        awardsRecognitions: portfolio.awardsRecognitions ? [...portfolio.awardsRecognitions] : [],
+        continuingEducations: portfolio.continuingEducations ? [...portfolio.continuingEducations] : [],
+        professionalMemberships: portfolio.professionalMemberships ? [...portfolio.professionalMemberships] : [],
+        references: portfolio.references ? [...portfolio.references] : [],
+      }
+      setEditingPortfolio(portfolioCopy)
+    }
     setEditingSections((prev) => ({
       ...prev,
       [section]: !prev[section],
@@ -1465,6 +1443,38 @@ const fetchPublicDataWithToken = async () => {
     setSaveSuccess("")
 
     try {
+      // Ensure editingPortfolio is initialized
+      if (!editingPortfolio) {
+        if (!portfolio) {
+          setSaveError("Portfolio data not available")
+          setIsSaving(false)
+          return
+        }
+        const portfolioCopy = {
+          ...portfolio,
+          skills: portfolio.skills ? [...portfolio.skills] : [],
+          experiences: portfolio.experiences ? [...portfolio.experiences] : [],
+          awardsRecognitions: portfolio.awardsRecognitions ? [...portfolio.awardsRecognitions] : [],
+          continuingEducations: portfolio.continuingEducations ? [...portfolio.continuingEducations] : [],
+          professionalMemberships: portfolio.professionalMemberships ? [...portfolio.professionalMemberships] : [],
+          references: portfolio.references ? [...portfolio.references] : [],
+        }
+        setEditingPortfolio(portfolioCopy)
+        setSaveError("Please try saving again")
+        setIsSaving(false)
+        return
+      }
+
+      // Ensure portfolio ID exists
+      if (!editingPortfolio.id && !portfolio?.id) {
+        setSaveError("Portfolio ID not available. Please refresh the page.")
+        setIsSaving(false)
+        return
+      }
+
+      // Use portfolio.id if editingPortfolio.id is missing
+      const portfolioId = editingPortfolio.id || portfolio.id
+
       // Handle avatar upload for header section
       let avatarUrl = editingPortfolio.avatar || ""
       if (section === "header" && selectedAvatarFile) {
@@ -1558,7 +1568,7 @@ const fetchPublicDataWithToken = async () => {
         const projectIds = []
         const existingProjectIds = new Set(
           (
-            await axios.get(`${BACKEND_URL}/api/project/portfolio/${editingPortfolio.id}`, {
+            await axios.get(`${BACKEND_URL}/api/project/portfolio/${portfolioId}`, {
               withCredentials: true,
               headers: { Authorization: `Bearer ${token}` },
             })
@@ -1575,7 +1585,7 @@ const fetchPublicDataWithToken = async () => {
           }
 
           const projectData = new FormData()
-          projectData.append("portfolioId", editingPortfolio.id.toString())
+          projectData.append("portfolioId", portfolioId.toString())
           projectData.append("title", proj.title || "")
           projectData.append("description", proj.description || "")
           if (proj.startDate) projectData.append("startDate", proj.startDate)
@@ -1612,8 +1622,8 @@ const fetchPublicDataWithToken = async () => {
         setModifiedProjects(new Set())
         
         // Refresh projects
-        if (editingPortfolio.id) {
-          const projectsResponse = await axios.get(`${BACKEND_URL}/api/project/portfolio/${editingPortfolio.id}`, {
+        if (portfolioId) {
+          const projectsResponse = await axios.get(`${BACKEND_URL}/api/project/portfolio/${portfolioId}`, {
             withCredentials: true,
             headers: { Authorization: `Bearer ${token}` },
           })
@@ -1639,12 +1649,14 @@ const fetchPublicDataWithToken = async () => {
         payload.phone = editingPortfolio.phone
         payload.website = editingPortfolio.website
       } else if (section === "skills") {
-        payload.skills = editingPortfolio.skills?.map((skill) => ({
-          id: typeof skill.id === "string" && skill.id.includes("new-") ? null : skill.id,
-          name: skill.name,
-          type: skill.type,
-          proficiencyLevel: skill.proficiencyLevel || null,
-        })) || []
+        payload.skills = editingPortfolio.skills
+          ?.filter((skill) => skill.name && skill.name.trim() !== "") // Filter out entries with empty name
+          .map((skill) => ({
+            id: typeof skill.id === "string" && skill.id.includes("new-") ? null : skill.id,
+            name: skill.name.trim(),
+            type: skill.type && skill.type.trim() !== "" ? skill.type.trim() : "TECHNICAL",
+            proficiencyLevel: skill.proficiencyLevel && skill.proficiencyLevel.trim() !== "" ? skill.proficiencyLevel.trim() : null,
+          })) || []
       } else if (section === "tesda") {
         payload.ncLevel = editingPortfolio.ncLevel
         payload.trainingCenter = editingPortfolio.trainingCenter
@@ -1652,85 +1664,114 @@ const fetchPublicDataWithToken = async () => {
         payload.trainingDuration = editingPortfolio.trainingDuration
         payload.tesdaRegistrationNumber = editingPortfolio.tesdaRegistrationNumber
       } else if (section === "experience") {
-        payload.experiences = editingPortfolio.experiences?.map((exp) => ({
-          id: typeof exp.id === "string" && exp.id.includes("new-") ? null : exp.id,
-          jobTitle: exp.jobTitle,
-          employer: exp.employer,
-          description: exp.description || null,
-          startDate: exp.startDate ? exp.startDate : null,
-          endDate: exp.endDate ? exp.endDate : null,
-        })) || []
+        payload.experiences = editingPortfolio.experiences
+          ?.filter((exp) => exp.jobTitle && exp.jobTitle.trim() !== "") // Filter out entries with empty jobTitle
+          .map((exp) => ({
+            id: typeof exp.id === "string" && exp.id.includes("new-") ? null : exp.id,
+            jobTitle: exp.jobTitle.trim(),
+            employer: (exp.company || exp.employer || "").trim() || null,
+            description: (exp.responsibilities || exp.description || "").trim() || null,
+            duration: exp.duration && exp.duration.trim() !== "" ? exp.duration.trim() : null,
+            startDate: exp.startDate && exp.startDate.trim() !== "" ? exp.startDate : null,
+            endDate: exp.endDate && exp.endDate.trim() !== "" ? exp.endDate : null,
+          })) || []
       } else if (section === "awards") {
-        payload.awardsRecognitions = editingPortfolio.awardsRecognitions?.map((award) => ({
-          id: typeof award.id === "string" && award.id.includes("new-") ? null : award.id,
-          title: award.title,
-          issuer: award.issuer || null,
-          dateReceived: award.dateReceived ? award.dateReceived : null,
-        })) || []
+        payload.awardsRecognitions = editingPortfolio.awardsRecognitions
+          ?.filter((award) => award.title && award.title.trim() !== "") // Filter out entries with empty title
+          .map((award) => ({
+            id: typeof award.id === "string" && award.id.includes("new-") ? null : award.id,
+            title: award.title.trim(),
+            issuer: award.issuer && award.issuer.trim() !== "" ? award.issuer.trim() : null,
+            dateReceived: award.dateReceived && award.dateReceived.trim() !== "" ? award.dateReceived : null,
+          })) || []
       } else if (section === "education") {
-        payload.continuingEducations = editingPortfolio.continuingEducations?.map((edu) => ({
-          id: typeof edu.id === "string" && edu.id.includes("new-") ? null : edu.id,
-          courseName: edu.courseName,
-          institution: edu.institution || null,
-          completionDate: edu.completionDate ? edu.completionDate : null,
-        })) || []
+        payload.continuingEducations = editingPortfolio.continuingEducations
+          ?.filter((edu) => edu.courseName && edu.courseName.trim() !== "") // Filter out entries with empty courseName
+          .map((edu) => {
+            const completionDate = edu.completionDate 
+              ? (typeof edu.completionDate === 'string' && edu.completionDate.trim() !== "" ? edu.completionDate.trim() : null)
+              : null
+            return {
+              id: typeof edu.id === "string" && edu.id.includes("new-") ? null : edu.id,
+              courseName: edu.courseName.trim(),
+              institution: edu.institution && typeof edu.institution === 'string' && edu.institution.trim() !== "" ? edu.institution.trim() : null,
+              completionDate: completionDate,
+            }
+          }) || []
       } else if (section === "memberships") {
-        payload.professionalMemberships = editingPortfolio.professionalMemberships?.map((mem) => ({
-          id: typeof mem.id === "string" && mem.id.includes("new-") ? null : mem.id,
-          organization: mem.organization,
-          membershipType: mem.membershipType || null,
-          startDate: mem.startDate ? mem.startDate : null,
-        })) || []
+        payload.professionalMemberships = editingPortfolio.professionalMemberships
+          ?.filter((mem) => mem.organization && mem.organization.trim() !== "") // Filter out entries with empty organization
+          .map((mem) => ({
+            id: typeof mem.id === "string" && mem.id.includes("new-") ? null : mem.id,
+            organization: mem.organization.trim(),
+            membershipType: mem.membershipType && mem.membershipType.trim() !== "" ? mem.membershipType.trim() : null,
+            startDate: mem.startDate && mem.startDate.trim() !== "" ? mem.startDate : null,
+          })) || []
       } else if (section === "references") {
-        payload.references = editingPortfolio.references?.map((ref) => ({
-          id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
-          name: ref.name,
-          relationship: ref.relationship || null,
-          email: ref.email || null,
-          phone: ref.phone || null,
-        })) || []
+        payload.references = editingPortfolio.references
+          ?.filter((ref) => ref.name && ref.name.trim() !== "") // Filter out entries with empty name
+          .map((ref) => ({
+            id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
+            name: ref.name.trim(),
+            relationship: ref.relationship && ref.relationship.trim() !== "" ? ref.relationship.trim() : null,
+            email: ref.email && ref.email.trim() !== "" ? ref.email.trim() : null,
+            phone: (ref.contact && ref.contact.trim() !== "") || (ref.phone && ref.phone.trim() !== "") ? (ref.contact || ref.phone).trim() : null,
+          })) || []
       }
 
       // Ensure all array fields are properly formatted from editingPortfolio
-      payload.skills = editingPortfolio.skills?.map((skill) => ({
-        id: typeof skill.id === "string" && skill.id.includes("new-") ? null : skill.id,
-        name: skill.name,
-        type: skill.type,
-        proficiencyLevel: skill.proficiencyLevel || null,
-      })) || []
-      payload.experiences = editingPortfolio.experiences?.map((exp) => ({
-        id: typeof exp.id === "string" && exp.id.includes("new-") ? null : exp.id,
-        jobTitle: exp.jobTitle,
-        employer: exp.employer,
-        description: exp.description || null,
-        startDate: exp.startDate ? exp.startDate : null,
-        endDate: exp.endDate ? exp.endDate : null,
-      })) || []
-      payload.awardsRecognitions = editingPortfolio.awardsRecognitions?.map((award) => ({
-        id: typeof award.id === "string" && award.id.includes("new-") ? null : award.id,
-        title: award.title,
-        issuer: award.issuer || null,
-        dateReceived: award.dateReceived ? award.dateReceived : null,
-      })) || []
-      payload.continuingEducations = editingPortfolio.continuingEducations?.map((edu) => ({
-        id: typeof edu.id === "string" && edu.id.includes("new-") ? null : edu.id,
-        courseName: edu.courseName,
-        institution: edu.institution || null,
-        completionDate: edu.completionDate ? edu.completionDate : null,
-      })) || []
-      payload.professionalMemberships = editingPortfolio.professionalMemberships?.map((mem) => ({
-        id: typeof mem.id === "string" && mem.id.includes("new-") ? null : mem.id,
-        organization: mem.organization,
-        membershipType: mem.membershipType || null,
-        startDate: mem.startDate ? mem.startDate : null,
-      })) || []
-      payload.references = editingPortfolio.references?.map((ref) => ({
-        id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
-        name: ref.name,
-        relationship: ref.relationship || null,
-        email: ref.email || null,
-        phone: ref.phone || null,
-      })) || []
+      payload.skills = editingPortfolio.skills
+        ?.filter((skill) => skill.name && skill.name.trim() !== "") // Filter out entries with empty name
+        .map((skill) => ({
+          id: typeof skill.id === "string" && skill.id.includes("new-") ? null : skill.id,
+          name: skill.name.trim(),
+          type: skill.type && skill.type.trim() !== "" ? skill.type.trim() : "TECHNICAL",
+          proficiencyLevel: skill.proficiencyLevel && skill.proficiencyLevel.trim() !== "" ? skill.proficiencyLevel.trim() : null,
+        })) || []
+      payload.experiences = editingPortfolio.experiences
+        ?.filter((exp) => exp.jobTitle && exp.jobTitle.trim() !== "") // Filter out entries with empty jobTitle
+        .map((exp) => ({
+          id: typeof exp.id === "string" && exp.id.includes("new-") ? null : exp.id,
+          jobTitle: exp.jobTitle.trim(),
+          employer: (exp.company || exp.employer || "").trim() || null,
+          description: (exp.responsibilities || exp.description || "").trim() || null,
+          duration: exp.duration && exp.duration.trim() !== "" ? exp.duration.trim() : null,
+          startDate: exp.startDate && exp.startDate.trim() !== "" ? exp.startDate : null,
+          endDate: exp.endDate && exp.endDate.trim() !== "" ? exp.endDate : null,
+        })) || []
+      payload.awardsRecognitions = editingPortfolio.awardsRecognitions
+        ?.filter((award) => award.title && award.title.trim() !== "") // Filter out entries with empty title
+        .map((award) => ({
+          id: typeof award.id === "string" && award.id.includes("new-") ? null : award.id,
+          title: award.title.trim(),
+          issuer: award.issuer && award.issuer.trim() !== "" ? award.issuer.trim() : null,
+          dateReceived: award.dateReceived && award.dateReceived.trim() !== "" ? award.dateReceived : null,
+        })) || []
+      payload.continuingEducations = editingPortfolio.continuingEducations
+        ?.filter((edu) => edu.courseName && edu.courseName.trim() !== "") // Filter out entries with empty courseName
+        .map((edu) => ({
+          id: typeof edu.id === "string" && edu.id.includes("new-") ? null : edu.id,
+          courseName: edu.courseName.trim(),
+          institution: edu.institution && edu.institution.trim() !== "" ? edu.institution.trim() : null,
+          completionDate: edu.completionDate && edu.completionDate.trim() !== "" ? edu.completionDate : null,
+        })) || []
+      payload.professionalMemberships = editingPortfolio.professionalMemberships
+        ?.filter((mem) => mem.organization && mem.organization.trim() !== "") // Filter out entries with empty organization
+        .map((mem) => ({
+          id: typeof mem.id === "string" && mem.id.includes("new-") ? null : mem.id,
+          organization: mem.organization.trim(),
+          membershipType: mem.membershipType && mem.membershipType.trim() !== "" ? mem.membershipType.trim() : null,
+          startDate: mem.startDate && mem.startDate.trim() !== "" ? mem.startDate : null,
+        })) || []
+      payload.references = editingPortfolio.references
+        ?.filter((ref) => ref.name && ref.name.trim() !== "") // Filter out entries with empty name
+        .map((ref) => ({
+          id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
+          name: ref.name.trim(),
+          relationship: ref.relationship && ref.relationship.trim() !== "" ? ref.relationship.trim() : null,
+          email: ref.email && ref.email.trim() !== "" ? ref.email.trim() : null,
+          phone: (ref.contact && ref.contact.trim() !== "") || (ref.phone && ref.phone.trim() !== "") ? (ref.contact || ref.phone).trim() : null,
+        })) || []
 
       // Add certificate and project IDs if they exist
       if (section === "certificates") {
@@ -1746,9 +1787,9 @@ const fetchPublicDataWithToken = async () => {
       }
 
       if (section === "projects") {
-        if (editingPortfolio.id) {
+        if (portfolioId) {
           const existingProjectIds = (
-            await axios.get(`${BACKEND_URL}/api/project/portfolio/${editingPortfolio.id}`, {
+            await axios.get(`${BACKEND_URL}/api/project/portfolio/${portfolioId}`, {
               withCredentials: true,
               headers: { Authorization: `Bearer ${token}` },
             })
@@ -1759,7 +1800,10 @@ const fetchPublicDataWithToken = async () => {
         payload.projectIds = editingPortfolio.projectIds || portfolio.projectIds
       }
 
-      await axios.put(`${BACKEND_URL}/api/portfolio/${editingPortfolio.id}`, payload, {
+      // Log payload for debugging
+      console.log(`Saving ${section} section:`, JSON.stringify(payload, null, 2))
+      
+      await axios.put(`${BACKEND_URL}/api/portfolio/${portfolioId}`, payload, {
         withCredentials: true,
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -1835,9 +1879,9 @@ const fetchPublicDataWithToken = async () => {
       setTimeout(() => setSaveSuccess(""), 3000)
     } catch (err) {
       console.error(`Failed to save ${section}:`, err)
-      setSaveError(
-        err.response?.data?.message || err.response?.data?.error || err.message || `Failed to save ${section}`,
-      )
+      console.error(`Error response:`, err.response?.data)
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || err.response?.data || err.message || `Failed to save ${section}`
+      setSaveError(typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage))
     } finally {
       setIsSaving(false)
     }
@@ -1919,676 +1963,2294 @@ const fetchPublicDataWithToken = async () => {
   }
 
   return (
-    <div className={`min-h-screen ${designTheme.pageBg || "bg-gray-50"} py-8 px-4`}>
-      <div className={`mx-auto bg-white ${designTheme.layoutType === "housekeeping-layout" ? "max-w-6xl shadow-xl rounded-none" : "max-w-7xl shadow-2xl rounded-2xl"} overflow-hidden`}>
-        {/* Housekeeping Layout: Top header + Left sidebar + Right content */}
-        {designTheme.layoutType === "housekeeping-layout" ? (
-          <div>
-            {/* Top Header - Full Width Dark Gray */}
-            <div className={`${designTheme.headerBg} text-white p-8 ${designTheme.headerFlexDirection} ${designTheme.headerTextAlign}`}>
-              {isEditMode && editingSections.header ? (
-                <>
-                  <Input
-                    value={editingPortfolio?.fullName || ""}
-                    onChange={(e) => handleFieldChange("fullName", e.target.value)}
-                    className={`!${designTheme.typographySize} !${designTheme.titleWeight} !bg-white/20 !border-white/40 !text-white placeholder:text-white/60 uppercase`}
-                    placeholder="Full Name"
-                  />
-                  <Input
-                    value={editingPortfolio?.professionalTitle || ""}
-                    onChange={(e) => handleFieldChange("professionalTitle", e.target.value)}
-                    className="!text-lg !font-normal !bg-white/20 !border-white/40 !text-white placeholder:text-white/60 uppercase mt-2"
-                    placeholder="Professional Title"
-                  />
-                </>
-              ) : (
-                <>
-                  <Typography variant="h1" className={`${designTheme.typographySize} ${designTheme.titleWeight} text-white uppercase tracking-wide mb-2`}>
-                    {portfolio.fullName || "Professional Portfolio"}
-                  </Typography>
-                  {portfolio.professionalTitle && (
-                    <Typography variant="h6" className="text-white text-lg font-normal uppercase tracking-wide">
-                      {portfolio.professionalTitle}
-                    </Typography>
-                  )}
-                </>
-              )}
-              {isGraduateView && isEditMode && (
-                <IconButton
-                  size="sm"
-                  variant="text"
-                  className="text-white hover:bg-white/20 mt-2"
-                  onClick={() => handleSectionEditToggle("header")}
-                >
-                  <FaPen className="w-4 h-4" />
-                </IconButton>
-              )}
-              {isEditMode && editingSections.header && (
-                <Button
-                  variant="gradient"
-                  color="white"
-                  onClick={() => handleSaveSection("header")}
-                  disabled={isSaving}
-                  className="flex items-center gap-2 mt-4"
-                >
-                  <FaSave className="w-4 h-4" />
-                  {isSaving ? "Saving..." : "Save Changes"}
-                </Button>
-              )}
-            </div>
-
-            {/* Main Content: Left Sidebar + Right Content */}
-            <div className="flex flex-col lg:flex-row">
-              {/* Left Sidebar - Light Gray Background */}
-              <div className={`${designTheme.sidebarBg} w-full lg:w-80 flex-shrink-0 p-8 border-r border-gray-400`}>
-                {/* Contact Section */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <Typography variant="h6" className={`${designTheme.sidebarTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+    <div className={`min-h-screen ${portfolio?.designTemplate === "food-beverage" ? "bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200" : portfolio?.designTemplate === "bartending-barista" ? "bg-white" : "bg-gray-50"} py-8 px-4`}>
+      <div className="max-w-7xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
+        {portfolio?.designTemplate === "food-beverage" ? (
+          <div className="px-6 py-8 bg-gradient-to-br from-gray-50 via-gray-100 via-gray-200 to-gray-100" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left Sidebar - Profile Image, Contact, Skills, TESDA */}
+              <div className="lg:col-span-1 space-y-6">
+                {/* Profile Image Container */}
+                {(graduate?.profilePicture || portfolio?.avatar || isEditMode) && (
+                  <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 flex justify-center items-center border-2 border-gray-300 shadow-md">
+                    <Avatar
+                      src={
+                        isEditMode && selectedAvatarFile
+                          ? URL.createObjectURL(selectedAvatarFile)
+                          : graduate?.profilePicture || portfolio?.avatar || "/placeholder.svg"
+                      }
+                      alt={`${portfolio.fullName || "Profile"} Picture`}
+                      size="xxl"
+                      className="w-48 h-48 shadow-xl ring-4 ring-gray-300"
+                      onClick={isEditMode ? handleImageClick : undefined}
+                    />
+                    {isEditMode && !editingSections.header && (
+                      <div className="absolute bottom-2 right-2 rounded-full p-2 shadow-lg cursor-pointer bg-gray-500 hover:bg-gray-600"
+                        onClick={() => handleSectionEditToggle("header")}>
+                        <FaPen className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarFileChange}
+                      ref={avatarFileInputRef}
+                      className="hidden"
+                    />
+                  </div>
+                )}
+                
+                {/* Contact Information */}
+                <div className={`bg-white border-2 ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding} shadow-md`}>
+                  <div className="flex items-center justify-between mb-5">
+                    <Typography variant="h6" className={`font-bold ${designTheme.textColor} text-xl`} style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.01em" }}>
                       Contact
                     </Typography>
                     {isGraduateView && isEditMode && (
-                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("contact")}>
+                      <IconButton 
+                        size="md" 
+                        variant="text" 
+                        onClick={() => handleSectionEditToggle("contact")}
+                        className={editingSections.contact ? designTheme.textColor : ""}
+                      >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
                     )}
                   </div>
-                  <div className="mt-3 space-y-3">
-                    {isEditMode && editingSections.contact ? (
-                      <>
-                        <Input
-                          size="sm"
-                          value={editingPortfolio?.email || ""}
-                          onChange={(e) => handleFieldChange("email", e.target.value)}
-                          placeholder="Email"
-                          className="!border-gray-300"
-                        />
-                        <Input
-                          size="sm"
-                          value={editingPortfolio?.phone || ""}
-                          onChange={(e) => handleFieldChange("phone", e.target.value)}
-                          placeholder="Phone"
-                          className="!border-gray-300"
-                        />
-                        <Input
-                          size="sm"
-                          value={editingPortfolio?.website || ""}
-                          onChange={(e) => handleFieldChange("website", e.target.value)}
-                          placeholder="Website"
-                          className="!border-gray-300"
-                        />
-                        <Button size="sm" onClick={() => handleSaveSection("contact")} disabled={isSaving}>
-                          {isSaving ? "Saving..." : "Save"}
-                        </Button>
-                      </>
-                    ) : (portfolio.email || portfolio.phone || portfolio.website) ? (
-                      <>
-                        {portfolio.email && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-700">✉️</span>
-                            <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm break-all`}>
-                              {portfolio.email}
-                            </Typography>
-                          </div>
+                  <div className="space-y-3">
+                    {(portfolio.email || isEditMode) && (
+                      <div>
+                        <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          Email
+                        </Typography>
+                        {isEditMode && editingSections.contact ? (
+                          <Input
+                            size="md"
+                            value={editingPortfolio?.email || ""}
+                            onChange={(e) => handleFieldChange("email", e.target.value)}
+                            placeholder="Email address"
+                            className="!border-gray-300"
+                          />
+                        ) : (
+                          <Typography variant="small" className="text-gray-900 break-all font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                            {portfolio.email}
+                          </Typography>
                         )}
-                        {portfolio.phone && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-700">📞</span>
-                            <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm`}>
-                              {portfolio.phone}
-                            </Typography>
-                          </div>
+                      </div>
+                    )}
+                    {(portfolio.phone || isEditMode) && (
+                      <div>
+                        <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          Phone
+                        </Typography>
+                        {isEditMode && editingSections.contact ? (
+                          <Input
+                            size="md"
+                            value={editingPortfolio?.phone || ""}
+                            onChange={(e) => handleFieldChange("phone", e.target.value)}
+                            placeholder="Phone number"
+                            className="!border-gray-300"
+                          />
+                        ) : (
+                          <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                            {portfolio.phone}
+                          </Typography>
                         )}
-                        {portfolio.website && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-700">📍</span>
-                            <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm`}>
-                              {portfolio.website}
-                            </Typography>
-                          </div>
+                      </div>
+                    )}
+                    {(portfolio.website || isEditMode) && (
+                      <div>
+                        <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          Website
+                        </Typography>
+                        {isEditMode && editingSections.contact ? (
+                          <Input
+                            size="md"
+                            value={editingPortfolio?.website || ""}
+                            onChange={(e) => handleFieldChange("website", e.target.value)}
+                            placeholder="Website URL"
+                            className="!border-gray-300"
+                          />
+                        ) : (
+                          <Typography variant="small" className="text-gray-900 break-all font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                            {portfolio.website}
+                          </Typography>
                         )}
-                      </>
-                    ) : (
-                      <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} italic text-xs`}>
-                        You haven't filled up details in this section.
-                      </Typography>
+                      </div>
                     )}
                   </div>
+                  {isEditMode && editingSections.contact && (
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        variant="gradient"
+                        color={designTheme.buttonColor}
+                        size="md"
+                        onClick={() => handleSaveSection("contact")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-3 h-3" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
-                {/* Education Section */}
-                <div className="mb-6">
-                  <Typography variant="h6" className={`${designTheme.sidebarTextColor || "text-gray-800"} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                    Education
-                  </Typography>
-                  <div className="mt-3 space-y-2">
-                    {portfolio.trainingCenter || portfolio.ncLevel || portfolio.scholarshipType ? (
-                      <>
-                        {portfolio.trainingCenter && (
-                          <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm font-semibold`}>
-                            {portfolio.trainingCenter}
-                          </Typography>
-                        )}
-                        {portfolio.ncLevel && (
-                          <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm`}>
-                            • {portfolio.ncLevel}
-                          </Typography>
-                        )}
-                        {portfolio.scholarshipType && (
-                          <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm`}>
-                            • {portfolio.scholarshipType}
-                          </Typography>
-                        )}
-                      </>
-                    ) : (
-                      <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} italic text-xs`}>
-                        You haven't filled up details in this section.
-                      </Typography>
-                    )}
-                  </div>
-                </div>
-
-                {/* Skills Section */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <Typography variant="h6" className={`${designTheme.sidebarTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+                {/* Skills */}
+                <div className={`bg-white border-2 ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding} shadow-md`}>
+                  <div className="flex items-center justify-between mb-5">
+                    <Typography variant="h6" className={`font-bold ${designTheme.textColor} text-xl`} style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.01em" }}>
                       Skills
                     </Typography>
                     {isGraduateView && isEditMode && (
-                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("skills")}>
+                      <IconButton 
+                        size="md" 
+                        variant="text" 
+                        onClick={() => handleSectionEditToggle("skills")}
+                        className={editingSections.skills ? designTheme.textColor : ""}
+                      >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
                     )}
                   </div>
-                  <div className="mt-3">
-                    {portfolio.skills && portfolio.skills.length > 0 ? (
-                      <ul className="space-y-1 list-disc list-inside">
-                        {portfolio.skills.map((skill, index) => (
-                          <li key={index}>
-                            <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm`}>
-                              {skill.name}
-                            </Typography>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} italic text-xs`}>
-                        You haven't filled up details in this section.
-                      </Typography>
-                    )}
-                  </div>
+                  {((portfolio.skills && portfolio.skills.length > 0) || (isEditMode && editingSections.skills)) ? (
+                    <div className="space-y-3">
+                      {(isEditMode && editingSections.skills ? editingPortfolio?.skills : portfolio.skills)?.map((skill, index) => (
+                        <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
+                          {isEditMode && editingSections.skills ? (
+                            <div className="space-y-2">
+                              <div className="flex gap-2">
+                                <Input
+                                  size="md"
+                                  value={skill.name || ""}
+                                  onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
+                                  placeholder="Skill name"
+                                  className="!border-gray-300 flex-1"
+                                />
+                                <IconButton
+                                  size="md"
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => handleRemoveArrayItem("skills", index)}
+                                >
+                                  <FaTrash className="w-3 h-3" />
+                                </IconButton>
+                              </div>
+                              <Input
+                                size="md"
+                                value={skill.proficiencyLevel || ""}
+                                onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
+                                placeholder="Proficiency level"
+                                className="!border-gray-300"
+                              />
+                            </div>
+                          ) : (
+                            <>
+                              <Typography variant="small" className="font-bold text-gray-900 mb-1 text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                {skill.name}
+                              </Typography>
+                              <div className="flex items-center space-x-2">
+                                <Chip size="md" value={skill.type} color={designTheme.buttonColor} className="text-xs font-semibold" />
+                                {skill.proficiencyLevel && (
+                                  <Typography variant="small" className="text-gray-600 text-xs font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                    {skill.proficiencyLevel}
+                                  </Typography>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ))}
+                      {isEditMode && editingSections.skills && (
+                        <Button
+                          variant="outlined"
+                          size="md"
+                          color={designTheme.buttonColor}
+                          onClick={() => handleAddArrayItem("skills", { name: "", type: "TECHNICAL", proficiencyLevel: "" })}
+                          className="w-full flex items-center justify-center gap-2 mt-2"
+                        >
+                          <FaPlus className="w-3 h-3" />
+                          Add Skill
+                        </Button>
+                      )}
+                      {isEditMode && editingSections.skills && (
+                        <div className="mt-4 flex justify-end">
+                          <Button
+                            variant="gradient"
+                            color={designTheme.buttonColor}
+                            size="md"
+                            onClick={() => handleSaveSection("skills")}
+                            disabled={isSaving}
+                            className="flex items-center gap-2"
+                          >
+                            <FaSave className="w-3 h-3" />
+                            {isSaving ? "Saving..." : "Save Changes"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                      No skills added yet
+                    </Typography>
+                  )}
                 </div>
 
                 {/* TESDA Information */}
-                <div>
-                  <Typography variant="h6" className={`${designTheme.sidebarTextColor || "text-gray-800"} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                    TESDA
-                  </Typography>
-                  <div className="mt-3 space-y-2">
-                    {portfolio.trainingDuration || portfolio.tesdaRegistrationNumber ? (
-                      <>
-                        {portfolio.trainingDuration && (
-                          <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm`}>
-                            • Duration: {portfolio.trainingDuration}
+                <div className={`bg-white border-2 ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding} shadow-md`}>
+                  <div className="flex items-center justify-between mb-5">
+                    <Typography variant="h6" className={`font-bold ${designTheme.textColor} text-xl`} style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.01em" }}>
+                      TESDA Information
+                    </Typography>
+                    {isGraduateView && isEditMode && (
+                      <IconButton 
+                        size="md" 
+                        variant="text" 
+                        onClick={() => handleSectionEditToggle("tesda")}
+                        className={editingSections.tesda ? designTheme.textColor : ""}
+                      >
+                        <FaPen className="w-4 h-4" />
+                      </IconButton>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    {(portfolio.ncLevel || (isEditMode && editingSections.tesda)) && (
+                      <div>
+                        <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          NC Level
+                        </Typography>
+                        {isEditMode && editingSections.tesda ? (
+                          <Input
+                            size="md"
+                            value={editingPortfolio?.ncLevel || ""}
+                            onChange={(e) => handleFieldChange("ncLevel", e.target.value)}
+                            placeholder="NC Level"
+                            className="!border-gray-300"
+                          />
+                        ) : (
+                          <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                            {portfolio.ncLevel}
                           </Typography>
                         )}
-                        {portfolio.tesdaRegistrationNumber && (
-                          <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} text-sm`}>
-                            • Reg. #: {portfolio.tesdaRegistrationNumber}
+                      </div>
+                    )}
+                    {(portfolio.trainingCenter || (isEditMode && editingSections.tesda)) && (
+                      <div>
+                        <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          Training Center
+                        </Typography>
+                        {isEditMode && editingSections.tesda ? (
+                          <Input
+                            size="md"
+                            value={editingPortfolio?.trainingCenter || ""}
+                            onChange={(e) => handleFieldChange("trainingCenter", e.target.value)}
+                            placeholder="Training Center"
+                            className="!border-gray-300"
+                          />
+                        ) : (
+                          <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                            {portfolio.trainingCenter}
                           </Typography>
                         )}
-                      </>
-                    ) : (
-                      <Typography variant="small" className={`${designTheme.sidebarTextColor || "text-gray-800"} italic text-xs`}>
-                        You haven't filled up details in this section.
+                      </div>
+                    )}
+                    {(portfolio.scholarshipType || (isEditMode && editingSections.tesda)) && (
+                      <div>
+                        <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          Scholarship Type
+                        </Typography>
+                        {isEditMode && editingSections.tesda ? (
+                          <Input
+                            size="md"
+                            value={editingPortfolio?.scholarshipType || ""}
+                            onChange={(e) => handleFieldChange("scholarshipType", e.target.value)}
+                            placeholder="Scholarship Type"
+                            className="!border-gray-300"
+                          />
+                        ) : (
+                          <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                            {portfolio.scholarshipType}
+                          </Typography>
+                        )}
+                      </div>
+                    )}
+                    {(portfolio.trainingDuration || (isEditMode && editingSections.tesda)) && (
+                      <div>
+                        <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          Training Duration
+                        </Typography>
+                        {isEditMode && editingSections.tesda ? (
+                          <Input
+                            size="md"
+                            value={editingPortfolio?.trainingDuration || ""}
+                            onChange={(e) => handleFieldChange("trainingDuration", e.target.value)}
+                            placeholder="Training Duration"
+                            className="!border-gray-300"
+                          />
+                        ) : (
+                          <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                            {portfolio.trainingDuration}
+                          </Typography>
+                        )}
+                      </div>
+                    )}
+                    {(portfolio.tesdaRegistrationNumber || (isEditMode && editingSections.tesda)) && (
+                      <div>
+                        <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          Registration Number
+                        </Typography>
+                        {isEditMode && editingSections.tesda ? (
+                          <Input
+                            size="md"
+                            value={editingPortfolio?.tesdaRegistrationNumber || ""}
+                            onChange={(e) => handleFieldChange("tesdaRegistrationNumber", e.target.value)}
+                            placeholder="Registration Number"
+                            className="!border-gray-300"
+                          />
+                        ) : (
+                          <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                            {portfolio.tesdaRegistrationNumber}
+                          </Typography>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {isEditMode && editingSections.tesda && (
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        variant="gradient"
+                        color={designTheme.buttonColor}
+                        size="md"
+                        onClick={() => handleSaveSection("tesda")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-3 h-3" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Side - Name and Main Content */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Name Container */}
+                <div className="bg-white border-2 border-gray-300 rounded-xl shadow-lg p-8 bg-gradient-to-br from-white to-gray-50/30">
+                  {isEditMode && editingSections.header ? (
+                    <div className="space-y-4">
+                      <Input
+                        value={editingPortfolio?.fullName || ""}
+                        onChange={(e) => handleFieldChange("fullName", e.target.value)}
+                        className={`!${designTheme.typographySize} !${designTheme.titleWeight} !bg-white/20 !border-gray-300 !text-gray-900`}
+                        placeholder="Full Name"
+                      />
+                      <Input
+                        value={editingPortfolio?.professionalTitle || ""}
+                        onChange={(e) => handleFieldChange("professionalTitle", e.target.value)}
+                        className="!text-lg !bg-white/20 !border-gray-300 !text-gray-900"
+                        placeholder="Professional Title"
+                      />
+                      <Textarea
+                        value={editingPortfolio?.professionalSummary || ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          if (value.length <= 300) {
+                            handleFieldChange("professionalSummary", value)
+                          }
+                        }}
+                        className="!text-base !bg-white/20 !border-gray-300 !text-gray-900"
+                        placeholder="Professional Summary"
+                        rows={4}
+                        maxLength={300}
+                      />
+                      <Typography variant="small" className="text-gray-600 mt-1">
+                        {(editingPortfolio?.professionalSummary || "").length}/300 characters
                       </Typography>
+                      <div className="flex justify-end">
+                        <Button
+                          variant="gradient"
+                          color="white"
+                          onClick={() => handleSaveSection("header")}
+                          disabled={isSaving}
+                          className="flex items-center gap-2"
+                        >
+                          <FaSave className="w-4 h-4" />
+                          {isSaving ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <Typography
+                        variant="h1"
+                        className={`${designTheme.titleWeight} ${designTheme.typographySize} tracking-tight text-gray-900 break-words`}
+                        style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.02em" }}
+                      >
+                        {portfolio.fullName || "Professional Portfolio"}
+                      </Typography>
+                      {portfolio.professionalTitle && (
+                        <Typography
+                          variant="h6"
+                          className="text-gray-700 font-semibold mt-3 text-lg"
+                          style={{ fontFamily: "'Inter', sans-serif" }}
+                        >
+                          {portfolio.professionalTitle}
+                        </Typography>
+                      )}
+                      {portfolio.professionalSummary && (
+                        <Typography
+                          variant="lead"
+                          className="text-gray-800 leading-relaxed mt-5 break-words overflow-wrap-anywhere text-base"
+                          style={{ fontFamily: "'Inter', sans-serif", lineHeight: "1.75" }}
+                        >
+                          {portfolio.professionalSummary}
+                        </Typography>
+                      )}
+                      {isGraduateView && isEditMode && (
+                        <div className="mt-4 flex justify-end">
+                          <IconButton
+                            size="md"
+                            variant="text"
+                            className="text-gray-700 hover:bg-gray-100"
+                            onClick={() => handleSectionEditToggle("header")}
+                          >
+                            <FaPen className="w-4 h-4" />
+                          </IconButton>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Main Content Container */}
+                <div className={`bg-white border-2 ${designTheme.cardBorder} rounded-xl shadow-lg p-10 space-y-10`}>
+                  {/* Certificates Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-6">
+                      <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
+                        Certificates
+                      </Typography>
+                      {isGraduateView && isEditMode && (
+                        <IconButton 
+                          size="md" 
+                          variant="text" 
+                          onClick={() => handleSectionEditToggle("certificates")}
+                          className={editingSections.certificates ? designTheme.textColor : ""}
+                        >
+                          <FaPen className="w-4 h-4" />
+                        </IconButton>
+                      )}
+                    </div>
+                    {certificates && certificates.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {certificates.map((certificate) => (
+                          <Card key={certificate.id} className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-300 shadow-md hover:shadow-lg transition-shadow duration-300">
+                            <CardBody className="flex flex-col items-start gap-3">
+                              <div className="flex items-center gap-3 w-full">
+                                {(certificate.preview || certificate.certificateFilePath) && (
+                                  <Avatar
+                                    src={certificate.preview || certificate.certificateFilePath || "/placeholder.svg"}
+                                    alt="Certificate Preview"
+                                    size="md"
+                                    className="ring-2 ring-gray-400 shadow-md flex-shrink-0"
+                                  />
+                                )}
+                                <div className="flex-grow min-w-0">
+                                  <Typography variant="h6" className="text-gray-900 font-bold text-sm truncate" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                    {certificate.courseName}
+                                  </Typography>
+                                  {certificate.certificateNumber && (
+                                    <Typography variant="small" className="text-gray-700 font-medium mt-1 text-xs">
+                                      #{certificate.certificateNumber}
+                                    </Typography>
+                                  )}
+                                  {certificate.issueDate && (
+                                    <Typography variant="small" className="text-gray-600 mt-1 text-xs">
+                                      {certificate.issueDate ? new Date(certificate.issueDate).toLocaleDateString() : "N/A"}
+                                    </Typography>
+                                  )}
+                                </div>
+                              </div>
+                            </CardBody>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
+                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          No certificates added yet
+                        </Typography>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Experience Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-6">
+                      <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
+                        Experience
+                      </Typography>
+                      {isGraduateView && isEditMode && (
+                        <IconButton 
+                          size="md" 
+                          variant="text" 
+                          onClick={() => handleSectionEditToggle("experience")}
+                          className={editingSections.experience ? designTheme.textColor : ""}
+                        >
+                          <FaPen className="w-4 h-4" />
+                        </IconButton>
+                      )}
+                    </div>
+                    {portfolio.experiences && portfolio.experiences.length > 0 ? (
+                      <div className="space-y-6">
+                        {portfolio.experiences.map((exp, index) => (
+                          <div key={index} className="border-l-4 border-gray-600 pl-6 pb-6 relative bg-gradient-to-r from-gray-50/50 to-transparent rounded-r-lg p-5">
+                            <Typography variant="h6" className="font-bold text-gray-900 mb-1 break-words text-base" style={{ fontFamily: "'Inter', sans-serif" }}>
+                              {exp.jobTitle}
+                            </Typography>
+                            {exp.company && (
+                              <Typography variant="small" className={`${designTheme.textColor} font-semibold mb-1 break-words text-sm`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                {exp.company}
+                              </Typography>
+                            )}
+                            {exp.duration && (
+                              <Typography variant="small" className="text-gray-600 font-medium mb-3 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                {exp.duration}
+                              </Typography>
+                            )}
+                            {exp.responsibilities && (
+                              <Typography
+                                variant="small"
+                                className="text-gray-800 leading-relaxed break-words overflow-wrap-anywhere text-xs"
+                                style={{ fontFamily: "'Inter', sans-serif", lineHeight: "1.6" }}
+                              >
+                                {exp.responsibilities}
+                              </Typography>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
+                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          No experience added yet
+                        </Typography>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Projects Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-6">
+                      <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
+                        Projects
+                      </Typography>
+                      {isGraduateView && isEditMode && (
+                        <IconButton 
+                          size="md" 
+                          variant="text" 
+                          onClick={() => handleSectionEditToggle("projects")}
+                          className={editingSections.projects ? designTheme.textColor : ""}
+                        >
+                          <FaPen className="w-4 h-4" />
+                        </IconButton>
+                      )}
+                    </div>
+                    {projects && projects.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {projects.map((project) => (
+                          <Card key={project.id} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+                            {project.projectImageFilePath && (
+                              <div className="relative h-40 overflow-hidden">
+                                <img
+                                  src={project.projectImageFilePath || "/placeholder.svg"}
+                                  alt={project.title || "Project"}
+                                  className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                                  onClick={() => setSelectedProjectImage(project.projectImageFilePath)}
+                                />
+                              </div>
+                            )}
+                            <CardBody className="p-4 bg-gradient-to-br from-white to-gray-50/30">
+                              <Typography variant="h6" className="font-bold text-gray-900 mb-2 break-words text-base" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                {project.title || "Unnamed Project"}
+                              </Typography>
+                              {project.description && (
+                                <Typography
+                                  variant="small"
+                                  className="text-gray-700 mb-3 leading-relaxed break-words overflow-wrap-anywhere text-xs line-clamp-3"
+                                  style={{ fontFamily: "'Inter', sans-serif", lineHeight: "1.6" }}
+                                >
+                                  {project.description}
+                                </Typography>
+                              )}
+                              {project.startDate && project.endDate && (
+                                <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                  {new Date(project.startDate).toLocaleDateString()} -{" "}
+                                  {new Date(project.endDate).toLocaleDateString()}
+                                </Typography>
+                              )}
+                            </CardBody>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
+                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          No projects added yet
+                        </Typography>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Awards & Recognition Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-6">
+                      <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
+                        Awards & Recognition
+                      </Typography>
+                      {isGraduateView && isEditMode && (
+                        <IconButton 
+                          size="md" 
+                          variant="text" 
+                          onClick={() => handleSectionEditToggle("awards")}
+                          className={editingSections.awards ? designTheme.textColor : ""}
+                        >
+                          <FaPen className="w-4 h-4" />
+                        </IconButton>
+                      )}
+                    </div>
+                    {portfolio.awardsRecognitions && portfolio.awardsRecognitions.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {portfolio.awardsRecognitions.map((award, index) => (
+                          <div key={index} className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow duration-300">
+                            <Typography variant="h6" className="font-bold text-gray-900 mb-2 text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
+                              {award.title}
+                            </Typography>
+                            {award.issuer && (
+                              <Typography variant="small" className="text-gray-700 font-medium mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                {award.issuer}
+                              </Typography>
+                            )}
+                            {award.dateReceived && (
+                              <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                {award.dateReceived}
+                              </Typography>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
+                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          No awards or recognition added yet
+                        </Typography>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Continuing Education & Professional Memberships */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Continuing Education */}
+                    <div>
+                      <div className="flex items-center justify-between mb-5">
+                        <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-xl md:text-2xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
+                          Continuing Education
+                        </Typography>
+                        {isGraduateView && isEditMode && (
+                          <IconButton 
+                            size="md" 
+                            variant="text" 
+                            onClick={() => handleSectionEditToggle("education")}
+                            className={editingSections.education ? designTheme.textColor : ""}
+                          >
+                            <FaPen className="w-4 h-4" />
+                          </IconButton>
+                        )}
+                      </div>
+                      {portfolio.continuingEducations && portfolio.continuingEducations.length > 0 ? (
+                        <div className="space-y-3">
+                          {portfolio.continuingEducations.map((edu, index) => (
+                            <div key={index} className="border-l-4 border-gray-600 pl-4 py-2 bg-gradient-to-r from-gray-50/50 to-transparent rounded-r-lg">
+                              <Typography variant="small" className="font-bold text-gray-900 mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                {edu.courseName}
+                              </Typography>
+                              {edu.institution && (
+                                <Typography variant="small" className="text-gray-700 font-medium mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                  {edu.institution}
+                                </Typography>
+                              )}
+                              {edu.completionDate && (
+                                <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                  {edu.completionDate}
+                                </Typography>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          No continuing education added yet
+                        </Typography>
+                      )}
+                    </div>
+
+                    {/* Professional Memberships */}
+                    <div>
+                      <div className="flex items-center justify-between mb-5">
+                        <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-xl md:text-2xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
+                          Professional Memberships
+                        </Typography>
+                        {isGraduateView && isEditMode && (
+                          <IconButton 
+                            size="md" 
+                            variant="text" 
+                            onClick={() => handleSectionEditToggle("memberships")}
+                            className={editingSections.memberships ? designTheme.textColor : ""}
+                          >
+                            <FaPen className="w-4 h-4" />
+                          </IconButton>
+                        )}
+                      </div>
+                      {portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0 ? (
+                        <div className="space-y-3">
+                          {portfolio.professionalMemberships.map((mem, index) => (
+                            <div key={index} className="border-l-4 border-gray-600 pl-4 py-2 bg-gradient-to-r from-gray-50/50 to-transparent rounded-r-lg">
+                              <Typography variant="small" className="font-bold text-gray-900 mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                {mem.organization}
+                              </Typography>
+                              {mem.membershipType && (
+                                <Typography variant="small" className="text-gray-700 font-medium mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                  {mem.membershipType}
+                                </Typography>
+                              )}
+                              {mem.startDate && (
+                                <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                  Since {mem.startDate}
+                                </Typography>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          No professional memberships added yet
+                        </Typography>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* References Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-6">
+                      <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
+                        References
+                      </Typography>
+                      {isGraduateView && isEditMode && (
+                        <IconButton 
+                          size="md" 
+                          variant="text" 
+                          onClick={() => handleSectionEditToggle("references")}
+                          className={editingSections.references ? designTheme.textColor : ""}
+                        >
+                          <FaPen className="w-4 h-4" />
+                        </IconButton>
+                      )}
+                    </div>
+                    {portfolio.references && portfolio.references.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {portfolio.references.map((ref, index) => (
+                          <div key={index} className="bg-gradient-to-br from-white to-gray-50/30 border-2 border-gray-300 rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow duration-300">
+                            <Typography variant="h6" className="font-bold text-gray-900 mb-2 break-words text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
+                              {ref.name}
+                            </Typography>
+                            {ref.position && (
+                              <Typography variant="small" className="text-gray-700 font-medium mb-1 break-words text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                {ref.position}
+                              </Typography>
+                            )}
+                            {ref.company && (
+                              <Typography variant="small" className={`${designTheme.textColor} mb-2 break-words font-semibold text-xs`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                {ref.company}
+                              </Typography>
+                            )}
+                            <div className="space-y-1">
+                              {ref.email && (
+                                <Typography variant="small" className="text-gray-600 break-all font-medium text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                  {ref.email}
+                                </Typography>
+                              )}
+                              {ref.contact && (
+                                <Typography variant="small" className="text-gray-600 break-words font-medium text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                  {ref.contact}
+                                </Typography>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
+                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                          No references added yet
+                        </Typography>
+                      </div>
                     )}
                   </div>
                 </div>
               </div>
-
-              {/* Right Main Content - White Background */}
-              <div className="flex-1 bg-white p-8">
-                {/* Professional Summary */}
-                <div className="mb-8">
-                  <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase mb-2 pb-2 border-b border-gray-600`}>
-                    Professional Summary
-                  </Typography>
-                  <div className="mt-3">
+            </div>
+          </div>
+        ) : portfolio?.designTemplate === "bartending-barista" ? (
+          /* Tourism - Modern Centered Layout with Clean Résumé Style */
+          <div className="bg-white min-h-screen" style={{ fontFamily: "'Montserrat', 'Roboto', 'Inter', sans-serif" }}>
+            {/* Header Section - Clean Modern Résumé Style */}
+            <div className="relative bg-white pt-16 pb-16 md:pt-20 md:pb-20 px-6 md:px-12 lg:px-16 border-b-2 border-gray-200">
+              <div className="max-w-7xl mx-auto">
+                {/* Centered Layout */}
+                <div className="flex flex-col items-center text-center space-y-6 md:space-y-8">
+                  {/* Profile Photo - Centered */}
+                  <div className="flex-shrink-0 pt-4 md:pt-6 lg:pt-8">
+                    <div className="relative">
+                      {(graduate?.profilePicture || portfolio?.avatar || isEditMode) && (
+                        <>
+                          <Avatar
+                            src={
+                              isEditMode && selectedAvatarFile
+                                ? URL.createObjectURL(selectedAvatarFile)
+                                : graduate?.profilePicture || portfolio?.avatar || "/placeholder.svg"
+                            }
+                            alt={portfolio?.fullName || "Profile"}
+                            size="xxl"
+                            className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-none border-2 border-black shadow-lg"
+                            style={{ filter: 'grayscale(100%)' }}
+                            onClick={isEditMode ? handleImageClick : undefined}
+                          />
+                          {isEditMode && !editingSections.header && (
+                            <div className="absolute bottom-2 right-2 rounded-full p-2 shadow-lg cursor-pointer bg-red-600 hover:bg-red-700"
+                              onClick={() => handleSectionEditToggle("header")}>
+                              <FaPen className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarFileChange}
+                            ref={avatarFileInputRef}
+                            className="hidden"
+                          />
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Name - Large Bold Red, Centered */}
+                  <div>
                     {isEditMode && editingSections.header ? (
-                      <Textarea
-                        value={editingPortfolio?.professionalSummary || ""}
-                        onChange={(e) => handleFieldChange("professionalSummary", e.target.value)}
-                        className="!border-gray-300"
-                        rows={4}
+                      <Input
+                        value={editingPortfolio?.fullName || ""}
+                        onChange={(e) => handleFieldChange("fullName", e.target.value)}
+                        className="!text-5xl md:!text-6xl lg:!text-7xl xl:!text-8xl !font-bold !text-red-600 !border-red-600"
+                        placeholder="Your Name"
                       />
-                    ) : portfolio.professionalSummary ? (
-                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} leading-relaxed`}>
+                    ) : (
+                      <Typography
+                        variant="h1"
+                        className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-red-600 tracking-tight leading-none"
+                        style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 900, letterSpacing: "-0.02em" }}
+                      >
+                        {portfolio?.fullName || "Your Name"}
+                      </Typography>
+                    )}
+                  </div>
+                  
+                  {/* Professional Title - Black Text, Centered */}
+                  {(portfolio?.professionalTitle || (isEditMode && editingSections.header)) && (
+                    <div>
+                      {isEditMode && editingSections.header ? (
+                        <Input
+                          value={editingPortfolio?.professionalTitle || ""}
+                          onChange={(e) => handleFieldChange("professionalTitle", e.target.value)}
+                          className="!text-xl md:!text-2xl !text-black !font-medium"
+                          placeholder="Professional Title"
+                        />
+                      ) : (
+                        <Typography
+                          variant="h5"
+                          className="text-xl md:text-2xl text-black font-medium tracking-normal"
+                          style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 500 }}
+                        >
+                          {portfolio?.professionalTitle}
+                        </Typography>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Professional Summary - Black Body Text, Centered */}
+                  <div className="max-w-3xl mx-auto px-4">
+                    {isEditMode && editingSections.header ? (
+                      <div>
+                        <Textarea
+                          value={editingPortfolio?.professionalSummary || ""}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            if (value.length <= 300) {
+                              handleFieldChange("professionalSummary", value)
+                            }
+                          }}
+                          className="!text-base md:!text-lg !text-black !border-gray-300"
+                          placeholder="Professional Summary"
+                          rows={4}
+                          maxLength={300}
+                        />
+                        <Typography variant="small" className="text-gray-500 mt-1">
+                          {(editingPortfolio?.professionalSummary || "").length}/300 characters
+                        </Typography>
+                      </div>
+                    ) : portfolio?.professionalSummary ? (
+                      <Typography
+                        variant="lead"
+                        className="text-black leading-relaxed text-base md:text-lg break-words overflow-wrap-anywhere text-center"
+                        style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.7", fontWeight: 400, wordWrap: "break-word", overflowWrap: "break-word" }}
+                      >
                         {portfolio.professionalSummary}
                       </Typography>
                     ) : (
-                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
+                      <Typography
+                        variant="lead"
+                        className="text-gray-500 leading-relaxed text-base md:text-lg italic text-center break-words overflow-wrap-anywhere"
+                        style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.7", fontWeight: 400, wordWrap: "break-word", overflowWrap: "break-word" }}
+                      >
                         You haven't filled up details in this section.
                       </Typography>
+                    )}
+                  </div>
+                  {isEditMode && editingSections.header && (
+                    <div className="mt-6 flex justify-center">
+                      <Button
+                        variant="gradient"
+                        color="red"
+                        onClick={() => handleSaveSection("header")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-4 h-4" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content Section */}
+            <div className="bg-white py-12 px-6">
+              <div className="max-w-6xl mx-auto space-y-12">
+                
+                {/* Contact & TESDA Info - Side by Side */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Contact Information */}
+                  <div className="bg-white p-6 border-l-4 border-red-600">
+                    <div className="flex items-center justify-between mb-4">
+                      <Typography variant="h5" className="font-bold text-red-600 text-lg uppercase tracking-wide" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                        Contact
+                      </Typography>
+                      {isGraduateView && isEditMode && (
+                        <IconButton 
+                          size="md" 
+                          variant="text" 
+                          onClick={() => handleSectionEditToggle("contact")}
+                          className="text-red-600"
+                        >
+                          <FaPen className="w-4 h-4" />
+                        </IconButton>
+                      )}
+                    </div>
+                    {(portfolio?.email || portfolio?.phone || portfolio?.website || (isEditMode && editingSections.contact)) ? (
+                      <div className="space-y-3">
+                        {(portfolio?.email || (isEditMode && editingSections.contact)) && (
+                          <div>
+                            <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                              Email
+                            </Typography>
+                            {isEditMode && editingSections.contact ? (
+                              <Input
+                                size="md"
+                                value={editingPortfolio?.email || ""}
+                                onChange={(e) => handleFieldChange("email", e.target.value)}
+                                placeholder="Email address"
+                                className="!border-gray-300"
+                              />
+                            ) : (
+                              <Typography variant="small" className="text-black break-all text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                {portfolio?.email}
+                              </Typography>
+                            )}
+                          </div>
+                        )}
+                        {(portfolio?.phone || (isEditMode && editingSections.contact)) && (
+                          <div>
+                            <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                              Phone
+                            </Typography>
+                            {isEditMode && editingSections.contact ? (
+                              <Input
+                                size="md"
+                                value={editingPortfolio?.phone || ""}
+                                onChange={(e) => handleFieldChange("phone", e.target.value)}
+                                placeholder="Phone number"
+                                className="!border-gray-300"
+                              />
+                            ) : (
+                              <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                {portfolio?.phone}
+                              </Typography>
+                            )}
+                          </div>
+                        )}
+                        {(portfolio?.website || (isEditMode && editingSections.contact)) && (
+                          <div>
+                            <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                              Website
+                            </Typography>
+                            {isEditMode && editingSections.contact ? (
+                              <Input
+                                size="md"
+                                value={editingPortfolio?.website || ""}
+                                onChange={(e) => handleFieldChange("website", e.target.value)}
+                                placeholder="Website URL"
+                                className="!border-gray-300"
+                              />
+                            ) : (
+                              <Typography variant="small" className="text-black break-all text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                {portfolio?.website}
+                              </Typography>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )}
+                    {isEditMode && editingSections.contact && (
+                      <div className="mt-4 flex justify-end">
+                        <Button
+                          variant="gradient"
+                          color="red"
+                          size="md"
+                          onClick={() => handleSaveSection("contact")}
+                          disabled={isSaving}
+                          className="flex items-center gap-2"
+                        >
+                          <FaSave className="w-3 h-3" />
+                          {isSaving ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* TESDA Information */}
+                  <div className="bg-white p-6 border-l-4 border-red-600">
+                    <div className="flex items-center justify-between mb-4">
+                      <Typography variant="h5" className="font-bold text-red-600 text-lg uppercase tracking-wide" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                        TESDA Information
+                      </Typography>
+                      {isGraduateView && isEditMode && (
+                        <IconButton 
+                          size="md" 
+                          variant="text" 
+                          onClick={() => handleSectionEditToggle("tesda")}
+                          className="text-red-600"
+                        >
+                          <FaPen className="w-4 h-4" />
+                        </IconButton>
+                      )}
+                    </div>
+                    {(portfolio?.ncLevel || portfolio?.trainingCenter || portfolio?.scholarshipType || portfolio?.trainingDuration || portfolio?.tesdaRegistrationNumber || (isEditMode && editingSections.tesda)) ? (
+                      <div className="space-y-3">
+                        {(portfolio?.ncLevel || (isEditMode && editingSections.tesda)) && (
+                          <div>
+                            <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                              NC Level
+                            </Typography>
+                            {isEditMode && editingSections.tesda ? (
+                              <Input
+                                size="md"
+                                value={editingPortfolio?.ncLevel || ""}
+                                onChange={(e) => handleFieldChange("ncLevel", e.target.value)}
+                                placeholder="NC Level"
+                                className="!border-gray-300"
+                              />
+                            ) : (
+                              <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                {portfolio?.ncLevel}
+                              </Typography>
+                            )}
+                          </div>
+                        )}
+                        {(portfolio?.trainingCenter || (isEditMode && editingSections.tesda)) && (
+                          <div>
+                            <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                              Training Center
+                            </Typography>
+                            {isEditMode && editingSections.tesda ? (
+                              <Input
+                                size="md"
+                                value={editingPortfolio?.trainingCenter || ""}
+                                onChange={(e) => handleFieldChange("trainingCenter", e.target.value)}
+                                placeholder="Training Center"
+                                className="!border-gray-300"
+                              />
+                            ) : (
+                              <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                {portfolio?.trainingCenter}
+                              </Typography>
+                            )}
+                          </div>
+                        )}
+                        {(portfolio?.scholarshipType || (isEditMode && editingSections.tesda)) && (
+                          <div>
+                            <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                              Scholarship Type
+                            </Typography>
+                            {isEditMode && editingSections.tesda ? (
+                              <Input
+                                size="md"
+                                value={editingPortfolio?.scholarshipType || ""}
+                                onChange={(e) => handleFieldChange("scholarshipType", e.target.value)}
+                                placeholder="Scholarship Type"
+                                className="!border-gray-300"
+                              />
+                            ) : (
+                              <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                {portfolio?.scholarshipType}
+                              </Typography>
+                            )}
+                          </div>
+                        )}
+                        {(portfolio?.trainingDuration || (isEditMode && editingSections.tesda)) && (
+                          <div>
+                            <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                              Training Duration
+                            </Typography>
+                            {isEditMode && editingSections.tesda ? (
+                              <Input
+                                size="md"
+                                value={editingPortfolio?.trainingDuration || ""}
+                                onChange={(e) => handleFieldChange("trainingDuration", e.target.value)}
+                                placeholder="Training Duration"
+                                className="!border-gray-300"
+                              />
+                            ) : (
+                              <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                {portfolio?.trainingDuration}
+                              </Typography>
+                            )}
+                          </div>
+                        )}
+                        {(portfolio?.tesdaRegistrationNumber || (isEditMode && editingSections.tesda)) && (
+                          <div>
+                            <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                              Registration Number
+                            </Typography>
+                            {isEditMode && editingSections.tesda ? (
+                              <Input
+                                size="md"
+                                value={editingPortfolio?.tesdaRegistrationNumber || ""}
+                                onChange={(e) => handleFieldChange("tesdaRegistrationNumber", e.target.value)}
+                                placeholder="Registration Number"
+                                className="!border-gray-300"
+                              />
+                            ) : (
+                              <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                {portfolio?.tesdaRegistrationNumber}
+                              </Typography>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )}
+                    {isEditMode && editingSections.tesda && (
+                      <div className="mt-4 flex justify-end">
+                        <Button
+                          variant="gradient"
+                          color="red"
+                          size="md"
+                          onClick={() => handleSaveSection("tesda")}
+                          disabled={isSaving}
+                          className="flex items-center gap-2"
+                        >
+                          <FaSave className="w-3 h-3" />
+                          {isSaving ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
 
-                {/* Work Experience */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-2">
-                    <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
-                      Work Experience
+                {/* Skills */}
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                      Skills
                     </Typography>
                     {isGraduateView && isEditMode && (
-                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("experience")}>
+                      <IconButton 
+                        size="md" 
+                        variant="text" 
+                        onClick={() => handleSectionEditToggle("skills")}
+                        className="text-red-600"
+                      >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
                     )}
                   </div>
-                  <div className="mt-3">
-                    {portfolio.experiences && portfolio.experiences.length > 0 ? (
-                      <div className="space-y-6">
-                        {portfolio.experiences.map((exp, index) => (
-                          <div key={index} className="mb-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} font-semibold`}>
-                                  {exp.employer || exp.company || "Company"}
-                                </Typography>
-                                <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"}`}>
-                                  {exp.jobTitle || "Position"}
-                                </Typography>
+                  {((portfolio?.skills && portfolio.skills.length > 0) || (isEditMode && editingSections.skills)) ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {(isEditMode && editingSections.skills ? (editingPortfolio?.skills || []) : (portfolio?.skills || []))?.map((skill, index) => (
+                        <div key={index} className="flex items-center gap-3 py-2 border-b border-gray-200">
+                          {isEditMode && editingSections.skills ? (
+                            <div className="flex-1 space-y-2">
+                              <div className="flex gap-2">
+                                <Input
+                                  size="md"
+                                  value={skill.name || ""}
+                                  onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
+                                  placeholder="Skill name"
+                                  className="!border-gray-300 flex-1"
+                                />
+                                <IconButton
+                                  size="md"
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => handleRemoveArrayItem("skills", index)}
+                                >
+                                  <FaTrash className="w-3 h-3" />
+                                </IconButton>
                               </div>
-                              {(exp.startDate || exp.endDate) && (
-                                <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-right`}>
-                                  {exp.startDate && exp.endDate ? `${exp.startDate} - ${exp.endDate}` : exp.startDate || exp.endDate}
+                              <Input
+                                size="md"
+                                value={skill.type || "TECHNICAL"}
+                                onChange={(e) => handleArrayFieldChange("skills", index, "type", e.target.value)}
+                                placeholder="Type"
+                                className="!border-gray-300"
+                              />
+                              <Input
+                                size="md"
+                                value={skill.proficiencyLevel || ""}
+                                onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
+                                placeholder="Proficiency Level"
+                                className="!border-gray-300"
+                              />
+                            </div>
+                          ) : (
+                            <>
+                              <Typography variant="small" className="font-bold text-black text-base uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600, minWidth: '80px' }}>
+                                {skill.type || "TECHNICAL"}
+                              </Typography>
+                              <Typography variant="small" className="text-black text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                {skill.name}
+                              </Typography>
+                              {skill.proficiencyLevel && (
+                                <Typography variant="small" className="text-gray-600 text-sm ml-auto" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                  {skill.proficiencyLevel}
                                 </Typography>
                               )}
-                            </div>
-                            {exp.description && (
-                              <ul className="list-disc list-inside mt-2">
-                                <li>
-                                  <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"}`}>
-                                    {exp.description}
-                                  </Typography>
-                                </li>
-                              </ul>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
-                        You haven't filled up details in this section.
-                      </Typography>
-                    )}
-                  </div>
+                            </>
+                          )}
+                        </div>
+                      ))}
+                      {isEditMode && editingSections.skills && (
+                        <div className="md:col-span-2">
+                          <Button
+                            variant="outlined"
+                            size="md"
+                            color="red"
+                            onClick={() => handleAddArrayItem("skills", { name: "", type: "TECHNICAL", proficiencyLevel: "" })}
+                            className="w-full flex items-center justify-center gap-2"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Skill
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-white p-6 border-l-4 border-gray-300">
+                      {isEditMode && editingSections.skills ? (
+                        <div className="space-y-4">
+                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            No skills added yet. Click the button below to add your first skill.
+                          </Typography>
+                          <Button
+                            variant="outlined"
+                            size="md"
+                            color="red"
+                            onClick={() => handleAddArrayItem("skills", { name: "", type: "TECHNICAL", proficiencyLevel: "" })}
+                            className="w-full flex items-center justify-center gap-2"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Skill
+                          </Button>
+                        </div>
+                      ) : (
+                        <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                          You haven't filled up details in this section.
+                        </Typography>
+                      )}
+                    </div>
+                  )}
+                  {isEditMode && editingSections.skills && (
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        variant="gradient"
+                        color="red"
+                        size="md"
+                        onClick={() => handleSaveSection("skills")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-3 h-3" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Certificates */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-2">
-                    <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                       Certificates
                     </Typography>
                     {isGraduateView && isEditMode && (
-                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("certificates")}>
+                      <IconButton 
+                        size="md" 
+                        variant="text" 
+                        onClick={() => handleSectionEditToggle("certificates")}
+                        className="text-red-600"
+                      >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
                     )}
                   </div>
-                  <div className="mt-3">
-                    {certificates.length > 0 ? (
-                      <div className="space-y-3">
-                        {certificates.map((certificate, index) => (
-                          <div key={index}>
-                            <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} font-medium`}>
-                              {certificate.courseName}
+                  {((certificates && certificates.length > 0) || (isEditMode && editingSections.certificates)) ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {(showAllCertificates ? certificates : certificates.slice(0, INITIAL_ITEMS_LIMIT)).map((certificate, index) => (
+                        <div key={index} className="pb-3 border-b border-gray-200">
+                          <Typography variant="h6" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                            {certificate.courseName}
+                          </Typography>
+                          {certificate.certificateNumber && (
+                            <Typography variant="small" className="text-black font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                              #{certificate.certificateNumber}
                             </Typography>
-                            {certificate.certificateNumber && (
-                              <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-xs`}>
-                                #{certificate.certificateNumber}
-                              </Typography>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
+                          )}
+                          {certificate.issueDate && (
+                            <Typography variant="small" className="text-gray-600 text-sm mt-1" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                              {new Date(certificate.issueDate).toLocaleDateString()}
+                            </Typography>
+                          )}
+                        </div>
+                      ))}
+                      {certificates.length > INITIAL_ITEMS_LIMIT && (
+                        <div className="flex justify-left pt-2">
+                          <Button
+                            variant="text"
+                            size="md"
+                            onClick={() => setShowAllCertificates(!showAllCertificates)}
+                            className="text-black font-medium hover:text-red-600"
+                            style={{ fontFamily: "'Open Sauce', sans-serif" }}
+                          >
+                            {showAllCertificates ? "Show Less" : `Show All (${certificates.length})`}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-white p-6 border-l-4 border-gray-300">
+                      <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
                         You haven't filled up details in this section.
                       </Typography>
+                    </div>
+                  )}
+                </div>
+
+                {/* Experience */}
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                      Experience
+                    </Typography>
+                    {isGraduateView && isEditMode && (
+                      <IconButton 
+                        size="md" 
+                        variant="text" 
+                        onClick={() => handleSectionEditToggle("experience")}
+                        className="text-red-600"
+                      >
+                        <FaPen className="w-4 h-4" />
+                      </IconButton>
                     )}
                   </div>
+                  {((portfolio?.experiences && portfolio.experiences.length > 0) || (isEditMode && editingSections.experience)) ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {(isEditMode && editingSections.experience ? (editingPortfolio?.experiences || []) : (portfolio?.experiences || []))
+                        .slice(0, isEditMode && editingSections.experience ? undefined : (showAllExperiences ? undefined : INITIAL_ITEMS_LIMIT))
+                        .map((exp, index) => (
+                        <div key={index} className="pb-3 border-b border-gray-200">
+                          {isEditMode && editingSections.experience ? (
+                            <div className="space-y-2">
+                              <Input
+                                size="md"
+                                value={exp.jobTitle || ""}
+                                onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
+                                placeholder="Job Title"
+                                className="!border-gray-300"
+                              />
+                              <Input
+                                size="md"
+                                value={exp.company || ""}
+                                onChange={(e) => handleArrayFieldChange("experiences", index, "company", e.target.value)}
+                                placeholder="Company"
+                                className="!border-gray-300"
+                              />
+                              <Input
+                                size="md"
+                                value={exp.duration || ""}
+                                onChange={(e) => handleArrayFieldChange("experiences", index, "duration", e.target.value)}
+                                placeholder="Duration"
+                                className="!border-gray-300"
+                              />
+                              <Textarea
+                                size="md"
+                                value={exp.responsibilities || ""}
+                                onChange={(e) => handleArrayFieldChange("experiences", index, "responsibilities", e.target.value)}
+                                placeholder="Responsibilities"
+                                className="!border-gray-300"
+                                rows={3}
+                              />
+                              <div className="flex justify-end">
+                                <IconButton
+                                  size="md"
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => handleRemoveArrayItem("experiences", index)}
+                                >
+                                  <FaTrash className="w-3 h-3" />
+                                </IconButton>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <Typography variant="h6" className="font-bold text-black mb-1 text-lg" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                {exp.jobTitle}
+                              </Typography>
+                              {exp.company && (
+                                <Typography variant="small" className="text-black font-medium mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 500 }}>
+                                  {exp.company}
+                                </Typography>
+                              )}
+                              {exp.duration && (
+                                <Typography variant="small" className="text-gray-600 text-sm mb-2" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                  {exp.duration}
+                                </Typography>
+                              )}
+                              {exp.responsibilities && (
+                                <Typography
+                                  variant="small"
+                                  className="text-black leading-relaxed text-base"
+                                  style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.7", fontWeight: 400 }}
+                                >
+                                  {exp.responsibilities}
+                                </Typography>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                      {isEditMode && editingSections.experience && (
+                        <div className="md:col-span-2">
+                          <Button
+                            variant="outlined"
+                            size="md"
+                            color="red"
+                            onClick={() => handleAddArrayItem("experiences", { jobTitle: "", company: "", duration: "", responsibilities: "" })}
+                            className="w-full flex items-center justify-center gap-2"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Experience
+                          </Button>
+                        </div>
+                      )}
+                      {!isEditMode && portfolio?.experiences && portfolio.experiences.length > INITIAL_ITEMS_LIMIT && (
+                        <div className="flex justify-left pt-2 md:col-span-2">
+                          <Button
+                            variant="text"
+                            size="md"
+                            onClick={() => setShowAllExperiences(!showAllExperiences)}
+                            className="text-black font-medium hover:text-red-600"
+                            style={{ fontFamily: "'Open Sauce', sans-serif" }}
+                          >
+                            {showAllExperiences ? "Show Less" : `Show All (${portfolio.experiences.length})`}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-white p-6 border-l-4 border-gray-300">
+                      {isEditMode && editingSections.experience ? (
+                        <div className="space-y-4">
+                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            No experience added yet. Click the button below to add your first experience.
+                          </Typography>
+                          <Button
+                            variant="outlined"
+                            size="md"
+                            color="red"
+                            onClick={() => handleAddArrayItem("experiences", { jobTitle: "", company: "", duration: "", responsibilities: "" })}
+                            className="w-full flex items-center justify-center gap-2"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Experience
+                          </Button>
+                        </div>
+                      ) : (
+                        <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                          You haven't filled up details in this section.
+                        </Typography>
+                      )}
+                    </div>
+                  )}
+                  {isEditMode && editingSections.experience && (
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        variant="gradient"
+                        color="red"
+                        size="md"
+                        onClick={() => handleSaveSection("experience")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-3 h-3" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Projects */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-2">
-                    <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                       Projects
                     </Typography>
                     {isGraduateView && isEditMode && (
-                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("projects")}>
+                      <IconButton 
+                        size="md" 
+                        variant="text" 
+                        onClick={() => handleSectionEditToggle("projects")}
+                        className="text-red-600"
+                      >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
                     )}
                   </div>
-                  <div className="mt-3">
-                    {projects.length > 0 ? (
-                      <div className="space-y-4">
-                        {projects.map((project, index) => (
-                          <div key={index}>
-                            <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} font-semibold`}>
-                              {project.title}
-                            </Typography>
-                            {project.description && (
-                              <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-xs mt-1`}>
-                                {project.description}
-                              </Typography>
+                  {((projects && projects.length > 0) || (isEditMode && editingSections.projects)) ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {(showAllProjects ? projects : projects.slice(0, INITIAL_ITEMS_LIMIT)).map((project, index) => (
+                          <Card key={index} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                            {project.projectImageFilePath && (
+                              <div className="relative h-48 overflow-hidden">
+                                <img
+                                  src={project.projectImageFilePath}
+                                  alt={project.title || "Project"}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
                             )}
-                          </div>
+                            <CardBody className="p-5">
+                              <Typography variant="h6" className="font-bold text-black mb-2 text-lg" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                {project.title || "Unnamed Project"}
+                              </Typography>
+                              {project.description && (
+                                <Typography
+                                  variant="small"
+                                  className="text-black mb-3 leading-relaxed text-base line-clamp-3"
+                                  style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.6", fontWeight: 400 }}
+                                >
+                                  {project.description}
+                                </Typography>
+                              )}
+                              {project.startDate && project.endDate && (
+                                <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                  {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
+                                </Typography>
+                              )}
+                            </CardBody>
+                          </Card>
                         ))}
                       </div>
-                    ) : (
-                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
+                      {projects.length > INITIAL_ITEMS_LIMIT && (
+                        <div className="flex justify-left pt-2">
+                          <Button
+                            variant="text"
+                            size="md"
+                            onClick={() => setShowAllProjects(!showAllProjects)}
+                            className="text-black font-medium hover:text-red-600"
+                            style={{ fontFamily: "'Open Sauce', sans-serif" }}
+                          >
+                            {showAllProjects ? "Show Less" : `Show All (${projects.length})`}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-white p-6 border-l-4 border-gray-300">
+                      <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
                         You haven't filled up details in this section.
                       </Typography>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Awards & Recognition */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-2">
-                    <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                       Awards & Recognition
                     </Typography>
                     {isGraduateView && isEditMode && (
-                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("awards")}>
+                      <IconButton 
+                        size="md" 
+                        variant="text" 
+                        onClick={() => handleSectionEditToggle("awards")}
+                        className="text-red-600"
+                      >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
                     )}
                   </div>
-                  <div className="mt-3">
-                    {portfolio.awardsRecognitions && portfolio.awardsRecognitions.length > 0 ? (
-                      <div className="space-y-3">
-                        {portfolio.awardsRecognitions.map((award, index) => (
-                          <div key={index}>
-                            <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} font-medium`}>
-                              {award.title}
-                            </Typography>
-                            {award.issuer && (
-                              <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-xs`}>
-                                {award.issuer}
+                  {((portfolio?.awardsRecognitions && portfolio.awardsRecognitions.length > 0) || (isEditMode && editingSections.awards)) ? (
+                    <div className="space-y-3">
+                      {(isEditMode && editingSections.awards ? (editingPortfolio?.awardsRecognitions || []) : (portfolio?.awardsRecognitions || []))
+                        .slice(0, isEditMode && editingSections.awards ? undefined : (showAllAwards ? undefined : INITIAL_ITEMS_LIMIT))
+                        .map((award, index) => (
+                        <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
+                          {isEditMode && editingSections.awards ? (
+                            <div className="space-y-2">
+                              <Input
+                                size="md"
+                                value={award.title || ""}
+                                onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
+                                placeholder="Award Title"
+                                className="!border-gray-300"
+                              />
+                              <Input
+                                size="md"
+                                value={award.issuer || ""}
+                                onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "issuer", e.target.value)}
+                                placeholder="Issuer"
+                                className="!border-gray-300"
+                              />
+                              <Input
+                                size="md"
+                                value={award.dateReceived || ""}
+                                onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
+                                placeholder="Date Received"
+                                className="!border-gray-300"
+                              />
+                              <div className="flex justify-end">
+                                <IconButton
+                                  size="md"
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => handleRemoveArrayItem("awardsRecognitions", index)}
+                                >
+                                  <FaTrash className="w-3 h-3" />
+                                </IconButton>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <Typography variant="h6" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                {award.title}
                               </Typography>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
-                        You haven't filled up details in this section.
-                      </Typography>
-                    )}
-                  </div>
+                              {award.issuer && (
+                                <Typography variant="small" className="text-black font-medium mb-1 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                  {award.issuer}
+                                </Typography>
+                              )}
+                              {award.dateReceived && (
+                                <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                  {award.dateReceived}
+                                </Typography>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                      {isEditMode && editingSections.awards && (
+                        <div className="pt-2">
+                          <Button
+                            variant="outlined"
+                            size="md"
+                            color="red"
+                            onClick={() => handleAddArrayItem("awardsRecognitions", { title: "", issuer: "", dateReceived: "" })}
+                            className="w-full flex items-center justify-center gap-2"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Award
+                          </Button>
+                        </div>
+                      )}
+                      {!isEditMode && portfolio?.awardsRecognitions && portfolio.awardsRecognitions.length > INITIAL_ITEMS_LIMIT && (
+                        <div className="flex justify-left pt-2">
+                          <Button
+                            variant="text"
+                            size="md"
+                            onClick={() => setShowAllAwards(!showAllAwards)}
+                            className="text-black font-medium hover:text-red-600"
+                            style={{ fontFamily: "'Open Sauce', sans-serif" }}
+                          >
+                            {showAllAwards ? "Show Less" : `Show All (${portfolio.awardsRecognitions.length})`}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-white p-6 border-l-4 border-gray-300">
+                      {isEditMode && editingSections.awards ? (
+                        <div className="space-y-4">
+                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            No awards added yet. Click the button below to add your first award.
+                          </Typography>
+                          <Button
+                            variant="outlined"
+                            size="md"
+                            color="red"
+                            onClick={() => handleAddArrayItem("awardsRecognitions", { title: "", issuer: "", dateReceived: "" })}
+                            className="w-full flex items-center justify-center gap-2"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Award
+                          </Button>
+                        </div>
+                      ) : (
+                        <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                          You haven't filled up details in this section.
+                        </Typography>
+                      )}
+                    </div>
+                  )}
+                  {isEditMode && editingSections.awards && (
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        variant="gradient"
+                        color="red"
+                        size="md"
+                        onClick={() => handleSaveSection("awards")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-3 h-3" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
-                {/* Continuing Education */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-2">
-                    <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
-                      Continuing Education
-                    </Typography>
-                    {isGraduateView && isEditMode && (
-                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("education")}>
-                        <FaPen className="w-4 h-4" />
-                      </IconButton>
-                    )}
-                  </div>
-                  <div className="mt-3">
-                    {portfolio.continuingEducations && portfolio.continuingEducations.length > 0 ? (
+                {/* Education & Memberships */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Continuing Education */}
+                  <div>
+                    <div className="flex items-center justify-between mb-5">
+                      <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                        Continuing Education
+                      </Typography>
+                      {isGraduateView && isEditMode && (
+                        <IconButton 
+                          size="md" 
+                          variant="text" 
+                          onClick={() => handleSectionEditToggle("education")}
+                          className="text-red-600"
+                        >
+                          <FaPen className="w-4 h-4" />
+                        </IconButton>
+                      )}
+                    </div>
+                    {((portfolio?.continuingEducations && portfolio.continuingEducations.length > 0) || (isEditMode && editingSections.education)) ? (
                       <div className="space-y-3">
-                        {portfolio.continuingEducations.map((edu, index) => (
-                          <div key={index}>
-                            <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} font-medium`}>
-                              {edu.courseName}
-                            </Typography>
-                            {edu.institution && (
-                              <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-xs`}>
-                                {edu.institution}
-                              </Typography>
+                        {(isEditMode && editingSections.education ? (editingPortfolio?.continuingEducations || []) : (portfolio?.continuingEducations || []))
+                          .slice(0, isEditMode && editingSections.education ? undefined : (showAllEducation ? undefined : INITIAL_ITEMS_LIMIT))
+                          .map((edu, index) => (
+                          <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
+                            {isEditMode && editingSections.education ? (
+                              <div className="space-y-2">
+                                <Input
+                                  size="md"
+                                  value={edu.courseName || ""}
+                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
+                                  placeholder="Course Name"
+                                  className="!border-gray-300"
+                                />
+                                <Input
+                                  size="md"
+                                  value={edu.institution || ""}
+                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
+                                  placeholder="Institution"
+                                  className="!border-gray-300"
+                                />
+                                <Input
+                                  size="md"
+                                  value={edu.completionDate || ""}
+                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
+                                  placeholder="Completion Date"
+                                  className="!border-gray-300"
+                                />
+                                <div className="flex justify-end">
+                                  <IconButton
+                                    size="md"
+                                    variant="text"
+                                    color="red"
+                                    onClick={() => handleRemoveArrayItem("continuingEducations", index)}
+                                  >
+                                    <FaTrash className="w-3 h-3" />
+                                  </IconButton>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <Typography variant="small" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                  {edu.courseName}
+                                </Typography>
+                                {edu.institution && (
+                                  <Typography variant="small" className="text-black font-medium mb-1 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                    {edu.institution}
+                                  </Typography>
+                                )}
+                                {edu.completionDate && (
+                                  <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                    {edu.completionDate}
+                                  </Typography>
+                                )}
+                              </>
                             )}
                           </div>
                         ))}
+                        {isEditMode && editingSections.education && (
+                          <div className="pt-2">
+                            <Button
+                              variant="outlined"
+                              size="md"
+                              color="red"
+                              onClick={() => handleAddArrayItem("continuingEducations", { courseName: "", institution: "", completionDate: "" })}
+                              className="w-full flex items-center justify-center gap-2"
+                            >
+                              <FaPlus className="w-4 h-4" />
+                              Add Education
+                            </Button>
+                          </div>
+                        )}
+                        {!isEditMode && portfolio?.continuingEducations && portfolio.continuingEducations.length > INITIAL_ITEMS_LIMIT && (
+                          <div className="flex justify-left pt-2">
+                            <Button
+                              variant="text"
+                              size="md"
+                              onClick={() => setShowAllEducation(!showAllEducation)}
+                              className="text-black font-medium hover:text-red-600 text-xs"
+                              style={{ fontFamily: "'Open Sauce', sans-serif" }}
+                            >
+                              {showAllEducation ? "Show Less" : `Show All (${portfolio.continuingEducations.length})`}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     ) : (
-                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
-                        You haven't filled up details in this section.
-                      </Typography>
+                      <div className="bg-white p-6 border-l-4 border-gray-300">
+                        {isEditMode && editingSections.education ? (
+                          <div className="space-y-4">
+                            <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                              No continuing education added yet. Click the button below to add your first education.
+                            </Typography>
+                            <Button
+                              variant="outlined"
+                              size="md"
+                              color="red"
+                              onClick={() => handleAddArrayItem("continuingEducations", { courseName: "", institution: "", completionDate: "" })}
+                              className="w-full flex items-center justify-center gap-2"
+                            >
+                              <FaPlus className="w-4 h-4" />
+                              Add Education
+                            </Button>
+                          </div>
+                        ) : (
+                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            You haven't filled up details in this section.
+                          </Typography>
+                        )}
+                      </div>
+                    )}
+                    {isEditMode && editingSections.education && (
+                      <div className="mt-4 flex justify-end">
+                        <Button
+                          variant="gradient"
+                          color="red"
+                          size="md"
+                          onClick={() => handleSaveSection("education")}
+                          disabled={isSaving}
+                          className="flex items-center gap-2"
+                        >
+                          <FaSave className="w-3 h-3" />
+                          {isSaving ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </div>
                     )}
                   </div>
-                </div>
 
-                {/* Professional Memberships */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-2">
-                    <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
-                      Professional Memberships
-                    </Typography>
-                    {isGraduateView && isEditMode && (
-                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("memberships")}>
-                        <FaPen className="w-4 h-4" />
-                      </IconButton>
-                    )}
-                  </div>
-                  <div className="mt-3">
-                    {portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0 ? (
+                  {/* Professional Memberships */}
+                  <div>
+                    <div className="flex items-center justify-between mb-5">
+                      <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+                        Professional Memberships
+                      </Typography>
+                      {isGraduateView && isEditMode && (
+                        <IconButton 
+                          size="md" 
+                          variant="text" 
+                          onClick={() => handleSectionEditToggle("memberships")}
+                          className="text-red-600"
+                        >
+                          <FaPen className="w-4 h-4" />
+                        </IconButton>
+                      )}
+                    </div>
+                    {((portfolio?.professionalMemberships && portfolio.professionalMemberships.length > 0) || (isEditMode && editingSections.memberships)) ? (
                       <div className="space-y-3">
-                        {portfolio.professionalMemberships.map((mem, index) => (
-                          <div key={index}>
-                            <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} font-medium`}>
-                              {mem.organization}
-                            </Typography>
-                            {mem.membershipType && (
-                              <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-xs`}>
-                                {mem.membershipType}
-                              </Typography>
+                        {(isEditMode && editingSections.memberships ? (editingPortfolio?.professionalMemberships || []) : (portfolio?.professionalMemberships || []))
+                          .slice(0, isEditMode && editingSections.memberships ? undefined : (showAllMemberships ? undefined : INITIAL_ITEMS_LIMIT))
+                          .map((mem, index) => (
+                          <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
+                            {isEditMode && editingSections.memberships ? (
+                              <div className="space-y-2">
+                                <Input
+                                  size="md"
+                                  value={mem.organization || ""}
+                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
+                                  placeholder="Organization"
+                                  className="!border-gray-300"
+                                />
+                                <Input
+                                  size="md"
+                                  value={mem.membershipType || ""}
+                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
+                                  placeholder="Membership Type"
+                                  className="!border-gray-300"
+                                />
+                                <Input
+                                  size="md"
+                                  value={mem.startDate || ""}
+                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
+                                  placeholder="Start Date"
+                                  className="!border-gray-300"
+                                />
+                                <div className="flex justify-end">
+                                  <IconButton
+                                    size="md"
+                                    variant="text"
+                                    color="red"
+                                    onClick={() => handleRemoveArrayItem("professionalMemberships", index)}
+                                  >
+                                    <FaTrash className="w-3 h-3" />
+                                  </IconButton>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <Typography variant="small" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                  {mem.organization}
+                                </Typography>
+                                {mem.membershipType && (
+                                  <Typography variant="small" className="text-black font-medium mb-1 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                    {mem.membershipType}
+                                  </Typography>
+                                )}
+                                {mem.startDate && (
+                                  <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                    Since {mem.startDate}
+                                  </Typography>
+                                )}
+                              </>
                             )}
                           </div>
                         ))}
+                        {isEditMode && editingSections.memberships && (
+                          <div className="pt-2">
+                            <Button
+                              variant="outlined"
+                              size="md"
+                              color="red"
+                              onClick={() => handleAddArrayItem("professionalMemberships", { organization: "", membershipType: "", startDate: "" })}
+                              className="w-full flex items-center justify-center gap-2"
+                            >
+                              <FaPlus className="w-4 h-4" />
+                              Add Membership
+                            </Button>
+                          </div>
+                        )}
+                        {!isEditMode && portfolio?.professionalMemberships && portfolio.professionalMemberships.length > INITIAL_ITEMS_LIMIT && (
+                          <div className="flex justify-left pt-2">
+                            <Button
+                              variant="text"
+                              size="md"
+                              onClick={() => setShowAllMemberships(!showAllMemberships)}
+                              className="text-black font-medium hover:text-red-600 text-xs"
+                              style={{ fontFamily: "'Open Sauce', sans-serif" }}
+                            >
+                              {showAllMemberships ? "Show Less" : `Show All (${portfolio.professionalMemberships.length})`}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     ) : (
-                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
-                        You haven't filled up details in this section.
-                      </Typography>
+                      <div className="bg-white p-6 border-l-4 border-gray-300">
+                        {isEditMode && editingSections.memberships ? (
+                          <div className="space-y-4">
+                            <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                              No professional memberships added yet. Click the button below to add your first membership.
+                            </Typography>
+                            <Button
+                              variant="outlined"
+                              size="md"
+                              color="red"
+                              onClick={() => handleAddArrayItem("professionalMemberships", { organization: "", membershipType: "", startDate: "" })}
+                              className="w-full flex items-center justify-center gap-2"
+                            >
+                              <FaPlus className="w-4 h-4" />
+                              Add Membership
+                            </Button>
+                          </div>
+                        ) : (
+                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            You haven't filled up details in this section.
+                          </Typography>
+                        )}
+                      </div>
+                    )}
+                    {isEditMode && editingSections.memberships && (
+                      <div className="mt-4 flex justify-end">
+                        <Button
+                          variant="gradient"
+                          color="red"
+                          size="md"
+                          onClick={() => handleSaveSection("memberships")}
+                          disabled={isSaving}
+                          className="flex items-center gap-2"
+                        >
+                          <FaSave className="w-3 h-3" />
+                          {isSaving ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
 
                 {/* References */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-2">
-                    <Typography variant="h6" className={`${designTheme.mainTextColor || "text-gray-800"} font-bold text-sm uppercase pb-2 border-b border-gray-600`}>
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                       References
                     </Typography>
                     {isGraduateView && isEditMode && (
-                      <IconButton size="sm" variant="text" onClick={() => handleSectionEditToggle("references")}>
+                      <IconButton 
+                        size="md" 
+                        variant="text" 
+                        onClick={() => handleSectionEditToggle("references")}
+                        className="text-red-600"
+                      >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
                     )}
                   </div>
-                  <div className="mt-3">
-                    {portfolio.references && portfolio.references.length > 0 ? (
-                      <div className="space-y-3">
-                        {portfolio.references.map((ref, index) => (
-                          <div key={index}>
-                            <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} font-medium`}>
-                              {ref.name}
-                            </Typography>
-                            {ref.position && (
-                              <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-xs`}>
-                                {ref.position}
-                              </Typography>
-                            )}
-                            {ref.company && (
-                              <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} text-xs`}>
-                                {ref.company}
-                              </Typography>
+                  {((portfolio?.references && portfolio.references.length > 0) || (isEditMode && editingSections.references)) ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {(isEditMode && editingSections.references ? (editingPortfolio?.references || []) : (portfolio?.references || []))
+                          .slice(0, isEditMode && editingSections.references ? undefined : (showAllReferences ? undefined : INITIAL_ITEMS_LIMIT))
+                          .map((ref, index) => (
+                          <div key={index} className="bg-white border-l-4 border-gray-300 p-5">
+                            {isEditMode && editingSections.references ? (
+                              <div className="space-y-2">
+                                <Input
+                                  size="md"
+                                  value={ref.name || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
+                                  placeholder="Name"
+                                  className="!border-gray-300"
+                                />
+                                <Input
+                                  size="md"
+                                  value={ref.position || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "position", e.target.value)}
+                                  placeholder="Position"
+                                  className="!border-gray-300"
+                                />
+                                <Input
+                                  size="md"
+                                  value={ref.company || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "company", e.target.value)}
+                                  placeholder="Company"
+                                  className="!border-gray-300"
+                                />
+                                <Input
+                                  size="md"
+                                  value={ref.email || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
+                                  placeholder="Email"
+                                  className="!border-gray-300"
+                                />
+                                <Input
+                                  size="md"
+                                  value={ref.contact || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "contact", e.target.value)}
+                                  placeholder="Contact"
+                                  className="!border-gray-300"
+                                />
+                                <div className="flex justify-end">
+                                  <IconButton
+                                    size="md"
+                                    variant="text"
+                                    color="red"
+                                    onClick={() => handleRemoveArrayItem("references", index)}
+                                  >
+                                    <FaTrash className="w-3 h-3" />
+                                  </IconButton>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <Typography variant="h6" className="font-bold text-black mb-2 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                  {ref.name}
+                                </Typography>
+                                {ref.position && (
+                                  <Typography variant="small" className="text-black font-medium mb-1 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                    {ref.position}
+                                  </Typography>
+                                )}
+                                {ref.company && (
+                                  <Typography variant="small" className="text-black mb-3 font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 500 }}>
+                                    {ref.company}
+                                  </Typography>
+                                )}
+                                <div className="space-y-1 pt-2 border-t border-gray-200">
+                                  {ref.email && (
+                                    <Typography variant="small" className="text-black break-all text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                      {ref.email}
+                                    </Typography>
+                                  )}
+                                  {ref.contact && (
+                                    <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                      {ref.contact}
+                                    </Typography>
+                                  )}
+                                </div>
+                              </>
                             )}
                           </div>
                         ))}
                       </div>
-                    ) : (
-                      <Typography variant="small" className={`${designTheme.mainTextColor || "text-gray-800"} italic`}>
-                        You haven't filled up details in this section.
-                      </Typography>
-                    )}
-                  </div>
+                      {isEditMode && editingSections.references && (
+                        <div className="pt-2">
+                          <Button
+                            variant="outlined"
+                            size="md"
+                            color="red"
+                            onClick={() => handleAddArrayItem("references", { name: "", position: "", company: "", email: "", contact: "" })}
+                            className="w-full flex items-center justify-center gap-2"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Reference
+                          </Button>
+                        </div>
+                      )}
+                      {!isEditMode && portfolio?.references && portfolio.references.length > INITIAL_ITEMS_LIMIT && (
+                        <div className="flex justify-left pt-2">
+                          <Button
+                            variant="text"
+                            size="md"
+                            onClick={() => setShowAllReferences(!showAllReferences)}
+                            className="text-black font-medium hover:text-red-600"
+                            style={{ fontFamily: "'Open Sauce', sans-serif" }}
+                          >
+                            {showAllReferences ? "Show Less" : `Show All (${portfolio.references.length})`}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-white p-6 border-l-4 border-gray-300">
+                      {isEditMode && editingSections.references ? (
+                        <div className="space-y-4">
+                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            No references added yet. Click the button below to add your first reference.
+                          </Typography>
+                          <Button
+                            variant="outlined"
+                            size="md"
+                            color="red"
+                            onClick={() => handleAddArrayItem("references", { name: "", position: "", company: "", email: "", contact: "" })}
+                            className="w-full flex items-center justify-center gap-2"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Reference
+                          </Button>
+                        </div>
+                      ) : (
+                        <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                          You haven't filled up details in this section.
+                        </Typography>
+                      )}
+                    </div>
+                  )}
+                  {isEditMode && editingSections.references && (
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        variant="gradient"
+                        color="red"
+                        size="md"
+                        onClick={() => handleSaveSection("references")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-3 h-3" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-
-            {/* Share Your Portfolio Section - Only for graduate view */}
-            {isGraduateView && (
-              <div className="mt-8 bg-white border border-gray-300 rounded-lg p-8">
-                <div className="text-center mb-8">
-                  <Typography variant="h4" className={`${designTheme.textColor || "text-gray-800"} mb-4 font-light`}>
-                    Share Your Portfolio
-                  </Typography>
-                  <Typography className="text-gray-600 max-w-2xl mx-auto font-light">
-                    Share your professional portfolio with potential employers, clients, or collaborators using secure
-                    links.
-                  </Typography>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                  <Button onClick={copyToClipboard} color={designTheme.buttonColor || "gray"} size="lg" className="font-light">
-                    Copy Secure Link
-                  </Button>
-                  <Button onClick={shareToLinkedIn} color={designTheme.buttonColor || "gray"} variant="outlined" size="lg" className="font-light">
-                    Share to LinkedIn
-                  </Button>
-                  <Button onClick={shareToFacebook} color={designTheme.buttonColor || "gray"} variant="outlined" size="lg" className="font-light">
-                    Share to Facebook
-                  </Button>
-                </div>
-
-                {shareToken && (
-                  <div className="p-6 bg-gray-100 rounded-lg mb-6">
-                    <Typography variant="h6" className={`${designTheme.textColor || "text-gray-800"} mb-2 font-light`}>
-                      Your Secure Token
-                    </Typography>
-                    <Typography variant="small" className="text-gray-700 font-mono">
-                      {shareToken.substring(0, 8)}...{shareToken.slice(-4)}
-                    </Typography>
-                    <Typography variant="small" className="text-gray-600 mt-2 italic">
-                      Links using this token will work until you generate a new one.
-                    </Typography>
-                  </div>
-                )}
-
-                {saveSuccess && (
-                  <Card className="mb-6 bg-green-50 border border-green-200">
-                    <CardBody>
-                      <Typography color="green" className="text-center">
-                        {saveSuccess}
-                      </Typography>
-                    </CardBody>
-                  </Card>
-                )}
-
-                {saveError && (
-                  <Card className="mb-6 bg-red-50 border border-red-200">
-                    <CardBody>
-                      <Typography color="red" className="text-center">
-                        {saveError}
-                      </Typography>
-                    </CardBody>
-                  </Card>
-                )}
-
-                <div className="flex flex-wrap gap-4 justify-center">
-                  <Button
-                    onClick={handleEditModeToggle}
-                    color={isEditMode ? "red" : designTheme.buttonColor || "gray"}
-                    size="lg"
-                    className="font-light flex items-center gap-2"
-                  >
-                    {isEditMode ? (
-                      <>
-                        <FaTimes className="w-4 h-4" />
-                        Cancel Edit
-                      </>
-                    ) : (
-                      <>
-                        <FaPen className="w-4 h-4" />
-                        Edit Portfolio
-                      </>
-                    )}
-                  </Button>
-                  {isEditMode && (
-                    <Button
-                      onClick={handleSavePortfolio}
-                      color="green"
-                      size="lg"
-                      className="font-light flex items-center gap-2"
-                      disabled={isSaving}
-                    >
-                      {isSaving ? (
-                        <>
-                          <Spinner className="w-4 h-4" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <FaSave className="w-4 h-4" />
-                          Save Changes
-                        </>
-                      )}
-                    </Button>
-                  )}
-                  {!isEditMode && (
-                    <>
-                      <Button
-                        onClick={handleRegenerateToken}
-                        color={designTheme.buttonColor || "gray"}
-                        variant="outlined"
-                        size="lg"
-                        className="font-light"
-                      >
-                        Generate New Link
-                      </Button>
-                      <Button onClick={handleDelete} color="red" variant="outlined" size="lg" className="font-light">
-                        Delete Portfolio
-                      </Button>
-                    </>
-                  )}
-                </div>
-
-                <div className="text-center mt-8">
-                  <Link to="/graduate-homepage">
-                    <Button color="gray" variant="text" size="lg" className="font-light">
-                      ← Back to Homepage
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            )}
           </div>
         ) : (
-          <>
-            {/* Default Layout */}
+          <Fragment>
+            {/* Standard Header Section for other templates */}
             <div className={`${designTheme.headerBg} text-white relative overflow-hidden`}>
-            {/* Background pattern */}
-            <div className="absolute inset-0 bg-white/5 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px] animate-pulse"></div>
-            <div className="px-6 py-24 relative">
+        {/* Background pattern */}
+        <div className="absolute inset-0 bg-white/5 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px] animate-pulse"></div>
+        <div className="px-6 py-8 relative">
           {/* Back Button - Visible only in public view */}
           
-          <div className={`${designTheme.headerFlexDirection} w-full gap-16`}>
+          <div className="flex flex-row items-center w-full gap-16">
             {/* Profile Image */}
             {(graduate?.profilePicture || portfolio?.avatar || isEditMode) && (
-              <div className={`relative flex-shrink-0 animate-fade-in-up ${designTheme.avatarPosition}`}>
+              <div className="relative flex-shrink-0 animate-fade-in-up mr-8">
                 <div className="absolute inset-0 bg-white/20 blur-xl scale-110 animate-pulse"></div>
                 <div className={`absolute inset-0 blur-2xl scale-125 animate-ping opacity-20 ${
                   designTheme.accentColor === "amber" ? "bg-amber-300/30" :
@@ -2635,11 +4297,8 @@ const fetchPublicDataWithToken = async () => {
             )}
 
             {/* Text Content */}
-            <div className={`flex-1 ${designTheme.headerTextAlign} space-y-8`}>
-              <div className={`animate-fade-in-up animation-delay-300 flex items-center gap-3 ${
-                designTheme.headerLayout === "centered" ? "justify-center" : 
-                designTheme.headerLayout === "right-left" ? "justify-end" : "justify-start"
-              }`}>
+            <div className="flex-1 min-w-0 text-left flex flex-col justify-start pt-8">
+              <div className="flex items-center animate-fade-in-up animation-delay-300 gap-3 justify-start">
                 {isEditMode && editingSections.header ? (
                   <div className="flex-1">
                     <Input
@@ -2652,14 +4311,14 @@ const fetchPublicDataWithToken = async () => {
                 ) : (
                   <Typography
                     variant="h1"
-                    className={`mb-6 ${designTheme.titleWeight} ${designTheme.typographySize} tracking-tight animate-typing overflow-hidden whitespace-nowrap border-r-4 border-white/50 break-words`}
+                    className={`${designTheme.titleWeight} ${designTheme.typographySize} tracking-tight animate-typing overflow-hidden whitespace-nowrap border-r-4 border-white/50 break-words`}
                   >
                     {portfolio.fullName || "Professional Portfolio"}
                   </Typography>
                 )}
                 {isGraduateView && isEditMode && (
                   <IconButton
-                    size="sm"
+                    size="md"
                     variant="text"
                     className="text-white hover:bg-white/20"
                     onClick={() => handleSectionEditToggle("header")}
@@ -2670,7 +4329,7 @@ const fetchPublicDataWithToken = async () => {
               </div>
 
               {(portfolio.professionalTitle || (isEditMode && editingSections.header)) && (
-                <div className="relative animate-fade-in-up animation-delay-600 flex items-center gap-3">
+                <div className="relative mt-8 animate-fade-in-up animation-delay-600 flex items-center gap-3">
                   {isEditMode && editingSections.header ? (
                     <div className="flex-1">
                       <Input
@@ -2695,19 +4354,26 @@ const fetchPublicDataWithToken = async () => {
               )}
 
               {(portfolio.professionalSummary || (isEditMode && editingSections.header)) && (
-                <div className={`mt-10 animate-fade-in-up animation-delay-900 ${
-                  designTheme.headerLayout === "centered" ? "max-w-3xl mx-auto" : 
-                  designTheme.headerLayout === "right-left" ? "max-w-3xl ml-auto" : 
-                  "max-w-3xl"
-                }`}>
+                <div className="mt-10 animate-fade-in-up animation-delay-900 max-w-3xl overflow-hidden">
                   {isEditMode && editingSections.header ? (
-                    <Textarea
-                      value={editingPortfolio?.professionalSummary || ""}
-                      onChange={(e) => handleFieldChange("professionalSummary", e.target.value)}
-                      className="!text-xl md:!text-2xl !font-light !bg-white/20 !border-white/40 !text-white placeholder:text-white/60"
-                      placeholder="Professional Summary"
-                      rows={4}
-                    />
+                    <div>
+                      <Textarea
+                        value={editingPortfolio?.professionalSummary || ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          if (value.length <= 300) {
+                            handleFieldChange("professionalSummary", value)
+                          }
+                        }}
+                        className="!text-xl md:!text-2xl !font-light !bg-white/20 !border-white/40 !text-white placeholder:text-white/60"
+                        placeholder="Professional Summary"
+                        rows={4}
+                        maxLength={300}
+                      />
+                      <Typography variant="small" className="text-white/60 mt-1">
+                        {(editingPortfolio?.professionalSummary || "").length}/300 characters
+                      </Typography>
+                    </div>
                   ) : (
                     <Typography
                       variant="lead"
@@ -2719,11 +4385,7 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
               {isEditMode && editingSections.header && (
-                <div className={`mt-6 flex ${
-                  designTheme.headerLayout === "centered" ? "justify-center" : 
-                  designTheme.headerLayout === "right-left" ? "justify-start" : 
-                  "justify-end"
-                }`}>
+                <div className="mt-6 flex justify-start">
                   <Button
                     variant="gradient"
                     color="white"
@@ -2737,11 +4399,7 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
 
-              <div className={`mt-14 flex animate-fade-in-up animation-delay-1200 ${
-                designTheme.headerLayout === "centered" ? "justify-center" : 
-                designTheme.headerLayout === "right-left" ? "justify-end" : 
-                "justify-start"
-              }`}>
+              <div className="mt-14 flex animate-fade-in-up animation-delay-1200 justify-start">
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-8 py-4 hover:bg-white/20 hover:scale-105 transition-all duration-300 animate-bounce-subtle">
                   <Chip
                     value={isGraduateView ? "Owner View" : `Public View ${urlShareToken ? "🔒" : ""}`}
@@ -2877,7 +4535,7 @@ const fetchPublicDataWithToken = async () => {
                 </Typography>
                 {isGraduateView && isEditMode && (
                   <IconButton 
-                    size="sm" 
+                    size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("contact")}
                     className={editingSections.contact ? designTheme.textColor : ""}
@@ -2894,7 +4552,7 @@ const fetchPublicDataWithToken = async () => {
                     </Typography>
                     {isEditMode && editingSections.contact ? (
                       <Input
-                        size="sm"
+                        size="md"
                         value={editingPortfolio?.email || ""}
                         onChange={(e) => handleFieldChange("email", e.target.value)}
                         placeholder="Email address"
@@ -2914,7 +4572,7 @@ const fetchPublicDataWithToken = async () => {
                     </Typography>
                     {isEditMode && editingSections.contact ? (
                       <Input
-                        size="sm"
+                        size="md"
                         value={editingPortfolio?.phone || ""}
                         onChange={(e) => handleFieldChange("phone", e.target.value)}
                         placeholder="Phone number"
@@ -2934,7 +4592,7 @@ const fetchPublicDataWithToken = async () => {
                     </Typography>
                     {isEditMode && editingSections.contact ? (
                       <Input
-                        size="sm"
+                        size="md"
                         value={editingPortfolio?.website || ""}
                         onChange={(e) => handleFieldChange("website", e.target.value)}
                         placeholder="Website URL"
@@ -2953,7 +4611,7 @@ const fetchPublicDataWithToken = async () => {
                   <Button
                     variant="gradient"
                     color={designTheme.buttonColor}
-                    size="sm"
+                    size="md"
                     onClick={() => handleSaveSection("contact")}
                     disabled={isSaving}
                     className="flex items-center gap-2"
@@ -2973,7 +4631,7 @@ const fetchPublicDataWithToken = async () => {
                 </Typography>
                 {isGraduateView && isEditMode && (
                   <IconButton 
-                    size="sm" 
+                    size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("skills")}
                     className={editingSections.skills ? designTheme.textColor : ""}
@@ -2990,14 +4648,14 @@ const fetchPublicDataWithToken = async () => {
                         <div className="space-y-2">
                           <div className="flex gap-2">
                             <Input
-                              size="sm"
+                              size="md"
                               value={skill.name || ""}
                               onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
                               placeholder="Skill name"
                               className="!border-gray-300 flex-1"
                             />
                             <IconButton
-                              size="sm"
+                              size="md"
                               variant="text"
                               color="red"
                               onClick={() => handleRemoveArrayItem("skills", index)}
@@ -3006,7 +4664,7 @@ const fetchPublicDataWithToken = async () => {
                             </IconButton>
                           </div>
                           <Input
-                            size="sm"
+                            size="md"
                             value={skill.proficiencyLevel || ""}
                             onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
                             placeholder="Proficiency level"
@@ -3019,7 +4677,7 @@ const fetchPublicDataWithToken = async () => {
                             {skill.name}
                           </Typography>
                           <div className="flex items-center space-x-2">
-                            <Chip size="sm" value={skill.type} color={designTheme.buttonColor} className="text-xs font-light" />
+                            <Chip size="md" value={skill.type} color={designTheme.buttonColor} className="text-xs font-light" />
                             {skill.proficiencyLevel && (
                               <Typography variant="small" color="gray" className="text-xs">
                                 {skill.proficiencyLevel}
@@ -3033,7 +4691,7 @@ const fetchPublicDataWithToken = async () => {
                   {isEditMode && editingSections.skills && (
                     <Button
                       variant="outlined"
-                      size="sm"
+                      size="md"
                       color={designTheme.buttonColor}
                       onClick={() => handleAddArrayItem("skills", { name: "", type: "TECHNICAL", proficiencyLevel: "" })}
                       className="w-full flex items-center justify-center gap-2 mt-2"
@@ -3047,7 +4705,7 @@ const fetchPublicDataWithToken = async () => {
                       <Button
                         variant="gradient"
                         color={designTheme.buttonColor}
-                        size="sm"
+                        size="md"
                         onClick={() => handleSaveSection("skills")}
                         disabled={isSaving}
                         className="flex items-center gap-2"
@@ -3073,7 +4731,7 @@ const fetchPublicDataWithToken = async () => {
                 </Typography>
                 {isGraduateView && isEditMode && (
                   <IconButton 
-                    size="sm" 
+                    size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("tesda")}
                     className={editingSections.tesda ? designTheme.textColor : ""}
@@ -3090,7 +4748,7 @@ const fetchPublicDataWithToken = async () => {
                     </Typography>
                     {isEditMode && editingSections.tesda ? (
                       <Input
-                        size="sm"
+                        size="md"
                         value={editingPortfolio?.ncLevel || ""}
                         onChange={(e) => handleFieldChange("ncLevel", e.target.value)}
                         placeholder="NC Level"
@@ -3110,7 +4768,7 @@ const fetchPublicDataWithToken = async () => {
                     </Typography>
                     {isEditMode && editingSections.tesda ? (
                       <Input
-                        size="sm"
+                        size="md"
                         value={editingPortfolio?.trainingCenter || ""}
                         onChange={(e) => handleFieldChange("trainingCenter", e.target.value)}
                         placeholder="Training Center"
@@ -3130,7 +4788,7 @@ const fetchPublicDataWithToken = async () => {
                     </Typography>
                     {isEditMode && editingSections.tesda ? (
                       <Input
-                        size="sm"
+                        size="md"
                         value={editingPortfolio?.scholarshipType || ""}
                         onChange={(e) => handleFieldChange("scholarshipType", e.target.value)}
                         placeholder="Scholarship Type"
@@ -3150,7 +4808,7 @@ const fetchPublicDataWithToken = async () => {
                     </Typography>
                     {isEditMode && editingSections.tesda ? (
                       <Input
-                        size="sm"
+                        size="md"
                         value={editingPortfolio?.trainingDuration || ""}
                         onChange={(e) => handleFieldChange("trainingDuration", e.target.value)}
                         placeholder="Training Duration"
@@ -3170,7 +4828,7 @@ const fetchPublicDataWithToken = async () => {
                     </Typography>
                     {isEditMode && editingSections.tesda ? (
                       <Input
-                        size="sm"
+                        size="md"
                         value={editingPortfolio?.tesdaRegistrationNumber || ""}
                         onChange={(e) => handleFieldChange("tesdaRegistrationNumber", e.target.value)}
                         placeholder="TESDA Registration Number"
@@ -3189,7 +4847,7 @@ const fetchPublicDataWithToken = async () => {
                   <Button
                     variant="gradient"
                     color={designTheme.buttonColor}
-                    size="sm"
+                    size="md"
                     onClick={() => handleSaveSection("tesda")}
                     disabled={isSaving}
                     className="flex items-center gap-2"
@@ -3216,7 +4874,7 @@ const fetchPublicDataWithToken = async () => {
                 </Typography>
                 {isGraduateView && isEditMode && (
                   <IconButton 
-                    size="sm" 
+                    size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("certificates")}
                     className={editingSections.certificates ? designTheme.textColor : ""}
@@ -3284,14 +4942,14 @@ const fetchPublicDataWithToken = async () => {
                           src={URL.createObjectURL(newCertificate.certificateFile)}
                           alt="Certificate Preview"
                           size="lg"
-                          className="ring-2 ring-blue-200"
+                          className={`ring-2 ${designTheme.borderColor}`}
                         />
                       ) : editingCertificateId ? (
                         <Avatar
                           src={certificates.find((cert) => cert.id === editingCertificateId)?.certificateFilePath || "/placeholder.svg"}
                           alt="Certificate Preview"
                           size="lg"
-                          className="ring-2 ring-blue-200"
+                          className={`ring-2 ${designTheme.borderColor}`}
                         />
                       ) : (
                         <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center">
@@ -3353,7 +5011,7 @@ const fetchPublicDataWithToken = async () => {
                   {!isAddingCertificate && isEditMode && editingSections.certificates && (
                     <Button
                       variant="outlined"
-                      color="blue"
+                      color={designTheme.buttonColor}
                       onClick={() => {
                         setIsAddingCertificate(true)
                         setEditingCertificateId(null)
@@ -3377,7 +5035,7 @@ const fetchPublicDataWithToken = async () => {
                                   src={certificate.preview || certificate.certificateFilePath || "/placeholder.svg"}
                                   alt="Certificate Preview"
                                   size="lg"
-                                  className="ring-2 ring-blue-200"
+                                  className={`ring-2 ${designTheme.borderColor}`}
                                 />
                               )}
                               <div>
@@ -3395,16 +5053,16 @@ const fetchPublicDataWithToken = async () => {
                             {isEditMode && editingSections.certificates && (
                               <div className="flex gap-2">
                                 <Button
-                                  size="sm"
+                                  size="md"
                                   variant="text"
-                                  color="blue"
+                                  color={designTheme.buttonColor}
                                   onClick={() => handleEditCertificate(certificate)}
                                   className="flex items-center gap-1"
                                 >
                                   <FaPen className="w-4 h-4" /> Edit
                                 </Button>
                                 <Button
-                                  size="sm"
+                                  size="md"
                                   variant="text"
                                   color="red"
                                   onClick={() => handleRemoveCertificate(certificate.id)}
@@ -3419,7 +5077,7 @@ const fetchPublicDataWithToken = async () => {
                                 className="cursor-pointer"
                                 onClick={() => handleCertificateClick(certificate)}
                               >
-                                <Typography variant="small" color="blue">
+                                <Typography variant="small" className={designTheme.textColor}>
                                   View
                                 </Typography>
                               </div>
@@ -3433,7 +5091,7 @@ const fetchPublicDataWithToken = async () => {
                     <div className="mt-6 flex justify-end">
                       <Button
                         variant="gradient"
-                        color="blue"
+                        color={designTheme.buttonColor}
                         onClick={() => handleSaveSection("certificates")}
                         disabled={isSaving}
                         className="flex items-center gap-2"
@@ -3456,15 +5114,15 @@ const fetchPublicDataWithToken = async () => {
             {/* Experience */}
             <div>
               <div className="flex items-center justify-between mb-8">
-                <Typography variant="h4" className="font-light text-blue-600 text-2xl">
+                <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl`}>
                   Experience
                 </Typography>
                 {isGraduateView && isEditMode && (
                   <IconButton 
-                    size="sm" 
+                    size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("experience")}
-                    className={editingSections.experience ? "text-blue-600" : ""}
+                    className={editingSections.experience ? designTheme.textColor : ""}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -3473,10 +5131,10 @@ const fetchPublicDataWithToken = async () => {
               {((portfolio.experiences && portfolio.experiences.length > 0) || (isEditMode && editingSections.experience)) ? (
                 <div className="space-y-8">
                   {(isEditMode && editingSections.experience ? editingPortfolio?.experiences : portfolio.experiences)?.map((exp, index) => (
-                    <div key={index} className="border-l-2 border-blue-100 pl-8 pb-8 relative">
+                    <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-8 pb-8 relative`}>
                       {isEditMode && editingSections.experience && (
                         <IconButton
-                          size="sm"
+                          size="md"
                           variant="text"
                           color="red"
                           className="absolute top-0 right-0"
@@ -3518,7 +5176,7 @@ const fetchPublicDataWithToken = async () => {
                             {exp.jobTitle}
                           </Typography>
                           {exp.company && (
-                            <Typography variant="small" color="blue" className="font-medium mb-2 break-words">
+                            <Typography variant="small" className={`${designTheme.textColor} font-medium mb-2 break-words`}>
                               {exp.company}
                             </Typography>
                           )}
@@ -3540,12 +5198,12 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   ))}
                   {isEditMode && editingSections.experience && (
-                    <Button
-                      variant="outlined"
-                      size="md"
-                      color="blue"
-                      onClick={() =>
-                        handleAddArrayItem("experiences", {
+                      <Button
+                        variant="outlined"
+                        size="md"
+                        color={designTheme.buttonColor}
+                        onClick={() =>
+                          handleAddArrayItem("experiences", {
                           jobTitle: "",
                           employer: "",
                           description: "",
@@ -3563,7 +5221,7 @@ const fetchPublicDataWithToken = async () => {
                     <div className="mt-6 flex justify-end">
                       <Button
                         variant="gradient"
-                        color="blue"
+                        color={designTheme.buttonColor}
                         onClick={() => handleSaveSection("experience")}
                         disabled={isSaving}
                         className="flex items-center gap-2"
@@ -3586,15 +5244,15 @@ const fetchPublicDataWithToken = async () => {
             {/* Projects */}
             <div>
               <div className="flex items-center justify-between mb-8">
-                <Typography variant="h4" className="font-light text-blue-600 text-2xl">
+                <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl`}>
                   Projects
                 </Typography>
                 {isGraduateView && isEditMode && (
                   <IconButton 
-                    size="sm" 
+                    size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("projects")}
-                    className={editingSections.projects ? "text-blue-600" : ""}
+                    className={editingSections.projects ? designTheme.textColor : ""}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -3676,14 +5334,14 @@ const fetchPublicDataWithToken = async () => {
                           src={URL.createObjectURL(newProject.projectImageFile)}
                           alt="Project Preview"
                           size="lg"
-                          className="ring-2 ring-blue-200"
+                          className={`ring-2 ${designTheme.borderColor}`}
                         />
                       ) : editingProjectId ? (
                         <Avatar
                           src={projects.find((proj) => proj.id === editingProjectId)?.projectImageFilePath || "/placeholder.svg"}
                           alt="Project Preview"
                           size="lg"
-                          className="ring-2 ring-blue-200"
+                          className={`ring-2 ${designTheme.borderColor}`}
                         />
                       ) : (
                         <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center">
@@ -3694,7 +5352,7 @@ const fetchPublicDataWithToken = async () => {
                       )}
                       <Button
                         variant="outlined"
-                        color="blue"
+                        color={designTheme.buttonColor}
                         onClick={handleProjectImageClick}
                         className="flex items-center gap-2"
                       >
@@ -3714,7 +5372,7 @@ const fetchPublicDataWithToken = async () => {
                   <div className="mt-6 flex justify-end gap-2">
                     <Button
                       variant="gradient"
-                      color="blue"
+                      color={designTheme.buttonColor}
                       onClick={editingProjectId ? handleUpdateProject : handleAddProject}
                       disabled={!isProjectFormValid()}
                     >
@@ -3746,7 +5404,7 @@ const fetchPublicDataWithToken = async () => {
                   {!isAddingProject && isEditMode && editingSections.projects && (
                     <Button
                       variant="outlined"
-                      color="blue"
+                      color={designTheme.buttonColor}
                       onClick={() => {
                         setIsAddingProject(true)
                         setEditingProjectId(null)
@@ -3789,7 +5447,7 @@ const fetchPublicDataWithToken = async () => {
                                   </Typography>
                                 )}
                                 {project.startDate && project.endDate && (
-                                  <Typography variant="small" color="blue" className="font-medium">
+                                  <Typography variant="small" className={`${designTheme.textColor} font-medium`}>
                                     {new Date(project.startDate).toLocaleDateString()} -{" "}
                                     {new Date(project.endDate).toLocaleDateString()}
                                   </Typography>
@@ -3798,16 +5456,16 @@ const fetchPublicDataWithToken = async () => {
                               {isEditMode && editingSections.projects && (
                                 <div className="flex flex-col gap-2">
                                   <Button
-                                    size="sm"
+                                    size="md"
                                     variant="text"
-                                    color="blue"
+                                    color={designTheme.buttonColor}
                                     onClick={() => handleEditProject(project)}
                                     className="flex items-center gap-1"
                                   >
                                     <FaPen className="w-4 h-4" /> Edit
                                   </Button>
                                   <Button
-                                    size="sm"
+                                    size="md"
                                     variant="text"
                                     color="red"
                                     onClick={() => handleRemoveProject(project.id)}
@@ -3827,7 +5485,7 @@ const fetchPublicDataWithToken = async () => {
                     <div className="mt-6 flex justify-end">
                       <Button
                         variant="gradient"
-                        color="blue"
+                        color={designTheme.buttonColor}
                         onClick={() => handleSaveSection("projects")}
                         disabled={isSaving}
                         className="flex items-center gap-2"
@@ -3850,15 +5508,15 @@ const fetchPublicDataWithToken = async () => {
             {/* Awards & Recognition */}
             <div>
               <div className="flex items-center justify-between mb-8">
-                <Typography variant="h4" className="font-light text-blue-600 text-2xl">
+                <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl`}>
                   Awards & Recognition
                 </Typography>
                 {isGraduateView && isEditMode && (
                   <IconButton 
-                    size="sm" 
+                    size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("awards")}
-                    className={editingSections.awards ? "text-blue-600" : ""}
+                    className={editingSections.awards ? designTheme.textColor : ""}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -3870,7 +5528,7 @@ const fetchPublicDataWithToken = async () => {
                     <div key={index} className="bg-white border border-gray-100 rounded-lg p-6 relative">
                       {isEditMode && editingSections.awards && (
                         <IconButton
-                          size="sm"
+                          size="md"
                           variant="text"
                           color="red"
                           className="absolute top-2 right-2"
@@ -3914,7 +5572,7 @@ const fetchPublicDataWithToken = async () => {
                             </Typography>
                           )}
                           {award.dateReceived && (
-                            <Typography variant="small" color="blue">
+                            <Typography variant="small" className={designTheme.textColor}>
                               {award.dateReceived}
                             </Typography>
                           )}
@@ -3926,7 +5584,7 @@ const fetchPublicDataWithToken = async () => {
                     <Button
                       variant="outlined"
                       size="md"
-                      color="blue"
+                      color={designTheme.buttonColor}
                       onClick={() => handleAddArrayItem("awardsRecognitions", { title: "", issuer: "", dateReceived: "" })}
                       className="w-full flex items-center justify-center gap-2"
                     >
@@ -3938,7 +5596,7 @@ const fetchPublicDataWithToken = async () => {
                     <div className="mt-6 flex justify-end">
                       <Button
                         variant="gradient"
-                        color="blue"
+                        color={designTheme.buttonColor}
                         onClick={() => handleSaveSection("awards")}
                         disabled={isSaving}
                         className="flex items-center gap-2"
@@ -3963,15 +5621,15 @@ const fetchPublicDataWithToken = async () => {
               {/* Continuing Education */}
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <Typography variant="h5" className="font-light text-blue-600">
+                  <Typography variant="h5" className={`font-light ${designTheme.textColor}`}>
                     Continuing Education
                   </Typography>
                   {isGraduateView && isEditMode && (
                     <IconButton 
-                      size="sm" 
+                      size="md" 
                       variant="text" 
                       onClick={() => handleSectionEditToggle("education")}
-                      className={editingSections.education ? "text-blue-600" : ""}
+                      className={editingSections.education ? designTheme.textColor : ""}
                     >
                       <FaPen className="w-4 h-4" />
                     </IconButton>
@@ -3980,10 +5638,10 @@ const fetchPublicDataWithToken = async () => {
                 {((portfolio.continuingEducations && portfolio.continuingEducations.length > 0) || (isEditMode && editingSections.education)) ? (
                   <div className="space-y-4">
                     {(isEditMode && editingSections.education ? editingPortfolio?.continuingEducations : portfolio.continuingEducations)?.map((edu, index) => (
-                      <div key={index} className="border-l-2 border-blue-100 pl-4 py-2 relative">
+                      <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2 relative`}>
                         {isEditMode && editingSections.education && (
                           <IconButton
-                            size="sm"
+                            size="md"
                             variant="text"
                             color="red"
                             className="absolute top-0 right-0"
@@ -3995,14 +5653,14 @@ const fetchPublicDataWithToken = async () => {
                         {isEditMode && editingSections.education ? (
                           <div className="space-y-2 pr-8">
                             <Input
-                              size="sm"
+                              size="md"
                               value={edu.courseName || ""}
                               onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
                               placeholder="Course Name"
                               className="!border-gray-300"
                             />
                             <Input
-                              size="sm"
+                              size="md"
                               value={edu.institution || ""}
                               onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
                               placeholder="Institution"
@@ -4010,7 +5668,7 @@ const fetchPublicDataWithToken = async () => {
                             />
                             <Input
                               type="date"
-                              size="sm"
+                              size="md"
                               value={edu.completionDate || ""}
                               onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
                               className="!border-gray-300"
@@ -4027,7 +5685,7 @@ const fetchPublicDataWithToken = async () => {
                               </Typography>
                             )}
                             {edu.completionDate && (
-                              <Typography variant="small" color="blue">
+                              <Typography variant="small" className={designTheme.textColor}>
                                 {edu.completionDate}
                               </Typography>
                             )}
@@ -4038,8 +5696,8 @@ const fetchPublicDataWithToken = async () => {
                     {isEditMode && editingSections.education && (
                       <Button
                         variant="outlined"
-                        size="sm"
-                        color="blue"
+                        size="md"
+                        color={designTheme.buttonColor}
                         onClick={() => handleAddArrayItem("continuingEducations", { courseName: "", institution: "", completionDate: "" })}
                         className="w-full flex items-center justify-center gap-2"
                       >
@@ -4051,8 +5709,8 @@ const fetchPublicDataWithToken = async () => {
                       <div className="mt-4 flex justify-end">
                         <Button
                           variant="gradient"
-                          color="blue"
-                          size="sm"
+                          color={designTheme.buttonColor}
+                          size="md"
                           onClick={() => handleSaveSection("education")}
                           disabled={isSaving}
                           className="flex items-center gap-2"
@@ -4073,15 +5731,15 @@ const fetchPublicDataWithToken = async () => {
               {/* Professional Memberships */}
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <Typography variant="h5" className="font-light text-blue-600">
+                  <Typography variant="h5" className={`font-light ${designTheme.textColor}`}>
                     Professional Memberships
                   </Typography>
                   {isGraduateView && isEditMode && (
                     <IconButton 
-                      size="sm" 
+                      size="md" 
                       variant="text" 
                       onClick={() => handleSectionEditToggle("memberships")}
-                      className={editingSections.memberships ? "text-blue-600" : ""}
+                      className={editingSections.memberships ? designTheme.textColor : ""}
                     >
                       <FaPen className="w-4 h-4" />
                     </IconButton>
@@ -4090,10 +5748,10 @@ const fetchPublicDataWithToken = async () => {
                 {((portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0) || (isEditMode && editingSections.memberships)) ? (
                   <div className="space-y-4">
                     {(isEditMode && editingSections.memberships ? editingPortfolio?.professionalMemberships : portfolio.professionalMemberships)?.map((mem, index) => (
-                      <div key={index} className="border-l-2 border-blue-100 pl-4 py-2 relative">
+                      <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2 relative`}>
                         {isEditMode && editingSections.memberships && (
                           <IconButton
-                            size="sm"
+                            size="md"
                             variant="text"
                             color="red"
                             className="absolute top-0 right-0"
@@ -4105,14 +5763,14 @@ const fetchPublicDataWithToken = async () => {
                         {isEditMode && editingSections.memberships ? (
                           <div className="space-y-2 pr-8">
                             <Input
-                              size="sm"
+                              size="md"
                               value={mem.organization || ""}
                               onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
                               placeholder="Organization"
                               className="!border-gray-300"
                             />
                             <Input
-                              size="sm"
+                              size="md"
                               value={mem.membershipType || ""}
                               onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
                               placeholder="Membership Type"
@@ -4120,7 +5778,7 @@ const fetchPublicDataWithToken = async () => {
                             />
                             <Input
                               type="date"
-                              size="sm"
+                              size="md"
                               value={mem.startDate || ""}
                               onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
                               className="!border-gray-300"
@@ -4137,7 +5795,7 @@ const fetchPublicDataWithToken = async () => {
                               </Typography>
                             )}
                             {mem.startDate && (
-                              <Typography variant="small" color="blue">
+                              <Typography variant="small" className={designTheme.textColor}>
                                 Since {mem.startDate}
                               </Typography>
                             )}
@@ -4148,8 +5806,8 @@ const fetchPublicDataWithToken = async () => {
                     {isEditMode && editingSections.memberships && (
                       <Button
                         variant="outlined"
-                        size="sm"
-                        color="blue"
+                        size="md"
+                        color={designTheme.buttonColor}
                         onClick={() => handleAddArrayItem("professionalMemberships", { organization: "", membershipType: "", startDate: "" })}
                         className="w-full flex items-center justify-center gap-2"
                       >
@@ -4161,8 +5819,8 @@ const fetchPublicDataWithToken = async () => {
                       <div className="mt-4 flex justify-end">
                         <Button
                           variant="gradient"
-                          color="blue"
-                          size="sm"
+                          color={designTheme.buttonColor}
+                          size="md"
                           onClick={() => handleSaveSection("memberships")}
                           disabled={isSaving}
                           className="flex items-center gap-2"
@@ -4184,15 +5842,15 @@ const fetchPublicDataWithToken = async () => {
             {/* References */}
             <div>
               <div className="flex items-center justify-between mb-8">
-                <Typography variant="h4" className="font-light text-blue-600 text-2xl">
+                <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl`}>
                   References
                 </Typography>
                 {isGraduateView && isEditMode && (
                   <IconButton 
-                    size="sm" 
+                    size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("references")}
-                    className={editingSections.references ? "text-blue-600" : ""}
+                    className={editingSections.references ? designTheme.textColor : ""}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -4204,7 +5862,7 @@ const fetchPublicDataWithToken = async () => {
                     <div key={index} className="bg-white border border-gray-100 rounded-lg p-6 relative">
                       {isEditMode && editingSections.references && (
                         <IconButton
-                          size="sm"
+                          size="md"
                           variant="text"
                           color="red"
                           className="absolute top-2 right-2"
@@ -4262,11 +5920,11 @@ const fetchPublicDataWithToken = async () => {
                               {ref.position}
                             </Typography>
                           )}
-                          {ref.company && (
-                            <Typography variant="small" color="blue" className="mb-3 break-words">
-                              {ref.company}
-                            </Typography>
-                          )}
+                            {ref.company && (
+                              <Typography variant="small" className={`${designTheme.textColor} mb-3 break-words`}>
+                                {ref.company}
+                              </Typography>
+                            )}
                           <div className="space-y-1">
                             {ref.email && (
                               <Typography variant="small" color="gray" className="break-all">
@@ -4288,7 +5946,7 @@ const fetchPublicDataWithToken = async () => {
                       <Button
                         variant="outlined"
                         size="md"
-                        color="blue"
+                        color={designTheme.buttonColor}
                         onClick={() => handleAddArrayItem("references", { name: "", relationship: "", company: "", email: "", phone: "" })}
                         className="w-full flex items-center justify-center gap-2"
                       >
@@ -4301,7 +5959,7 @@ const fetchPublicDataWithToken = async () => {
                     <div className="mt-6 flex justify-end md:col-span-2">
                       <Button
                         variant="gradient"
-                        color="blue"
+                        color={designTheme.buttonColor}
                         onClick={() => handleSaveSection("references")}
                         disabled={isSaving}
                         className="flex items-center gap-2"
@@ -4322,11 +5980,15 @@ const fetchPublicDataWithToken = async () => {
             </div>
           </div>
         </div>
+      </div>
+        </Fragment>
+      )}
+      </div>
 
-        {isGraduateView && (
+      {isGraduateView && (
           <div className="mt-16 bg-white border border-gray-100 rounded-lg p-8">
             <div className="text-center mb-8">
-              <Typography variant="h4" color="blue" className="mb-4 font-light">
+              <Typography variant="h4" className={`${designTheme.textColor} mb-4 font-light`}>
                 Share Your Portfolio
               </Typography>
               <Typography color="gray" className="max-w-2xl mx-auto font-light">
@@ -4348,8 +6010,8 @@ const fetchPublicDataWithToken = async () => {
             </div>
 
             {shareToken && (
-              <div className="p-6 bg-blue-50 rounded-lg mb-6">
-                <Typography variant="h6" color="blue" className="mb-2 font-light">
+              <div className={`p-6 ${designTheme.lightBg} rounded-lg mb-6`}>
+                <Typography variant="h6" className={`${designTheme.textColor} mb-2 font-light`}>
                   Your Secure Token
                 </Typography>
                 <Typography variant="small" color="blue-gray" className="font-mono">
@@ -4425,7 +6087,7 @@ const fetchPublicDataWithToken = async () => {
                 <>
                   <Button
                     onClick={handleRegenerateToken}
-                    color="blue"
+                    color={designTheme.buttonColor}
                     variant="outlined"
                     size="lg"
                     className="font-light"
@@ -4448,8 +6110,6 @@ const fetchPublicDataWithToken = async () => {
             </div>
           </div>
         )}
-
-      </div>
 
       {selectedCertificate && (
         <Dialog open={!!selectedCertificate} handler={() => setSelectedCertificate(null)} size="md">
@@ -4498,9 +6158,6 @@ const fetchPublicDataWithToken = async () => {
           </DialogFooter>
         </Dialog>
       )}
-          </>
-        )}
-      </div>
     </div>
   )
 }
