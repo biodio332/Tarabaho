@@ -18,6 +18,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "experiences")
@@ -39,7 +40,8 @@ public class Experience {
     @Column(length = 200)
     private String employer;
 
-    @Column(length = 1000)
+   @Size(max = 300, message = "Description must not exceed 300 characters")
+    @Column(length = 300)
     private String description;
 
     @Column

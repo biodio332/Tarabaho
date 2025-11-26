@@ -36,6 +36,9 @@ public class Reference {
     private String relationship;
 
     @Column
+    private String company;
+
+    @Column
     private String email;
 
     @Column
@@ -43,11 +46,12 @@ public class Reference {
 
     public Reference() {}
 
-    public Reference(String name, String relationship, String email, String phone) {
+    public Reference(String name, String relationship, String email, String phone,String company) {
         this.name = name;
         this.relationship = relationship;
         this.email = email;
         this.phone = phone;
+        this.company= company;
     }
 
     @Override
@@ -75,4 +79,6 @@ public class Reference {
     public void setEmail(String email) { this.email = email; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+    public String getCompany() { return company; }
+    public void setCompany(String company) { this.company = company; }
 }

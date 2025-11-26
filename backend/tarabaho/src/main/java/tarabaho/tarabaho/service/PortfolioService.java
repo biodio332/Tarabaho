@@ -529,6 +529,7 @@ public class PortfolioService {
             reference.setRelationship(incomingRef.getRelationship());
             reference.setEmail(incomingRef.getEmail());
             reference.setPhone(incomingRef.getPhone());
+            reference.setCompany(incomingRef.getCompany());
         }
         referenceRepository.saveAll(existingReferences);
         entityManager.flush();

@@ -1,8 +1,12 @@
 package tarabaho.tarabaho.service;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import tarabaho.tarabaho.entity.Graduate;
 import tarabaho.tarabaho.entity.Portfolio;
 import tarabaho.tarabaho.entity.Reference;
@@ -10,8 +14,6 @@ import tarabaho.tarabaho.entity.Visibility;
 import tarabaho.tarabaho.repository.GraduateRepository;
 import tarabaho.tarabaho.repository.PortfolioRepository;
 import tarabaho.tarabaho.repository.ReferenceRepository;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ReferenceService {
@@ -63,6 +65,7 @@ public class ReferenceService {
         existingReference.setRelationship(updatedReference.getRelationship());
         existingReference.setEmail(updatedReference.getEmail());
         existingReference.setPhone(updatedReference.getPhone());
+        existingReference.setCompany(updatedReference.getCompany());
         return referenceRepository.save(existingReference);
     }
 
