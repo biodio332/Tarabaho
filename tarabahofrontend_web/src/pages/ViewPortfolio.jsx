@@ -330,7 +330,8 @@ const ViewPortfolio = () => {
             id: exp.id,
             jobTitle: exp.jobTitle || "Unnamed",
             company: exp.employer || "",
-            duration: exp.duration || "",
+            startDate: exp.startDate || "",
+            endDate: exp.endDate || "",
             responsibilities: exp.description || "",
           }))
         : [],
@@ -381,14 +382,23 @@ const ViewPortfolio = () => {
           }))
         : [],
       references: portfolioData.references
-        ? portfolioData.references.map((ref) => ({
+        ? portfolioData.references.map((ref) => {
+            // Get relationship value - handle both relationship and position from backend
+            const relationshipVal = ref.relationship || ref.position || ""
+            // Get phone value - handle both phone and contact from backend
+            const phoneVal = ref.phone || ref.contact || ""
+            
+            return {
             id: ref.id,
             name: ref.name || "Unnamed Reference",
-            position: ref.relationship || "",
+              relationship: relationshipVal,
+              position: relationshipVal, // Keep both for backward compatibility
             company: ref.company || "",
-            contact: ref.phone || "",
+              phone: phoneVal,
+              contact: phoneVal, // Keep both for backward compatibility
             email: ref.email || "",
-          }))
+            }
+          })
         : [],
     }
 
@@ -1045,11 +1055,19 @@ const fetchPublicDataWithToken = async () => {
 
   const handleEditProject = (project) => {
     setEditingProjectId(project.id)
+    // Extract date part from LocalDateTime format (YYYY-MM-DDTHH:mm:ss -> YYYY-MM-DD)
+    const formatDateForInput = (dateStr) => {
+      if (!dateStr) return ""
+      // If it's already in YYYY-MM-DD format, return as is
+      if (!dateStr.includes("T")) return dateStr
+      // Extract date part from LocalDateTime
+      return dateStr.split("T")[0]
+    }
     setNewProject({
       title: project.title || "",
       description: project.description || "",
-      startDate: project.startDate || "",
-      endDate: project.endDate || "",
+      startDate: formatDateForInput(project.startDate) || "",
+      endDate: formatDateForInput(project.endDate) || "",
       projectImageFile: null,
     })
     setIsAddingProject(true)
@@ -1278,8 +1296,16 @@ const fetchPublicDataWithToken = async () => {
         projectData.append("portfolioId", editingPortfolio.id.toString())
         projectData.append("title", proj.title || "")
         projectData.append("description", proj.description || "")
-        if (proj.startDate) projectData.append("startDate", proj.startDate)
-        if (proj.endDate) projectData.append("endDate", proj.endDate)
+        if (proj.startDate && proj.startDate.trim() !== "") {
+          // Convert date string (YYYY-MM-DD) to LocalDateTime format (YYYY-MM-DDTHH:mm:ss)
+          const startDateStr = proj.startDate.includes("T") ? proj.startDate : `${proj.startDate}T00:00:00`
+          projectData.append("startDate", startDateStr)
+        }
+        if (proj.endDate && proj.endDate.trim() !== "") {
+          // Convert date string (YYYY-MM-DD) to LocalDateTime format (YYYY-MM-DDTHH:mm:ss)
+          const endDateStr = proj.endDate.includes("T") ? proj.endDate : `${proj.endDate}T00:00:00`
+          projectData.append("endDate", endDateStr)
+        }
         if (proj.projectImageFile instanceof File) {
           projectData.append("projectImageFile", proj.projectImageFile)
         }
@@ -1313,7 +1339,7 @@ const fetchPublicDataWithToken = async () => {
           try {
             const projResponse = await axios.put(`${BACKEND_URL}/api/project/${proj.id}`, projectData, {
               withCredentials: true,
-              headers: { Authorization: `Bearer ${token}` },
+              headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
             })
             console.log("Project updated:", projResponse.data)
             projectIds.push(proj.id)
@@ -1387,13 +1413,34 @@ const fetchPublicDataWithToken = async () => {
           membershipType: mem.membershipType || null,
           startDate: mem.startDate ? mem.startDate : null,
         })) || [],
-        references: editingPortfolio.references?.map((ref) => ({
+        references: editingPortfolio.references?.map((ref) => {
+          // Get relationship value - check both relationship and position fields
+          // Prioritize relationship, fallback to position
+          let relationshipValue = null
+          if (ref.relationship && typeof ref.relationship === "string" && ref.relationship.trim() !== "") {
+            relationshipValue = ref.relationship.trim()
+          } else if (ref.position && typeof ref.position === "string" && ref.position.trim() !== "") {
+            relationshipValue = ref.position.trim()
+          }
+          
+          // Get phone value - check both phone and contact fields
+          // Prioritize phone, fallback to contact
+          let phoneValue = null
+          if (ref.phone && typeof ref.phone === "string" && ref.phone.trim() !== "") {
+            phoneValue = ref.phone.trim()
+          } else if (ref.contact && typeof ref.contact === "string" && ref.contact.trim() !== "") {
+            phoneValue = ref.contact.trim()
+          }
+
+          return {
           id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
-          name: ref.name,
-          relationship: ref.relationship || null,
-          email: ref.email || null,
-          phone: ref.phone || null,
-        })) || [],
+            name: ref.name && typeof ref.name === "string" && ref.name.trim() !== "" ? ref.name.trim() : null,
+            relationship: relationshipValue,
+            company: ref.company && typeof ref.company === "string" && ref.company.trim() !== "" ? ref.company.trim() : null,
+            email: ref.email && typeof ref.email === "string" && ref.email.trim() !== "" ? ref.email.trim() : null,
+            phone: phoneValue,
+          }
+        }) || [],
       }
 
       await axios.put(`${BACKEND_URL}/api/portfolio/${editingPortfolio.id}`, payload, {
@@ -1592,8 +1639,16 @@ const fetchPublicDataWithToken = async () => {
           projectData.append("portfolioId", portfolioId.toString())
           projectData.append("title", proj.title || "")
           projectData.append("description", proj.description || "")
-          if (proj.startDate) projectData.append("startDate", proj.startDate)
-          if (proj.endDate) projectData.append("endDate", proj.endDate)
+          if (proj.startDate && proj.startDate.trim() !== "") {
+            // Convert date string (YYYY-MM-DD) to LocalDateTime format (YYYY-MM-DDTHH:mm:ss)
+            const startDateStr = proj.startDate.includes("T") ? proj.startDate : `${proj.startDate}T00:00:00`
+            projectData.append("startDate", startDateStr)
+          }
+          if (proj.endDate && proj.endDate.trim() !== "") {
+            // Convert date string (YYYY-MM-DD) to LocalDateTime format (YYYY-MM-DDTHH:mm:ss)
+            const endDateStr = proj.endDate.includes("T") ? proj.endDate : `${proj.endDate}T00:00:00`
+            projectData.append("endDate", endDateStr)
+          }
           if (proj.projectImageFile instanceof File) {
             projectData.append("projectImageFile", proj.projectImageFile)
           }
@@ -1607,7 +1662,7 @@ const fetchPublicDataWithToken = async () => {
           } else {
             await axios.put(`${BACKEND_URL}/api/project/${proj.id}`, projectData, {
               withCredentials: true,
-              headers: { Authorization: `Bearer ${token}` },
+              headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
             })
             projectIds.push(proj.id)
           }
@@ -1675,7 +1730,6 @@ const fetchPublicDataWithToken = async () => {
             jobTitle: exp.jobTitle.trim(),
             employer: (exp.company || exp.employer || "").trim() || null,
             description: (exp.responsibilities || exp.description || "").trim() || null,
-            duration: exp.duration && exp.duration.trim() !== "" ? exp.duration.trim() : null,
             startDate: exp.startDate && exp.startDate.trim() !== "" ? exp.startDate : null,
             endDate: exp.endDate && exp.endDate.trim() !== "" ? exp.endDate : null,
           })) || []
@@ -1715,27 +1769,33 @@ const fetchPublicDataWithToken = async () => {
         payload.references = editingPortfolio.references
           ?.filter((ref) => ref.name && ref.name.trim() !== "") // Filter out entries with empty name
           .map((ref) => {
-            const relationshipValue =
-              ref.relationship && ref.relationship.trim() !== ""
-                ? ref.relationship.trim()
-                : ref.position && ref.position.trim() !== ""
-                  ? ref.position.trim()
-                  : null
-            const companyValue =
-              ref.company && ref.company.trim() !== "" ? ref.company.trim() : null
-            const phoneValue =
-              ref.contact && ref.contact.trim() !== ""
-                ? ref.contact.trim()
-                : ref.phone && ref.phone.trim() !== ""
-                  ? ref.phone.trim()
-                  : null
+          // Get relationship value - check both relationship and position fields
+          // Prioritize relationship, fallback to position
+          let relationshipValue = null
+          if (ref.relationship && typeof ref.relationship === "string" && ref.relationship.trim() !== "") {
+            relationshipValue = ref.relationship.trim()
+          } else if (ref.position && typeof ref.position === "string" && ref.position.trim() !== "") {
+            relationshipValue = ref.position.trim()
+          }
+          
+          // Get phone value - check both phone and contact fields
+          // Prioritize phone, fallback to contact
+          let phoneValue = null
+          if (ref.phone && typeof ref.phone === "string" && ref.phone.trim() !== "") {
+            phoneValue = ref.phone.trim()
+          } else if (ref.contact && typeof ref.contact === "string" && ref.contact.trim() !== "") {
+            phoneValue = ref.contact.trim()
+          }
+
+          const companyValue =
+            ref.company && typeof ref.company === "string" && ref.company.trim() !== "" ? ref.company.trim() : null
 
             return {
-              id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
-              name: ref.name.trim(),
+            id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
+            name: ref.name.trim(),
               relationship: relationshipValue,
               company: companyValue,
-              email: ref.email && ref.email.trim() !== "" ? ref.email.trim() : null,
+              email: ref.email && typeof ref.email === "string" && ref.email.trim() !== "" ? ref.email.trim() : null,
               phone: phoneValue,
             }
           }) || []
@@ -1757,7 +1817,6 @@ const fetchPublicDataWithToken = async () => {
           jobTitle: exp.jobTitle.trim(),
           employer: (exp.company || exp.employer || "").trim() || null,
           description: (exp.responsibilities || exp.description || "").trim() || null,
-          duration: exp.duration && exp.duration.trim() !== "" ? exp.duration.trim() : null,
           startDate: exp.startDate && exp.startDate.trim() !== "" ? exp.startDate : null,
           endDate: exp.endDate && exp.endDate.trim() !== "" ? exp.endDate : null,
         })) || []
@@ -1788,29 +1847,35 @@ const fetchPublicDataWithToken = async () => {
       payload.references = editingPortfolio.references
         ?.filter((ref) => ref.name && ref.name.trim() !== "") // Filter out entries with empty name
         .map((ref) => {
-          const relationshipValue =
-            ref.relationship && ref.relationship.trim() !== ""
-              ? ref.relationship.trim()
-              : ref.position && ref.position.trim() !== ""
-                ? ref.position.trim()
-                : null
-          const companyValue =
-            ref.company && ref.company.trim() !== "" ? ref.company.trim() : null
-          const phoneValue =
-            ref.contact && ref.contact.trim() !== ""
-              ? ref.contact.trim()
-              : ref.phone && ref.phone.trim() !== ""
-                ? ref.phone.trim()
-                : null
-
-          return {
-            id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
-            name: ref.name.trim(),
-            relationship: relationshipValue,
-            company: companyValue,
-            email: ref.email && ref.email.trim() !== "" ? ref.email.trim() : null,
-            phone: phoneValue,
+          // Get relationship value - check both relationship and position fields
+          // Prioritize relationship, fallback to position
+          let relationshipValue = null
+          if (ref.relationship && typeof ref.relationship === "string" && ref.relationship.trim() !== "") {
+            relationshipValue = ref.relationship.trim()
+          } else if (ref.position && typeof ref.position === "string" && ref.position.trim() !== "") {
+            relationshipValue = ref.position.trim()
           }
+          
+          // Get phone value - check both phone and contact fields
+          // Prioritize phone, fallback to contact
+          let phoneValue = null
+          if (ref.phone && typeof ref.phone === "string" && ref.phone.trim() !== "") {
+            phoneValue = ref.phone.trim()
+          } else if (ref.contact && typeof ref.contact === "string" && ref.contact.trim() !== "") {
+            phoneValue = ref.contact.trim()
+          }
+
+          const companyValue =
+            ref.company && typeof ref.company === "string" && ref.company.trim() !== "" ? ref.company.trim() : null
+
+            return {
+          id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
+          name: ref.name.trim(),
+              relationship: relationshipValue,
+              company: companyValue,
+              email: ref.email && typeof ref.email === "string" && ref.email.trim() !== "" ? ref.email.trim() : null,
+              phone: phoneValue,
+            }
         }) || []
 
       // Add certificate and project IDs if they exist
@@ -2163,23 +2228,23 @@ const fetchPublicDataWithToken = async () => {
                                 <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                                   Skill Name
                                 </Typography>
-                                <div className="flex gap-2">
-                                  <Input
-                                    size="md"
-                                    value={skill.name || ""}
-                                    onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
+                              <div className="flex gap-2">
+                                <Input
+                                  size="md"
+                                  value={skill.name || ""}
+                                  onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
                                     placeholder="e.g. Latte Art"
-                                    className="!border-gray-300 flex-1"
-                                  />
-                                  <IconButton
-                                    size="md"
-                                    variant="text"
-                                    color="red"
-                                    onClick={() => handleRemoveArrayItem("skills", index)}
-                                  >
-                                    <FaTrash className="w-3 h-3" />
-                                  </IconButton>
-                                </div>
+                                  className="!border-gray-300 flex-1"
+                                />
+                                <IconButton
+                                  size="md"
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => handleRemoveArrayItem("skills", index)}
+                                >
+                                  <FaTrash className="w-3 h-3" />
+                                </IconButton>
+                              </div>
                               </div>
                               <div>
                                 <Typography variant="small" className="text-gray-700 font-semibold mb-1">
@@ -2205,13 +2270,13 @@ const fetchPublicDataWithToken = async () => {
                                 <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                                   Proficiency Level
                                 </Typography>
-                                <Input
-                                  size="md"
-                                  value={skill.proficiencyLevel || ""}
-                                  onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
+                              <Input
+                                size="md"
+                                value={skill.proficiencyLevel || ""}
+                                onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
                                   placeholder="e.g. Advanced"
-                                  className="!border-gray-300"
-                                />
+                                className="!border-gray-300"
+                              />
                               </div>
                             </div>
                           ) : (
@@ -2814,9 +2879,33 @@ const fetchPublicDataWithToken = async () => {
                                 </Typography>
                                 <Input
                                   size="md"
-                                  value={exp.employer || exp.company || ""}
-                                  onChange={(e) => handleArrayFieldChange("experiences", index, "employer", e.target.value)}
+                                  value={exp.company || exp.employer || ""}
+                                  onChange={(e) => handleArrayFieldChange("experiences", index, "company", e.target.value)}
                                   placeholder="e.g. Bistro Manila"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                  Start Date
+                                </Typography>
+                                <Input
+                                  type="date"
+                                  size="md"
+                                  value={exp.startDate || ""}
+                                  onChange={(e) => handleArrayFieldChange("experiences", index, "startDate", e.target.value)}
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                  End Date
+                                </Typography>
+                                <Input
+                                  type="date"
+                                  size="md"
+                                  value={exp.endDate || ""}
+                                  onChange={(e) => handleArrayFieldChange("experiences", index, "endDate", e.target.value)}
                                   className="!border-gray-300"
                                 />
                               </div>
@@ -2826,9 +2915,9 @@ const fetchPublicDataWithToken = async () => {
                                 </Typography>
                                 <Textarea
                                   size="md"
-                                  value={exp.description || exp.responsibilities || ""}
+                                  value={exp.responsibilities || exp.description || ""}
                                   onChange={(e) =>
-                                    handleArrayFieldChange("experiences", index, "description", e.target.value)
+                                    handleArrayFieldChange("experiences", index, "responsibilities", e.target.value)
                                   }
                                   placeholder="Summarize key contributions"
                                   className="!border-gray-300"
@@ -2881,9 +2970,10 @@ const fetchPublicDataWithToken = async () => {
                                 {exp.company}
                               </Typography>
                             )}
-                            {exp.duration && (
+                            {(exp.startDate || exp.endDate) && (
                               <Typography variant="small" className="text-gray-600 font-medium mb-3 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                {exp.duration}
+                                {exp.startDate ? new Date(exp.startDate).toLocaleDateString() : "N/A"} -{" "}
+                                {exp.endDate ? new Date(exp.endDate).toLocaleDateString() : "N/A"}
                               </Typography>
                             )}
                             {exp.responsibilities && (
@@ -2908,7 +2998,7 @@ const fetchPublicDataWithToken = async () => {
                   </div>
 
                   {/* Projects Section */}
-            <div>
+                  <div>
               <div className="flex items-center justify-between mb-3">
                       <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
                         Projects
@@ -3663,8 +3753,8 @@ const fetchPublicDataWithToken = async () => {
                                 </Typography>
                                 <Input
                                   size="md"
-                                  value={ref.contact || ref.phone || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "contact", e.target.value)}
+                                  value={ref.phone || ref.contact || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "phone", e.target.value)}
                                   placeholder="+63 900 000 0000"
                                   className="!border-gray-300"
                                 />
@@ -4160,32 +4250,32 @@ const fetchPublicDataWithToken = async () => {
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                   Skill Name
                                 </Typography>
-                                <div className="flex gap-2">
-                                  <Input
-                                    size="md"
-                                    value={skill.name || ""}
-                                    onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
+                              <div className="flex gap-2">
+                                <Input
+                                  size="md"
+                                  value={skill.name || ""}
+                                  onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
                                     placeholder="e.g. Latte Art"
-                                    className="!border-gray-300 flex-1"
-                                  />
-                                  <IconButton
-                                    size="md"
-                                    variant="text"
-                                    color="red"
-                                    onClick={() => handleRemoveArrayItem("skills", index)}
-                                  >
-                                    <FaTrash className="w-3 h-3" />
-                                  </IconButton>
-                                </div>
+                                  className="!border-gray-300 flex-1"
+                                />
+                                <IconButton
+                                  size="md"
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => handleRemoveArrayItem("skills", index)}
+                                >
+                                  <FaTrash className="w-3 h-3" />
+                                </IconButton>
+                              </div>
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                   Skill Type
                                 </Typography>
                                 <Select
-                                  size="md"
+                                size="md"
                                   label="Select Skill Type"
-                                  value={skill.type || "TECHNICAL"}
+                                value={skill.type || "TECHNICAL"}
                                   onChange={(value) =>
                                     handleArrayFieldChange("skills", index, "type", value || "TECHNICAL")
                                   }
@@ -4202,13 +4292,13 @@ const fetchPublicDataWithToken = async () => {
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                   Proficiency Level
                                 </Typography>
-                                <Input
-                                  size="md"
-                                  value={skill.proficiencyLevel || ""}
-                                  onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
+                              <Input
+                                size="md"
+                                value={skill.proficiencyLevel || ""}
+                                onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
                                   placeholder="e.g. Intermediate"
-                                  className="!border-gray-300"
-                                />
+                                className="!border-gray-300"
+                              />
                               </div>
                             </div>
                           ) : (
@@ -4373,35 +4463,47 @@ const fetchPublicDataWithToken = async () => {
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                   Job Title
                                 </Typography>
-                                <Input
-                                  size="md"
-                                  value={exp.jobTitle || ""}
-                                  onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
+                              <Input
+                                size="md"
+                                value={exp.jobTitle || ""}
+                                onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
                                   placeholder="e.g. Barista"
-                                  className="!border-gray-300"
-                                />
+                                className="!border-gray-300"
+                              />
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                   Company
                                 </Typography>
-                                <Input
-                                  size="md"
-                                  value={exp.company || ""}
-                                  onChange={(e) => handleArrayFieldChange("experiences", index, "company", e.target.value)}
+                              <Input
+                                size="md"
+                                value={exp.company || ""}
+                                onChange={(e) => handleArrayFieldChange("experiences", index, "company", e.target.value)}
                                   placeholder="e.g. Brewed Cafe"
-                                  className="!border-gray-300"
-                                />
+                                className="!border-gray-300"
+                              />
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Duration
+                                  Start Date
+                                </Typography>
+                              <Input
+                                  type="date"
+                                size="md"
+                                  value={exp.startDate || ""}
+                                  onChange={(e) => handleArrayFieldChange("experiences", index, "startDate", e.target.value)}
+                                className="!border-gray-300"
+                              />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                  End Date
                                 </Typography>
                                 <Input
+                                  type="date"
                                   size="md"
-                                  value={exp.duration || ""}
-                                  onChange={(e) => handleArrayFieldChange("experiences", index, "duration", e.target.value)}
-                                  placeholder="Jan 2023 - Present"
+                                  value={exp.endDate || ""}
+                                  onChange={(e) => handleArrayFieldChange("experiences", index, "endDate", e.target.value)}
                                   className="!border-gray-300"
                                 />
                               </div>
@@ -4409,14 +4511,14 @@ const fetchPublicDataWithToken = async () => {
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                   Responsibilities
                                 </Typography>
-                                <Textarea
-                                  size="md"
-                                  value={exp.responsibilities || ""}
-                                  onChange={(e) => handleArrayFieldChange("experiences", index, "responsibilities", e.target.value)}
+                              <Textarea
+                                size="md"
+                                value={exp.responsibilities || ""}
+                                onChange={(e) => handleArrayFieldChange("experiences", index, "responsibilities", e.target.value)}
                                   placeholder="Summarize major contributions"
-                                  className="!border-gray-300"
-                                  rows={3}
-                                />
+                                className="!border-gray-300"
+                                rows={3}
+                              />
                               </div>
                               <div className="flex justify-end">
                                 <IconButton
@@ -4439,9 +4541,10 @@ const fetchPublicDataWithToken = async () => {
                                   {exp.company}
                                 </Typography>
                               )}
-                              {exp.duration && (
+                              {(exp.startDate || exp.endDate) && (
                                 <Typography variant="small" className="text-gray-600 text-sm mb-2" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                  {exp.duration}
+                                  {exp.startDate ? new Date(exp.startDate).toLocaleDateString() : "N/A"} -{" "}
+                                  {exp.endDate ? new Date(exp.endDate).toLocaleDateString() : "N/A"}
                                 </Typography>
                               )}
                               {exp.responsibilities && (
@@ -4463,7 +4566,7 @@ const fetchPublicDataWithToken = async () => {
                             variant="outlined"
                             size="md"
                             color="red"
-                            onClick={() => handleAddArrayItem("experiences", { jobTitle: "", company: "", duration: "", responsibilities: "" })}
+                            onClick={() => handleAddArrayItem("experiences", { jobTitle: "", company: "", startDate: "", endDate: "", responsibilities: "" })}
                             className="w-full flex items-center justify-center gap-2"
                           >
                             <FaPlus className="w-4 h-4" />
@@ -4496,7 +4599,7 @@ const fetchPublicDataWithToken = async () => {
                             variant="outlined"
                             size="md"
                             color="red"
-                            onClick={() => handleAddArrayItem("experiences", { jobTitle: "", company: "", duration: "", responsibilities: "" })}
+                            onClick={() => handleAddArrayItem("experiences", { jobTitle: "", company: "", startDate: "", endDate: "", responsibilities: "" })}
                             className="w-full flex items-center justify-center gap-2"
                           >
                             <FaPlus className="w-4 h-4" />
@@ -4632,37 +4735,37 @@ const fetchPublicDataWithToken = async () => {
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                   Award Title
                                 </Typography>
-                                <Input
-                                  size="md"
-                                  value={award.title || ""}
-                                  onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
+                              <Input
+                                size="md"
+                                value={award.title || ""}
+                                onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
                                   placeholder="e.g. Employee of the Month"
-                                  className="!border-gray-300"
-                                />
+                                className="!border-gray-300"
+                              />
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                   Issuer
                                 </Typography>
-                                <Input
-                                  size="md"
-                                  value={award.issuer || ""}
-                                  onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "issuer", e.target.value)}
+                              <Input
+                                size="md"
+                                value={award.issuer || ""}
+                                onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "issuer", e.target.value)}
                                   placeholder="e.g. Cafe Royale"
-                                  className="!border-gray-300"
-                                />
+                                className="!border-gray-300"
+                              />
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                   Date Received
                                 </Typography>
-                                <Input
-                                  size="md"
-                                  value={award.dateReceived || ""}
-                                  onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
+                              <Input
+                                size="md"
+                                value={award.dateReceived || ""}
+                                onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
                                   placeholder="YYYY-MM-DD"
-                                  className="!border-gray-300"
-                                />
+                                className="!border-gray-300"
+                              />
                               </div>
                               <div className="flex justify-end">
                                 <IconButton
@@ -4795,37 +4898,37 @@ const fetchPublicDataWithToken = async () => {
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                     Course Name
                                   </Typography>
-                                  <Input
-                                    size="md"
-                                    value={edu.courseName || ""}
-                                    onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
+                                <Input
+                                  size="md"
+                                  value={edu.courseName || ""}
+                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
                                     placeholder="e.g. Wine Appreciation"
-                                    className="!border-gray-300"
-                                  />
+                                  className="!border-gray-300"
+                                />
                                 </div>
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                     Institution
                                   </Typography>
-                                  <Input
-                                    size="md"
-                                    value={edu.institution || ""}
-                                    onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
+                                <Input
+                                  size="md"
+                                  value={edu.institution || ""}
+                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
                                     placeholder="e.g. TESDA Training Center"
-                                    className="!border-gray-300"
-                                  />
+                                  className="!border-gray-300"
+                                />
                                 </div>
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                     Completion Date
                                   </Typography>
-                                  <Input
-                                    size="md"
-                                    value={edu.completionDate || ""}
-                                    onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
+                                <Input
+                                  size="md"
+                                  value={edu.completionDate || ""}
+                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
                                     placeholder="YYYY-MM-DD"
-                                    className="!border-gray-300"
-                                  />
+                                  className="!border-gray-300"
+                                />
                                 </div>
                                 <div className="flex justify-end">
                                   <IconButton
@@ -4956,37 +5059,37 @@ const fetchPublicDataWithToken = async () => {
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                     Organization
                                   </Typography>
-                                  <Input
-                                    size="md"
-                                    value={mem.organization || ""}
-                                    onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
+                                <Input
+                                  size="md"
+                                  value={mem.organization || ""}
+                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
                                     placeholder="e.g. National Barista Guild"
-                                    className="!border-gray-300"
-                                  />
+                                  className="!border-gray-300"
+                                />
                                 </div>
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                     Membership Type
                                   </Typography>
-                                  <Input
-                                    size="md"
-                                    value={mem.membershipType || ""}
-                                    onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
+                                <Input
+                                  size="md"
+                                  value={mem.membershipType || ""}
+                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
                                     placeholder="e.g. Member / Officer"
-                                    className="!border-gray-300"
-                                  />
+                                  className="!border-gray-300"
+                                />
                                 </div>
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                     Start Date
                                   </Typography>
-                                  <Input
-                                    size="md"
-                                    value={mem.startDate || ""}
-                                    onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
+                                <Input
+                                  size="md"
+                                  value={mem.startDate || ""}
+                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
                                     placeholder="YYYY-MM-DD"
-                                    className="!border-gray-300"
-                                  />
+                                  className="!border-gray-300"
+                                />
                                 </div>
                                 <div className="flex justify-end">
                                   <IconButton
@@ -5119,61 +5222,61 @@ const fetchPublicDataWithToken = async () => {
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                     Name
                                   </Typography>
-                                  <Input
-                                    size="md"
-                                    value={ref.name || ""}
-                                    onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
+                                <Input
+                                  size="md"
+                                  value={ref.name || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
                                     placeholder="e.g. Juan Dela Cruz"
-                                    className="!border-gray-300"
-                                  />
+                                  className="!border-gray-300"
+                                />
                                 </div>
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                     Position / Relationship
                                   </Typography>
-                                  <Input
-                                    size="md"
-                                    value={ref.position || ""}
-                                    onChange={(e) => handleArrayFieldChange("references", index, "position", e.target.value)}
+                                <Input
+                                  size="md"
+                                  value={ref.position || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "position", e.target.value)}
                                     placeholder="e.g. Training Supervisor"
-                                    className="!border-gray-300"
-                                  />
+                                  className="!border-gray-300"
+                                />
                                 </div>
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                     Company
                                   </Typography>
-                                  <Input
-                                    size="md"
-                                    value={ref.company || ""}
-                                    onChange={(e) => handleArrayFieldChange("references", index, "company", e.target.value)}
+                                <Input
+                                  size="md"
+                                  value={ref.company || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "company", e.target.value)}
                                     placeholder="e.g. Cafe Delight"
-                                    className="!border-gray-300"
-                                  />
+                                  className="!border-gray-300"
+                                />
                                 </div>
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                     Email
                                   </Typography>
-                                  <Input
-                                    size="md"
-                                    value={ref.email || ""}
-                                    onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
+                                <Input
+                                  size="md"
+                                  value={ref.email || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
                                     placeholder="name@example.com"
-                                    className="!border-gray-300"
-                                  />
+                                  className="!border-gray-300"
+                                />
                                 </div>
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                     Contact Number
                                   </Typography>
-                                  <Input
-                                    size="md"
-                                    value={ref.contact || ""}
-                                    onChange={(e) => handleArrayFieldChange("references", index, "contact", e.target.value)}
+                                <Input
+                                  size="md"
+                                  value={ref.contact || ""}
+                                  onChange={(e) => handleArrayFieldChange("references", index, "contact", e.target.value)}
                                     placeholder="+63 900 000 0000"
-                                    className="!border-gray-300"
-                                  />
+                                  className="!border-gray-300"
+                                />
                                 </div>
                                 <div className="flex justify-end">
                                   <IconButton
@@ -5224,7 +5327,7 @@ const fetchPublicDataWithToken = async () => {
                             variant="outlined"
                             size="md"
                             color="red"
-                            onClick={() => handleAddArrayItem("references", { name: "", position: "", company: "", email: "", contact: "" })}
+                            onClick={() => handleAddArrayItem("references", { name: "", relationship: "", company: "", email: "", phone: "" })}
                             className="w-full flex items-center justify-center gap-2"
                           >
                             <FaPlus className="w-4 h-4" />
@@ -5257,7 +5360,7 @@ const fetchPublicDataWithToken = async () => {
                             variant="outlined"
                             size="md"
                             color="red"
-                            onClick={() => handleAddArrayItem("references", { name: "", position: "", company: "", email: "", contact: "" })}
+                            onClick={() => handleAddArrayItem("references", { name: "", relationship: "", company: "", email: "", phone: "" })}
                             className="w-full flex items-center justify-center gap-2"
                           >
                             <FaPlus className="w-4 h-4" />
@@ -5702,23 +5805,23 @@ const fetchPublicDataWithToken = async () => {
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Skill Name
                             </Typography>
-                            <div className="flex gap-2">
-                              <Input
-                                size="md"
-                                value={skill.name || ""}
-                                onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
+                          <div className="flex gap-2">
+                            <Input
+                              size="md"
+                              value={skill.name || ""}
+                              onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
                                 placeholder="e.g. Food Presentation"
-                                className="!border-gray-300 flex-1"
-                              />
-                              <IconButton
-                                size="md"
-                                variant="text"
-                                color="red"
-                                onClick={() => handleRemoveArrayItem("skills", index)}
-                              >
-                                <FaTrash className="w-3 h-3" />
-                              </IconButton>
-                            </div>
+                              className="!border-gray-300 flex-1"
+                            />
+                            <IconButton
+                              size="md"
+                              variant="text"
+                              color="red"
+                              onClick={() => handleRemoveArrayItem("skills", index)}
+                            >
+                              <FaTrash className="w-3 h-3" />
+                            </IconButton>
+                          </div>
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
@@ -5744,13 +5847,13 @@ const fetchPublicDataWithToken = async () => {
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Proficiency Level
                             </Typography>
-                            <Input
-                              size="md"
-                              value={skill.proficiencyLevel || ""}
-                              onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
+                          <Input
+                            size="md"
+                            value={skill.proficiencyLevel || ""}
+                            onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
                               placeholder="e.g. Advanced"
-                              className="!border-gray-300"
-                            />
+                            className="!border-gray-300"
+                          />
                           </div>
                         </div>
                       ) : (
@@ -6217,37 +6320,61 @@ const fetchPublicDataWithToken = async () => {
                       {isEditMode && editingSections.experience ? (
                         <div className="space-y-4">
                           <div className="flex justify-end -mt-2">
-                            <IconButton
-                              size="md"
-                              variant="text"
-                              color="red"
-                              onClick={() => handleRemoveArrayItem("experiences", index)}
+                        <IconButton
+                          size="md"
+                          variant="text"
+                          color="red"
+                          onClick={() => handleRemoveArrayItem("experiences", index)}
                               aria-label="Remove experience"
-                            >
-                              <FaTrash className="w-4 h-4" />
-                            </IconButton>
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </IconButton>
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Job Title
                             </Typography>
-                            <Input
-                              size="md"
-                              value={exp.jobTitle || ""}
-                              onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
+                          <Input
+                            size="md"
+                            value={exp.jobTitle || ""}
+                            onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
                               placeholder="e.g. Sous Chef"
-                              className="!border-gray-300"
-                            />
+                            className="!border-gray-300"
+                          />
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Company / Employer
                             </Typography>
-                            <Input
-                              size="md"
-                              value={exp.employer || ""}
-                              onChange={(e) => handleArrayFieldChange("experiences", index, "employer", e.target.value)}
+                          <Input
+                            size="md"
+                              value={exp.company || exp.employer || ""}
+                              onChange={(e) => handleArrayFieldChange("experiences", index, "company", e.target.value)}
                               placeholder="e.g. Bistro Manila"
+                            className="!border-gray-300"
+                          />
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              Start Date
+                            </Typography>
+                            <Input
+                              type="date"
+                              size="md"
+                              value={exp.startDate || ""}
+                              onChange={(e) => handleArrayFieldChange("experiences", index, "startDate", e.target.value)}
+                              className="!border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                              End Date
+                            </Typography>
+                            <Input
+                              type="date"
+                              size="md"
+                              value={exp.endDate || ""}
+                              onChange={(e) => handleArrayFieldChange("experiences", index, "endDate", e.target.value)}
                               className="!border-gray-300"
                             />
                           </div>
@@ -6255,16 +6382,16 @@ const fetchPublicDataWithToken = async () => {
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Responsibilities / Highlights
                             </Typography>
-                            <Textarea
-                              size="md"
-                              value={exp.description || ""}
-                              onChange={(e) =>
-                                handleArrayFieldChange("experiences", index, "description", e.target.value)
-                              }
+                          <Textarea
+                            size="md"
+                              value={exp.responsibilities || exp.description || ""}
+                            onChange={(e) =>
+                                handleArrayFieldChange("experiences", index, "responsibilities", e.target.value)
+                            }
                               placeholder="Summarize key contributions"
-                              className="!border-gray-300"
-                              rows={3}
-                            />
+                            className="!border-gray-300"
+                            rows={3}
+                          />
                           </div>
                         </div>
                       ) : (
@@ -6277,9 +6404,10 @@ const fetchPublicDataWithToken = async () => {
                               {exp.company}
                             </Typography>
                           )}
-                          {exp.duration && (
+                          {(exp.startDate || exp.endDate) && (
                             <Typography variant="small" color="gray" className="mb-4">
-                              {exp.duration}
+                              {exp.startDate ? new Date(exp.startDate).toLocaleDateString() : "N/A"} -{" "}
+                              {exp.endDate ? new Date(exp.endDate).toLocaleDateString() : "N/A"}
                             </Typography>
                           )}
                           {exp.responsibilities && (
@@ -6626,51 +6754,51 @@ const fetchPublicDataWithToken = async () => {
                       {isEditMode && editingSections.awards ? (
                         <div className="space-y-3">
                           <div className="flex justify-end -mt-2">
-                            <IconButton
-                              size="md"
-                              variant="text"
-                              color="red"
-                              onClick={() => handleRemoveArrayItem("awardsRecognitions", index)}
+                        <IconButton
+                          size="md"
+                          variant="text"
+                          color="red"
+                          onClick={() => handleRemoveArrayItem("awardsRecognitions", index)}
                               aria-label="Remove award"
-                            >
-                              <FaTrash className="w-4 h-4" />
-                            </IconButton>
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </IconButton>
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Award Title
                             </Typography>
-                            <Input
-                              size="md"
-                              value={award.title || ""}
-                              onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
+                          <Input
+                            size="md"
+                            value={award.title || ""}
+                            onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
                               placeholder="e.g. Best in Pastry Arts"
-                              className="!border-gray-300"
-                            />
+                            className="!border-gray-300"
+                          />
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Issuer
                             </Typography>
-                            <Input
-                              size="md"
-                              value={award.issuer || ""}
-                              onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "issuer", e.target.value)}
+                          <Input
+                            size="md"
+                            value={award.issuer || ""}
+                            onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "issuer", e.target.value)}
                               placeholder="e.g. TESDA"
-                              className="!border-gray-300"
-                            />
+                            className="!border-gray-300"
+                          />
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Date Received
                             </Typography>
-                            <Input
-                              type="date"
-                              size="md"
-                              value={award.dateReceived || ""}
-                              onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
-                              className="!border-gray-300"
-                            />
+                          <Input
+                            type="date"
+                            size="md"
+                            value={award.dateReceived || ""}
+                            onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
+                            className="!border-gray-300"
+                          />
                           </div>
                         </div>
                       ) : (
@@ -6754,51 +6882,51 @@ const fetchPublicDataWithToken = async () => {
                         {isEditMode && editingSections.education ? (
                           <div className="space-y-3">
                             <div className="flex justify-end -mt-2">
-                              <IconButton
-                                size="md"
-                                variant="text"
-                                color="red"
-                                onClick={() => handleRemoveArrayItem("continuingEducations", index)}
+                          <IconButton
+                            size="md"
+                            variant="text"
+                            color="red"
+                            onClick={() => handleRemoveArrayItem("continuingEducations", index)}
                                 aria-label="Remove education"
-                              >
-                                <FaTrash className="w-3 h-3" />
-                              </IconButton>
+                          >
+                            <FaTrash className="w-3 h-3" />
+                          </IconButton>
                             </div>
                             <div>
                               <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                                 Course Name
                               </Typography>
-                              <Input
-                                size="md"
-                                value={edu.courseName || ""}
-                                onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
+                            <Input
+                              size="md"
+                              value={edu.courseName || ""}
+                              onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
                                 placeholder="e.g. Advanced Baking Workshop"
-                                className="!border-gray-300"
-                              />
+                              className="!border-gray-300"
+                            />
                             </div>
                             <div>
                               <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                                 Institution
                               </Typography>
-                              <Input
-                                size="md"
-                                value={edu.institution || ""}
-                                onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
+                            <Input
+                              size="md"
+                              value={edu.institution || ""}
+                              onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
                                 placeholder="e.g. TESDA Training Center"
-                                className="!border-gray-300"
-                              />
+                              className="!border-gray-300"
+                            />
                             </div>
                             <div>
                               <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                                 Completion Date
                               </Typography>
-                              <Input
-                                type="date"
-                                size="md"
-                                value={edu.completionDate || ""}
-                                onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
-                                className="!border-gray-300"
-                              />
+                            <Input
+                              type="date"
+                              size="md"
+                              value={edu.completionDate || ""}
+                              onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
+                              className="!border-gray-300"
+                            />
                             </div>
                           </div>
                         ) : (
@@ -6879,51 +7007,51 @@ const fetchPublicDataWithToken = async () => {
                         {isEditMode && editingSections.memberships ? (
                           <div className="space-y-3">
                             <div className="flex justify-end -mt-2">
-                              <IconButton
-                                size="md"
-                                variant="text"
-                                color="red"
-                                onClick={() => handleRemoveArrayItem("professionalMemberships", index)}
+                          <IconButton
+                            size="md"
+                            variant="text"
+                            color="red"
+                            onClick={() => handleRemoveArrayItem("professionalMemberships", index)}
                                 aria-label="Remove membership"
-                              >
-                                <FaTrash className="w-3 h-3" />
-                              </IconButton>
+                          >
+                            <FaTrash className="w-3 h-3" />
+                          </IconButton>
                             </div>
                             <div>
                               <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                                 Organization
                               </Typography>
-                              <Input
-                                size="md"
-                                value={mem.organization || ""}
-                                onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
+                            <Input
+                              size="md"
+                              value={mem.organization || ""}
+                              onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
                                 placeholder="e.g. Philippine Chefs Association"
-                                className="!border-gray-300"
-                              />
+                              className="!border-gray-300"
+                            />
                             </div>
                             <div>
                               <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                                 Membership Type
                               </Typography>
-                              <Input
-                                size="md"
-                                value={mem.membershipType || ""}
-                                onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
+                            <Input
+                              size="md"
+                              value={mem.membershipType || ""}
+                              onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
                                 placeholder="e.g. Regular Member"
-                                className="!border-gray-300"
-                              />
+                              className="!border-gray-300"
+                            />
                             </div>
                             <div>
                               <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                                 Start Date
                               </Typography>
-                              <Input
-                                type="date"
-                                size="md"
-                                value={mem.startDate || ""}
-                                onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
-                                className="!border-gray-300"
-                              />
+                            <Input
+                              type="date"
+                              size="md"
+                              value={mem.startDate || ""}
+                              onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
+                              className="!border-gray-300"
+                            />
                             </div>
                           </div>
                         ) : (
@@ -7005,76 +7133,76 @@ const fetchPublicDataWithToken = async () => {
                       {isEditMode && editingSections.references ? (
                         <div className="space-y-3">
                           <div className="flex justify-end -mt-2">
-                            <IconButton
-                              size="md"
-                              variant="text"
-                              color="red"
-                              onClick={() => handleRemoveArrayItem("references", index)}
+                        <IconButton
+                          size="md"
+                          variant="text"
+                          color="red"
+                          onClick={() => handleRemoveArrayItem("references", index)}
                               aria-label="Remove reference"
-                            >
-                              <FaTrash className="w-4 h-4" />
-                            </IconButton>
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </IconButton>
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Name
                             </Typography>
-                            <Input
-                              size="md"
-                              value={ref.name || ""}
-                              onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
+                          <Input
+                            size="md"
+                            value={ref.name || ""}
+                            onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
                               placeholder="e.g. Maria Cruz"
-                              className="!border-gray-300"
-                            />
+                            className="!border-gray-300"
+                          />
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Relationship / Position
                             </Typography>
-                            <Input
-                              size="md"
-                              value={ref.relationship || ref.position || ""}
-                              onChange={(e) => handleArrayFieldChange("references", index, "relationship", e.target.value)}
+                          <Input
+                            size="md"
+                            value={ref.relationship || ref.position || ""}
+                            onChange={(e) => handleArrayFieldChange("references", index, "relationship", e.target.value)}
                               placeholder="e.g. Former Training Supervisor"
-                              className="!border-gray-300"
-                            />
+                            className="!border-gray-300"
+                          />
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Company
                             </Typography>
-                            <Input
-                              size="md"
-                              value={ref.company || ""}
-                              onChange={(e) => handleArrayFieldChange("references", index, "company", e.target.value)}
+                          <Input
+                            size="md"
+                            value={ref.company || ""}
+                            onChange={(e) => handleArrayFieldChange("references", index, "company", e.target.value)}
                               placeholder="e.g. Cafe Delight"
-                              className="!border-gray-300"
-                            />
+                            className="!border-gray-300"
+                          />
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Email
                             </Typography>
-                            <Input
-                              type="email"
-                              size="md"
-                              value={ref.email || ""}
-                              onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
+                          <Input
+                            type="email"
+                            size="md"
+                            value={ref.email || ""}
+                            onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
                               placeholder="name@example.com"
-                              className="!border-gray-300"
-                            />
+                            className="!border-gray-300"
+                          />
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Phone
                             </Typography>
-                            <Input
-                              size="md"
-                              value={ref.phone || ref.contact || ""}
-                              onChange={(e) => handleArrayFieldChange("references", index, "phone", e.target.value)}
+                          <Input
+                            size="md"
+                            value={ref.phone || ref.contact || ""}
+                            onChange={(e) => handleArrayFieldChange("references", index, "phone", e.target.value)}
                               placeholder="+63 900 000 0000"
-                              className="!border-gray-300"
-                            />
+                            className="!border-gray-300"
+                          />
                           </div>
                         </div>
                       ) : (

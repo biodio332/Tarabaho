@@ -1,4 +1,4 @@
-"use client"
+  "use client"
 
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
@@ -77,7 +77,8 @@ const PortfolioCreation = () => {
   const [newExperience, setNewExperience] = useState({
     jobTitle: "",
     company: "",
-    duration: "",
+    startDate: "",
+    endDate: "",
     responsibilities: "",
   })
   const [newAward, setNewAward] = useState({
@@ -97,9 +98,9 @@ const PortfolioCreation = () => {
   })
   const [newReference, setNewReference] = useState({
     name: "",
-    position: "",
+    relationship: "",
+    phone: "",
     company: "",
-    contact: "",
     email: "",
   })
   const [newCertificate, setNewCertificate] = useState({
@@ -133,6 +134,7 @@ const PortfolioCreation = () => {
   const INITIAL_ITEMS_LIMIT = 6
 
   const validSkillTypes = ["TECHNICAL", "LANGUAGE", "DIGITAL", "SOFT", "INDUSTRY_SPECIFIC"]
+  const PROFICIENCY_LEVELS = ["Beginner", "Intermediate", "Advanced", "Expert"]
 
   // Course type to design template mapping
   const courseTypeTemplates = {
@@ -142,6 +144,8 @@ const PortfolioCreation = () => {
     "Maritime": "housekeeping",
     "Tourism": "bartending-barista"
   }
+
+  const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV", "NC V", "NC VI"]
 
   // Get design theme for preview (matching ViewPortfolio.jsx)
   const getDesignTheme = (template) => {
@@ -575,7 +579,7 @@ const PortfolioCreation = () => {
       return
     }
     setExperiences((prev) => [...prev, { ...newExperience }])
-    setNewExperience({ jobTitle: "", company: "", duration: "", responsibilities: "" })
+    setNewExperience({ jobTitle: "", company: "", startDate: "", endDate: "", responsibilities: "" })
     setIsAddingExperience(false)
     setError("")
   }
@@ -650,8 +654,13 @@ const PortfolioCreation = () => {
       setError("Please fill in the reference name.")
       return
     }
-    setReferences((prev) => [...prev, { ...newReference }])
-    setNewReference({ name: "", position: "", company: "", contact: "", email: "" })
+    const referenceToAdd = {
+      ...newReference,
+      position: newReference.relationship,
+      contact: newReference.phone,
+    }
+    setReferences((prev) => [...prev, referenceToAdd])
+    setNewReference({ name: "", relationship: "", phone: "", company: "", email: "" })
     setIsAddingReference(false)
     setError("")
   }
@@ -1000,9 +1009,10 @@ const PortfolioCreation = () => {
         skills: validatedSkills,
         experiences: experiences.map((exp) => ({
           jobTitle: exp.jobTitle,
-          company: exp.company,
-          duration: exp.duration || null,
-          responsibilities: exp.responsibilities || null,
+          employer: exp.company,
+          startDate: exp.startDate || null,
+          endDate: exp.endDate || null,
+          description: exp.responsibilities || null,
         })),
         projectIds: [],
         awardsRecognitions: awardsRecognitions.map((award) => ({
@@ -1022,9 +1032,11 @@ const PortfolioCreation = () => {
         })),
         references: references.map((ref) => ({
           name: ref.name,
-          position: ref.position || null,
+          relationship: ref.relationship || ref.position || null,
+          position: ref.relationship || ref.position || null,
           company: ref.company || null,
-          contact: ref.contact || null,
+          phone: ref.phone || ref.contact || null,
+          contact: ref.phone || ref.contact || null,
           email: ref.email || null,
         })),
         certificateIds: certificateIds,
@@ -1045,8 +1057,16 @@ const PortfolioCreation = () => {
         formDataProject.append("portfolioId", portfolioId)
         formDataProject.append("title", proj.title)
         formDataProject.append("description", proj.description || "")
-        if (proj.startDate) formDataProject.append("startDate", proj.startDate)
-        if (proj.endDate) formDataProject.append("endDate", proj.endDate)
+        if (proj.startDate && proj.startDate.trim() !== "") {
+          // Convert date string (YYYY-MM-DD) to LocalDateTime format (YYYY-MM-DDTHH:mm:ss)
+          const startDateStr = proj.startDate.includes("T") ? proj.startDate : `${proj.startDate}T00:00:00`
+          formDataProject.append("startDate", startDateStr)
+        }
+        if (proj.endDate && proj.endDate.trim() !== "") {
+          // Convert date string (YYYY-MM-DD) to LocalDateTime format (YYYY-MM-DDTHH:mm:ss)
+          const endDateStr = proj.endDate.includes("T") ? proj.endDate : `${proj.endDate}T00:00:00`
+          formDataProject.append("endDate", endDateStr)
+        }
         if (proj.projectImageFile) {
           formDataProject.append("projectImageFile", proj.projectImageFile)
         }
@@ -1341,15 +1361,22 @@ const PortfolioCreation = () => {
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                     NC Level
                   </Typography>
-                  <Input
+                  <Select
                     size="lg"
-                    value={formData.ncLevel}
-                    onChange={handleInputChange}
-                    name="ncLevel"
-                    placeholder="e.g., NC II"
+                    label="Select NC Level"
+                    value={formData.ncLevel || ""}
+                    onChange={(val) => setFormData((prev) => ({ ...prev, ncLevel: val }))}
                     disabled={isLoading}
                     className="!border-gray-300 focus:!border-blue-500"
-                  />
+                    menuProps={{ className: "z-50 bg-white" }}
+                  >
+                    <Option value="">None</Option>
+                    {NC_LEVEL_OPTIONS.map((level) => (
+                      <Option key={level} value={level}>
+                        {level}
+                      </Option>
+                    ))}
+                  </Select>
                 </div>
 
                 <div>
@@ -1986,15 +2013,22 @@ const PortfolioCreation = () => {
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                         Proficiency
                       </Typography>
-                      <Input
+                      <Select
                         size="lg"
-                        value={newSkill.proficiencyLevel}
-                        onChange={handleSkillInputChange}
-                        name="proficiencyLevel"
-                        placeholder="e.g., Expert"
+                        label="Select Proficiency"
+                        value={newSkill.proficiencyLevel || ""}
+                        onChange={(val) => setNewSkill((prev) => ({ ...prev, proficiencyLevel: val }))}
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
-                      />
+                        menuProps={{ className: "z-50 bg-white" }}
+                      >
+                        <Option value="">None</Option>
+                        {PROFICIENCY_LEVELS.map((level) => (
+                          <Option key={level} value={level}>
+                            {level}
+                          </Option>
+                        ))}
+                      </Select>
                     </div>
                   </div>
                   <div className="flex justify-center gap-4">
@@ -2123,14 +2157,28 @@ const PortfolioCreation = () => {
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Duration
+                        Start Date
                       </Typography>
                       <Input
+                        type="date"
                         size="lg"
-                        value={newExperience.duration}
+                        value={newExperience.startDate}
                         onChange={handleExperienceInputChange}
-                        name="duration"
-                        placeholder="e.g., Jan 2020 - Dec 2022"
+                        name="startDate"
+                        disabled={isLoading}
+                        className="!border-gray-300 focus:!border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                        End Date
+                      </Typography>
+                      <Input
+                        type="date"
+                        size="lg"
+                        value={newExperience.endDate}
+                        onChange={handleExperienceInputChange}
+                        name="endDate"
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
@@ -2200,9 +2248,10 @@ const PortfolioCreation = () => {
                             <FaTrash className="w-5 h-5" />
                           </Button>
                         </div>
-                        {exp.duration && (
+                        {(exp.startDate || exp.endDate) && (
                           <Typography variant="small" className="text-gray-500 mb-2">
-                            Duration: {exp.duration}
+                            {exp.startDate ? new Date(exp.startDate).toLocaleDateString() : "N/A"} -{" "}
+                            {exp.endDate ? new Date(exp.endDate).toLocaleDateString() : "N/A"}
                           </Typography>
                         )}
                         {exp.responsibilities && (
@@ -2689,14 +2738,14 @@ const PortfolioCreation = () => {
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Position
+                        Relationship / Position
                       </Typography>
                       <Input
                         size="lg"
-                        value={newReference.position}
+                        value={newReference.relationship}
                         onChange={handleReferenceInputChange}
-                        name="position"
-                        placeholder="e.g., Manager"
+                        name="relationship"
+                        placeholder="e.g., Former Supervisor"
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
@@ -2717,13 +2766,13 @@ const PortfolioCreation = () => {
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Contact Info
+                        Phone
                       </Typography>
                       <Input
                         size="lg"
-                        value={newReference.contact}
+                        value={newReference.phone}
                         onChange={handleReferenceInputChange}
-                        name="contact"
+                        name="phone"
                         placeholder="e.g., +1234567890"
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
@@ -2778,9 +2827,9 @@ const PortfolioCreation = () => {
                           <Typography variant="h6" className="text-gray-900 font-bold mb-1">
                             {ref.name}
                           </Typography>
-                          {ref.position && (
+                          {(ref.relationship || ref.position) && (
                             <Typography variant="paragraph" className="text-gray-600 text-sm mb-1">
-                              Position: {ref.position}
+                              Relationship: {ref.relationship || ref.position}
                             </Typography>
                           )}
                           {ref.company && (
@@ -2788,9 +2837,9 @@ const PortfolioCreation = () => {
                               Company: {ref.company}
                             </Typography>
                           )}
-                          {ref.contact && (
+                          {(ref.phone || ref.contact) && (
                             <Typography variant="paragraph" className="text-gray-600 text-sm mb-1">
-                              Contact: {ref.contact}
+                              Phone: {ref.phone || ref.contact}
                             </Typography>
                           )}
                           {ref.email && (
@@ -2845,11 +2894,12 @@ const PortfolioCreation = () => {
                   <Select
                     size="lg"
                     label="Select Course Type"
-                    value={formData.primaryCourseType}
+                    value={formData.primaryCourseType || ""}
                     onChange={handleCourseTypeChange}
                     required
                     disabled={isLoading}
                     className="!border-gray-300 focus:!border-blue-500"
+                    menuProps={{ className: "z-50 bg-white" }}
                   >
                     {courseTypes.map((courseType) => (
                       <Option key={courseType} value={courseType}>
@@ -2866,10 +2916,11 @@ const PortfolioCreation = () => {
                   <Select
                     size="lg"
                     label="Select Visibility"
-                    value={formData.visibility}
+                    value={formData.visibility || ""}
                     onChange={(val) => setFormData((prev) => ({ ...prev, visibility: val }))}
                     disabled={isLoading}
                     className="!border-gray-300 focus:!border-blue-500"
+                    menuProps={{ className: "z-50 bg-white" }}
                   >
                     <Option value="PUBLIC">Public</Option>
                     <Option value="PRIVATE">Private</Option>
@@ -3182,9 +3233,10 @@ const PortfolioCreation = () => {
                                                 {exp.company}
                                               </Typography>
                                             )}
-                                            {exp.duration && (
+                                            {(exp.startDate || exp.endDate) && (
                                               <Typography variant="small" className="text-gray-600 font-medium mb-3 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                                {exp.duration}
+                                                {exp.startDate ? new Date(exp.startDate).toLocaleDateString() : "N/A"} -{" "}
+                                                {exp.endDate ? new Date(exp.endDate).toLocaleDateString() : "N/A"}
                                               </Typography>
                                             )}
                                             {exp.responsibilities && (
@@ -3436,9 +3488,9 @@ const PortfolioCreation = () => {
                                               <Typography variant="h6" className="font-bold text-gray-900 mb-2 break-words text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
                                                 {ref.name}
                                               </Typography>
-                                              {ref.position && (
+                                              {(ref.relationship || ref.position) && (
                                                 <Typography variant="small" className="text-gray-700 font-medium mb-1 break-words text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                                  {ref.position}
+                                                  {ref.relationship || ref.position}
                                                 </Typography>
                                               )}
                                               {ref.company && (
@@ -3452,9 +3504,9 @@ const PortfolioCreation = () => {
                                                     {ref.email}
                                                   </Typography>
                                                 )}
-                                                {ref.contact && (
+                                                {(ref.phone || ref.contact) && (
                                                   <Typography variant="small" className="text-gray-600 break-words font-medium text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                                    {ref.contact}
+                                                    {ref.phone || ref.contact}
                                                   </Typography>
                                                 )}
                                               </div>
@@ -3768,9 +3820,10 @@ const PortfolioCreation = () => {
                                                   {exp.company}
                                                 </Typography>
                                               )}
-                                              {exp.duration && (
+                                              {(exp.startDate || exp.endDate) && (
                                                 <Typography variant="small" className="text-gray-600 text-sm mb-2" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                                  {exp.duration}
+                                                  {exp.startDate ? new Date(exp.startDate).toLocaleDateString() : "N/A"} -{" "}
+                                                  {exp.endDate ? new Date(exp.endDate).toLocaleDateString() : "N/A"}
                                                 </Typography>
                                               )}
                                               {exp.responsibilities && (
@@ -4028,9 +4081,9 @@ const PortfolioCreation = () => {
                                                 <Typography variant="h6" className="font-bold text-black mb-2 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
                                                   {ref.name}
                                                 </Typography>
-                                                {ref.position && (
+                                                {(ref.relationship || ref.position) && (
                                                   <Typography variant="small" className="text-black font-medium mb-1 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
-                                                    {ref.position}
+                                                    {ref.relationship || ref.position}
                                                   </Typography>
                                                 )}
                                                 {ref.company && (
@@ -4044,9 +4097,9 @@ const PortfolioCreation = () => {
                                                       {ref.email}
                                                     </Typography>
                                                   )}
-                                                  {ref.contact && (
+                                                  {(ref.phone || ref.contact) && (
                                                     <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
-                                                      {ref.contact}
+                                                      {ref.phone || ref.contact}
                                                     </Typography>
                                                   )}
                                                 </div>
