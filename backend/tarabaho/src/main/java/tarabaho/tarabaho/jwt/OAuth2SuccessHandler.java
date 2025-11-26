@@ -1,4 +1,4 @@
-package tarabaho.tarabaho.jwt;
+/*package tarabaho.tarabaho.jwt;
 
 import java.io.IOException;
 
@@ -45,4 +45,4 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         response.sendRedirect(redirectUrl);
     }
-}
+}*/
