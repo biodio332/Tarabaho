@@ -7,6 +7,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -163,6 +165,29 @@ public class SecurityConfig {
         System.out.println("Creating CustomOAuth2AuthorizationRequestResolver bean...");
         return new CustomOAuth2AuthorizationRequestResolver(clientRegistrationRepository);
     }
+
+    @Configuration
+public class AsyncConfig {
+
+    @Bean
+    public TaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        
+        // These values will come from environment variables
+        executor.setCorePoolSize(
+            Integer.parseInt(System.getenv().getOrDefault("ASYNC_CORE_POOL_SIZE", "5"))
+        );
+        executor.setMaxPoolSize(
+            Integer.parseInt(System.getenv().getOrDefault("ASYNC_MAX_POOL_SIZE", "10"))
+        );
+        executor.setQueueCapacity(
+            Integer.parseInt(System.getenv().getOrDefault("ASYNC_QUEUE_CAPACITY", "100"))
+        );
+        executor.setThreadNamePrefix("EmailAsync-");
+        executor.initialize();
+        return executor;
+    }
+}
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

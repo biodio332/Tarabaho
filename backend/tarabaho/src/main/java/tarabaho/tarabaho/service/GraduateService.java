@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -139,6 +140,7 @@ public class GraduateService {
         return graduateRepository.save(graduate);
     }
 
+    @Async
     public void sendResetOtp(String email) throws Exception {
         Optional<Graduate> graduateOpt = findByEmail(email);
         if (graduateOpt.isEmpty()) {
@@ -190,6 +192,7 @@ public class GraduateService {
         System.out.println("GraduateService: Password reset successfully for graduate: " + email);
     }
 
+    @Async
     public void sendVerificationEmail(String email) throws Exception {
         Optional<Graduate> gradOpt = findByEmail(email);
         if (gradOpt.isEmpty()) {
