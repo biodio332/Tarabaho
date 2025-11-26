@@ -6,8 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.task.TaskExecutor;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -162,16 +160,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public TaskExecutor taskExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(Integer.parseInt(System.getenv().getOrDefault("ASYNC_CORE_POOL_SIZE", "5")));
-        executor.setMaxPoolSize(Integer.parseInt(System.getenv().getOrDefault("ASYNC_MAX_POOL_SIZE", "10")));
-        executor.setQueueCapacity(Integer.parseInt(System.getenv().getOrDefault("ASYNC_QUEUE_CAPACITY", "100")));
-        executor.setThreadNamePrefix("EmailAsync-");
-        executor.initialize();
-        return executor;
-    }
 }
 
 // Keep your CustomOAuth2AuthorizationRequestResolver class exactly as before
