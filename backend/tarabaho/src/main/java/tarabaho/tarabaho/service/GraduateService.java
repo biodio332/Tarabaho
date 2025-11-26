@@ -13,6 +13,7 @@ import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import tarabaho.tarabaho.dto.OtpInfo;
 import tarabaho.tarabaho.entity.Graduate;
@@ -190,28 +191,35 @@ public class GraduateService {
     }
 
     public void sendVerificationEmail(String email) throws Exception {
-    Optional<Graduate> gradOpt = findByEmail(email);
-    if (gradOpt.isEmpty()) {
-        throw new IllegalArgumentException("Graduate not found with email: " + email);
+        Optional<Graduate> gradOpt = findByEmail(email);
+        if (gradOpt.isEmpty()) {
+            throw new IllegalArgumentException("Graduate not found with email: " + email);
+        }
+        Graduate graduate = gradOpt.get();
+
+        String token = String.format("%06d", new Random().nextInt(999999));
+        Instant expiry = Instant.now().plusSeconds(600);
+        verificationMap.put(email, new VerificationToken(token, expiry));
+
+        // AUTOMATICALLY DETECT PRODUCTION URL
+        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().scheme("https").build().toUriString();
+        // This will be: https://tarabaho-backend.onrender.com
+
+        String verificationLink = baseUrl + "/api/graduate/verify-email?token=" + token +
+                "&email=" + URLEncoder.encode(email, StandardCharsets.UTF_8);
+
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setTo(email);
+        msg.setSubject("Verify your Tarabaho Graduate account");
+        msg.setText(
+            "Hi " + graduate.getFirstName() + ",\n\n" +
+            "Your verification code is: " + token + "\n\n" +
+            "Or click the link below to verify instantly (expires in 10 minutes):\n" +
+            verificationLink + "\n\n" +
+            "Thank you!\nTarabaho Team"
+        );
+        mailSender.send(msg);
     }
-    Graduate graduate = gradOpt.get();
-
-    String token = String.format("%06d", new Random().nextInt(999999));
-    Instant expiry = Instant.now().plusSeconds(600); // 10 min
-    verificationMap.put(email, new VerificationToken(token, expiry));
-
-    SimpleMailMessage msg = new SimpleMailMessage();
-    msg.setTo(email);
-    msg.setSubject("Verify your Tarabaho Graduate account");
-    msg.setText(
-        "Hi " + graduate.getFirstName() + ",\n\n" +
-        "Your verification code is: " + token + "\n" +
-        "Or click the link below (expires in 10 minutes):\n" +
-        "http://localhost:8080/api/graduate/verify-email?token=" + token + "&email=" + URLEncoder.encode(email, StandardCharsets.UTF_8) +
-        "\n\nThank you!"
-    );
-    mailSender.send(msg);
-}
 
  
     public void verifyEmailToken(String token, String email) throws Exception {

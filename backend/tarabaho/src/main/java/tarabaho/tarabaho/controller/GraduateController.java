@@ -727,11 +727,21 @@ public class GraduateController {
 
         try {
             graduateService.verifyEmailToken(token, email);
-            // ---- REDIRECT BACK TO GRADUATE PROFILE ----
-            response.sendRedirect("http://localhost:5173/graduate-profile?verified=true");
+
+            // DYNAMIC FRONTEND URL
+            String frontendUrl = System.getenv("FRONTEND_URL");
+            if (frontendUrl == null || frontendUrl.isEmpty()) {
+                frontendUrl = "https://tarabaho.vercel.app";  // fallback
+            }
+
+            response.sendRedirect(frontendUrl + "/graduate-profile?verified=true");
         } catch (Exception e) {
             String err = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
-            response.sendRedirect("http://localhost:5173/graduate-profile?error=" + err);
+            String frontendUrl = System.getenv("FRONTEND_URL");
+            if (frontendUrl == null || frontendUrl.isEmpty()) {
+                frontendUrl = "https://tarabaho.vercel.app";
+            }
+            response.sendRedirect(frontendUrl + "/graduate-profile?error=" + err);
         }
     }
 
