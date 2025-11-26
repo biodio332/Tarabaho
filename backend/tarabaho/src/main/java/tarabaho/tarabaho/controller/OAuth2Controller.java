@@ -189,7 +189,7 @@ public class OAuth2Controller {
                     }
                 }
 
-                redirectUrl = frontendUrl + "/signin?classname=" + 
+                redirectUrl = frontendUrl + "/signin?username=" + 
                     URLEncoder.encode(username, StandardCharsets.UTF_8) + "&type=graduate";
 
             } else {

@@ -1,10 +1,9 @@
 package tarabaho.tarabaho.config;
 
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
@@ -17,27 +16,24 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
-import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
-import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
-import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import tarabaho.tarabaho.jwt.JwtAuthFilter;
+import tarabaho.tarabaho.jwt.OAuth2SuccessHandler;
 import tarabaho.tarabaho.service.CustomOAuth2UserService;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    @Value("${app.frontend.url:https://tarabaho.vercel.app}")
+    private String frontendUrl;
 
     @Autowired
     private JwtAuthFilter jwtAuthenticationFilter;
@@ -48,152 +44,104 @@ public class SecurityConfig {
     @Autowired
     private AuthorizationRequestRepository<OAuth2AuthorizationRequest> customAuthorizationRequestRepository;
 
-    @Bean
-    @SuppressWarnings("CallToPrintStackTrace")
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        System.out.println("Applying SecurityFilterChain configuration...");
+    @Autowired
+    private CustomOAuth2UserService customOAuth2UserService;
 
+    @Autowired
+    private OAuth2SuccessHandler oauth2SuccessHandler;  // THIS IS NOW USED!
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(Customizer.withDefaults())
-            .csrf(csrf -> {
-                System.out.println("Disabling CSRF protection");
-                csrf.disable();
-            })
-            .sessionManagement(session -> {
-                System.out.println("Configuring session management...");
-                session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
-                session.sessionFixation().changeSessionId();
-            })
-            .authorizeHttpRequests(auth -> {
-                System.out.println("Configuring authorization rules...");
-                auth
-                    .requestMatchers("/api/admin/register", "/api/admin/login", "/api/admin/logout").permitAll()
-                    .requestMatchers("/api/user/login", "/api/user/register", "/api/user/token","/api/user/forgot-password",
-                        "/api/user/reset-password").permitAll()
-                    .requestMatchers(
-                        "/api/graduate/register",
-                        "/api/graduate/check-duplicates",
-                        "/api/graduate/token",
-						"/api/graduate/get-token",
-                        "/api/graduate/login",
-                        "/api/contact/submit",
-                        "/api/graduate/forgot-password",
-                        "/api/graduate/reset-password",
-                        "/api/graduate/{graduateId}/upload-initial-picture",
-                        "/swagger-ui/**", 
-                        "/v3/api-docs/**",
-                        "/api/graduate/test-graduate",
-                        "/api/portfolio/public/graduate/*/portfolio",
-                        "/api/portfolio/graduate/*/portfolio/share-token"
-                    ).permitAll()
-                    .requestMatchers("/api/certificate/graduate/**").authenticated()
-                    .requestMatchers("/oauth2/**", "/login/**", "/oauth2-success").permitAll()
-                    .requestMatchers("/profiles/**").permitAll()
-                    .requestMatchers("/chat").permitAll() 
-                    .requestMatchers("/api/admin/**","/api/contact/inquiries","/api/contact/delete/{id}").authenticated()
-                    .requestMatchers("/api/user/me", "/api/user/update-phone").authenticated()
-                    .requestMatchers("/api/user/**").authenticated()
-                    .requestMatchers("/api/graduate/**").authenticated()
-                    .requestMatchers("/api/certificate/**").authenticated()
-                    .requestMatchers("/api/portfolio").authenticated()
-                    .anyRequest().authenticated();
-                System.out.println("Authorization rules configured.");
-            })
-            .oauth2Login(oauth -> {
-                System.out.println("Configuring OAuth2 login...");
-                oauth
-                    .authorizationEndpoint(authzEndpoint -> authzEndpoint
-                        .authorizationRequestResolver(customAuthorizationRequestResolver())
-                        .authorizationRequestRepository(customAuthorizationRequestRepository)
-                    )
-                    .userInfoEndpoint(userInfo -> userInfo
-                        .userService(customOAuth2UserService())
-                    )
-                    .successHandler((request, response, authentication) -> {
-                        System.out.println("OAuth2 login successful, redirecting to /oauth2-success");
-                        OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
-                        System.out.println("OAuth2User attributes: " + oauth2User.getAttributes());
-                        response.sendRedirect("/oauth2-success");
-                    })
-                    .failureHandler((request, response, exception) -> {
-                        System.err.println("OAuth2 login failed: " + exception.getMessage());
-                        exception.printStackTrace();
-                        String errorMessage = java.net.URLEncoder.encode(
-                            exception.getMessage() != null ? exception.getMessage() : "Unknown OAuth2 error",
-                            "UTF-8"
-                        );
-                        System.out.println("Redirecting to: http://localhost:5173/login-failed?error=" + errorMessage);
-                        response.sendRedirect("http://localhost:5173/login-failed?error=" + errorMessage);
-                    });
-            })
-            .logout(logout -> {
-                    System.out.println("Configuring logout...");
-                    logout
-                        .logoutUrl("/api/user/logout")
-                        .logoutUrl("/api/graduate/logout") // Add graduate logout URL
-                        .logoutSuccessHandler((request, response, authentication) -> {
-                            Cookie tokenCookie = new Cookie("jwtToken", null);
-                            tokenCookie.setMaxAge(0);
-                            tokenCookie.setPath("/");
-                            tokenCookie.setHttpOnly(true);
-                            tokenCookie.setSecure(true); // Match login's Secure=true for https
-                            tokenCookie.setAttribute("SameSite", "None");
-                            response.addCookie(tokenCookie);
-                            System.out.println("Logout: Sent Set-Cookie - jwtToken=; Path=/; Max-Age=0; HttpOnly; Secure=true; SameSite=None");
-                            response.setStatus(HttpServletResponse.SC_OK);
-                            response.getWriter().write("User logged out successfully.");
-                        })
-                        .invalidateHttpSession(true)
-                        .permitAll();
-                })
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(new StateCaptureFilter(), org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter.class) // Add StateCaptureFilter here
-            .exceptionHandling(exceptions -> exceptions
-                .authenticationEntryPoint((request, response, authException) -> {
-                    System.out.println("Unauthorized request to: " + request.getRequestURI() + ", Error: " + authException.getMessage());
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: " + authException.getMessage());
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .sessionFixation().changeSessionId()
+            )
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/admin/register", "/api/admin/login", "/api/admin/logout").permitAll()
+                .requestMatchers("/api/user/login", "/api/user/register", "/api/user/token", "/api/user/forgot-password", "/api/user/reset-password").permitAll()
+                .requestMatchers(
+                    "/api/graduate/register",
+                    "/api/graduate/check-duplicates",
+                    "/api/graduate/token",
+                    "/api/graduate/get-token",
+                    "/api/graduate/login",
+                    "/api/contact/submit",
+                    "/api/graduate/forgot-password",
+                    "/api/graduate/reset-password",
+                    "/api/graduate/{graduateId}/upload-initial-picture",
+                    "/swagger-ui/**", "/v3/api-docs/**",
+                    "/api/graduate/test-graduate",
+                    "/api/portfolio/public/graduate/*/portfolio",
+                    "/api/portfolio/graduate/*/portfolio/share-token"
+                ).permitAll()
+                .requestMatchers("/api/certificate/graduate/**").authenticated()
+                .requestMatchers("/oauth2/**", "/login/**", "/oauth2-success").permitAll()
+                .requestMatchers("/profiles/**").permitAll()
+                .requestMatchers("/chat").permitAll()
+                .requestMatchers("/api/admin/**", "/api/contact/inquiries", "/api/contact/delete/{id}").authenticated()
+                .requestMatchers("/api/user/me", "/api/user/update-phone").authenticated()
+                .requestMatchers("/api/user/**").authenticated()
+                .requestMatchers("/api/graduate/**").authenticated()
+                .requestMatchers("/api/certificate/**").authenticated()
+                .requestMatchers("/api/portfolio").authenticated()
+                .anyRequest().authenticated()
+            )
+            .oauth2Login(oauth -> oauth
+                .authorizationEndpoint(authz -> authz
+                    .authorizationRequestResolver(customAuthorizationRequestResolver())
+                    .authorizationRequestRepository(customAuthorizationRequestRepository)
+                )
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService)
+                )
+                // THIS IS THE ONLY CHANGE THAT MATTERS
+                .successHandler(oauth2SuccessHandler)  // Now your real handler runs!
+                .failureHandler((request, response, exception) -> {
+                    String error = java.net.URLEncoder.encode(
+                        exception.getMessage() != null ? exception.getMessage() : "OAuth2 login failed",
+                        "UTF-8"
+                    );
+                    response.sendRedirect(frontendUrl + "/login-failed?error=" + error);
                 })
             )
-            .httpBasic(Customizer.withDefaults());
+            .logout(logout -> logout
+                .logoutUrl("/api/user/logout")
+                .logoutUrl("/api/graduate/logout")
+                .logoutSuccessHandler((request, response, authentication) -> {
+                    var cookie = new jakarta.servlet.http.Cookie("jwtToken", null);
+                    cookie.setMaxAge(0);
+                    cookie.setPath("/");
+                    cookie.setHttpOnly(true);
+                    cookie.setSecure(true);
+                    cookie.setAttribute("SameSite", "None");
+                    response.addCookie(cookie);
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    response.getWriter().write("Logged out");
+                })
+                .invalidateHttpSession(true)
+                .permitAll()
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new StateCaptureFilter(), org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter.class)
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((req, res, authEx) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+            );
 
-        System.out.println("SecurityFilterChain configuration applied.");
         return http.build();
     }
 
     @Bean
-    public OAuth2AuthorizationRequestResolver customAuthorizationRequestResolver() {
-        System.out.println("Creating CustomOAuth2AuthorizationRequestResolver bean...");
+    public CustomOAuth2AuthorizationRequestResolver customAuthorizationRequestResolver() {
         return new CustomOAuth2AuthorizationRequestResolver(clientRegistrationRepository);
     }
 
-    @Configuration
-public class AsyncConfig {
-
-    @Bean
-    public TaskExecutor taskExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        
-        // These values will come from environment variables
-        executor.setCorePoolSize(
-            Integer.parseInt(System.getenv().getOrDefault("ASYNC_CORE_POOL_SIZE", "5"))
-        );
-        executor.setMaxPoolSize(
-            Integer.parseInt(System.getenv().getOrDefault("ASYNC_MAX_POOL_SIZE", "10"))
-        );
-        executor.setQueueCapacity(
-            Integer.parseInt(System.getenv().getOrDefault("ASYNC_QUEUE_CAPACITY", "100"))
-        );
-        executor.setThreadNamePrefix("EmailAsync-");
-        executor.initialize();
-        return executor;
-    }
-}
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        System.out.println("Configuring CORS...");
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList("http://localhost:5173", "https://tarabaho.vercel.app"));
+        config.setAllowedOrigins(List.of("http://localhost:5173", "https://tarabaho.vercel.app"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowCredentials(true);
         config.setAllowedHeaders(List.of("*"));
@@ -201,74 +149,59 @@ public class AsyncConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-        System.out.println("CORS configuration applied.");
         return source;
     }
 
     @Bean
     public CustomOAuth2UserService customOAuth2UserService() {
-        System.out.println("Creating CustomOAuth2UserService bean...");
         return new CustomOAuth2UserService();
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        System.out.println("Creating BCryptPasswordEncoder bean...");
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public AuthorizationRequestRepository<OAuth2AuthorizationRequest> customAuthorizationRequestRepository() {
-        return customAuthorizationRequestRepository;
+    public TaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(Integer.parseInt(System.getenv().getOrDefault("ASYNC_CORE_POOL_SIZE", "5")));
+        executor.setMaxPoolSize(Integer.parseInt(System.getenv().getOrDefault("ASYNC_MAX_POOL_SIZE", "10")));
+        executor.setQueueCapacity(Integer.parseInt(System.getenv().getOrDefault("ASYNC_QUEUE_CAPACITY", "100")));
+        executor.setThreadNamePrefix("EmailAsync-");
+        executor.initialize();
+        return executor;
     }
 }
 
-class CustomOAuth2AuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
-    private final OAuth2AuthorizationRequestResolver delegate;
+// Keep your CustomOAuth2AuthorizationRequestResolver class exactly as before
+class CustomOAuth2AuthorizationRequestResolver implements org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver {
+    private final org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver delegate;
 
-    public CustomOAuth2AuthorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository) {
-        this.delegate = new DefaultOAuth2AuthorizationRequestResolver(
-            clientRegistrationRepository, OAuth2AuthorizationRequestRedirectFilter.DEFAULT_AUTHORIZATION_REQUEST_BASE_URI
+    public CustomOAuth2AuthorizationRequestResolver(ClientRegistrationRepository repo) {
+        this.delegate = new org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver(
+            repo, "/oauth2/authorization"
         );
-        System.out.println("CustomOAuth2AuthorizationRequestResolver: Initialized");
     }
 
     @Override
-    public OAuth2AuthorizationRequest resolve(HttpServletRequest request) {
-        System.out.println("CustomOAuth2AuthorizationRequestResolver: Resolving OAuth2 authorization request for URI: " + request.getRequestURI());
-        System.out.println("CustomOAuth2AuthorizationRequestResolver: Query string: " + request.getQueryString());
-        OAuth2AuthorizationRequest authorizationRequest = delegate.resolve(request);
-        return customizeAuthorizationRequest(request, authorizationRequest);
+    public OAuth2AuthorizationRequest resolve(jakarta.servlet.http.HttpServletRequest request) {
+        OAuth2AuthorizationRequest req = delegate.resolve(request);
+        return customize(req, request);
     }
 
     @Override
-    public OAuth2AuthorizationRequest resolve(HttpServletRequest request, String clientRegistrationId) {
-        System.out.println("CustomOAuth2AuthorizationRequestResolver: Resolving OAuth2 authorization request for client: " + clientRegistrationId);
-        System.out.println("CustomOAuth2AuthorizationRequestResolver: Query string: " + request.getQueryString());
-        OAuth2AuthorizationRequest authorizationRequest = delegate.resolve(request, clientRegistrationId);
-        return customizeAuthorizationRequest(request, authorizationRequest);
+    public OAuth2AuthorizationRequest resolve(jakarta.servlet.http.HttpServletRequest request, String clientRegistrationId) {
+        OAuth2AuthorizationRequest req = delegate.resolve(request, clientRegistrationId);
+        return customize(req, request);
     }
 
-    private OAuth2AuthorizationRequest customizeAuthorizationRequest(HttpServletRequest request, OAuth2AuthorizationRequest authorizationRequest) {
-        if (authorizationRequest == null) {
-            System.out.println("CustomOAuth2AuthorizationRequestResolver: No OAuth2AuthorizationRequest created");
-            return null;
-        }
+    private OAuth2AuthorizationRequest customize(OAuth2AuthorizationRequest req, jakarta.servlet.http.HttpServletRequest request) {
+        if (req == null) return null;
         String type = request.getParameter("type");
-        System.out.println("CustomOAuth2AuthorizationRequestResolver: Received type parameter: " + type);
-        if (type == null || type.isEmpty() || !("user".equals(type) || "graduate".equals(type))) {
-            type = "user";
-            System.out.println("CustomOAuth2AuthorizationRequestResolver: Invalid or missing type parameter, defaulting to: " + type);
-        }
-
-        // Encode type and include it in the state
-        String encodedType = Base64.getEncoder().encodeToString(type.getBytes());
-        String originalState = authorizationRequest.getState();
-        String newState = originalState + ":" + encodedType;
-        System.out.println("CustomOAuth2AuthorizationRequestResolver: Updated state with type: " + newState);
-
-        return OAuth2AuthorizationRequest.from(authorizationRequest)
-            .state(newState)
-            .build();
+        if (type == null || (!"user".equals(type) && !"graduate".equals(type))) type = "user";
+        String encoded = java.util.Base64.getEncoder().encodeToString(type.getBytes());
+        String newState = req.getState() + ":" + encoded;
+        return OAuth2AuthorizationRequest.from(req).state(newState).build();
     }
 }
