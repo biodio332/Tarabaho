@@ -585,9 +585,6 @@ const TrabahadorProfile = () => {
                 <p className="text-gray-600 mb-4">
                   A verification link and 6-digit code were sent to <strong>{graduate.email}</strong>.
                 </p>
-                <p className="text-sm text-gray-500 mb-6">
-                  Click the link or enter the code below.
-                </p>
                 <div className="flex gap-3 justify-end">
                   <button
                     onClick={() => setVerifyStep(3)}

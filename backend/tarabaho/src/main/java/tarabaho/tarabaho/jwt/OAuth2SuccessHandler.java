@@ -1,20 +1,25 @@
 package tarabaho.tarabaho.jwt;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.core.user.OAuth2User;  // ← NEW
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-
-import java.io.IOException;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtService jwtService;
+
+    // This makes it work in both local dev and production
+    @Value("${app.frontend.url:https://tarabaho.vercel.app}")
+    private String frontendUrl;
 
     public OAuth2SuccessHandler(JwtService jwtService) {
         this.jwtService = jwtService;
@@ -27,16 +32,17 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-        // Get email from OAuth2 attributes (or another unique identifier you use)
         String email = oAuth2User.getAttribute("email");
         if (email == null) {
-            throw new IllegalStateException("Email not found in OAuth2 user attributes.");
+            response.sendRedirect(frontendUrl + "/signin?error=oauth_no_email");
+            return;
         }
 
         String token = jwtService.generateToken(email);
 
-        // Redirect with token
-        String redirectUrl = "http://localhost:5173/oauth2-success?token=" + token;
+        // Clean, professional redirect
+        String redirectUrl = frontendUrl + "/oauth2-success?token=" + token;
+
         response.sendRedirect(redirectUrl);
     }
 }
