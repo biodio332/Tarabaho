@@ -9,12 +9,12 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import tarabaho.tarabaho.dto.OtpInfo;
 import tarabaho.tarabaho.entity.Graduate;
@@ -26,6 +26,8 @@ public class GraduateService {
     @Autowired
     private GraduateRepository graduateRepository;
 
+    @Value("${app.frontend.url:https://tarabaho.vercel.app}")
+    private String frontendUrl;
 
     @Autowired
     private PasswordEncoderService passwordEncoderService;
@@ -204,12 +206,10 @@ public class GraduateService {
         Instant expiry = Instant.now().plusSeconds(600);
         verificationMap.put(email, new VerificationToken(token, expiry));
 
-        // AUTOMATICALLY DETECT PRODUCTION URL
-        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().scheme("https").build().toUriString();
-        // This will be: https://tarabaho-backend.onrender.com
-
-        String verificationLink = baseUrl + "/api/graduate/verify-email?token=" + token +
+    
+       String verificationLink = frontendUrl + "/verify-email?token=" + token +
                 "&email=" + URLEncoder.encode(email, StandardCharsets.UTF_8);
+        
 
         SimpleMailMessage msg = new SimpleMailMessage();
         msg.setTo(email);
@@ -222,6 +222,15 @@ public class GraduateService {
             "Thank you!\nTarabaho Team"
         );
         mailSender.send(msg);
+    }
+    @Async
+    public void sendVerificationEmailAsync(String email) {
+        try {
+            sendVerificationEmail(email);
+        } catch (Exception e) {
+            // Log but don’t crash
+            System.err.println("Async verification email failed: " + e.getMessage());
+        }
     }
 
  
