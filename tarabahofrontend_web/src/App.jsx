@@ -38,6 +38,7 @@ import ClientLayout from "./components/ClientLayout"
 import PortfolioRouteWrapper from './components/PortfolioRouteWrapper';
 import ForgotPassword from "./pages/ForgotPassword";
 import AdminContactDetail from "./pages/AdminContactDetail"
+import VerifyEmail from "./components/VerifyEmail";
 
 
 function App() {
@@ -95,6 +96,11 @@ function App() {
         <Route path="/graduate-history" element={<TrabahadorHistory />} />
         <Route path="/graduate-profile" element={<TrabahadorProfile />} />
         <Route path="/graduate-about" element={<TrabahadorAboutUs />} />
+
+        {/*Verify Email Route*/}
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        {/*OauthSuccess Route*/}
+        <Route path="/oauth2-success" element={<OAuth2Success />} />
 
       </Routes>
     </Router>
