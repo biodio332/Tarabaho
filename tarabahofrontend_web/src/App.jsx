@@ -39,6 +39,7 @@ import PortfolioRouteWrapper from './components/PortfolioRouteWrapper';
 import ForgotPassword from "./pages/ForgotPassword";
 import AdminContactDetail from "./pages/AdminContactDetail"
 import VerifyEmail from "./components/VerifyEmail";
+import OAuth2Success from "./pages/OAuth2Success"
 
 
 function App() {
