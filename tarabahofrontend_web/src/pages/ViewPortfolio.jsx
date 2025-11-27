@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Fragment } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
 import axios from "axios"
-import { FaPen, FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa"
+import { FaPen, FaSave, FaTimes, FaPlus, FaTrash, FaCheckCircle, FaExclamationCircle } from "react-icons/fa"
 import {
   Card,
   CardBody,
@@ -91,6 +91,18 @@ const ViewPortfolio = () => {
   const [showAllEducation, setShowAllEducation] = useState(false)
   const [showAllMemberships, setShowAllMemberships] = useState(false)
   const [showAllReferences, setShowAllReferences] = useState(false)
+
+  // Notification state
+  const [notification, setNotification] = useState({
+    show: false,
+    type: "success", // "success" or "error"
+    title: "",
+    message: "",
+    link: "",
+  })
+
+  // Confirmation modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   const urlParams = new URLSearchParams(window.location.search)
   const urlShareToken = urlParams.get("share")
@@ -621,16 +633,13 @@ const fetchPublicDataWithToken = async () => {
 }, [graduateId, navigate, urlShareToken]);
 
   const generateNewShareToken = async () => {
-    if (
-      !window.confirm(
-        "This will create a NEW share link and INVALIDATE ALL EXISTING LINKS!\n\n" +
-          "Anyone with old links will see 'Portfolio not found' errors.\n\n" +
-          "Are you sure you want to continue?",
-      )
-    ) {
-      return
-    }
+    // Show custom confirmation modal instead of window.confirm
+    setShowConfirmModal(true)
+  }
 
+  const handleConfirmGenerateToken = async () => {
+    setShowConfirmModal(false)
+    
     try {
       console.log("Generating new share token for graduate ID:", graduateId)
       const response = await axios.post(
@@ -646,14 +655,35 @@ const fetchPublicDataWithToken = async () => {
       setShareToken(newTokenData.shareToken)
       localStorage.setItem(`portfolio_${graduateId}_shareToken`, newTokenData.shareToken)
 
-      alert(
-        `✅ New share link created successfully!\n\n` +
-          `📋 ${newTokenData.shareUrl}\n\n` +
-          `⚠️ All previous share links are now invalid.`,
-      )
+      // Show success notification
+      setNotification({
+        show: true,
+        type: "success",
+        title: "New share link created successfully!",
+        message: "All previous share links are now invalid.",
+        link: newTokenData.shareUrl,
+      })
+
+      // Auto-hide notification after 6 seconds
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, show: false }))
+      }, 6000)
     } catch (err) {
       console.error("Failed to generate new share token:", err)
-      alert("❌ Failed to generate new share link.\n\nPlease try again or contact support.")
+      
+      // Show error notification
+      setNotification({
+        show: true,
+        type: "error",
+        title: "Failed to generate new share link",
+        message: "Please try again or contact support.",
+        link: "",
+      })
+
+      // Auto-hide notification after 5 seconds
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, show: false }))
+      }, 5000)
     }
   }
 
@@ -2068,7 +2098,219 @@ const fetchPublicDataWithToken = async () => {
   }
 
   return (
-    <div className={`min-h-screen ${portfolio?.designTemplate === "food-beverage" ? "bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200" : portfolio?.designTemplate === "bartending-barista" ? "bg-white" : "bg-gray-50"} py-8 px-4`}>
+    <>
+      {/* Animated Notification */}
+      {notification.show && (
+        <div
+          className={`fixed top-4 right-4 z-[9999] min-w-[400px] max-w-[500px] rounded-lg shadow-2xl animate-slide-in-right ${
+            notification.type === "success"
+              ? "bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300"
+              : "bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-300"
+          }`}
+        >
+          <div className="p-4">
+            <div className="flex items-start gap-3">
+              <div
+                className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                  notification.type === "success"
+                    ? "bg-green-500 text-white"
+                    : "bg-red-500 text-white"
+                }`}
+              >
+                {notification.type === "success" ? (
+                  <FaCheckCircle className="w-6 h-6" />
+                ) : (
+                  <FaExclamationCircle className="w-6 h-6" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3
+                  className={`font-semibold text-lg mb-1 ${
+                    notification.type === "success" ? "text-green-800" : "text-red-800"
+                  }`}
+                >
+                  {notification.title}
+                </h3>
+                <p
+                  className={`text-sm mb-2 ${
+                    notification.type === "success" ? "text-green-700" : "text-red-700"
+                  }`}
+                >
+                  {notification.message}
+                </p>
+                {notification.link && (
+                  <div className="mt-2 p-2 bg-white rounded border border-gray-200">
+                    <p className="text-xs text-gray-600 mb-1">New Share Link:</p>
+                    <p className="text-xs font-mono text-gray-800 break-all">{notification.link}</p>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(notification.link)
+                          setNotification(prev => ({
+                            ...prev,
+                            message: "Link copied to clipboard!",
+                          }))
+                        } catch (err) {
+                          console.error("Failed to copy:", err)
+                        }
+                      }}
+                      className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Copy Link
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setNotification(prev => ({ ...prev, show: false }))}
+                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+          {/* Progress bar */}
+          <div className="h-1 bg-gray-200 rounded-b-lg overflow-hidden">
+            <div
+              className={`h-full ${
+                notification.type === "success" ? "bg-green-500" : "bg-red-500"
+              }`}
+              style={{
+                animation: "shrinkWidth 6s linear forwards",
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Animated Confirmation Modal */}
+      {showConfirmModal && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-[10000] animate-fade-in"
+            onClick={() => setShowConfirmModal(false)}
+          />
+          
+          {/* Modal */}
+          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4">
+            <div
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-modal-scale-in"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                {/* Icon */}
+                <div className="flex justify-center mb-4">
+                  <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
+                    <FaExclamationCircle className="w-8 h-8 text-amber-600" />
+                  </div>
+                </div>
+
+                {/* Title */}
+                <h3 className="text-2xl font-bold text-gray-800 text-center mb-4">
+                  Generate New Share Link?
+                </h3>
+
+                {/* Message */}
+                <div className="text-gray-600 text-center space-y-2 mb-6">
+                  <p className="font-semibold text-amber-700">
+                    This will create a NEW share link and INVALIDATE ALL EXISTING LINKS!
+                  </p>
+                  <p>
+                    Anyone with old links will see 'Portfolio not found' errors.
+                  </p>
+                  <p className="font-medium">
+                    Are you sure you want to continue?
+                  </p>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3">
+                  <Button
+                    variant="outlined"
+                    color="gray"
+                    className="flex-1 font-light"
+                    onClick={() => setShowConfirmModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    color="amber"
+                    className="flex-1 font-light"
+                    onClick={handleConfirmGenerateToken}
+                  >
+                    Continue
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      <style>{`
+        @keyframes slideInRight {
+          0% {
+            transform: translateX(100%) scale(0.9);
+            opacity: 0;
+          }
+          50% {
+            transform: translateX(-10px) scale(1.02);
+            opacity: 0.8;
+          }
+          100% {
+            transform: translateX(0) scale(1);
+            opacity: 1;
+          }
+        }
+
+        @keyframes shrinkWidth {
+          from {
+            width: 100%;
+          }
+          to {
+            width: 0%;
+          }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes modalScaleIn {
+          0% {
+            transform: scale(0.7) translateY(-20px);
+            opacity: 0;
+          }
+          50% {
+            transform: scale(1.05) translateY(0);
+            opacity: 0.9;
+          }
+          100% {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+          }
+        }
+
+        .animate-slide-in-right {
+          animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+
+        .animate-fade-in {
+          animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        .animate-modal-scale-in {
+          animation: modalScaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+      `}</style>
+
+      <div className={`min-h-screen ${portfolio?.designTemplate === "food-beverage" ? "bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200" : portfolio?.designTemplate === "bartending-barista" ? "bg-white" : "bg-gray-50"} py-8 px-4`}>
       <div className="max-w-7xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
         {portfolio?.designTemplate === "food-beverage" ? (
           <div className="px-6 py-8 bg-gradient-to-br from-gray-50 via-gray-100 via-gray-200 to-gray-100" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
@@ -7453,7 +7695,8 @@ const fetchPublicDataWithToken = async () => {
           </DialogFooter>
         </Dialog>
       )}
-    </div>
+      </div>
+    </>
   )
 }
 

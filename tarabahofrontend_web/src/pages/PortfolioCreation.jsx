@@ -479,6 +479,11 @@ const PortfolioCreation = () => {
     setError("")
   }
 
+  const handleNcLevelChange = (ncLevel) => {
+    setFormData((prev) => ({ ...prev, ncLevel: ncLevel || "" }))
+    setError("")
+  }
+
   const handleAvatarFileChange = (e) => {
     const file = e.target.files[0]
     if (file && !file.type.startsWith("image/")) {
@@ -928,7 +933,7 @@ const PortfolioCreation = () => {
       return {
         name: skill.name,
         type: skill.type,
-        proficiencyLevel: skill.proficiencyLevel || null,
+        proficiencyLevel: skill.proficiencyLevel === "None" || !skill.proficiencyLevel ? null : skill.proficiencyLevel,
       }
     })
 
@@ -1361,22 +1366,31 @@ const PortfolioCreation = () => {
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                     NC Level
                   </Typography>
-                  <Select
-                    size="lg"
-                    label="Select NC Level"
+                  <select
                     value={formData.ncLevel || ""}
-                    onChange={(val) => setFormData((prev) => ({ ...prev, ncLevel: val }))}
+                    onChange={(e) => handleNcLevelChange(e.target.value)}
                     disabled={isLoading}
-                    className="!border-gray-300 focus:!border-blue-500"
-                    menuProps={{ className: "z-50 bg-white" }}
+                    className={`w-full h-12 px-4 py-3 text-base border rounded-lg appearance-none cursor-pointer outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed pr-10 ${
+                      formData.ncLevel && formData.ncLevel !== ""
+                        ? "!border-gray-300 focus:!border-blue-500 !bg-green-50 text-gray-900"
+                        : "!border-gray-300 focus:!border-blue-500 bg-white text-gray-900"
+                    }`}
+                    style={{ 
+                      backgroundImage: formData.ncLevel && formData.ncLevel !== ""
+                        ? 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2310b981\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'
+                        : 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'right 0.75rem center',
+                      backgroundSize: '1.25rem 1.25rem'
+                    }}
                   >
-                    <Option value="">None</Option>
+                    <option value="" disabled>Select NC Level</option>
                     {NC_LEVEL_OPTIONS.map((level) => (
-                      <Option key={level} value={level}>
+                      <option key={level} value={level}>
                         {level}
-                      </Option>
+                      </option>
                     ))}
-                  </Select>
+                  </select>
                 </div>
 
                 <div>
@@ -1994,41 +2008,60 @@ const PortfolioCreation = () => {
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                         Skill Type *
                       </Typography>
-                      <Select
-                        size="lg"
-                        label="Select Skill Type"
+                      <select
                         value={newSkill.type}
-                        onChange={(val) => setNewSkill((prev) => ({ ...prev, type: val }))}
+                        onChange={(e) => setNewSkill((prev) => ({ ...prev, type: e.target.value }))}
                         disabled={isLoading}
-                        className="!border-gray-300 focus:!border-blue-500"
+                        className={`w-full h-12 px-4 py-3 text-base border rounded-lg appearance-none cursor-pointer outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed pr-10 ${
+                          newSkill.type && newSkill.type !== ""
+                            ? "!border-gray-300 focus:!border-blue-500 !bg-green-50 text-gray-900"
+                            : "!border-gray-300 focus:!border-blue-500 bg-white text-gray-900"
+                        }`}
+                        style={{ 
+                          backgroundImage: newSkill.type && newSkill.type !== ""
+                            ? 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2310b981\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'
+                            : 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")',
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'right 0.75rem center',
+                          backgroundSize: '1.25rem 1.25rem'
+                        }}
                       >
                         {validSkillTypes.map((type) => (
-                          <Option key={type} value={type}>
+                          <option key={type} value={type}>
                             {type}
-                          </Option>
+                          </option>
                         ))}
-                      </Select>
+                      </select>
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                         Proficiency
                       </Typography>
-                      <Select
-                        size="lg"
-                        label="Select Proficiency"
+                      <select
                         value={newSkill.proficiencyLevel || ""}
-                        onChange={(val) => setNewSkill((prev) => ({ ...prev, proficiencyLevel: val }))}
+                        onChange={(e) => setNewSkill((prev) => ({ ...prev, proficiencyLevel: e.target.value }))}
                         disabled={isLoading}
-                        className="!border-gray-300 focus:!border-blue-500"
-                        menuProps={{ className: "z-50 bg-white" }}
+                        className={`w-full h-12 px-4 py-3 text-base border rounded-lg appearance-none cursor-pointer outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed pr-10 ${
+                          newSkill.proficiencyLevel && newSkill.proficiencyLevel !== ""
+                            ? "!border-gray-300 focus:!border-blue-500 !bg-green-50 text-gray-900"
+                            : "!border-gray-300 focus:!border-blue-500 bg-white text-gray-900"
+                        }`}
+                        style={{ 
+                          backgroundImage: newSkill.proficiencyLevel && newSkill.proficiencyLevel !== ""
+                            ? 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2310b981\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'
+                            : 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")',
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'right 0.75rem center',
+                          backgroundSize: '1.25rem 1.25rem'
+                        }}
                       >
-                        <Option value="">None</Option>
+                        <option value="">None</option>
                         {PROFICIENCY_LEVELS.map((level) => (
-                          <Option key={level} value={level}>
+                          <option key={level} value={level}>
                             {level}
-                          </Option>
+                          </option>
                         ))}
-                      </Select>
+                      </select>
                     </div>
                   </div>
                   <div className="flex justify-center gap-4">
