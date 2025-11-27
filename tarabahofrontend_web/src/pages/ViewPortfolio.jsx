@@ -103,6 +103,8 @@ const ViewPortfolio = () => {
 
   // Confirmation modal state
   const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const urlParams = new URLSearchParams(window.location.search)
   const urlShareToken = urlParams.get("share")
@@ -793,21 +795,68 @@ const fetchPublicDataWithToken = async () => {
 
   const handleRegenerateToken = generateNewShareToken
 
-  const handleDelete = async () => {
-    if (window.confirm("Are you sure you want to delete this portfolio? This action cannot be undone.")) {
-      try {
+  const handleDelete = () => {
+    setShowDeleteModal(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true)
+    setShowDeleteModal(false)
+    
+    try {
+      if (!token) {
+        setNotification({
+          show: true,
+          type: "error",
+          title: "Authentication Error",
+          message: "Authentication token not available. Please refresh the page.",
+          link: "",
+        })
+        setTimeout(() => {
+          setNotification(prev => ({ ...prev, show: false }))
+        }, 5000)
+        setIsDeleting(false)
+        return
+      }
+
         console.log("Deleting portfolio for graduate ID:", graduateId)
         await axios.delete(`${BACKEND_URL}/api/portfolio/graduate/${graduateId}/portfolio`, {
           withCredentials: true,
           headers: { Authorization: `Bearer ${token}` },
+        timeout: 30000, // 30 second timeout
         })
+      
         console.log("Portfolio deleted successfully")
-        alert("Portfolio deleted successfully.")
+      
+      // Show success notification
+      setNotification({
+        show: true,
+        type: "success",
+        title: "Portfolio Deleted",
+        message: "Your portfolio has been deleted successfully.",
+        link: "",
+      })
+      
+      // Navigate after a short delay to show the notification
+      setTimeout(() => {
         navigate("/graduate-homepage")
+      }, 2000)
       } catch (err) {
         console.error("Failed to delete portfolio:", err)
-        setError(err.response?.data?.message || err.response?.data?.error || "Failed to delete portfolio")
-      }
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || "Failed to delete portfolio"
+      
+      setNotification({
+        show: true,
+        type: "error",
+        title: "Delete Failed",
+        message: errorMessage,
+        link: "",
+      })
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, show: false }))
+      }, 5000)
+      
+      setIsDeleting(false)
     }
   }
 
@@ -1506,13 +1555,29 @@ const fetchPublicDataWithToken = async () => {
       setModifiedCertificates(new Set())
       setModifiedProjects(new Set())
       setIsEditMode(false)
-      setSaveSuccess("Portfolio updated successfully!")
-      setTimeout(() => setSaveSuccess(""), 3000)
+      setNotification({
+        show: true,
+        type: "success",
+        title: "Portfolio Saved!",
+        message: "Portfolio updated successfully!",
+        link: "",
+      })
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, show: false }))
+      }, 4000)
     } catch (err) {
       console.error("Failed to save portfolio:", err)
-      setSaveError(
-        err.response?.data?.message || err.response?.data?.error || err.message || "Failed to save portfolio",
-      )
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || "Failed to save portfolio"
+      setNotification({
+        show: true,
+        type: "error",
+        title: "Save Failed",
+        message: errorMessage,
+        link: "",
+      })
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, show: false }))
+      }, 5000)
     } finally {
       setIsSaving(false)
     }
@@ -1527,7 +1592,16 @@ const fetchPublicDataWithToken = async () => {
       // Ensure editingPortfolio is initialized
       if (!editingPortfolio) {
         if (!portfolio) {
-          setSaveError("Portfolio data not available")
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Data Error",
+            message: "Portfolio data not available",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
           setIsSaving(false)
           return
         }
@@ -1541,14 +1615,32 @@ const fetchPublicDataWithToken = async () => {
           references: portfolio.references ? [...portfolio.references] : [],
         }
         setEditingPortfolio(portfolioCopy)
-        setSaveError("Please try saving again")
+        setNotification({
+          show: true,
+          type: "error",
+          title: "Please Try Again",
+          message: "Portfolio data initialized. Please try saving again.",
+          link: "",
+        })
+        setTimeout(() => {
+          setNotification(prev => ({ ...prev, show: false }))
+        }, 5000)
         setIsSaving(false)
         return
       }
 
       // Ensure portfolio ID exists
       if (!editingPortfolio.id && !portfolio?.id) {
-        setSaveError("Portfolio ID not available. Please refresh the page.")
+        setNotification({
+          show: true,
+          type: "error",
+          title: "Data Error",
+          message: "Portfolio ID not available. Please refresh the page.",
+          link: "",
+        })
+        setTimeout(() => {
+          setNotification(prev => ({ ...prev, show: false }))
+        }, 5000)
         setIsSaving(false)
         return
       }
@@ -1572,6 +1664,21 @@ const fetchPublicDataWithToken = async () => {
 
       // Handle certificates section
       if (section === "certificates") {
+        if (!token) {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Authentication Error",
+            message: "Authentication token not available. Please refresh the page.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        
         const certificateIds = []
         const existingCertificateIds = new Set(
           (
@@ -1583,11 +1690,42 @@ const fetchPublicDataWithToken = async () => {
         )
 
         for (const cert of certificates) {
+          // Skip if certificate hasn't been modified and already exists
           if (!modifiedCertificates.has(cert.id)) {
             if (typeof cert.id === "string" && cert.id.includes("new-")) {
+              // New certificate that hasn't been modified - skip if empty
+              if (!cert.courseName || !cert.courseName.trim()) {
+                continue
+              }
             } else if (existingCertificateIds.has(cert.id)) {
               certificateIds.push(cert.id)
               continue
+            }
+          }
+
+          // Validate required fields for new certificates
+          if (typeof cert.id === "string" && cert.id.includes("new-")) {
+            if (!cert.courseName || !cert.courseName.trim()) {
+              console.warn("Skipping certificate with empty courseName")
+              continue
+            }
+            // Check file size (max 10MB)
+            if (cert.certificateFile instanceof File) {
+              const maxSize = 10 * 1024 * 1024 // 10MB
+              if (cert.certificateFile.size > maxSize) {
+                setNotification({
+                  show: true,
+                  type: "error",
+                  title: "File Too Large",
+                  message: "Certificate file is too large. Maximum size is 10MB.",
+                  link: "",
+                })
+                setTimeout(() => {
+                  setNotification(prev => ({ ...prev, show: false }))
+                }, 5000)
+                setIsSaving(false)
+                return
+              }
             }
           }
 
@@ -1595,32 +1733,112 @@ const fetchPublicDataWithToken = async () => {
           certificateData.append("courseName", cert.courseName || "")
           certificateData.append("certificateNumber", cert.certificateNumber || "")
           certificateData.append("issueDate", cert.issueDate || "")
+          
+          // Always include graduateId
+          certificateData.append("graduateId", graduateId.toString())
+          
           if (cert.portfolioId) {
             certificateData.append("portfolioId", cert.portfolioId.toString())
           }
-          if (typeof cert.id !== "string" || !cert.id.includes("new-")) {
-            certificateData.append("graduateId", graduateId.toString())
-          }
+          
           if (cert.certificateFile instanceof File) {
             certificateData.append("certificateFile", cert.certificateFile)
           }
 
+          try {
           if (typeof cert.id === "string" && cert.id.includes("new-")) {
             const certResponse = await axios.post(
               `${BACKEND_URL}/api/certificate/graduate/${graduateId}`,
               certificateData,
               {
                 withCredentials: true,
-                headers: { Authorization: `Bearer ${token}` },
+                  headers: { 
+                    Authorization: `Bearer ${token}`,
+                    // Don't set Content-Type for FormData - axios will set it automatically with boundary
+                  },
+                  timeout: 30000, // 30 second timeout
               },
             )
             certificateIds.push(certResponse.data.id)
           } else {
             await axios.put(`${BACKEND_URL}/api/certificate/${cert.id}`, certificateData, {
               withCredentials: true,
-              headers: { Authorization: `Bearer ${token}` },
+                headers: { 
+                  Authorization: `Bearer ${token}`,
+                  // Don't set Content-Type for FormData - axios will set it automatically with boundary
+                },
+                timeout: 30000, // 30 second timeout
             })
             certificateIds.push(cert.id)
+            }
+          } catch (certError) {
+            console.error(`Failed to save certificate ${cert.id}:`, certError)
+            console.error(`Certificate data:`, {
+              courseName: cert.courseName,
+              certificateNumber: cert.certificateNumber,
+              issueDate: cert.issueDate,
+              hasFile: cert.certificateFile instanceof File,
+              fileSize: cert.certificateFile instanceof File ? cert.certificateFile.size : 'N/A',
+            })
+            
+            // Handle specific error cases
+            if (certError.response?.status === 401) {
+              setNotification({
+                show: true,
+                type: "error",
+                title: "Session Expired",
+                message: "Session expired. Please sign in again.",
+                link: "",
+              })
+              setTimeout(() => {
+                setNotification(prev => ({ ...prev, show: false }))
+                navigate("/signin")
+              }, 3000)
+              setIsSaving(false)
+              return
+            } else if (certError.response?.status === 415) {
+              setNotification({
+                show: true,
+                type: "error",
+                title: "Invalid File Format",
+                message: "Unsupported media type. Please check certificate file format.",
+                link: "",
+              })
+              setTimeout(() => {
+                setNotification(prev => ({ ...prev, show: false }))
+              }, 5000)
+              setIsSaving(false)
+              return
+            } else if (certError.response?.status === 400) {
+              setNotification({
+                show: true,
+                type: "error",
+                title: "Save Failed",
+                message: `Failed to save certificate: ${certError.response?.data?.message || "Invalid data"}`,
+                link: "",
+              })
+              setTimeout(() => {
+                setNotification(prev => ({ ...prev, show: false }))
+              }, 5000)
+              setIsSaving(false)
+              return
+            } else if (certError.code === 'ERR_NETWORK' || certError.code === 'ECONNABORTED') {
+              setNotification({
+                show: true,
+                type: "error",
+                title: "Network Error",
+                message: "Network error. Please check your connection and try again.",
+                link: "",
+              })
+              setTimeout(() => {
+                setNotification(prev => ({ ...prev, show: false }))
+              }, 5000)
+              setIsSaving(false)
+              return
+            }
+            
+            // Re-throw to be caught by outer try-catch
+            throw certError
           }
         }
 
@@ -1692,7 +1910,10 @@ const fetchPublicDataWithToken = async () => {
           } else {
             await axios.put(`${BACKEND_URL}/api/project/${proj.id}`, projectData, {
               withCredentials: true,
-              headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+              headers: { 
+                Authorization: `Bearer ${token}`,
+                // Don't set Content-Type for FormData - axios will set it automatically with boundary
+              },
             })
             projectIds.push(proj.id)
           }
@@ -2010,13 +2231,31 @@ const fetchPublicDataWithToken = async () => {
         [section]: false,
       }))
 
-      setSaveSuccess(`${section.charAt(0).toUpperCase() + section.slice(1)} updated successfully!`)
-      setTimeout(() => setSaveSuccess(""), 3000)
+      setNotification({
+        show: true,
+        type: "success",
+        title: "Saved Successfully!",
+        message: `${section.charAt(0).toUpperCase() + section.slice(1)} updated successfully!`,
+        link: "",
+      })
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, show: false }))
+      }, 4000)
     } catch (err) {
       console.error(`Failed to save ${section}:`, err)
       console.error(`Error response:`, err.response?.data)
       const errorMessage = err.response?.data?.message || err.response?.data?.error || err.response?.data || err.message || `Failed to save ${section}`
-      setSaveError(typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage))
+      const errorText = typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage)
+      setNotification({
+        show: true,
+        type: "error",
+        title: "Save Failed",
+        message: errorText,
+        link: "",
+      })
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, show: false }))
+      }, 5000)
     } finally {
       setIsSaving(false)
     }
@@ -2099,49 +2338,52 @@ const fetchPublicDataWithToken = async () => {
 
   return (
     <>
-      {/* Animated Notification */}
+      {/* Enhanced Animated Notification */}
       {notification.show && (
         <div
-          className={`fixed top-4 right-4 z-[9999] min-w-[400px] max-w-[500px] rounded-lg shadow-2xl animate-slide-in-right ${
+          className={`fixed top-6 right-6 z-[9999] min-w-[420px] max-w-[550px] rounded-xl shadow-2xl animate-slide-in-right backdrop-blur-sm ${
             notification.type === "success"
-              ? "bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300"
-              : "bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-300"
+              ? "bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 border-2 border-green-400 shadow-green-200/50"
+              : "bg-gradient-to-br from-red-50 via-rose-50 to-red-100 border-2 border-red-400 shadow-red-200/50"
           }`}
+          style={{
+            animation: "slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards",
+          }}
         >
-          <div className="p-4">
-            <div className="flex items-start gap-3">
+          <div className="p-5">
+            <div className="flex items-start gap-4">
               <div
-                className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center shadow-lg ${
                   notification.type === "success"
-                    ? "bg-green-500 text-white"
-                    : "bg-red-500 text-white"
+                    ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white"
+                    : "bg-gradient-to-br from-red-500 to-rose-600 text-white"
                 }`}
               >
                 {notification.type === "success" ? (
-                  <FaCheckCircle className="w-6 h-6" />
+                  <FaCheckCircle className="w-7 h-7" />
                 ) : (
-                  <FaExclamationCircle className="w-6 h-6" />
+                  <FaExclamationCircle className="w-7 h-7" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
                 <h3
-                  className={`font-semibold text-lg mb-1 ${
-                    notification.type === "success" ? "text-green-800" : "text-red-800"
+                  className={`font-bold text-xl mb-2 ${
+                    notification.type === "success" ? "text-green-900" : "text-red-900"
                   }`}
                 >
                   {notification.title}
                 </h3>
                 <p
-                  className={`text-sm mb-2 ${
-                    notification.type === "success" ? "text-green-700" : "text-red-700"
+                  className={`text-base leading-relaxed ${
+                    notification.type === "success" ? "text-green-800" : "text-red-800"
                   }`}
                 >
                   {notification.message}
                 </p>
                 {notification.link && (
-                  <div className="mt-2 p-2 bg-white rounded border border-gray-200">
-                    <p className="text-xs text-gray-600 mb-1">New Share Link:</p>
-                    <p className="text-xs font-mono text-gray-800 break-all">{notification.link}</p>
+                  <div className="mt-3 p-3 bg-white/80 rounded-lg border border-gray-300 shadow-sm">
+                    <p className="text-xs font-semibold text-gray-700 mb-1">New Share Link:</p>
+                    <p className="text-xs font-mono text-gray-900 break-all bg-gray-50 p-2 rounded">{notification.link}</p>
                     <button
                       onClick={async () => {
                         try {
@@ -2154,7 +2396,7 @@ const fetchPublicDataWithToken = async () => {
                           console.error("Failed to copy:", err)
                         }
                       }}
-                      className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                      className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800 underline transition-colors"
                     >
                       Copy Link
                     </button>
@@ -2163,20 +2405,23 @@ const fetchPublicDataWithToken = async () => {
               </div>
               <button
                 onClick={() => setNotification(prev => ({ ...prev, show: false }))}
-                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+                className="flex-shrink-0 text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-full hover:bg-white/50"
+                aria-label="Close notification"
               >
                 <FaTimes className="w-5 h-5" />
               </button>
             </div>
           </div>
-          {/* Progress bar */}
-          <div className="h-1 bg-gray-200 rounded-b-lg overflow-hidden">
+          {/* Enhanced Progress bar */}
+          <div className="h-1.5 bg-gray-300/50 rounded-b-xl overflow-hidden">
             <div
               className={`h-full ${
-                notification.type === "success" ? "bg-green-500" : "bg-red-500"
+                notification.type === "success" 
+                  ? "bg-gradient-to-r from-green-500 to-emerald-600" 
+                  : "bg-gradient-to-r from-red-500 to-rose-600"
               }`}
               style={{
-                animation: "shrinkWidth 6s linear forwards",
+                animation: "shrinkWidth 4s linear forwards",
               }}
             />
           </div>
@@ -2240,6 +2485,83 @@ const fetchPublicDataWithToken = async () => {
                     onClick={handleConfirmGenerateToken}
                   >
                     Continue
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Delete Portfolio Confirmation Modal */}
+      {showDeleteModal && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black bg-opacity-60 z-[10000] animate-fade-in backdrop-blur-sm"
+            onClick={() => !isDeleting && setShowDeleteModal(false)}
+          />
+          
+          {/* Modal */}
+          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4">
+            <div
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-modal-scale-in border-2 border-red-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                {/* Icon */}
+                <div className="flex justify-center mb-4">
+                  <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center animate-pulse">
+                    <FaExclamationCircle className="w-10 h-10 text-red-600" />
+                  </div>
+                </div>
+
+                {/* Title */}
+                <h3 className="text-2xl font-bold text-gray-800 text-center mb-4">
+                  Delete Portfolio?
+                </h3>
+
+                {/* Message */}
+                <div className="text-gray-600 text-center space-y-3 mb-6">
+                  <p className="font-semibold text-red-700 text-lg">
+                    ⚠️ This action cannot be undone!
+                  </p>
+                  <p className="text-base">
+                    Are you absolutely sure you want to delete your portfolio?
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    All your portfolio data, certificates, projects, and other information will be permanently removed.
+                  </p>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3">
+                  <Button
+                    variant="outlined"
+                    color="gray"
+                    className="flex-1 font-light"
+                    onClick={() => setShowDeleteModal(false)}
+                    disabled={isDeleting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    color="red"
+                    className="flex-1 font-light flex items-center justify-center gap-2"
+                    onClick={handleConfirmDelete}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Spinner className="w-4 h-4" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <FaTrash className="w-4 h-4" />
+                        Delete Portfolio
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -3064,7 +3386,9 @@ const fetchPublicDataWithToken = async () => {
                     ) : (
                       <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
                         <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          No certificates added yet
+                          {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No certificates added yet"}
                         </Typography>
                       </div>
                     )}
@@ -3233,7 +3557,9 @@ const fetchPublicDataWithToken = async () => {
                     ) : (
                       <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
                         <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          No experience added yet
+                          {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No experience added yet"}
                         </Typography>
                       </div>
                     )}
@@ -3531,7 +3857,9 @@ const fetchPublicDataWithToken = async () => {
                     ) : (
                       <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
                         <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          No projects added yet
+                          {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No projects added yet"}
                         </Typography>
                       </div>
                     )}
@@ -3656,7 +3984,9 @@ const fetchPublicDataWithToken = async () => {
                     ) : (
                       <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
                         <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          No awards or recognition added yet
+                          {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No awards or recognition added yet"}
                         </Typography>
                       </div>
                     )}
@@ -3780,7 +4110,9 @@ const fetchPublicDataWithToken = async () => {
                         </div>
                       ) : (
                         <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          No continuing education added yet
+                          {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No continuing education added yet"}
                         </Typography>
                       )}
                     </div>
@@ -3901,7 +4233,9 @@ const fetchPublicDataWithToken = async () => {
                         </div>
                       ) : (
                         <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          No professional memberships added yet
+                          {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No professional memberships added yet"}
                         </Typography>
                       )}
                     </div>
@@ -4063,7 +4397,9 @@ const fetchPublicDataWithToken = async () => {
                     ) : (
                       <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
                         <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          No references added yet
+                          {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No references added yet"}
                         </Typography>
                       </div>
                     )}
@@ -4634,7 +4970,224 @@ const fetchPublicDataWithToken = async () => {
                       </IconButton>
                     )}
                   </div>
-                  {((certificates && certificates.length > 0) || (isEditMode && editingSections.certificates)) ? (
+                  {isEditMode && editingSections.certificates ? (
+                    <>
+                      {isAddingCertificate && (
+                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                          <Typography variant="h6" className="text-gray-800 font-semibold mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            {editingCertificateId ? "Edit Certificate" : "Add New Certificate"}
+                          </Typography>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Course Name *
+                              </Typography>
+                              <Input
+                                size="lg"
+                                name="courseName"
+                                value={newCertificate.courseName}
+                                onChange={handleCertificateInputChange}
+                                placeholder="Enter course name"
+                                required
+                                className="!border-gray-300 focus:!border-red-500"
+                              />
+                            </div>
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Certificate Number *
+                              </Typography>
+                              <Input
+                                size="lg"
+                                name="certificateNumber"
+                                value={newCertificate.certificateNumber}
+                                onChange={handleCertificateInputChange}
+                                placeholder="Enter certificate number"
+                                required
+                                className="!border-gray-300 focus:!border-red-500"
+                              />
+                            </div>
+                          </div>
+                          <div className="mt-4">
+                            <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                              Issue Date *
+                            </Typography>
+                            <Input
+                              type="date"
+                              size="lg"
+                              name="issueDate"
+                              value={newCertificate.issueDate}
+                              onChange={handleCertificateInputChange}
+                              required
+                              className="!border-gray-300 focus:!border-red-500"
+                            />
+                          </div>
+                          <div className="mt-4">
+                            <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                              Certificate File {editingCertificateId ? "(Optional)" : "*"}
+                            </Typography>
+                            <div className="flex items-center gap-4">
+                              {newCertificate.certificateFile ? (
+                                <Avatar
+                                  src={URL.createObjectURL(newCertificate.certificateFile)}
+                                  alt="Certificate Preview"
+                                  size="lg"
+                                  className="ring-2 ring-red-300"
+                                />
+                              ) : editingCertificateId ? (
+                                <Avatar
+                                  src={certificates.find((cert) => cert.id === editingCertificateId)?.certificateFilePath || "/placeholder.svg"}
+                                  alt="Certificate Preview"
+                                  size="lg"
+                                  className="ring-2 ring-red-300"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center">
+                                  <Typography variant="h5" className="text-gray-600">
+                                    📄
+                                  </Typography>
+                                </div>
+                              )}
+                              <Button
+                                variant="outlined"
+                                color="red"
+                                onClick={handleCertificateImageClick}
+                                className="flex items-center gap-2"
+                              >
+                                <FaPlus className="w-4 h-4" />
+                                Choose File
+                              </Button>
+                              <input
+                                type="file"
+                                id="certificateFile"
+                                accept="image/*,application/pdf"
+                                onChange={handleCertificateFileChange}
+                                ref={certificateFileInputRef}
+                                className="hidden"
+                              />
+                            </div>
+                          </div>
+                          <div className="mt-6 flex justify-end gap-2">
+                            <Button
+                              variant="gradient"
+                              color="red"
+                              onClick={editingCertificateId ? handleUpdateCertificate : handleAddCertificate}
+                              disabled={!isCertificateFormValid()}
+                            >
+                              {editingCertificateId ? "Update Certificate" : "Add Certificate"}
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color="gray"
+                              onClick={() => {
+                                setIsAddingCertificate(false)
+                                setEditingCertificateId(null)
+                                setNewCertificate({
+                                  courseName: "",
+                                  certificateNumber: "",
+                                  issueDate: "",
+                                  certificateFile: null,
+                                })
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-4">
+                        {!isAddingCertificate && (
+                          <Button
+                            variant="outlined"
+                            color="red"
+                            onClick={() => {
+                              setIsAddingCertificate(true)
+                              setEditingCertificateId(null)
+                              setNewCertificate({ courseName: "", certificateNumber: "", issueDate: "", certificateFile: null })
+                            }}
+                            className="flex items-center gap-2 w-full"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Certificate
+                          </Button>
+                        )}
+
+                        {certificates && certificates.length > 0 && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {certificates.map((certificate) => (
+                              <Card key={certificate.id} className="p-4 bg-white rounded-lg border-2 border-gray-300">
+                                <CardBody className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                  <div className="flex items-center gap-4">
+                                    {(certificate.preview || certificate.certificateFilePath) && (
+                                      <Avatar
+                                        src={certificate.preview || certificate.certificateFilePath || "/placeholder.svg"}
+                                        alt="Certificate Preview"
+                                        size="lg"
+                                        className="ring-2 ring-red-300"
+                                      />
+                                    )}
+                                    <div>
+                                      <Typography variant="h6" className="font-bold text-black text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                        {certificate.courseName}
+                                      </Typography>
+                                      <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                        Certificate #: {certificate.certificateNumber}
+                                      </Typography>
+                                      <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                        Issued: {certificate.issueDate ? new Date(certificate.issueDate).toLocaleDateString() : "N/A"}
+                                      </Typography>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="md"
+                                      variant="text"
+                                      color="red"
+                                      onClick={() => handleEditCertificate(certificate)}
+                                      className="flex items-center gap-1"
+                                    >
+                                      <FaPen className="w-4 h-4" /> Edit
+                                    </Button>
+                                    <Button
+                                      size="md"
+                                      variant="text"
+                                      color="red"
+                                      onClick={() => handleRemoveCertificate(certificate.id)}
+                                      className="flex items-center gap-1"
+                                    >
+                                      <FaTrash className="w-4 h-4" /> Remove
+                                    </Button>
+                                  </div>
+                                </CardBody>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="mt-6 flex justify-end">
+                          <Button
+                            variant="gradient"
+                            color="red"
+                            onClick={() => handleSaveSection("certificates")}
+                            disabled={isSaving}
+                            className="flex items-center gap-2"
+                          >
+                            {isSaving ? (
+                              <>
+                                <Spinner className="w-4 h-4" />
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <FaSave className="w-4 h-4" />
+                                Save Changes
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  ) : ((certificates && certificates.length > 0) || portfolio?.primaryCourseType === "Automotive and Land Transportation") ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {(showAllCertificates ? certificates : certificates.slice(0, INITIAL_ITEMS_LIMIT)).map((certificate, index) => (
                         <div key={index} className="pb-3 border-b border-gray-200">
@@ -4835,7 +5388,9 @@ const fetchPublicDataWithToken = async () => {
                       {isEditMode && editingSections.experience ? (
                         <div className="space-y-4">
                           <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                            No experience added yet. Click the button below to add your first experience.
+                            {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No experience added yet"}. Click the button below to add your first experience.
                           </Typography>
                           <Button
                             variant="outlined"
@@ -4889,7 +5444,250 @@ const fetchPublicDataWithToken = async () => {
                       </IconButton>
                     )}
                   </div>
-                  {((projects && projects.length > 0) || (isEditMode && editingSections.projects)) ? (
+                  {isEditMode && editingSections.projects ? (
+                    <div className="space-y-4">
+                      {isAddingProject && (
+                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                          <Typography variant="h6" className="text-gray-800 font-semibold mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            {editingProjectId ? "Edit Project" : "Add New Project"}
+                          </Typography>
+                          <div className="grid grid-cols-1 gap-4">
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Project Title *
+                              </Typography>
+                              <Input
+                                size="lg"
+                                name="title"
+                                value={newProject.title}
+                                onChange={handleProjectInputChange}
+                                placeholder="Enter project title"
+                                required
+                                className="!border-gray-300 focus:!border-red-500"
+                              />
+                            </div>
+                          </div>
+                          <div className="mt-4">
+                            <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                              Description *
+                            </Typography>
+                            <Textarea
+                              size="lg"
+                              name="description"
+                              value={newProject.description}
+                              onChange={handleProjectInputChange}
+                              placeholder="Describe your project"
+                              required
+                              className="!border-gray-300 focus:!border-red-500"
+                              rows={3}
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Start Date *
+                              </Typography>
+                              <Input
+                                type="date"
+                                size="lg"
+                                name="startDate"
+                                value={newProject.startDate}
+                                onChange={handleProjectInputChange}
+                                required
+                                className="!border-gray-300 focus:!border-red-500"
+                              />
+                            </div>
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                End Date *
+                              </Typography>
+                              <Input
+                                type="date"
+                                size="lg"
+                                name="endDate"
+                                value={newProject.endDate}
+                                onChange={handleProjectInputChange}
+                                required
+                                className="!border-gray-300 focus:!border-red-500"
+                              />
+                            </div>
+                          </div>
+                          <div className="mt-4">
+                            <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                              Project Image {editingProjectId ? "(Optional)" : "*"}
+                            </Typography>
+                            <div className="flex items-center gap-4">
+                              {newProject.projectImageFile ? (
+                                <Avatar
+                                  src={URL.createObjectURL(newProject.projectImageFile)}
+                                  alt="Project Preview"
+                                  size="lg"
+                                  className="ring-2 ring-red-300"
+                                />
+                              ) : editingProjectId ? (
+                                <Avatar
+                                  src={projects.find((proj) => proj.id === editingProjectId)?.projectImageFilePath || "/placeholder.svg"}
+                                  alt="Project Preview"
+                                  size="lg"
+                                  className="ring-2 ring-red-300"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center">
+                                  <Typography variant="h5" className="text-gray-600">
+                                    📷
+                                  </Typography>
+                                </div>
+                              )}
+                              <Button
+                                variant="outlined"
+                                color="red"
+                                onClick={handleProjectImageClick}
+                                className="flex items-center gap-2"
+                              >
+                                <FaPlus className="w-4 h-4" />
+                                Choose Image
+                              </Button>
+                              <input
+                                type="file"
+                                id="projectImageFile"
+                                accept="image/*"
+                                onChange={handleProjectFileChange}
+                                ref={projectFileInputRef}
+                                className="hidden"
+                              />
+                            </div>
+                          </div>
+                          <div className="mt-6 flex justify-end gap-2">
+                            <Button
+                              variant="gradient"
+                              color="red"
+                              onClick={editingProjectId ? handleUpdateProject : handleAddProject}
+                              disabled={!isProjectFormValid()}
+                            >
+                              {editingProjectId ? "Update Project" : "Add Project"}
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color="gray"
+                              onClick={() => {
+                                setIsAddingProject(false)
+                                setEditingProjectId(null)
+                                setNewProject({
+                                  title: "",
+                                  description: "",
+                                  startDate: "",
+                                  endDate: "",
+                                  projectImageFile: null,
+                                })
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {!isAddingProject && (
+                        <Button
+                          variant="outlined"
+                          color="red"
+                          onClick={() => {
+                            setIsAddingProject(true)
+                            setEditingProjectId(null)
+                            setNewProject({ title: "", description: "", startDate: "", endDate: "", projectImageFile: null })
+                          }}
+                          className="flex items-center gap-2 w-full"
+                        >
+                          <FaPlus className="w-4 h-4" />
+                          Add Project
+                        </Button>
+                      )}
+
+                      {projects && projects.length > 0 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {projects.map((project) => (
+                            <Card key={project.id} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300">
+                              {project.projectImageFilePath && (
+                                <div className="relative h-48 overflow-hidden">
+                                  <img
+                                    src={project.projectImageFilePath || "/placeholder.svg"}
+                                    alt={project.title || "Project"}
+                                    className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                                    onClick={() => setSelectedProjectImage(project.projectImageFilePath)}
+                                  />
+                                </div>
+                              )}
+                              <CardBody className="p-6">
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex-1">
+                                    <Typography variant="h6" className="font-bold text-black mb-2 text-lg break-words" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                      {project.title || "Unnamed Project"}
+                                    </Typography>
+                                    {project.description && (
+                                      <Typography
+                                        variant="small"
+                                        className="text-black mb-3 leading-relaxed text-base break-words overflow-wrap-anywhere line-clamp-3"
+                                        style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.6", fontWeight: 400 }}
+                                      >
+                                        {project.description}
+                                      </Typography>
+                                    )}
+                                    {project.startDate && project.endDate && (
+                                      <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                        {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
+                                      </Typography>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col gap-2">
+                                    <Button
+                                      size="md"
+                                      variant="text"
+                                      color="red"
+                                      onClick={() => handleEditProject(project)}
+                                      className="flex items-center gap-1"
+                                    >
+                                      <FaPen className="w-4 h-4" /> Edit
+                                    </Button>
+                                    <Button
+                                      size="md"
+                                      variant="text"
+                                      color="red"
+                                      onClick={() => handleRemoveProject(project.id)}
+                                      className="flex items-center gap-1"
+                                    >
+                                      <FaTrash className="w-4 h-4" /> Remove
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardBody>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="mt-6 flex justify-end">
+                        <Button
+                          variant="gradient"
+                          color="red"
+                          onClick={() => handleSaveSection("projects")}
+                          disabled={isSaving}
+                          className="flex items-center gap-2"
+                        >
+                          {isSaving ? (
+                            <>
+                              <Spinner className="w-4 h-4" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <FaSave className="w-4 h-4" />
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : ((projects && projects.length > 0) || portfolio?.primaryCourseType === "Automotive and Land Transportation") ? (
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {(showAllProjects ? projects : projects.slice(0, INITIAL_ITEMS_LIMIT)).map((project, index) => (
@@ -5235,7 +6033,9 @@ const fetchPublicDataWithToken = async () => {
                         {isEditMode && editingSections.education ? (
                           <div className="space-y-4">
                             <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                              No continuing education added yet. Click the button below to add your first education.
+                              {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No continuing education added yet"}. Click the button below to add your first education.
                             </Typography>
                             <Button
                               variant="outlined"
@@ -5396,7 +6196,9 @@ const fetchPublicDataWithToken = async () => {
                         {isEditMode && editingSections.memberships ? (
                           <div className="space-y-4">
                             <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                              No professional memberships added yet. Click the button below to add your first membership.
+                              {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No professional memberships added yet"}. Click the button below to add your first membership.
                             </Typography>
                             <Button
                               variant="outlined"
@@ -5596,7 +6398,9 @@ const fetchPublicDataWithToken = async () => {
                       {isEditMode && editingSections.references ? (
                         <div className="space-y-4">
                           <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                            No references added yet. Click the button below to add your first reference.
+                            {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No references added yet"}. Click the button below to add your first reference.
                           </Typography>
                           <Button
                             variant="outlined"
@@ -5725,7 +6529,7 @@ const fetchPublicDataWithToken = async () => {
                 )}
               </div>
 
-              {(portfolio.professionalTitle || (isEditMode && editingSections.header)) && (
+              {portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
                 <div className="relative mt-8 animate-fade-in-up animation-delay-600 flex items-center gap-3">
                   {isEditMode && editingSections.header ? (
                     <div className="flex-1">
@@ -5738,6 +6542,8 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   ) : (
                     <>
+                      {portfolio.professionalTitle ? (
+                    <>
                       <Typography
                         variant="h3"
                         className="font-light text-white/90 text-2xl md:text-3xl tracking-wide break-words"
@@ -5745,12 +6551,46 @@ const fetchPublicDataWithToken = async () => {
                         {portfolio.professionalTitle}
                       </Typography>
                       <div className="w-0 h-0.5 bg-white/40 mt-4 animate-expand-line"></div>
+                        </>
+                      ) : (
+                        <Typography
+                          variant="h3"
+                          className="font-light text-white/60 text-2xl md:text-3xl tracking-wide break-words italic"
+                        >
+                          You haven't filled up details in this section.
+                        </Typography>
+                      )}
                     </>
                   )}
                 </div>
+              ) : (
+                (portfolio.professionalTitle || (isEditMode && editingSections.header)) && (
+                  <div className="relative mt-8 animate-fade-in-up animation-delay-600 flex items-center gap-3">
+                    {isEditMode && editingSections.header ? (
+                      <div className="flex-1">
+                        <Input
+                          value={editingPortfolio?.professionalTitle || ""}
+                          onChange={(e) => handleFieldChange("professionalTitle", e.target.value)}
+                          className="!text-2xl md:!text-3xl !font-light !bg-white/20 !border-white/40 !text-white placeholder:text-white/60"
+                          placeholder="Professional Title"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <Typography
+                          variant="h3"
+                          className="font-light text-white/90 text-2xl md:text-3xl tracking-wide break-words"
+                        >
+                          {portfolio.professionalTitle}
+                        </Typography>
+                        <div className="w-0 h-0.5 bg-white/40 mt-4 animate-expand-line"></div>
+                      </>
+                    )}
+                  </div>
+                )
               )}
 
-              {(portfolio.professionalSummary || (isEditMode && editingSections.header)) && (
+              {portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
                 <div className="mt-10 animate-fade-in-up animation-delay-900 max-w-3xl overflow-hidden">
                   {isEditMode && editingSections.header ? (
                     <div>
@@ -5772,14 +6612,55 @@ const fetchPublicDataWithToken = async () => {
                       </Typography>
                     </div>
                   ) : (
+                    portfolio.professionalSummary ? (
                     <Typography
                       variant="lead"
                       className="text-white/80 leading-relaxed text-xl md:text-2xl font-light tracking-wide break-words overflow-wrap-anywhere"
                     >
                       {portfolio.professionalSummary}
                     </Typography>
+                    ) : (
+                      <Typography
+                        variant="lead"
+                        className="text-white/60 leading-relaxed text-xl md:text-2xl font-light tracking-wide break-words overflow-wrap-anywhere italic"
+                      >
+                        You haven't filled up details in this section.
+                      </Typography>
+                    )
                   )}
                 </div>
+              ) : (
+                (portfolio.professionalSummary || (isEditMode && editingSections.header)) && (
+                  <div className="mt-10 animate-fade-in-up animation-delay-900 max-w-3xl overflow-hidden">
+                    {isEditMode && editingSections.header ? (
+                      <div>
+                        <Textarea
+                          value={editingPortfolio?.professionalSummary || ""}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            if (value.length <= 300) {
+                              handleFieldChange("professionalSummary", value)
+                            }
+                          }}
+                          className="!text-xl md:!text-2xl !font-light !bg-white/20 !border-white/40 !text-white placeholder:text-white/60"
+                          placeholder="Professional Summary"
+                          rows={4}
+                          maxLength={300}
+                        />
+                        <Typography variant="small" className="text-white/60 mt-1">
+                          {(editingPortfolio?.professionalSummary || "").length}/300 characters
+                        </Typography>
+                      </div>
+                    ) : (
+                      <Typography
+                        variant="lead"
+                        className="text-white/80 leading-relaxed text-xl md:text-2xl font-light tracking-wide break-words overflow-wrap-anywhere"
+                      >
+                        {portfolio.professionalSummary}
+                      </Typography>
+                    )}
+                  </div>
+                )
               )}
               {isEditMode && editingSections.header && (
                 <div className="mt-6 flex justify-start">
@@ -5941,6 +6822,8 @@ const fetchPublicDataWithToken = async () => {
                   </IconButton>
                 )}
               </div>
+              {(portfolio.primaryCourseType === "Automotive and Land Transportation" || portfolio.email || portfolio.phone || portfolio.website || isEditMode) ? (
+                (portfolio.email || portfolio.phone || portfolio.website || isEditMode) ? (
               <div className="space-y-4">
                 {(portfolio.email || isEditMode) && (
                   <div>
@@ -6003,6 +6886,12 @@ const fetchPublicDataWithToken = async () => {
                   </div>
                 )}
               </div>
+                ) : (
+                  <Typography variant="small" className="text-gray-500 italic">
+                    You haven't filled up details in this section.
+                  </Typography>
+                )
+              ) : null}
               {isEditMode && editingSections.contact && (
                 <div className="mt-4 flex justify-end">
                   <Button
@@ -6145,12 +7034,15 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               ) : (
                 <Typography variant="small" className="text-gray-500 italic">
-                  No skills added yet
+                  {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                    ? "You haven't filled up details in this section."
+                    : "No skills added yet"}
                 </Typography>
               )}
             </div>
 
-            {/* TESDA Information */}
+            {/* TESDA Information - Always show for Automotive and Land Transportation */}
+            {(portfolio.primaryCourseType === "Automotive and Land Transportation" || portfolio.ncLevel || portfolio.trainingCenter || portfolio.scholarshipType || portfolio.trainingDuration || portfolio.tesdaRegistrationNumber || isEditMode) && (
             <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
               <div className="flex items-center justify-between mb-6">
                 <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg`}>
@@ -6167,6 +7059,7 @@ const fetchPublicDataWithToken = async () => {
                   </IconButton>
                 )}
               </div>
+                {(portfolio.ncLevel || portfolio.trainingCenter || portfolio.scholarshipType || portfolio.trainingDuration || portfolio.tesdaRegistrationNumber || isEditMode) ? (
               <div className="space-y-4">
                 {(portfolio.ncLevel || (isEditMode && editingSections.tesda)) && (
                   <div>
@@ -6269,6 +7162,11 @@ const fetchPublicDataWithToken = async () => {
                   </div>
                 )}
               </div>
+                ) : (
+                  <Typography variant="small" className="text-gray-500 italic">
+                    You haven't filled up details in this section.
+                  </Typography>
+                )}
               {isEditMode && editingSections.tesda && (
                 <div className="mt-4 flex justify-end">
                   <Button
@@ -6285,6 +7183,7 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
             </div>
+            )}
           </div>
  
           <div className={`${
@@ -6433,7 +7332,7 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
 
-              {((certificates && certificates.length > 0) || (isEditMode && editingSections.certificates)) ? (
+              {((certificates && certificates.length > 0) || (isEditMode && editingSections.certificates) || portfolio.primaryCourseType === "Automotive and Land Transportation") ? (
                 <div className="space-y-4">
                   {!isAddingCertificate && isEditMode && editingSections.certificates && (
                     <Button
@@ -6451,7 +7350,7 @@ const fetchPublicDataWithToken = async () => {
                     </Button>
                   )}
 
-                  {certificates && certificates.length > 0 && (
+                  {certificates && certificates.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {certificates.map((certificate) => (
                         <Card key={certificate.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -6513,7 +7412,15 @@ const fetchPublicDataWithToken = async () => {
                         </Card>
                       ))}
                     </div>
-                  )}
+                  ) : !isEditMode || !editingSections.certificates ? (
+                    portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
+                      <div className="bg-white border border-gray-100 rounded-lg p-6">
+                        <Typography variant="small" className="text-gray-500 italic">
+                          You haven't filled up details in this section.
+                        </Typography>
+                      </div>
+                    ) : null
+                  ) : null}
                   {isEditMode && editingSections.certificates && (
                     <div className="mt-6 flex justify-end">
                       <Button
@@ -6532,7 +7439,9 @@ const fetchPublicDataWithToken = async () => {
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
                   <Typography variant="small" className="text-gray-500 italic">
-                    No certificates added yet
+                    {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No certificates added yet"}
                   </Typography>
                 </div>
               )}
@@ -6555,9 +7464,10 @@ const fetchPublicDataWithToken = async () => {
                   </IconButton>
                 )}
               </div>
-              {((portfolio.experiences && portfolio.experiences.length > 0) || (isEditMode && editingSections.experience)) ? (
+              {((portfolio.experiences && portfolio.experiences.length > 0) || (isEditMode && editingSections.experience) || portfolio.primaryCourseType === "Automotive and Land Transportation") ? (
                 <div className="space-y-8">
-                  {(isEditMode && editingSections.experience ? editingPortfolio?.experiences : portfolio.experiences)?.map((exp, index) => (
+                  {((isEditMode && editingSections.experience ? editingPortfolio?.experiences : portfolio.experiences) || []).length > 0 ? (
+                    (isEditMode && editingSections.experience ? editingPortfolio?.experiences : portfolio.experiences)?.map((exp, index) => (
                     <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-8 pb-8`}>
                       {isEditMode && editingSections.experience ? (
                         <div className="space-y-4">
@@ -6663,7 +7573,16 @@ const fetchPublicDataWithToken = async () => {
                         </>
                       )}
                     </div>
-                  ))}
+                  ))
+                  ) : !isEditMode || !editingSections.experience ? (
+                    portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
+                      <div className="bg-white border border-gray-100 rounded-lg p-6">
+                        <Typography variant="small" className="text-gray-500 italic">
+                          You haven't filled up details in this section.
+                        </Typography>
+                      </div>
+                    ) : null
+                  ) : null}
                   {isEditMode && editingSections.experience && (
                       <Button
                         variant="outlined"
@@ -6702,7 +7621,9 @@ const fetchPublicDataWithToken = async () => {
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
                   <Typography variant="small" className="text-gray-500 italic">
-                    No experience added yet
+                    {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No experience added yet"}
                   </Typography>
                 </div>
               )}
@@ -6866,7 +7787,7 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
 
-              {((projects && projects.length > 0) || (isEditMode && editingSections.projects)) ? (
+              {((projects && projects.length > 0) || (isEditMode && editingSections.projects) || portfolio.primaryCourseType === "Automotive and Land Transportation") ? (
                 <div className="space-y-4">
                   {!isAddingProject && isEditMode && editingSections.projects && (
                     <Button
@@ -6884,7 +7805,7 @@ const fetchPublicDataWithToken = async () => {
                     </Button>
                   )}
 
-                  {projects && projects.length > 0 && (
+                  {projects && projects.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {projects.map((project) => (
                         <Card key={project.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
@@ -6947,7 +7868,15 @@ const fetchPublicDataWithToken = async () => {
                         </Card>
                       ))}
                     </div>
-                  )}
+                  ) : !isEditMode || !editingSections.projects ? (
+                    portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
+                      <div className="bg-white border border-gray-100 rounded-lg p-6">
+                        <Typography variant="small" className="text-gray-500 italic">
+                          You haven't filled up details in this section.
+                        </Typography>
+                      </div>
+                    ) : null
+                  ) : null}
                   {isEditMode && editingSections.projects && (
                     <div className="mt-6 flex justify-end">
                       <Button
@@ -6966,7 +7895,9 @@ const fetchPublicDataWithToken = async () => {
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
                   <Typography variant="small" className="text-gray-500 italic">
-                    No projects added yet
+                    {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No projects added yet"}
                   </Typography>
                 </div>
               )}
@@ -6989,9 +7920,10 @@ const fetchPublicDataWithToken = async () => {
                   </IconButton>
                 )}
               </div>
-              {((portfolio.awardsRecognitions && portfolio.awardsRecognitions.length > 0) || (isEditMode && editingSections.awards)) ? (
+              {((portfolio.awardsRecognitions && portfolio.awardsRecognitions.length > 0) || (isEditMode && editingSections.awards) || portfolio.primaryCourseType === "Automotive and Land Transportation") ? (
                 <div className="space-y-4">
-                  {(isEditMode && editingSections.awards ? editingPortfolio?.awardsRecognitions : portfolio.awardsRecognitions)?.map((award, index) => (
+                  {((isEditMode && editingSections.awards ? editingPortfolio?.awardsRecognitions : portfolio.awardsRecognitions) || []).length > 0 ? (
+                    (isEditMode && editingSections.awards ? editingPortfolio?.awardsRecognitions : portfolio.awardsRecognitions)?.map((award, index) => (
                     <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
                       {isEditMode && editingSections.awards ? (
                         <div className="space-y-3">
@@ -7061,7 +7993,16 @@ const fetchPublicDataWithToken = async () => {
                         </>
                       )}
                     </div>
-                  ))}
+                  ))
+                  ) : !isEditMode || !editingSections.awards ? (
+                    portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
+                      <div className="bg-white border border-gray-100 rounded-lg p-6">
+                        <Typography variant="small" className="text-gray-500 italic">
+                          You haven't filled up details in this section.
+                        </Typography>
+                      </div>
+                    ) : null
+                  ) : null}
                   {isEditMode && editingSections.awards && (
                     <Button
                       variant="outlined"
@@ -7092,7 +8033,9 @@ const fetchPublicDataWithToken = async () => {
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
                   <Typography variant="small" className="text-gray-500 italic">
-                    No awards or recognition added yet
+                    {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No awards or recognition added yet"}
                   </Typography>
                 </div>
               )}
@@ -7117,9 +8060,10 @@ const fetchPublicDataWithToken = async () => {
                     </IconButton>
                   )}
                 </div>
-                {((portfolio.continuingEducations && portfolio.continuingEducations.length > 0) || (isEditMode && editingSections.education)) ? (
+                {((portfolio.continuingEducations && portfolio.continuingEducations.length > 0) || (isEditMode && editingSections.education) || portfolio.primaryCourseType === "Automotive and Land Transportation") ? (
                   <div className="space-y-4">
-                    {(isEditMode && editingSections.education ? editingPortfolio?.continuingEducations : portfolio.continuingEducations)?.map((edu, index) => (
+                    {((isEditMode && editingSections.education ? editingPortfolio?.continuingEducations : portfolio.continuingEducations) || []).length > 0 ? (
+                      (isEditMode && editingSections.education ? editingPortfolio?.continuingEducations : portfolio.continuingEducations)?.map((edu, index) => (
                       <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2`}>
                         {isEditMode && editingSections.education ? (
                           <div className="space-y-3">
@@ -7189,7 +8133,14 @@ const fetchPublicDataWithToken = async () => {
                           </>
                         )}
                       </div>
-                    ))}
+                    ))
+                    ) : !isEditMode || !editingSections.education ? (
+                      portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
+                        <Typography variant="small" className="text-gray-500 italic">
+                          You haven't filled up details in this section.
+                        </Typography>
+                      ) : null
+                    ) : null}
                     {isEditMode && editingSections.education && (
                       <Button
                         variant="outlined"
@@ -7220,7 +8171,9 @@ const fetchPublicDataWithToken = async () => {
                   </div>
                 ) : (
                   <Typography variant="small" className="text-gray-500 italic">
-                    No continuing education added yet
+                    {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No continuing education added yet"}
                   </Typography>
                 )}
               </div>
@@ -7242,9 +8195,10 @@ const fetchPublicDataWithToken = async () => {
                     </IconButton>
                   )}
                 </div>
-                {((portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0) || (isEditMode && editingSections.memberships)) ? (
+                {((portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0) || (isEditMode && editingSections.memberships) || portfolio.primaryCourseType === "Automotive and Land Transportation") ? (
                   <div className="space-y-4">
-                    {(isEditMode && editingSections.memberships ? editingPortfolio?.professionalMemberships : portfolio.professionalMemberships)?.map((mem, index) => (
+                    {((isEditMode && editingSections.memberships ? editingPortfolio?.professionalMemberships : portfolio.professionalMemberships) || []).length > 0 ? (
+                      (isEditMode && editingSections.memberships ? editingPortfolio?.professionalMemberships : portfolio.professionalMemberships)?.map((mem, index) => (
                       <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2`}>
                         {isEditMode && editingSections.memberships ? (
                           <div className="space-y-3">
@@ -7314,7 +8268,14 @@ const fetchPublicDataWithToken = async () => {
                           </>
                         )}
                       </div>
-                    ))}
+                    ))
+                    ) : !isEditMode || !editingSections.memberships ? (
+                      portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
+                        <Typography variant="small" className="text-gray-500 italic">
+                          You haven't filled up details in this section.
+                        </Typography>
+                      ) : null
+                    ) : null}
                     {isEditMode && editingSections.memberships && (
                       <Button
                         variant="outlined"
@@ -7345,7 +8306,9 @@ const fetchPublicDataWithToken = async () => {
                   </div>
                 ) : (
                   <Typography variant="small" className="text-gray-500 italic">
-                    No professional memberships added yet
+                    {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No professional memberships added yet"}
                   </Typography>
                 )}
               </div>
@@ -7368,9 +8331,10 @@ const fetchPublicDataWithToken = async () => {
                   </IconButton>
                 )}
               </div>
-              {((portfolio.references && portfolio.references.length > 0) || (isEditMode && editingSections.references)) ? (
+              {((portfolio.references && portfolio.references.length > 0) || (isEditMode && editingSections.references) || portfolio.primaryCourseType === "Automotive and Land Transportation") ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {(isEditMode && editingSections.references ? editingPortfolio?.references : portfolio.references)?.map((ref, index) => (
+                  {((isEditMode && editingSections.references ? editingPortfolio?.references : portfolio.references) || []).length > 0 ? (
+                    (isEditMode && editingSections.references ? editingPortfolio?.references : portfolio.references)?.map((ref, index) => (
                     <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
                       {isEditMode && editingSections.references ? (
                         <div className="space-y-3">
@@ -7477,7 +8441,16 @@ const fetchPublicDataWithToken = async () => {
                         </>
                       )}
                     </div>
-                  ))}
+                  ))
+                  ) : !isEditMode || !editingSections.references ? (
+                    portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
+                      <div className="md:col-span-2 bg-white border border-gray-100 rounded-lg p-6">
+                        <Typography variant="small" className="text-gray-500 italic">
+                          You haven't filled up details in this section.
+                        </Typography>
+                      </div>
+                    ) : null
+                  ) : null}
                   {isEditMode && editingSections.references && (
                     <div className="md:col-span-2">
                       <Button
@@ -7510,7 +8483,9 @@ const fetchPublicDataWithToken = async () => {
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
                   <Typography variant="small" className="text-gray-500 italic">
-                    No references added yet
+                    {portfolio.primaryCourseType === "Automotive and Land Transportation" 
+                      ? "You haven't filled up details in this section."
+                      : "No references added yet"}
                   </Typography>
                 </div>
               )}
@@ -7560,25 +8535,6 @@ const fetchPublicDataWithToken = async () => {
               </div>
             )}
 
-            {saveSuccess && (
-              <Card className="mb-6 bg-green-50 border border-green-200">
-                <CardBody>
-                  <Typography color="green" className="text-center">
-                    {saveSuccess}
-                  </Typography>
-                </CardBody>
-              </Card>
-            )}
-
-            {saveError && (
-              <Card className="mb-6 bg-red-50 border border-red-200">
-                <CardBody>
-                  <Typography color="red" className="text-center">
-                    {saveError}
-                  </Typography>
-                </CardBody>
-              </Card>
-            )}
 
             <div className="flex flex-wrap gap-4 justify-center">
               <Button
@@ -7631,8 +8587,25 @@ const fetchPublicDataWithToken = async () => {
                   >
                     Generate New Link
                   </Button>
-                  <Button onClick={handleDelete} color="red" variant="outlined" size="lg" className="font-light">
+                  <Button 
+                    onClick={handleDelete} 
+                    color="red" 
+                    variant="outlined" 
+                    size="lg" 
+                    className="font-light flex items-center gap-2"
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Spinner className="w-4 h-4" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <FaTrash className="w-4 h-4" />
                     Delete Portfolio
+                      </>
+                    )}
                   </Button>
                 </>
               )}
