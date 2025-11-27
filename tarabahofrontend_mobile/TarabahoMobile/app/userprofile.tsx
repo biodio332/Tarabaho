@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
-const BACKEND_URL = (process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8080').replace(/\/$/, '');
+const BACKEND_URL = (process.env.EXPO_PUBLIC_BACKEND_URL || 'https://tarabaho-backend.onrender.com').replace(/\/$/, '');
 
 interface User {
   id: number;
@@ -346,10 +346,13 @@ export default function UserProfile() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.removeItem('authToken');
-              await AsyncStorage.removeItem('userType');
+              // Clear all authentication related data
+              const keysToRemove = ['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId'];
+              await AsyncStorage.multiRemove(keysToRemove);
+              console.log('UserProfile - Cleared AsyncStorage keys:', keysToRemove);
               router.replace('/login');
             } catch (error) {
+              console.error('UserProfile - Error during logout:', error);
               Alert.alert('Error', 'Failed to logout properly');
             }
           },

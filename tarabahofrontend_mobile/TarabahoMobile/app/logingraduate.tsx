@@ -3,9 +3,9 @@ import { View, Text, Image, ScrollView, KeyboardAvoidingView, Platform, Touchabl
 import { useRouter } from "expo-router"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import TextField from "@/components/ui/TextField"
-import Button from "@/components/ui/Button"
+import Button from "@/components/ui/Button";
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:8080"
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "https://tarabaho-backend.onrender.com"
 
 export default function LoginGraduate() {
   const [username, setUsername] = useState("")
@@ -36,6 +36,9 @@ export default function LoginGraduate() {
       const data = await res.json()
 
       if (data?.token) {
+        // Clear any previous session data completely
+        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username'])
+        
         await AsyncStorage.multiSet([
           ["authToken", data.token],
           ["isLoggedIn", "true"],
@@ -65,9 +68,9 @@ export default function LoginGraduate() {
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          style={{ backgroundColor: "#f0f9ff" }}
+          style={{ backgroundColor: "#f9fafb" }}
         >
-          <View style={{ flex: 1, backgroundColor: "#f0f9ff" }}>
+          <View style={{ flex: 1, backgroundColor: "#f9fafb" }}>
             {/* Header Section */}
             <View style={{ 
               alignItems: "center", 
@@ -82,25 +85,24 @@ export default function LoginGraduate() {
                 backgroundColor: "#ffffff",
                 alignItems: "center",
                 justifyContent: "center",
-                shadowColor: "#0ea5e9",
-                shadowOpacity: 0.2,
+                shadowColor: "#076dfd",
+                shadowOpacity: 0.15,
                 shadowOffset: { width: 0, height: 4 },
                 shadowRadius: 12,
                 elevation: 8,
-                marginBottom: 24,
-                borderWidth: 2,
-                borderColor: "#0ea5e9"
+                marginBottom: 24
               }}>
                 <Image 
-                  source={require("../assets/images/icon.png")} 
+                  source={require("../assets/images/TARABAHO.png")} 
                   style={{ height: 60, width: 60 }} 
+                  resizeMode="contain"
                 />
               </View>
               
               <Text style={{
                 fontSize: 32,
                 fontWeight: "700",
-                color: "#0c4a6e",
+                color: "#1f2937",
                 marginBottom: 8,
                 letterSpacing: -0.5
               }}>
@@ -109,7 +111,7 @@ export default function LoginGraduate() {
               
               <Text style={{
                 fontSize: 16,
-                color: "#0369a1",
+                color: "#1f2937",
                 textAlign: "center",
                 lineHeight: 24
               }}>
@@ -135,7 +137,7 @@ export default function LoginGraduate() {
               <Text style={{
                 fontSize: 24,
                 fontWeight: "600",
-                color: "#0c4a6e",
+                color: "#1f2937",
                 marginBottom: 32,
                 textAlign: "center"
               }}>
@@ -223,7 +225,15 @@ export default function LoginGraduate() {
               <View style={{ gap: 12 }}>
                 <Button
                   title="Back to User Login"
-                  onPress={() => router.push("/login")}
+                  onPress={async () => {
+                    // Clear any existing session data before switching login types
+                    try {
+                      await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId']);
+                    } catch (error) {
+                      console.warn('Failed to clear session data:', error);
+                    }
+                    router.push("/login");
+                  }}
                   variant="outline"
                 />
                 <Button

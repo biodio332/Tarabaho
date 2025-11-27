@@ -5,7 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import TextField from "@/components/ui/TextField"
 import Button from "@/components/ui/Button"
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:8080"
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "https://tarabaho-backend.onrender.com"
 
 export default function Login() {
   const [username, setUsername] = useState("")
@@ -40,7 +40,10 @@ export default function Login() {
 
       const data = await res.json()
 
-      // Store auth data including token in AsyncStorage
+      // Clear any previous session data completely
+      await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username'])
+      
+      // Store new auth data including token in AsyncStorage
       await AsyncStorage.multiSet([
         ["isLoggedIn", "true"],
         ["userType", "user"],
@@ -76,9 +79,9 @@ export default function Login() {
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          style={{ backgroundColor: "#f8fafc" }}
+          style={{ backgroundColor: "#f9fafb" }}
         >
-          <View style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+          <View style={{ flex: 1, backgroundColor: "#f9fafb" }}>
             {/* Header Section */}
             <View style={{ 
               alignItems: "center", 
@@ -93,16 +96,17 @@ export default function Login() {
                 backgroundColor: "#ffffff",
                 alignItems: "center",
                 justifyContent: "center",
-                shadowColor: "#000000",
-                shadowOpacity: 0.1,
+                shadowColor: "#076dfd",
+                shadowOpacity: 0.15,
                 shadowOffset: { width: 0, height: 4 },
                 shadowRadius: 12,
                 elevation: 8,
                 marginBottom: 24
               }}>
                 <Image 
-                  source={require("../assets/images/icon.png")} 
+                  source={require("../assets/images/TARABAHO.png")} 
                   style={{ height: 60, width: 60 }} 
+                  resizeMode="contain"
                 />
               </View>
               
@@ -232,7 +236,15 @@ export default function Login() {
               <View style={{ gap: 12 }}>
                 <Button
                   title="Login as Graduate"
-                  onPress={() => router.push("/logingraduate")}
+                  onPress={async () => {
+                    // Clear any existing session data before switching login types
+                    try {
+                      await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId']);
+                    } catch (error) {
+                      console.warn('Failed to clear session data:', error);
+                    }
+                    router.push("/logingraduate");
+                  }}
                   variant="outline"
                 />
                 <Button

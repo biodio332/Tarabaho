@@ -239,7 +239,7 @@ function CertificateImage({ filePath, style, resizeMode }: CertificateImageProps
 }
 
 // Ensure backend URL doesn't end with a slash
-const BACKEND_URL = (process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:8080").replace(/\/$/, "")
+const BACKEND_URL = (process.env.EXPO_PUBLIC_BACKEND_URL || "https://tarabaho-backend.onrender.com").replace(/\/$/, "")
 
 interface Project {
   id?: number
@@ -435,7 +435,8 @@ export default function PortfolioScreen() {
   }
 
   const getShareableUrl = (token: string) => {
-    const baseUrl = __DEV__ ? 'http://localhost:3000' : 'https://your-domain.com'
+    // Always use the deployed web URL for sharing, regardless of development mode
+    const baseUrl = 'https://tarabaho.vercel.app'
     return `${baseUrl}/portfolio/${graduateId}?share=${token}`
   }
 

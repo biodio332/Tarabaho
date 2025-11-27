@@ -9,13 +9,14 @@ import {
   TextInput,
   ImageBackground,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
-const BACKEND_URL = (process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8080').replace(/\/$/, '');
+const BACKEND_URL = (process.env.EXPO_PUBLIC_BACKEND_URL || 'https://tarabaho-backend.onrender.com').replace(/\/$/, '');
 
 export default function UserHomePage() {
   const router = useRouter();
@@ -429,9 +430,29 @@ export default function UserHomePage() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#007bff" />
-        <Text style={{ marginTop: 10 }}>Loading...</Text>
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9fafb' }}>
+        <View style={{
+          width: 80,
+          height: 80,
+          borderRadius: 40,
+          backgroundColor: "#ffffff",
+          alignItems: "center",
+          justifyContent: "center",
+          shadowColor: "#076dfd",
+          shadowOpacity: 0.2,
+          shadowOffset: { width: 0, height: 4 },
+          shadowRadius: 12,
+          elevation: 8,
+          marginBottom: 24
+        }}>
+          <Image 
+            source={require("../assets/images/TARABAHO.png")} 
+            style={{ height: 50, width: 50 }} 
+            resizeMode="contain"
+          />
+        </View>
+        <ActivityIndicator size="large" color="#076dfd" />
+        <Text style={{ marginTop: 10, color: '#1f2937', fontSize: 16, fontWeight: '500' }}>Loading your dashboard...</Text>
       </SafeAreaView>
     );
   }

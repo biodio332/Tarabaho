@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Platform,
   StatusBar,
+  Image,
   TouchableOpacity,
   Linking,
   Modal,
@@ -25,7 +26,7 @@ import Chart from '@/components/ui/Chart';
 import StatCard from '@/components/ui/StatCard';
 import ToggleGroup from '@/components/ui/ToggleGroup';
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:8080";
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "https://tarabaho-backend.onrender.com";
 
 interface ViewStats {
   weeklyViews: number;
@@ -226,26 +227,37 @@ export default function GraduateHomepage() {
   }, [timeRange, chartType]);
 
 
-
-
-
-
-
-
-
   // Initial data fetch
   const fetchInitialData = useCallback(async () => {
     setIsLoading(true);
     setError('');
+    
+    // Clear any previous state to ensure fresh data
+    setGraduateData(null);
+    setPortfolio(null);
+    setViewStats(null);
+    setViewTrends([]);
+    setToken(null);
+    
     console.log("🟢 Initial page load - fetching all data");
 
     try {
       const username = await AsyncStorage.getItem('username');
       const storedToken = await AsyncStorage.getItem('authToken');
+      const userType = await AsyncStorage.getItem('userType');
       
       if (!username || !storedToken) {
         console.log("❌ No username or token found, redirecting to login");
         setError("User not logged in. Please sign in.");
+        router.replace('/logingraduate');
+        return;
+      }
+
+      // Verify this is actually a graduate session
+      if (userType !== 'graduate') {
+        console.log("❌ Invalid user type for graduate homepage:", userType);
+        setError("Please login as a graduate to access this page.");
+        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username']);
         router.replace('/logingraduate');
         return;
       }
@@ -278,7 +290,10 @@ export default function GraduateHomepage() {
         await AsyncStorage.setItem('username', graduateData.username);
 
         // Fetch portfolio data
-        console.log("📁 Fetching portfolio");
+        console.log("📁 Fetching portfolio for graduate ID:", graduateData.id);
+        console.log("📁 Using token:", storedToken ? 'Token exists' : 'No token');
+        console.log("📁 API URL:", `${BACKEND_URL}/api/portfolio/graduate/${graduateData.id}/portfolio`);
+        
         let portfolioData = null;
         try {
           const portfolioResponse = await fetch(
@@ -292,15 +307,20 @@ export default function GraduateHomepage() {
             }
           );
           
+          console.log("📁 Portfolio response status:", portfolioResponse.status);
+          
           if (portfolioResponse.ok) {
             portfolioData = await portfolioResponse.json();
             console.log("✅ Portfolio data received:", portfolioData);
+            console.log("✅ Portfolio ID:", portfolioData?.id);
             setPortfolio(portfolioData);
           } else if (portfolioResponse.status === 404) {
             console.log("ℹ️ No portfolio found for graduate ID:", graduateData.id);
             setPortfolio(null);
           } else {
-            throw new Error(`Portfolio fetch failed: ${portfolioResponse.status}`);
+            const errorText = await portfolioResponse.text().catch(() => 'Unknown error');
+            console.error("❌ Portfolio fetch failed:", portfolioResponse.status, errorText);
+            throw new Error(`Portfolio fetch failed: ${portfolioResponse.status} - ${errorText}`);
           }
         } catch (portfolioErr: any) {
           console.error("⚠️ Portfolio fetch error:", portfolioErr.message);
@@ -372,6 +392,18 @@ export default function GraduateHomepage() {
     fetchInitialData();
   }, [fetchInitialData]);
 
+  // Cleanup component state when component unmounts or user changes
+  useEffect(() => {
+    return () => {
+      // Clear state when component unmounts to prevent stale data
+      setGraduateData(null);
+      setPortfolio(null);
+      setViewStats(null);
+      setViewTrends([]);
+      setToken(null);
+    };
+  }, []);
+
   // Refetch trends when chart period changes
   useEffect(() => {
     if (portfolio && token) {
@@ -426,46 +458,72 @@ export default function GraduateHomepage() {
   // Render loading state without early return
   if (isLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.surface }} edges={['top']}>
-        <StatusBar 
-          barStyle="dark-content" 
-          backgroundColor={theme.colors.background}
-        />
-        <View style={viewStyles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2563eb" />
-          <Text style={textStyles.loadingText}>Loading your dashboard...</Text>
-        </View>
-      </SafeAreaView>
+      <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.surface }} edges={['top', 'left', 'right']}>
+          <StatusBar 
+            barStyle="dark-content" 
+            backgroundColor={theme.colors.background}
+          />
+          <View style={viewStyles.loadingContainer}>
+            <View style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: "#ffffff",
+              alignItems: "center",
+              justifyContent: "center",
+              shadowColor: "#076dfd",
+              shadowOpacity: 0.2,
+              shadowOffset: { width: 0, height: 4 },
+              shadowRadius: 12,
+              elevation: 8,
+              marginBottom: 24
+            }}>
+              <Image 
+                source={require("../assets/images/TARABAHO.png")} 
+                style={{ height: 50, width: 50 }} 
+                resizeMode="contain"
+              />
+            </View>
+            <ActivityIndicator size="large" color="#076dfd" />
+            <Text style={[textStyles.loadingText, { color: "#1f2937" }]}>Loading your dashboard...</Text>
+          </View>
+        </SafeAreaView>
+      </View>
     );
   }
 
   // Render error state without early return
   if (error) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.surface }} edges={['top']}>
-        <StatusBar 
-          barStyle="dark-content" 
-          backgroundColor={theme.colors.background}
-        />
-        <View style={viewStyles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-          <Text style={textStyles.errorText}>{error}</Text>
-          <Button title="Try Again" onPress={fetchInitialData} />
-        </View>
-      </SafeAreaView>
+      <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.surface }} edges={['top', 'left', 'right']}>
+          <StatusBar 
+            barStyle="dark-content" 
+            backgroundColor={theme.colors.background}
+          />
+          <View style={viewStyles.errorContainer}>
+            <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
+            <Text style={textStyles.errorText}>{error}</Text>
+            <Button title="Try Again" onPress={fetchInitialData} />
+          </View>
+        </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.surface }} edges={['top']}>
-      <StatusBar 
-        barStyle="dark-content" 
-        backgroundColor={theme.colors.background}
-      />
+    <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.surface }} edges={['top', 'left', 'right']}>
+        <StatusBar 
+          barStyle="dark-content" 
+          backgroundColor={theme.colors.background}
+        />
       <ScrollView
         style={{ flex: 1, backgroundColor: theme.colors.background }}
         contentContainerStyle={{ 
-          paddingBottom: 0,
+          flexGrow: 1,
+          paddingBottom: portfolio ? 170 : 90, // Extra padding when portfolio button is visible
         }}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
@@ -711,41 +769,42 @@ export default function GraduateHomepage() {
 
 
         
-        {/* Sticky View Portfolio Button */}
-        {portfolio && (
-          <View style={viewStyles.stickyButtonContainer}>
-              <TouchableOpacity 
-                style={viewStyles.stickyActionButton}
-                onPress={() => router.push('/portfolio')}
-              >
-                <Ionicons name="eye-outline" size={24} color="#ffffff" />
-                <Text style={textStyles.stickyButtonText}>View Portfolio</Text>
-                <Ionicons name="chevron-forward" size={20} color="#ffffff" />
-              </TouchableOpacity>
-          </View>
-        )}
-        
-        {/* Bottom Navigation */}
-        <View style={viewStyles.bottomNavContainer}>
-            <View style={viewStyles.bottomNav}>
-              <TouchableOpacity 
-                style={viewStyles.bottomNavItem} 
-                onPress={() => router.push('/graduatehomepage')}
-              >
-                <Ionicons name="home" size={24} color={theme.colors.primary} />
-                <Text style={textStyles.bottomNavText}>Home</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={viewStyles.bottomNavItem} 
-                onPress={() => router.push('/graduateprofile')}
-              >
-                <Ionicons name="settings-outline" size={24} color={theme.colors.text.secondary} />
-                <Text style={textStyles.bottomNavTextInactive}>Settings</Text>
-              </TouchableOpacity>
-            </View>
-        </View>
       </ScrollView>
+      
+      {/* Sticky View Portfolio Button */}
+      {portfolio && (
+        <View style={viewStyles.stickyButtonContainer}>
+            <TouchableOpacity 
+              style={viewStyles.stickyActionButton}
+              onPress={() => router.push('/portfolio')}
+            >
+              <Ionicons name="eye-outline" size={24} color="#ffffff" />
+              <Text style={textStyles.stickyButtonText}>View Portfolio</Text>
+              <Ionicons name="chevron-forward" size={20} color="#ffffff" />
+            </TouchableOpacity>
+        </View>
+      )}
+      
+      {/* Bottom Navigation */}
+      <View style={viewStyles.bottomNavContainer}>
+          <View style={viewStyles.bottomNav}>
+            <TouchableOpacity 
+              style={viewStyles.bottomNavItem} 
+              onPress={() => router.push('/graduatehomepage')}
+            >
+              <Ionicons name="home" size={24} color={theme.colors.primary} />
+              <Text style={textStyles.bottomNavText}>Home</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={viewStyles.bottomNavItem} 
+              onPress={() => router.push('/graduateprofile')}
+            >
+              <Ionicons name="settings-outline" size={24} color={theme.colors.text.secondary} />
+              <Text style={textStyles.bottomNavTextInactive}>Settings</Text>
+            </TouchableOpacity>
+          </View>
+      </View>
       
       {/* Time Range Modal */}
       <Modal
@@ -795,7 +854,8 @@ export default function GraduateHomepage() {
           </View>
         </Pressable>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -1196,9 +1256,11 @@ const viewStyles = StyleSheet.create<Record<string, ViewStyle>>({
 
   // Sticky Action Button
   stickyButtonContainer: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.background,
+    position: 'absolute',
+    bottom: 96, // Position above the bottom navigation with more spacing
+    left: theme.spacing.lg,
+    right: theme.spacing.lg,
+    zIndex: 1000,
   },
 
   stickyActionButton: {
@@ -1212,6 +1274,7 @@ const viewStyles = StyleSheet.create<Record<string, ViewStyle>>({
     gap: theme.spacing.md,
     ...theme.shadows.lg,
     minHeight: 56,
+    elevation: 10, // For Android
   },
 
   // Share Portfolio Section
@@ -1338,14 +1401,17 @@ const viewStyles = StyleSheet.create<Record<string, ViewStyle>>({
 
   // Bottom Navigation
   bottomNavContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border.light,
     ...theme.shadows.lg,
     shadowOffset: { width: 0, height: -3 },
-    elevation: 10,
-    paddingBottom: 0,
-    marginBottom: 0,
+    elevation: 15, // Higher elevation to stay above other elements
+    zIndex: 1001,
   },
 
   bottomNav: {
@@ -1413,7 +1479,7 @@ const textStyles = StyleSheet.create<Record<string, TextStyle>>({
     fontSize: theme.typography.body1.fontSize,
     lineHeight: theme.typography.body1.lineHeight,
     fontWeight: 'normal' as const,
-    color: theme.colors.text.secondary,
+    color: "#1f2937",
     marginTop: theme.spacing.md,
   },
   loadingIndicatorText: {

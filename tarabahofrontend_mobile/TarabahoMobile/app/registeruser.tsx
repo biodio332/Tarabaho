@@ -15,7 +15,7 @@ import TextField from '@/components/ui/TextField';
 import Button from '@/components/ui/Button';
 import { DatePicker } from '@/components/ui/DatePicker';
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8080';
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://tarabaho-backend.onrender.com';
 
 // Utility function to handle date conversion
 const parseDate = (dateString: string | null | undefined): Date => {

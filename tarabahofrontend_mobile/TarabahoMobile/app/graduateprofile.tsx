@@ -19,7 +19,7 @@ import { Ionicons } from "@expo/vector-icons"
 import * as ImagePicker from "expo-image-picker"
 import { DatePicker } from "../components/ui/DatePicker"
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:8080"
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "https://tarabaho-backend.onrender.com"
 
 type Graduate = {
   id?: number
@@ -545,81 +545,292 @@ export default function GraduateProfile() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f9fafb', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
-      {/* Back Button - consistent with portfolio page */}
-      <View className="absolute top-12 left-4 z-20">
-        <TouchableOpacity
-          onPress={() => router.push('/graduatehomepage')}
-          className="w-10 h-10 rounded-full bg-white items-center justify-center shadow-md active:opacity-90 border border-gray-200"
-        >
-          <Ionicons name="chevron-back" size={22} color="#1D4ED8" />
-        </TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
+      
+      {/* Header with gradient background */}
+      <View style={{
+        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 16 : 50,
+        paddingBottom: 20,
+        paddingHorizontal: 16,
+        backgroundColor: '#ffffff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <TouchableOpacity
+            onPress={() => router.push('/graduatehomepage')}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: '#f3f4f6',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: '#e5e7eb',
+            }}
+          >
+            <Ionicons name="chevron-back" size={20} color="#374151" />
+          </TouchableOpacity>
+          
+          <Text style={{
+            fontSize: 20,
+            fontWeight: '700',
+            color: '#111827',
+            letterSpacing: -0.5,
+          }}>My Profile</Text>
+          
+          <View style={{ width: 40 }} />
+        </View>
       </View>
       
       {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#3b82f6" />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' }}>
+          <View style={{
+            backgroundColor: '#ffffff',
+            paddingHorizontal: 32,
+            paddingVertical: 24,
+            borderRadius: 16,
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 4,
+          }}>
+            <ActivityIndicator size="large" color="#2563eb" />
+            <Text style={{
+              marginTop: 16,
+              fontSize: 16,
+              fontWeight: '500',
+              color: '#6b7280',
+            }}>Loading your profile...</Text>
+          </View>
         </View>
       ) : error ? (
-        <View className="flex-1 items-center justify-center px-6">
-          <Ionicons name="alert-circle" size={48} color="#ef4444" />
-          <Text className="text-red-600 text-center mt-4 text-base">{error}</Text>
-          <TouchableOpacity onPress={() => router.push('/graduatehomepage')} className="mt-6 bg-blue-600 px-6 py-3 rounded-xl">
-            <Text className="text-white font-semibold">Go Back</Text>
-          </TouchableOpacity>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
+          <View style={{
+            backgroundColor: '#ffffff',
+            padding: 32,
+            borderRadius: 20,
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 6,
+            maxWidth: 320,
+          }}>
+            <View style={{
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              backgroundColor: '#fee2e2',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 16,
+            }}>
+              <Ionicons name="alert-circle" size={32} color="#dc2626" />
+            </View>
+            <Text style={{
+              color: '#dc2626',
+              textAlign: 'center',
+              fontSize: 16,
+              fontWeight: '600',
+              marginBottom: 8,
+            }}>Something went wrong</Text>
+            <Text style={{
+              color: '#6b7280',
+              textAlign: 'center',
+              fontSize: 14,
+              lineHeight: 20,
+              marginBottom: 24,
+            }}>{error}</Text>
+            <TouchableOpacity 
+              onPress={() => router.push('/graduatehomepage')}
+              style={{
+                backgroundColor: '#2563eb',
+                paddingHorizontal: 24,
+                paddingVertical: 12,
+                borderRadius: 12,
+                minWidth: 120,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: '#ffffff', fontWeight: '600', fontSize: 16 }}>Go Back</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       ) : (
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 16 }}>
-          <View className="bg-white mx-4 mt-10 mb-4 rounded-2xl shadow-sm p-6 items-center">
+        <ScrollView 
+          style={{ flex: 1 }} 
+          showsVerticalScrollIndicator={false} 
+          contentContainerStyle={{ paddingBottom: 32 }}
+        >
+          {/* Profile Header Card */}
+          <View style={{
+            backgroundColor: '#ffffff',
+            marginHorizontal: 16,
+            marginTop: 20,
+            marginBottom: 16,
+            borderRadius: 20,
+            padding: 24,
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 4,
+          }}>
             <TouchableOpacity 
-              className="relative mb-6" 
+              style={{ 
+                position: 'relative', 
+                marginBottom: 24,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.15,
+                shadowRadius: 16,
+                elevation: 8,
+              }}
               onPress={pickImage}
               disabled={imageUploading}
+              activeOpacity={0.8}
             >
               {imageUploading ? (
-                <View className="w-32 h-32 rounded-full bg-blue-100 items-center justify-center">
-                  <ActivityIndicator size="small" color="#3b82f6" />
+                <View style={{
+                  width: 140,
+                  height: 140,
+                  borderRadius: 70,
+                  backgroundColor: '#dbeafe',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 4,
+                  borderColor: '#ffffff',
+                }}>
+                  <ActivityIndicator size="large" color="#2563eb" />
+                  <Text style={{
+                    marginTop: 8,
+                    fontSize: 12,
+                    fontWeight: '500',
+                    color: '#2563eb',
+                  }}>Uploading...</Text>
                 </View>
               ) : graduate?.profilePicture ? (
-                <Image 
-                  source={{ 
-                    uri: graduate.profilePicture.startsWith('http') 
-                      ? graduate.profilePicture 
-                      : `${BACKEND_URL}${graduate.profilePicture}` 
-                  }} 
-                  style={{ width: 128, height: 128, borderRadius: 64 }}
-                  resizeMode="cover"
-                  // Add a cache-busting parameter to prevent cached images
-                  key={`profile-${Date.now()}`}
-                  // Add onLoad and onError handlers
-                  onLoadStart={() => console.log("Image loading started")}
-                  onLoad={() => console.log("Image loaded successfully")}
-                  onError={(e) => console.log("Image load error:", e.nativeEvent.error)}
-                />
+                <View style={{
+                  width: 140,
+                  height: 140,
+                  borderRadius: 70,
+                  borderWidth: 4,
+                  borderColor: '#ffffff',
+                  overflow: 'hidden',
+                }}>
+                  <Image 
+                    source={{ 
+                      uri: graduate.profilePicture.startsWith('http') 
+                        ? graduate.profilePicture 
+                        : `${BACKEND_URL}${graduate.profilePicture}` 
+                    }} 
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                    key={`profile-${Date.now()}`}
+                    onLoadStart={() => console.log("Image loading started")}
+                    onLoad={() => console.log("Image loaded successfully")}
+                    onError={(e) => console.log("Image load error:", e.nativeEvent.error)}
+                  />
+                </View>
               ) : (
-                <View className="w-32 h-32 rounded-full bg-blue-100 items-center justify-center">
-                  <Ionicons name="person" size={56} color="#3b82f6" />
+                <View style={{
+                  width: 140,
+                  height: 140,
+                  borderRadius: 70,
+                  backgroundColor: '#dbeafe',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 4,
+                  borderColor: '#ffffff',
+                }}>
+                  <Ionicons name="person" size={64} color="#2563eb" />
                 </View>
               )}
-              <View className="absolute bottom-0 right-0 w-10 h-10 bg-blue-600 rounded-full items-center justify-center border-4 border-white">
-                <Ionicons name="camera" size={18} color="white" />
+              <View style={{
+                position: 'absolute',
+                bottom: 4,
+                right: 4,
+                width: 44,
+                height: 44,
+                backgroundColor: '#2563eb',
+                borderRadius: 22,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 3,
+                borderColor: '#ffffff',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 5,
+              }}>
+                <Ionicons name="camera" size={20} color="white" />
               </View>
             </TouchableOpacity>
             
             {/* Name */}
-            <Text className="text-2xl font-bold text-gray-900 text-center mb-3">
+            <Text style={{
+              fontSize: 28,
+              fontWeight: '800',
+              color: '#111827',
+              textAlign: 'center',
+              marginBottom: 8,
+              letterSpacing: -0.5,
+            }}>
               {graduate?.firstName || ""} {graduate?.lastName || ""}
             </Text>
             
-            {/* Status - Bigger and more prominent */}
-            <View className={`px-4 py-2.5 rounded-xl mb-4 ${getVerificationStatus().bgColor} ${getVerificationStatus().borderColor} border-2`}>
-              <View className="flex-row items-center">
+            {graduate?.username && (
+              <Text style={{
+                fontSize: 16,
+                fontWeight: '500',
+                color: '#6b7280',
+                textAlign: 'center',
+                marginBottom: 16,
+              }}>
+                @{graduate.username}
+              </Text>
+            )}
+            
+            {/* Status - Enhanced design */}
+            <View style={{
+              paddingHorizontal: 20,
+              paddingVertical: 12,
+              borderRadius: 16,
+              marginBottom: 8,
+              backgroundColor: graduate?.isVerified ? '#dcfce7' : '#fee2e2',
+              borderWidth: 2,
+              borderColor: graduate?.isVerified ? '#bbf7d0' : '#fecaca',
+              shadowColor: graduate?.isVerified ? '#22c55e' : '#ef4444',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 2,
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons 
                   name={graduate?.isVerified ? "checkmark-circle" : "alert-circle"} 
-                  size={18} 
-                  color={graduate?.isVerified ? "#059669" : "#DC2626"} 
+                  size={20} 
+                  color={graduate?.isVerified ? "#059669" : "#dc2626"} 
                 />
-                <Text className={`ml-2 text-base font-bold ${getVerificationStatus().textColor}`}>
+                <Text style={{
+                  marginLeft: 8,
+                  fontSize: 16,
+                  fontWeight: '700',
+                  color: graduate?.isVerified ? "#059669" : "#dc2626",
+                }}>
                   {getVerificationStatus().text}
                 </Text>
               </View>
@@ -627,63 +838,185 @@ export default function GraduateProfile() {
             
           </View>
 
-          <View className="bg-white mx-4 mb-4 rounded-2xl shadow-sm p-6">
-            <Text className="text-lg font-semibold text-gray-900 mb-4">Contact Information</Text>
+          {/* Contact Information Card */}
+          <View style={{
+            backgroundColor: '#ffffff',
+            marginHorizontal: 16,
+            marginBottom: 16,
+            borderRadius: 20,
+            padding: 24,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            elevation: 3,
+          }}>
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 20,
+            }}>
+              <View style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: '#dbeafe',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 12,
+              }}>
+                <Ionicons name="call" size={16} color="#2563eb" />
+              </View>
+              <Text style={{
+                fontSize: 20,
+                fontWeight: '700',
+                color: '#111827',
+                flex: 1,
+              }}>Contact Information</Text>
+            </View>
 
-            {/* Username */}
-            <View className="mb-4">
-              <Text className="text-sm font-medium text-gray-700 mb-2">Username</Text>
-              <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-                <Ionicons name="at" size={20} color="#3B82F6" />
-                <Text className="flex-1 ml-3 text-lg text-gray-900 font-medium">
-                  {graduate?.username || ""}
+            {/* Username - Read Only */}
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{
+                fontSize: 14,
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: 8,
+              }}>Username</Text>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#f9fafb',
+                borderRadius: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                borderWidth: 1,
+                borderColor: '#e5e7eb',
+              }}>
+                <Ionicons name="at" size={20} color="#6b7280" />
+                <Text style={{
+                  flex: 1,
+                  marginLeft: 12,
+                  fontSize: 16,
+                  color: '#6b7280',
+                  fontWeight: '500',
+                }}>
+                  {graduate?.username || "Not set"}
                 </Text>
               </View>
             </View>
 
-            {/* Phone Number */}
+            {/* Phone Number - Read Only */}
             {graduate?.phoneNumber && (
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-2">Phone Number</Text>
-                <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-                  <Ionicons name="call" size={20} color="#3B82F6" />
-                  <Text className="flex-1 ml-3 text-lg text-gray-900 font-medium">
+              <View style={{ marginBottom: 20 }}>
+                <Text style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: 8,
+                }}>Phone Number</Text>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#f9fafb',
+                  borderRadius: 12,
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  borderWidth: 1,
+                  borderColor: '#e5e7eb',
+                }}>
+                  <Ionicons name="call" size={20} color="#6b7280" />
+                  <Text style={{
+                    flex: 1,
+                    marginLeft: 12,
+                    fontSize: 16,
+                    color: '#111827',
+                    fontWeight: '500',
+                  }}>
                     {graduate.phoneNumber}
                   </Text>
                 </View>
               </View>
             )}
 
-            {/* Email Input */}
-            <View className="mb-4">
-              <Text className="text-sm font-medium text-gray-700 mb-2">Email Address</Text>
-              <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-                <Ionicons name="mail-outline" size={20} color="#6b7280" />
+            {/* Email Input - Editable */}
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{
+                fontSize: 14,
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: 8,
+              }}>Email Address</Text>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#ffffff',
+                borderRadius: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 4,
+                borderWidth: 2,
+                borderColor: '#e5e7eb',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.05,
+                shadowRadius: 2,
+                elevation: 1,
+              }}>
+                <Ionicons name="mail" size={20} color="#2563eb" />
                 <TextInput
                   value={form.email}
                   onChangeText={(t) => handleChange("email", t)}
                   autoCapitalize="none"
                   keyboardType="email-address"
-                  placeholder="Enter your email"
+                  placeholder="Enter your email address"
                   placeholderTextColor="#9ca3af"
-                  className="flex-1 ml-3 text-base text-gray-900"
-                  style={{ textAlignVertical: 'center' }}
+                  style={{
+                    flex: 1,
+                    marginLeft: 12,
+                    fontSize: 16,
+                    color: '#111827',
+                    paddingVertical: 12,
+                  }}
                 />
               </View>
             </View>
 
-            {/* Address Input */}
-            <View className="mb-4">
-              <Text className="text-sm font-medium text-gray-700 mb-2">Address</Text>
-              <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-                <Ionicons name="location-outline" size={20} color="#6b7280" />
+            {/* Address Input - Editable */}
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{
+                fontSize: 14,
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: 8,
+              }}>Address</Text>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#ffffff',
+                borderRadius: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 4,
+                borderWidth: 2,
+                borderColor: '#e5e7eb',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.05,
+                shadowRadius: 2,
+                elevation: 1,
+              }}>
+                <Ionicons name="location" size={20} color="#2563eb" />
                 <TextInput
                   value={form.address}
                   onChangeText={(t) => handleChange("address", t)}
                   placeholder="Enter your address"
                   placeholderTextColor="#9ca3af"
-                  className="flex-1 ml-3 text-base text-gray-900"
-                  style={{ textAlignVertical: 'center' }}
+                  style={{
+                    flex: 1,
+                    marginLeft: 12,
+                    fontSize: 16,
+                    color: '#111827',
+                    paddingVertical: 12,
+                  }}
                 />
               </View>
             </View>
@@ -700,61 +1033,222 @@ export default function GraduateProfile() {
             </View>
           </View>
 
-          <View className="bg-white mx-4 mb-4 rounded-2xl shadow-sm p-6">
-            <Text className="text-lg font-semibold text-gray-900 mb-4">About Me</Text>
-            <View className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
+          {/* About Me Card */}
+          <View style={{
+            backgroundColor: '#ffffff',
+            marginHorizontal: 16,
+            marginBottom: 16,
+            borderRadius: 20,
+            padding: 24,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            elevation: 3,
+          }}>
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 20,
+            }}>
+              <View style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: '#ddd6fe',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 12,
+              }}>
+                <Ionicons name="person" size={16} color="#7c3aed" />
+              </View>
+              <Text style={{
+                fontSize: 20,
+                fontWeight: '700',
+                color: '#111827',
+                flex: 1,
+              }}>About Me</Text>
+            </View>
+            
+            <View style={{
+              backgroundColor: '#ffffff',
+              borderRadius: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderWidth: 2,
+              borderColor: '#e5e7eb',
+              minHeight: 120,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.05,
+              shadowRadius: 2,
+              elevation: 1,
+            }}>
               <TextInput
                 value={form.biography}
                 onChangeText={(t) => handleChange("biography", t)}
                 multiline
-                numberOfLines={4}
-                placeholder="Tell us about yourself..."
+                numberOfLines={5}
+                placeholder="Share something about yourself, your experience, skills, or what makes you unique..."
                 placeholderTextColor="#9ca3af"
                 textAlignVertical="top"
-                className="text-base text-gray-900 min-h-[100px]"
+                style={{
+                  fontSize: 16,
+                  color: '#111827',
+                  lineHeight: 22,
+                  minHeight: 100,
+                }}
               />
             </View>
           </View>
 
-          <View className="bg-white mx-4 mb-6 rounded-2xl shadow-sm p-6">
-            <Text className="text-lg font-semibold text-gray-900 mb-4">Security</Text>
-            <View className="mb-2">
-              <Text className="text-sm font-medium text-gray-700 mb-2">Change Password</Text>
-              <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-                <Ionicons name="lock-closed-outline" size={20} color="#6b7280" />
+          {/* Security Card */}
+          <View style={{
+            backgroundColor: '#ffffff',
+            marginHorizontal: 16,
+            marginBottom: 24,
+            borderRadius: 20,
+            padding: 24,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            elevation: 3,
+          }}>
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 20,
+            }}>
+              <View style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: '#fef3c7',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 12,
+              }}>
+                <Ionicons name="shield-checkmark" size={16} color="#d97706" />
+              </View>
+              <Text style={{
+                fontSize: 20,
+                fontWeight: '700',
+                color: '#111827',
+                flex: 1,
+              }}>Security</Text>
+            </View>
+            
+            <View style={{ marginBottom: 8 }}>
+              <Text style={{
+                fontSize: 14,
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: 8,
+              }}>Change Password</Text>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#ffffff',
+                borderRadius: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 4,
+                borderWidth: 2,
+                borderColor: '#e5e7eb',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.05,
+                shadowRadius: 2,
+                elevation: 1,
+              }}>
+                <Ionicons name="lock-closed" size={20} color="#2563eb" />
                 <TextInput
                   value={form.password}
                   onChangeText={(t) => handleChange("password", t)}
                   secureTextEntry
                   placeholder="Enter new password (optional)"
                   placeholderTextColor="#9ca3af"
-                  className="flex-1 ml-3 text-base text-gray-900"
-                  style={{ textAlignVertical: 'center' }}
+                  style={{
+                    flex: 1,
+                    marginLeft: 12,
+                    fontSize: 16,
+                    color: '#111827',
+                    paddingVertical: 12,
+                  }}
                 />
               </View>
             </View>
-            <Text className="text-xs text-gray-500 mt-1">Leave blank to keep current password</Text>
+            <Text style={{
+              fontSize: 12,
+              color: '#6b7280',
+              marginTop: 4,
+              fontStyle: 'italic',
+            }}>Leave blank to keep your current password</Text>
           </View>
 
-          <View className="px-4 pb-8">
+          {/* Action Buttons */}
+          <View style={{ paddingHorizontal: 16, paddingBottom: 32 }}>
+            {/* Save Button */}
             <TouchableOpacity
               onPress={handleSave}
               disabled={loading}
-              className="bg-blue-600 rounded-xl py-4 items-center shadow-sm"
+              style={{
+                backgroundColor: loading ? '#9ca3af' : '#2563eb',
+                borderRadius: 16,
+                paddingVertical: 16,
+                alignItems: 'center',
+                shadowColor: '#2563eb',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: loading ? 0 : 0.3,
+                shadowRadius: 8,
+                elevation: loading ? 0 : 6,
+                marginBottom: 12,
+              }}
             >
               {loading ? (
-                <ActivityIndicator color="white" />
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <ActivityIndicator color="white" size="small" />
+                  <Text style={{
+                    color: '#ffffff',
+                    fontWeight: '600',
+                    fontSize: 16,
+                    marginLeft: 8,
+                  }}>Saving...</Text>
+                </View>
               ) : (
-                <Text className="text-white font-semibold text-base">Save Changes</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="checkmark-circle" size={20} color="white" />
+                  <Text style={{
+                    color: '#ffffff',
+                    fontWeight: '600',
+                    fontSize: 16,
+                    marginLeft: 8,
+                  }}>Save Changes</Text>
+                </View>
               )}
             </TouchableOpacity>
             
             {/* Logout Button */}
             <TouchableOpacity
               onPress={handleLogout}
-              className="mt-4 border border-red-500 rounded-xl py-4 items-center"
+              style={{
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                borderColor: '#dc2626',
+                borderRadius: 16,
+                paddingVertical: 14,
+                alignItems: 'center',
+              }}
             >
-              <Text className="text-red-500 font-semibold text-base">Logout</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="log-out" size={20} color="#dc2626" />
+                <Text style={{
+                  color: '#dc2626',
+                  fontWeight: '600',
+                  fontSize: 16,
+                  marginLeft: 8,
+                }}>Logout</Text>
+              </View>
             </TouchableOpacity>
           </View>
         </ScrollView>
