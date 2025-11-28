@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
-import { FaPlus, FaTrash, FaPen, FaChevronLeft, FaChevronRight, FaCheck, FaCheckCircle, FaExclamationCircle, FaTimes } from "react-icons/fa"
+import { FaPlus, FaTrash, FaPen, FaChevronLeft, FaChevronRight, FaCheck } from "react-icons/fa"
 import {
   Card,
   CardBody,
@@ -110,14 +110,8 @@ const PortfolioCreation = () => {
     certificateFile: null,
   })
   const [error, setError] = useState("")
+  const [fieldErrors, setFieldErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
-  const [notification, setNotification] = useState({
-    show: false,
-    type: "success", // "success" or "error"
-    title: "",
-    message: "",
-    link: "",
-  })
   const [token, setToken] = useState(null)
   const [graduateId, setGraduateId] = useState(null)
   const [currentStep, setCurrentStep] = useState(0)
@@ -141,21 +135,6 @@ const PortfolioCreation = () => {
   const INITIAL_ITEMS_LIMIT = 6
 
   const validSkillTypes = ["TECHNICAL", "LANGUAGE", "DIGITAL", "SOFT", "INDUSTRY_SPECIFIC"]
-  const PROFICIENCY_LEVELS = ["Beginner", "Intermediate", "Advanced", "Expert"]
-
-  // Helper function to show notifications
-  const showNotification = (type, title, message, link = "", duration = 4000) => {
-    setNotification({
-      show: true,
-      type,
-      title,
-      message,
-      link,
-    })
-    setTimeout(() => {
-      setNotification(prev => ({ ...prev, show: false }))
-    }, duration)
-  }
 
   // Course type to design template mapping
   const courseTypeTemplates = {
@@ -164,6 +143,94 @@ const PortfolioCreation = () => {
     "Decorative Crafts": "bread-pastry",
     "Maritime": "housekeeping",
     "Tourism": "bartending-barista"
+  }
+
+  const updateFieldError = (fieldName, errorMessage) => {
+    setFieldErrors((prev) => {
+      const updated = { ...prev }
+      if (errorMessage) {
+        updated[fieldName] = errorMessage
+      } else {
+        delete updated[fieldName]
+      }
+      return updated
+    })
+  }
+
+  const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+
+  const isValidWebsiteUrl = (value) => {
+    if (!value) return true
+    const trimmedValue = value.trim()
+    if (!/^https:\/\/(www\.)?/i.test(trimmedValue)) {
+      return false
+    }
+    try {
+      const url = new URL(trimmedValue)
+      return url.protocol === "https:"
+    } catch (err) {
+      return false
+    }
+  }
+
+  const validateField = (fieldName, value) => {
+    const trimmedValue = typeof value === "string" ? value.trim() : value
+    let message = ""
+
+    switch (fieldName) {
+      case "tesdaRegistrationNumber":
+        if (trimmedValue && !/^\d+$/.test(trimmedValue)) {
+          message = "TESDA registration number must contain digits only."
+        }
+        break
+      case "email":
+        if (trimmedValue) {
+          if (!isValidEmail(trimmedValue) || !trimmedValue.toLowerCase().endsWith("@gmail.com")) {
+            message = "Please provide a valid Gmail address."
+          }
+        }
+        break
+      case "phone":
+        if (trimmedValue) {
+          if (!/^\d+$/.test(trimmedValue)) {
+            message = "Phone number must contain digits only."
+          } else if (trimmedValue.length !== 11) {
+            message = "Phone number must be exactly 11 digits."
+          }
+        }
+        break
+      case "website":
+        if (trimmedValue && !isValidWebsiteUrl(trimmedValue)) {
+          message = "Website must be a valid https URL (e.g., https://www.example.com)."
+        }
+        break
+      case "certificateNumber":
+        if (trimmedValue && !/^\d+$/.test(trimmedValue)) {
+          message = "Certificate number must contain digits only."
+        }
+        break
+      case "referencePhone":
+        if (!trimmedValue) {
+          message = "Reference phone number is required."
+        } else if (!/^\d+$/.test(trimmedValue)) {
+          message = "Reference phone number must contain digits only."
+        } else if (trimmedValue.length !== 11) {
+          message = "Reference phone number must be exactly 11 digits."
+        }
+        break
+      case "referenceEmail":
+        if (!trimmedValue) {
+          message = "Reference email is required."
+        } else if (!isValidEmail(trimmedValue)) {
+          message = "Please provide a valid email address."
+        }
+        break
+      default:
+        break
+    }
+
+    updateFieldError(fieldName, message)
+    return !message
   }
 
   const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV", "NC V", "NC VI"]
@@ -376,6 +443,10 @@ const PortfolioCreation = () => {
     "Tourism"
   ]
 
+  const SKILL_PROFICIENCY_LEVELS = ["Beginner", "Intermediate", "Advanced", "Expert"]
+  const selectMenuProps = { className: "z-[9999]" }
+  const selectContainerProps = { className: "relative z-[60]" }
+
   const steps = [
     { id: 0, name: "Profile Photo", required: false },
     { id: 1, name: "Basic Information", required: true },
@@ -410,42 +481,37 @@ const PortfolioCreation = () => {
     return true
   }
 
-  // Check if a step is completed - all fields in section must be filled
+  // Check if a step is completed
   const isStepCompleted = (stepIndex) => {
     if (steps[stepIndex].required) {
       return completedSteps.has(stepIndex) || validateStep(stepIndex, false)
     }
     
-    // For optional steps, check if ALL fields in the section are filled
+    // For optional steps, check if they have any data
     switch (stepIndex) {
       case 0: // Profile Photo
         return previewAvatar !== "/placeholder.svg" || selectedAvatarFile !== null
-      case 2: // TESDA Information - check all fields are filled
-        return formData.ncLevel && formData.ncLevel.trim() !== "" &&
-               formData.trainingCenter && formData.trainingCenter.trim() !== "" &&
-               formData.scholarshipType && formData.scholarshipType.trim() !== "" &&
-               formData.trainingDuration && formData.trainingDuration.trim() !== "" &&
-               formData.tesdaRegistrationNumber && formData.tesdaRegistrationNumber.trim() !== ""
-      case 3: // Contact Information - check all fields are filled
-        return formData.email && formData.email.trim() !== "" &&
-               formData.phone && formData.phone.trim() !== "" &&
-               formData.website && formData.website.trim() !== ""
-      case 4: // Projects - at least one project added and not currently adding
-        return projects.length > 0 && !isAddingProject
-      case 5: // Certificates - at least one certificate added and not currently adding
-        return certificates.length > 0 && !isAddingCertificate
-      case 6: // Skills - at least one skill added and not currently adding
-        return skills.length > 0 && !isAddingSkill
-      case 7: // Experiences - at least one experience added and not currently adding
-        return experiences.length > 0 && !isAddingExperience
-      case 8: // Awards - at least one award added and not currently adding
-        return awardsRecognitions.length > 0 && !isAddingAward
-      case 9: // Education - at least one education added and not currently adding
-        return continuingEducations.length > 0 && !isAddingEducation
-      case 10: // Memberships - at least one membership added and not currently adding
-        return professionalMemberships.length > 0 && !isAddingMembership
-      case 11: // References - at least one reference added and not currently adding
-        return references.length > 0 && !isAddingReference
+      case 2: // TESDA Information
+        return formData.ncLevel || formData.trainingCenter || formData.scholarshipType || 
+               formData.trainingDuration || formData.tesdaRegistrationNumber
+      case 3: // Contact Information
+        return formData.email || formData.phone || formData.website
+      case 4: // Projects
+        return projects.length > 0
+      case 5: // Certificates
+        return certificates.length > 0
+      case 6: // Skills
+        return skills.length > 0
+      case 7: // Experiences
+        return experiences.length > 0
+      case 8: // Awards
+        return awardsRecognitions.length > 0
+      case 9: // Education
+        return continuingEducations.length > 0
+      case 10: // Memberships
+        return professionalMemberships.length > 0
+      case 11: // References
+        return references.length > 0
       default:
         return false
     }
@@ -456,16 +522,8 @@ const PortfolioCreation = () => {
       try {
         const username = localStorage.getItem("username")
         if (!username) {
-          showNotification(
-            "error",
-            "Authentication Required",
-            "User not logged in. Please sign in.",
-            "",
-            5000
-          )
-          setTimeout(() => {
-            navigate("/signin")
-          }, 3000)
+          setError("User not logged in. Please sign in.")
+          navigate("/signin")
           return
         }
 
@@ -474,16 +532,8 @@ const PortfolioCreation = () => {
         })
         const fetchedToken = tokenResponse.data.token
         if (!fetchedToken) {
-          showNotification(
-            "error",
-            "Authentication Error",
-            "Authentication token missing. Please sign in again.",
-            "",
-            5000
-          )
-          setTimeout(() => {
-            navigate("/signin")
-          }, 3000)
+          setError("Authentication token missing. Please sign in again.")
+          navigate("/signin")
           return
         }
         setToken(fetchedToken)
@@ -498,18 +548,8 @@ const PortfolioCreation = () => {
           setFormData((prev) => ({ ...prev, avatar: graduateResponse.data.profilePicture }))
         }
       } catch (err) {
-        showNotification(
-          "error",
-          "Load Error",
-          "Failed to load profile data. Please try again.",
-          "",
-          5000
-        )
-        if (err.response?.status === 401) {
-          setTimeout(() => {
-            navigate("/signin")
-          }, 3000)
-        }
+        setError("Failed to load profile data. Please try again.")
+        if (err.response?.status === 401) navigate("/signin")
       }
     }
     fetchTokenAndProfileData()
@@ -518,6 +558,9 @@ const PortfolioCreation = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+    if (["tesdaRegistrationNumber", "email", "phone", "website"].includes(name)) {
+      validateField(name, value)
+    }
     setError("")
   }
 
@@ -531,15 +574,10 @@ const PortfolioCreation = () => {
     setError("")
   }
 
-  const handleNcLevelChange = (ncLevel) => {
-    setFormData((prev) => ({ ...prev, ncLevel: ncLevel || "" }))
-    setError("")
-  }
-
   const handleAvatarFileChange = (e) => {
     const file = e.target.files[0]
     if (file && !file.type.startsWith("image/")) {
-      showNotification("error", "Invalid File", "Please select an image file for the avatar.", "", 4000)
+      setError("Please select an image file for the avatar.")
       return
     }
     setSelectedAvatarFile(file)
@@ -550,7 +588,7 @@ const PortfolioCreation = () => {
   const handleProjectFileChange = (e) => {
     const file = e.target.files[0]
     if (file && !file.type.startsWith("image/")) {
-      showNotification("error", "Invalid File", "Please select an image file for the project.", "", 4000)
+      setError("Please select an image file for the project.")
       return
     }
     setNewProject((prev) => ({ ...prev, projectImageFile: file }))
@@ -560,7 +598,7 @@ const PortfolioCreation = () => {
   const handleCertificateFileChange = (e) => {
     const file = e.target.files[0]
     if (file && !file.type.startsWith("image/") && file.type !== "application/pdf") {
-      showNotification("error", "Invalid File", "Please select an image or PDF file for the certificate.", "", 4000)
+      setError("Please select an image or PDF file for the certificate.")
       return
     }
     setNewCertificate((prev) => ({ ...prev, certificateFile: file }))
@@ -600,6 +638,12 @@ const PortfolioCreation = () => {
   const handleReferenceInputChange = (e) => {
     const { name, value } = e.target
     setNewReference((prev) => ({ ...prev, [name]: value }))
+    if (name === "phone") {
+      validateField("referencePhone", value)
+    }
+    if (name === "email") {
+      validateField("referenceEmail", value)
+    }
     setError("")
   }
 
@@ -612,16 +656,19 @@ const PortfolioCreation = () => {
   const handleCertificateInputChange = (e) => {
     const { name, value } = e.target
     setNewCertificate((prev) => ({ ...prev, [name]: value }))
+    if (name === "certificateNumber") {
+      validateField("certificateNumber", value)
+    }
     setError("")
   }
 
   const handleAddSkill = () => {
     if (!newSkill.name || newSkill.name.trim() === "") {
-      showNotification("error", "Validation Error", "Please fill in the skill name.", "", 4000)
+      setError("Please fill in the skill name.")
       return
     }
     if (!validSkillTypes.includes(newSkill.type)) {
-      showNotification("error", "Validation Error", `Please select a valid skill type: ${validSkillTypes.join(", ")}`, "", 5000)
+      setError(`Please select a valid skill type: ${validSkillTypes.join(", ")}`)
       return
     }
     setSkills((prev) => [...prev, { ...newSkill }])
@@ -632,7 +679,7 @@ const PortfolioCreation = () => {
 
   const handleAddExperience = () => {
     if (!newExperience.jobTitle || !newExperience.company) {
-      showNotification("error", "Validation Error", "Please fill in the job title and company.", "", 4000)
+      setError("Please fill in the job title and company.")
       return
     }
     setExperiences((prev) => [...prev, { ...newExperience }])
@@ -643,7 +690,7 @@ const PortfolioCreation = () => {
 
   const handleAddAward = () => {
     if (!newAward.title) {
-      showNotification("error", "Validation Error", "Please fill in the award title.", "", 4000)
+      setError("Please fill in the award title.")
       return
     }
     setAwardsRecognitions((prev) => [...prev, { ...newAward }])
@@ -654,7 +701,7 @@ const PortfolioCreation = () => {
 
   const handleAddEducation = () => {
     if (!newEducation.courseName) {
-      showNotification("error", "Validation Error", "Please fill in the course name.", "", 4000)
+      setError("Please fill in the course name.")
       return
     }
     setContinuingEducations((prev) => [...prev, { ...newEducation }])
@@ -665,7 +712,7 @@ const PortfolioCreation = () => {
 
   const handleAddMembership = () => {
     if (!newMembership.organization) {
-      showNotification("error", "Validation Error", "Please fill in the organization name.", "", 4000)
+      setError("Please fill in the organization name.")
       return
     }
     setProfessionalMemberships((prev) => [...prev, { ...newMembership }])
@@ -676,11 +723,11 @@ const PortfolioCreation = () => {
 
   const handleAddProject = () => {
     if (!newProject.title) {
-      showNotification("error", "Validation Error", "Please fill in the project title.", "", 4000)
+      setError("Please fill in the project title.")
       return
     }
     if (!newProject.projectImageFile) {
-      showNotification("error", "Validation Error", "Please select a project image file.", "", 4000)
+      setError("Please select a project image file.")
       return
     }
     setProjects((prev) => [
@@ -708,7 +755,13 @@ const PortfolioCreation = () => {
 
   const handleAddReference = () => {
     if (!newReference.name) {
-      showNotification("error", "Validation Error", "Please fill in the reference name.", "", 4000)
+      setError("Please fill in the reference name.")
+      return
+    }
+    const phoneValid = validateField("referencePhone", newReference.phone)
+    const emailValid = validateField("referenceEmail", newReference.email)
+    if (!phoneValid || !emailValid) {
+      setError("Please provide valid reference contact details.")
       return
     }
     const referenceToAdd = {
@@ -719,12 +772,17 @@ const PortfolioCreation = () => {
     setReferences((prev) => [...prev, referenceToAdd])
     setNewReference({ name: "", relationship: "", phone: "", company: "", email: "" })
     setIsAddingReference(false)
+    updateFieldError("referencePhone", "")
+    updateFieldError("referenceEmail", "")
     setError("")
   }
 
   const handleAddCertificate = () => {
     if (!newCertificate.courseName || !newCertificate.certificateNumber || !newCertificate.issueDate) {
-      showNotification("error", "Validation Error", "Please fill in all required certificate fields.", "", 4000)
+      setError("Please fill in all required certificate fields.")
+      return
+    }
+    if (!validateField("certificateNumber", newCertificate.certificateNumber)) {
       return
     }
     setCertificates((prev) => [
@@ -745,6 +803,7 @@ const PortfolioCreation = () => {
       certificateFile: null,
     })
     setIsAddingCertificate(false)
+    updateFieldError("certificateNumber", "")
     setError("")
   }
 
@@ -761,7 +820,10 @@ const PortfolioCreation = () => {
 
   const handleUpdateCertificate = () => {
     if (!newCertificate.courseName || !newCertificate.certificateNumber || !newCertificate.issueDate) {
-      showNotification("error", "Validation Error", "Please fill in all required certificate fields.", "", 4000)
+      setError("Please fill in all required certificate fields.")
+      return
+    }
+    if (!validateField("certificateNumber", newCertificate.certificateNumber)) {
       return
     }
     setCertificates((prev) =>
@@ -788,6 +850,7 @@ const PortfolioCreation = () => {
     })
     setEditingCertificateId(null)
     setIsAddingCertificate(false)
+    updateFieldError("certificateNumber", "")
     setError("")
   }
 
@@ -833,21 +896,35 @@ const PortfolioCreation = () => {
         return true
       case 1: // Basic Information
         if (!formData.fullName || formData.fullName.trim() === "") {
-          if (showError) showNotification("error", "Validation Error", "Please fill in your full name. This field is required.", "", 5000)
+          if (showError) setError("Please fill in your full name. This field is required.")
           return false
         }
         if (!formData.professionalSummary || formData.professionalSummary.trim() === "") {
-          if (showError) showNotification("error", "Validation Error", "Please fill in your professional summary. This field is required.", "", 5000)
+          if (showError) setError("Please fill in your professional summary. This field is required.")
           return false
         }
         if (formData.professionalSummary.length > 300) {
-          if (showError) showNotification("error", "Validation Error", "Professional summary cannot exceed 300 characters.", "", 5000)
+          if (showError) setError("Professional summary cannot exceed 300 characters.")
+          return false
+        }
+        return true
+      case 3: // Contact Information
+        if (formData.email && fieldErrors.email) {
+          if (showError) setError(fieldErrors.email)
+          return false
+        }
+        if (formData.phone && fieldErrors.phone) {
+          if (showError) setError(fieldErrors.phone)
+          return false
+        }
+        if (formData.website && fieldErrors.website) {
+          if (showError) setError(fieldErrors.website)
           return false
         }
         return true
       case 12: // Additional Information
         if (!formData.primaryCourseType || (typeof formData.primaryCourseType === "string" && formData.primaryCourseType.trim() === "")) {
-          if (showError) showNotification("error", "Validation Error", "Please fill in your primary course type. This field is required.", "", 5000)
+          if (showError) setError("Please fill in your primary course type. This field is required.")
           return false
         }
         return true
@@ -904,13 +981,7 @@ const PortfolioCreation = () => {
         // Find the first incomplete required step
         for (let i = 0; i < stepIndex; i++) {
           if (steps[i].required && !completedSteps.has(i)) {
-            showNotification(
-              "error",
-              "Step Required",
-              `Please complete the "${steps[i].name}" section before proceeding.`,
-              "",
-              5000
-            )
+            setError(`Please complete the "${steps[i].name}" section before proceeding.`)
             setCurrentStep(i)
             window.scrollTo({ top: 0, behavior: "smooth" })
             return
@@ -978,6 +1049,11 @@ const PortfolioCreation = () => {
       return
     }
     
+    if (Object.keys(fieldErrors).length > 0) {
+      setError("Please resolve all validation errors before submitting your portfolio.")
+      return
+    }
+
     setIsLoading(true)
     setError("")
 
@@ -991,23 +1067,15 @@ const PortfolioCreation = () => {
       return {
         name: skill.name,
         type: skill.type,
-        proficiencyLevel: skill.proficiencyLevel === "None" || !skill.proficiencyLevel ? null : skill.proficiencyLevel,
+        proficiencyLevel: skill.proficiencyLevel || null,
       }
     })
 
     try {
       const username = localStorage.getItem("username")
       if (!username || !token || !graduateId) {
-        showNotification(
-          "error",
-          "Authentication Error",
-          "User not logged in, token missing, or graduate ID not found. Please sign in.",
-          "",
-          5000
-        )
-        setTimeout(() => {
-          navigate("/signin")
-        }, 3000)
+        setError("User not logged in, token missing, or graduate ID not found. Please sign in.")
+        navigate("/signin")
         setIsLoading(false)
         return
       }
@@ -1049,13 +1117,7 @@ const PortfolioCreation = () => {
 
             // Validate professional summary length
       if (formData.professionalSummary.length > 300) {
-        showNotification(
-          "error",
-          "Validation Error",
-          "Professional summary cannot exceed 300 characters.",
-          "",
-          5000
-        )
+        setError("Professional summary cannot exceed 300 characters.")
         setIsLoading(false)
         return
       }
@@ -1155,20 +1217,7 @@ const PortfolioCreation = () => {
       }
 
       console.log("Portfolio created with ID:", portfolioId)
-      
-      // Show success notification
-      showNotification(
-        "success",
-        "Portfolio Created!",
-        "Your portfolio has been created successfully!",
-        "",
-        3000
-      )
-      
-      // Navigate after a short delay to show the notification
-      setTimeout(() => {
-        navigate("/graduate-homepage")
-      }, 2000)
+      navigate("/graduate-homepage")
     } catch (err) {
       let errorMessage = "Failed to create portfolio"
       if (err.response) {
@@ -1188,15 +1237,7 @@ const PortfolioCreation = () => {
       } else {
         errorMessage = `Network error: ${err.message}`
       }
-      
-      // Show error notification
-      showNotification(
-        "error",
-        "Portfolio Creation Failed",
-        errorMessage,
-        "",
-        5000
-      )
+      setError(`Error ${err.response?.status || "Unknown"}: ${errorMessage}`)
     } finally {
       setIsLoading(false)
     }
@@ -1204,96 +1245,6 @@ const PortfolioCreation = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 relative overflow-hidden">
-      {/* Enhanced Animated Notification */}
-      {notification.show && (
-        <div
-          className={`fixed top-6 right-6 z-[9999] min-w-[420px] max-w-[550px] rounded-xl shadow-2xl animate-slide-in-right backdrop-blur-sm ${
-            notification.type === "success"
-              ? "bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 border-2 border-green-400 shadow-green-200/50"
-              : "bg-gradient-to-br from-red-50 via-rose-50 to-red-100 border-2 border-red-400 shadow-red-200/50"
-          }`}
-          style={{
-            animation: "slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards",
-          }}
-        >
-          <div className="p-5">
-            <div className="flex items-start gap-4">
-              <div
-                className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center shadow-lg ${
-                  notification.type === "success"
-                    ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white"
-                    : "bg-gradient-to-br from-red-500 to-rose-600 text-white"
-                }`}
-              >
-                {notification.type === "success" ? (
-                  <FaCheckCircle className="w-7 h-7" />
-                ) : (
-                  <FaExclamationCircle className="w-7 h-7" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3
-                  className={`font-bold text-xl mb-2 ${
-                    notification.type === "success" ? "text-green-900" : "text-red-900"
-                  }`}
-                >
-                  {notification.title}
-                </h3>
-                <p
-                  className={`text-base leading-relaxed ${
-                    notification.type === "success" ? "text-green-800" : "text-red-800"
-                  }`}
-                >
-                  {notification.message}
-                </p>
-                {notification.link && (
-                  <div className="mt-3 p-3 bg-white/80 rounded-lg border border-gray-300 shadow-sm">
-                    <p className="text-xs font-semibold text-gray-700 mb-1">New Share Link:</p>
-                    <p className="text-xs font-mono text-gray-900 break-all bg-gray-50 p-2 rounded">{notification.link}</p>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await navigator.clipboard.writeText(notification.link)
-                          setNotification(prev => ({
-                            ...prev,
-                            message: "Link copied to clipboard!",
-                          }))
-                        } catch (err) {
-                          console.error("Failed to copy:", err)
-                        }
-                      }}
-                      className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800 underline transition-colors"
-                    >
-                      Copy Link
-                    </button>
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => setNotification(prev => ({ ...prev, show: false }))}
-                className="flex-shrink-0 text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-full hover:bg-white/50"
-                aria-label="Close notification"
-              >
-                <FaTimes className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          {/* Enhanced Progress bar */}
-          <div className="h-1.5 bg-gray-300/50 rounded-b-xl overflow-hidden">
-            <div
-              className={`h-full ${
-                notification.type === "success" 
-                  ? "bg-gradient-to-r from-green-500 to-emerald-600" 
-                  : "bg-gradient-to-r from-red-500 to-rose-600"
-              }`}
-              style={{
-                animation: "shrinkWidth 4s linear forwards",
-              }}
-            ></div>
-          </div>
-        </div>
-      )}
-
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl animate-pulse"></div>
@@ -1379,20 +1330,29 @@ const PortfolioCreation = () => {
           )}
         </div>
 
+        {error && (
+          <Card className="mb-6 bg-red-50 border border-red-200">
+            <CardBody>
+              <Typography color="red" className="text-center">
+                {error}
+              </Typography>
+            </CardBody>
+          </Card>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Step 0: Profile Photo */}
           {currentStep === 0 && (
             <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
               isStepCompleted(0)
-                ? "bg-white/70 border-green-400"
+                ? "bg-green-50/70 border-green-400"
                 : "bg-white/70 border-0"
             }`}>
             <CardBody className="p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
                   isStepCompleted(0)
-                    ? "bg-gradient-to-b from-blue-500 to-purple-500"
+                    ? "bg-gradient-to-b from-green-500 to-green-600"
                     : "bg-gradient-to-b from-blue-500 to-purple-500"
                 }`}></div>
                 <Typography variant="h4" className="text-gray-800 font-semibold">
@@ -1437,14 +1397,14 @@ const PortfolioCreation = () => {
           {currentStep === 1 && (
             <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
               isStepCompleted(1)
-                ? "bg-white/70 border-green-400"
+                ? "bg-green-50/70 border-green-400"
                 : "bg-white/70 border-0"
             }`}>
             <CardBody className="p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
                   isStepCompleted(1)
-                    ? "bg-gradient-to-b from-blue-500 to-purple-500"
+                    ? "bg-gradient-to-b from-green-500 to-green-600"
                     : "bg-gradient-to-b from-blue-500 to-purple-500"
                 }`}></div>
                 <Typography variant="h4" className="text-gray-800 font-semibold">
@@ -1520,14 +1480,14 @@ const PortfolioCreation = () => {
           {currentStep === 2 && (
             <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
               isStepCompleted(2)
-                ? "bg-white/70 border-green-400"
+                ? "bg-green-50/70 border-green-400"
                 : "bg-white/70 border-0"
             }`}>
             <CardBody className="p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
                   isStepCompleted(2)
-                    ? "bg-gradient-to-b from-blue-500 to-purple-500"
+                    ? "bg-gradient-to-b from-green-500 to-green-600"
                     : "bg-gradient-to-b from-blue-500 to-purple-500"
                 }`}></div>
                 <Typography variant="h4" className="text-gray-800 font-semibold">
@@ -1540,25 +1500,23 @@ const PortfolioCreation = () => {
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                     NC Level
                   </Typography>
-                  <select
+                  <Select
+                    size="lg"
+                    label="Select NC Level"
                     value={formData.ncLevel || ""}
-                    onChange={(e) => handleNcLevelChange(e.target.value)}
+                    onChange={(val) => setFormData((prev) => ({ ...prev, ncLevel: val }))}
+                    menuProps={selectMenuProps}
+                    containerProps={selectContainerProps}
                     disabled={isLoading}
-                    className="w-full h-12 px-4 py-3 text-base border rounded-lg appearance-none cursor-pointer outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed pr-10 !border-gray-300 focus:!border-blue-500 bg-white text-gray-900"
-                    style={{ 
-                      backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 0.75rem center',
-                      backgroundSize: '1.25rem 1.25rem'
-                    }}
+                    className="!border-gray-300 focus:!border-blue-500"
                   >
-                    <option value="" disabled>Select NC Level</option>
+                    <Option value="">None</Option>
                     {NC_LEVEL_OPTIONS.map((level) => (
-                      <option key={level} value={level}>
+                      <Option key={level} value={level}>
                         {level}
-                      </option>
+                      </Option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
 
                 <div>
@@ -1617,9 +1575,16 @@ const PortfolioCreation = () => {
                   onChange={handleInputChange}
                   name="tesdaRegistrationNumber"
                   placeholder="Enter TESDA registration number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   disabled={isLoading}
                   className="!border-gray-300 focus:!border-blue-500"
                 />
+                {fieldErrors.tesdaRegistrationNumber && (
+                  <Typography variant="small" color="red" className="mt-1">
+                    {fieldErrors.tesdaRegistrationNumber}
+                  </Typography>
+                )}
               </div>
             </CardBody>
           </Card>
@@ -1629,14 +1594,14 @@ const PortfolioCreation = () => {
           {currentStep === 3 && (
             <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
               isStepCompleted(3)
-                ? "bg-white/70 border-green-400"
+                ? "bg-green-50/70 border-green-400"
                 : "bg-white/70 border-0"
             }`}>
             <CardBody className="p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
                   isStepCompleted(3)
-                    ? "bg-gradient-to-b from-blue-500 to-purple-500"
+                    ? "bg-gradient-to-b from-green-500 to-green-600"
                     : "bg-gradient-to-b from-blue-500 to-purple-500"
                 }`}></div>
                 <Typography variant="h4" className="text-gray-800 font-semibold">
@@ -1659,6 +1624,11 @@ const PortfolioCreation = () => {
                     disabled={isLoading}
                     className="!border-gray-300 focus:!border-blue-500"
                   />
+                {fieldErrors.email && (
+                  <Typography variant="small" color="red" className="mt-1">
+                    {fieldErrors.email}
+                  </Typography>
+                )}
                 </div>
 
                 <div>
@@ -1672,9 +1642,17 @@ const PortfolioCreation = () => {
                     onChange={handleInputChange}
                     name="phone"
                     placeholder="Enter your phone number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={11}
                     disabled={isLoading}
                     className="!border-gray-300 focus:!border-blue-500"
                   />
+                {fieldErrors.phone && (
+                  <Typography variant="small" color="red" className="mt-1">
+                    {fieldErrors.phone}
+                  </Typography>
+                )}
                 </div>
               </div>
 
@@ -1688,10 +1666,15 @@ const PortfolioCreation = () => {
                   value={formData.website}
                   onChange={handleInputChange}
                   name="website"
-                  placeholder="Enter your website URL"
+                  placeholder="https://www.example.com"
                   disabled={isLoading}
                   className="!border-gray-300 focus:!border-blue-500"
                 />
+                {fieldErrors.website && (
+                  <Typography variant="small" color="red" className="mt-1">
+                    {fieldErrors.website}
+                  </Typography>
+                )}
               </div>
             </CardBody>
           </Card>
@@ -1701,7 +1684,7 @@ const PortfolioCreation = () => {
           {currentStep === 4 && (
             <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
               isStepCompleted(4)
-                ? "bg-white/70 border-green-400"
+                ? "bg-green-50/70 border-green-400"
                 : "bg-white/70 border-0"
             }`}>
             <CardBody className="p-8">
@@ -1709,7 +1692,7 @@ const PortfolioCreation = () => {
                 <div className="flex items-center gap-3">
                   <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
                     isStepCompleted(4)
-                      ? "bg-gradient-to-b from-blue-500 to-purple-500"
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
                       : "bg-gradient-to-b from-blue-500 to-purple-500"
                   }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
@@ -1840,7 +1823,7 @@ const PortfolioCreation = () => {
                   <div className="flex justify-center gap-4">
                     <Button
                       variant="filled"
-                      color="blue"
+                      color="green"
                       onClick={handleAddProject}
                       disabled={isLoading}
                       className="flex items-center gap-2"
@@ -1916,7 +1899,7 @@ const PortfolioCreation = () => {
           {currentStep === 5 && (
             <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
               isStepCompleted(5)
-                ? "bg-white/70 border-green-400"
+                ? "bg-green-50/70 border-green-400"
                 : "bg-white/70 border-0"
             }`}>
             <CardBody className="p-8">
@@ -1924,7 +1907,7 @@ const PortfolioCreation = () => {
                 <div className="flex items-center gap-3">
                   <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
                     isStepCompleted(5)
-                      ? "bg-gradient-to-b from-blue-500 to-purple-500"
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
                       : "bg-gradient-to-b from-blue-500 to-purple-500"
                   }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
@@ -1979,10 +1962,17 @@ const PortfolioCreation = () => {
                         onChange={handleCertificateInputChange}
                         name="certificateNumber"
                         placeholder="Enter certificate number"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
+                      {fieldErrors.certificateNumber && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          {fieldErrors.certificateNumber}
+                        </Typography>
+                      )}
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
@@ -2044,7 +2034,7 @@ const PortfolioCreation = () => {
                   <div className="flex justify-center gap-4">
                     <Button
                       variant="filled"
-                      color="blue"
+                      color="green"
                       onClick={editingCertificateId ? handleUpdateCertificate : handleAddCertificate}
                       disabled={isLoading}
                       className="flex items-center gap-2"
@@ -2063,6 +2053,7 @@ const PortfolioCreation = () => {
                           issueDate: "",
                           certificateFile: null,
                         })
+                        updateFieldError("certificateNumber", "")
                       }}
                       disabled={isLoading}
                     >
@@ -2128,7 +2119,7 @@ const PortfolioCreation = () => {
           {currentStep === 6 && (
             <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
               isStepCompleted(6)
-                ? "bg-white/70 border-green-400"
+                ? "bg-green-50/70 border-green-400"
                 : "bg-white/70 border-0"
             }`}>
             <CardBody className="p-8">
@@ -2136,7 +2127,7 @@ const PortfolioCreation = () => {
                 <div className="flex items-center gap-3">
                   <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
                     isStepCompleted(6)
-                      ? "bg-gradient-to-b from-blue-500 to-purple-500"
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
                       : "bg-gradient-to-b from-blue-500 to-purple-500"
                   }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
@@ -2176,54 +2167,52 @@ const PortfolioCreation = () => {
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                         Skill Type *
                       </Typography>
-                      <select
+                      <Select
+                        size="lg"
+                        label="Select Skill Type"
                         value={newSkill.type}
-                        onChange={(e) => setNewSkill((prev) => ({ ...prev, type: e.target.value }))}
+                        onChange={(val) => setNewSkill((prev) => ({ ...prev, type: val }))}
+                        menuProps={selectMenuProps}
+                        containerProps={selectContainerProps}
                         disabled={isLoading}
-                        className="w-full h-12 px-4 py-3 text-base border rounded-lg appearance-none cursor-pointer outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed pr-10 !border-gray-300 focus:!border-blue-500 bg-white text-gray-900"
-                        style={{ 
-                          backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")',
-                          backgroundRepeat: 'no-repeat',
-                          backgroundPosition: 'right 0.75rem center',
-                          backgroundSize: '1.25rem 1.25rem'
-                        }}
+                        className="!border-gray-300 focus:!border-blue-500"
                       >
                         {validSkillTypes.map((type) => (
-                          <option key={type} value={type}>
+                          <Option key={type} value={type}>
                             {type}
-                          </option>
+                          </Option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Proficiency
+                        Proficiency Level
                       </Typography>
-                      <select
-                        value={newSkill.proficiencyLevel || ""}
-                        onChange={(e) => setNewSkill((prev) => ({ ...prev, proficiencyLevel: e.target.value }))}
+                      <Select
+                        size="lg"
+                        label="Select Proficiency Level"
+                        value={newSkill.proficiencyLevel}
+                        onChange={(val) =>
+                          setNewSkill((prev) => ({ ...prev, proficiencyLevel: val || "" }))
+                        }
+                        menuProps={selectMenuProps}
+                        containerProps={selectContainerProps}
                         disabled={isLoading}
-                        className="w-full h-12 px-4 py-3 text-base border rounded-lg appearance-none cursor-pointer outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed pr-10 !border-gray-300 focus:!border-blue-500 bg-white text-gray-900"
-                        style={{ 
-                          backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")',
-                          backgroundRepeat: 'no-repeat',
-                          backgroundPosition: 'right 0.75rem center',
-                          backgroundSize: '1.25rem 1.25rem'
-                        }}
+                        className="!border-gray-300 focus:!border-blue-500"
                       >
-                        <option value="">None</option>
-                        {PROFICIENCY_LEVELS.map((level) => (
-                          <option key={level} value={level}>
+                        <Option value="">Not specified</Option>
+                        {SKILL_PROFICIENCY_LEVELS.map((level) => (
+                          <Option key={level} value={level}>
                             {level}
-                          </option>
+                          </Option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                   </div>
                   <div className="flex justify-center gap-4">
                     <Button
                       variant="filled"
-                      color="blue"
+                      color="green"
                       onClick={handleAddSkill}
                       disabled={isLoading}
                       className="flex items-center gap-2"
@@ -2285,7 +2274,7 @@ const PortfolioCreation = () => {
           {currentStep === 7 && (
             <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
               isStepCompleted(7)
-                ? "bg-white/70 border-green-400"
+                ? "bg-green-50/70 border-green-400"
                 : "bg-white/70 border-0"
             }`}>
             <CardBody className="p-8">
@@ -2293,7 +2282,7 @@ const PortfolioCreation = () => {
                 <div className="flex items-center gap-3">
                   <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
                     isStepCompleted(7)
-                      ? "bg-gradient-to-b from-blue-500 to-purple-500"
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
                       : "bg-gradient-to-b from-blue-500 to-purple-500"
                   }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
@@ -2391,7 +2380,7 @@ const PortfolioCreation = () => {
                   <div className="flex justify-center gap-4">
                     <Button
                       variant="filled"
-                      color="blue"
+                      color="green"
                       onClick={handleAddExperience}
                       disabled={isLoading}
                       className="flex items-center gap-2"
@@ -2461,7 +2450,7 @@ const PortfolioCreation = () => {
           {currentStep === 8 && (
             <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
               isStepCompleted(8)
-                ? "bg-white/70 border-green-400"
+                ? "bg-green-50/70 border-green-400"
                 : "bg-white/70 border-0"
             }`}>
             <CardBody className="p-8">
@@ -2469,7 +2458,7 @@ const PortfolioCreation = () => {
                 <div className="flex items-center gap-3">
                   <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
                     isStepCompleted(8)
-                      ? "bg-gradient-to-b from-blue-500 to-purple-500"
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
                       : "bg-gradient-to-b from-blue-500 to-purple-500"
                   }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
@@ -2537,7 +2526,7 @@ const PortfolioCreation = () => {
                   <div className="flex justify-center gap-4">
                     <Button
                       variant="filled"
-                      color="blue"
+                      color="green"
                       onClick={handleAddAward}
                       disabled={isLoading}
                       className="flex items-center gap-2"
@@ -2601,7 +2590,7 @@ const PortfolioCreation = () => {
           {currentStep === 9 && (
             <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
               isStepCompleted(9)
-                ? "bg-white/70 border-green-400"
+                ? "bg-green-50/70 border-green-400"
                 : "bg-white/70 border-0"
             }`}>
             <CardBody className="p-8">
@@ -2609,7 +2598,7 @@ const PortfolioCreation = () => {
                 <div className="flex items-center gap-3">
                   <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
                     isStepCompleted(9)
-                      ? "bg-gradient-to-b from-blue-500 to-purple-500"
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
                       : "bg-gradient-to-b from-blue-500 to-purple-500"
                   }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
@@ -2677,7 +2666,7 @@ const PortfolioCreation = () => {
                   <div className="flex justify-center gap-4">
                     <Button
                       variant="filled"
-                      color="blue"
+                      color="green"
                       onClick={handleAddEducation}
                       disabled={isLoading}
                       className="flex items-center gap-2"
@@ -2741,7 +2730,7 @@ const PortfolioCreation = () => {
           {currentStep === 10 && (
             <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
               isStepCompleted(10)
-                ? "bg-white/70 border-green-400"
+                ? "bg-green-50/70 border-green-400"
                 : "bg-white/70 border-0"
             }`}>
             <CardBody className="p-8">
@@ -2749,7 +2738,7 @@ const PortfolioCreation = () => {
                 <div className="flex items-center gap-3">
                   <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
                     isStepCompleted(10)
-                      ? "bg-gradient-to-b from-blue-500 to-purple-500"
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
                       : "bg-gradient-to-b from-blue-500 to-purple-500"
                   }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
@@ -2817,7 +2806,7 @@ const PortfolioCreation = () => {
                   <div className="flex justify-center gap-4">
                     <Button
                       variant="filled"
-                      color="blue"
+                      color="green"
                       onClick={handleAddMembership}
                       disabled={isLoading}
                       className="flex items-center gap-2"
@@ -2881,7 +2870,7 @@ const PortfolioCreation = () => {
           {currentStep === 11 && (
             <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
               isStepCompleted(11)
-                ? "bg-white/70 border-green-400"
+                ? "bg-green-50/70 border-green-400"
                 : "bg-white/70 border-0"
             }`}>
             <CardBody className="p-8">
@@ -2889,7 +2878,7 @@ const PortfolioCreation = () => {
                 <div className="flex items-center gap-3">
                   <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
                     isStepCompleted(11)
-                      ? "bg-gradient-to-b from-blue-500 to-purple-500"
+                      ? "bg-gradient-to-b from-green-500 to-green-600"
                       : "bg-gradient-to-b from-blue-500 to-purple-500"
                   }`}></div>
                   <Typography variant="h4" className="text-gray-800 font-semibold">
@@ -2963,9 +2952,18 @@ const PortfolioCreation = () => {
                         onChange={handleReferenceInputChange}
                         name="phone"
                         placeholder="e.g., +1234567890"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={11}
+                        required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
+                      {fieldErrors.referencePhone && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          {fieldErrors.referencePhone}
+                        </Typography>
+                      )}
                     </div>
                     <div className="md:col-span-2">
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
@@ -2978,15 +2976,21 @@ const PortfolioCreation = () => {
                         onChange={handleReferenceInputChange}
                         name="email"
                         placeholder="e.g., john.doe@example.com"
+                        required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
+                      {fieldErrors.referenceEmail && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          {fieldErrors.referenceEmail}
+                        </Typography>
+                      )}
                     </div>
                   </div>
                   <div className="flex justify-center gap-4">
                     <Button
                       variant="filled"
-                      color="blue"
+                      color="green"
                       onClick={handleAddReference}
                       disabled={isLoading}
                       className="flex items-center gap-2"
@@ -2996,7 +3000,12 @@ const PortfolioCreation = () => {
                     <Button
                       variant="outlined"
                       color="gray"
-                      onClick={() => setIsAddingReference(false)}
+                      onClick={() => {
+                        setIsAddingReference(false)
+                        setNewReference({ name: "", relationship: "", phone: "", company: "", email: "" })
+                        updateFieldError("referencePhone", "")
+                        updateFieldError("referenceEmail", "")
+                      }}
                       disabled={isLoading}
                     >
                       Cancel
@@ -3060,14 +3069,14 @@ const PortfolioCreation = () => {
           {currentStep === 12 && (
             <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
               isStepCompleted(12)
-                ? "bg-white/70 border-green-400"
+                ? "bg-green-50/70 border-green-400"
                 : "bg-white/70 border-0"
             }`}>
             <CardBody className="p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
                   isStepCompleted(12)
-                    ? "bg-gradient-to-b from-blue-500 to-purple-500"
+                    ? "bg-gradient-to-b from-green-500 to-green-600"
                     : "bg-gradient-to-b from-blue-500 to-purple-500"
                 }`}></div>
                 <Typography variant="h4" className="text-gray-800 font-semibold">
@@ -3083,12 +3092,13 @@ const PortfolioCreation = () => {
                   <Select
                     size="lg"
                     label="Select Course Type"
-                    value={formData.primaryCourseType || ""}
+                    value={formData.primaryCourseType}
                     onChange={handleCourseTypeChange}
+                    menuProps={selectMenuProps}
+                    containerProps={selectContainerProps}
                     required
                     disabled={isLoading}
                     className="!border-gray-300 focus:!border-blue-500"
-                    menuProps={{ className: "z-50 bg-white" }}
                   >
                     {courseTypes.map((courseType) => (
                       <Option key={courseType} value={courseType}>
@@ -3105,11 +3115,12 @@ const PortfolioCreation = () => {
                   <Select
                     size="lg"
                     label="Select Visibility"
-                    value={formData.visibility || ""}
+                    value={formData.visibility}
                     onChange={(val) => setFormData((prev) => ({ ...prev, visibility: val }))}
+                    menuProps={selectMenuProps}
+                    containerProps={selectContainerProps}
                     disabled={isLoading}
                     className="!border-gray-300 focus:!border-blue-500"
-                    menuProps={{ className: "z-50 bg-white" }}
                   >
                     <Option value="PUBLIC">Public</Option>
                     <Option value="PRIVATE">Private</Option>
@@ -3124,14 +3135,14 @@ const PortfolioCreation = () => {
           {currentStep === 13 && (
             <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
               isStepCompleted(13)
-                ? "bg-white/70 border-green-400"
+                ? "bg-green-50/70 border-green-400"
                 : "bg-white/70 border-0"
             }`}>
             <CardBody className="p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
                   isStepCompleted(13)
-                    ? "bg-gradient-to-b from-blue-500 to-purple-500"
+                    ? "bg-gradient-to-b from-green-500 to-green-600"
                     : "bg-gradient-to-b from-blue-500 to-purple-500"
                 }`}></div>
                 <Typography variant="h4" className="text-gray-800 font-semibold">
@@ -4346,69 +4357,26 @@ const PortfolioCreation = () => {
                                             {formData.fullName || "Your Name"}
                                           </Typography>
                                         </div>
-                                        {formData.primaryCourseType === "Automotive and Land Transportation" ? (
+                                        {formData.professionalTitle && (
                                           <div className="relative mt-8 flex items-center gap-3">
-                                            {formData.professionalTitle ? (
-                                              <>
-                                                <Typography
-                                                  variant="h3"
-                                                  className="font-light text-white/90 text-2xl md:text-3xl tracking-wide break-words"
-                                                >
-                                                  {formData.professionalTitle}
-                                                </Typography>
-                                                <div className="w-0 h-0.5 bg-white/40 mt-4"></div>
-                                              </>
-                                            ) : (
-                                              <Typography
-                                                variant="h3"
-                                                className="font-light text-white/60 text-2xl md:text-3xl tracking-wide break-words italic"
-                                              >
-                                                You haven't filled up details in this section.
-                                              </Typography>
-                                            )}
+                                            <Typography
+                                              variant="h3"
+                                              className="font-light text-white/90 text-2xl md:text-3xl tracking-wide break-words"
+                                            >
+                                              {formData.professionalTitle}
+                                            </Typography>
+                                            <div className="w-0 h-0.5 bg-white/40 mt-4"></div>
                                           </div>
-                                        ) : (
-                                          formData.professionalTitle && (
-                                            <div className="relative mt-8 flex items-center gap-3">
-                                              <Typography
-                                                variant="h3"
-                                                className="font-light text-white/90 text-2xl md:text-3xl tracking-wide break-words"
-                                              >
-                                                {formData.professionalTitle}
-                                              </Typography>
-                                              <div className="w-0 h-0.5 bg-white/40 mt-4"></div>
-                                            </div>
-                                          )
                                         )}
-                                        {formData.primaryCourseType === "Automotive and Land Transportation" ? (
+                                        {formData.professionalSummary && (
                                           <div className="mt-10 max-w-3xl overflow-hidden">
-                                            {formData.professionalSummary ? (
-                                              <Typography
-                                                variant="lead"
-                                                className="text-white/80 leading-relaxed text-xl md:text-2xl font-light tracking-wide break-words overflow-wrap-anywhere"
-                                              >
-                                                {formData.professionalSummary}
-                                              </Typography>
-                                            ) : (
-                                              <Typography
-                                                variant="lead"
-                                                className="text-white/60 leading-relaxed text-xl md:text-2xl font-light tracking-wide break-words overflow-wrap-anywhere italic"
-                                              >
-                                                You haven't filled up details in this section.
-                                              </Typography>
-                                            )}
+                                            <Typography
+                                              variant="lead"
+                                              className="text-white/80 leading-relaxed text-xl md:text-2xl font-light tracking-wide break-words overflow-wrap-anywhere"
+                                            >
+                                              {formData.professionalSummary}
+                                            </Typography>
                                           </div>
-                                        ) : (
-                                          formData.professionalSummary && (
-                                            <div className="mt-10 max-w-3xl overflow-hidden">
-                                              <Typography
-                                                variant="lead"
-                                                className="text-white/80 leading-relaxed text-xl md:text-2xl font-light tracking-wide break-words overflow-wrap-anywhere"
-                                              >
-                                                {formData.professionalSummary}
-                                              </Typography>
-                                            </div>
-                                          )
                                         )}
                                       </div>
                                     </div>
@@ -4470,484 +4438,6 @@ const PortfolioCreation = () => {
                                           </Typography>
                                         )}
                                       </div>
-
-                                      {/* TESDA Information - Always show for Automotive and Land Transportation */}
-                                      {formData.primaryCourseType === "Automotive and Land Transportation" && (
-                                        <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding} mb-6`}>
-                                          <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>
-                                            TESDA Information
-                                          </Typography>
-                                          {(formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration || formData.tesdaRegistrationNumber) ? (
-                                            <div className="space-y-4">
-                                              {formData.ncLevel && (
-                                                <div>
-                                                  <Typography variant="small" color="gray" className="font-medium mb-1">
-                                                    NC Level
-                                                  </Typography>
-                                                  <Typography variant="small" className="text-gray-800">
-                                                    {formData.ncLevel}
-                                                  </Typography>
-                                                </div>
-                                              )}
-                                              {formData.trainingCenter && (
-                                                <div>
-                                                  <Typography variant="small" color="gray" className="font-medium mb-1">
-                                                    Training Center
-                                                  </Typography>
-                                                  <Typography variant="small" className="text-gray-800">
-                                                    {formData.trainingCenter}
-                                                  </Typography>
-                                                </div>
-                                              )}
-                                              {formData.scholarshipType && (
-                                                <div>
-                                                  <Typography variant="small" color="gray" className="font-medium mb-1">
-                                                    Scholarship Type
-                                                  </Typography>
-                                                  <Typography variant="small" className="text-gray-800">
-                                                    {formData.scholarshipType}
-                                                  </Typography>
-                                                </div>
-                                              )}
-                                              {formData.trainingDuration && (
-                                                <div>
-                                                  <Typography variant="small" color="gray" className="font-medium mb-1">
-                                                    Training Duration
-                                                  </Typography>
-                                                  <Typography variant="small" className="text-gray-800">
-                                                    {formData.trainingDuration}
-                                                  </Typography>
-                                                </div>
-                                              )}
-                                              {formData.tesdaRegistrationNumber && (
-                                                <div>
-                                                  <Typography variant="small" color="gray" className="font-medium mb-1">
-                                                    Registration Number
-                                                  </Typography>
-                                                  <Typography variant="small" className="text-gray-800">
-                                                    {formData.tesdaRegistrationNumber}
-                                                  </Typography>
-                                                </div>
-                                              )}
-                                            </div>
-                                          ) : (
-                                            <Typography variant="small" className="text-gray-500 italic">
-                                              You haven't filled up details in this section.
-                                            </Typography>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {/* Main Content Area - Always show all sections for Automotive and Land Transportation */}
-                                    <div className={`${
-                                      designTheme.contentGrid.includes("lg:grid-cols-4") ? "lg:col-span-3" : 
-                                      designTheme.contentGrid.includes("lg:grid-cols-3") ? "lg:col-span-2" : 
-                                      designTheme.contentGrid.includes("lg:grid-cols-2") ? "lg:col-span-1" : 
-                                      ""
-                                    }`}>
-                                      {formData.primaryCourseType === "Automotive and Land Transportation" ? (
-                                        <div className="space-y-8">
-                                          {/* Skills Section */}
-                                          <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                            <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>
-                                              Skills
-                                            </Typography>
-                                            {skills.length > 0 ? (
-                                              <div className="space-y-3">
-                                                {skills.map((skill, index) => (
-                                                  <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
-                                                    <Typography variant="small" className="font-bold text-gray-900 mb-1">
-                                                      {skill.name}
-                                                    </Typography>
-                                                    <div className="flex items-center space-x-2">
-                                                      <Chip size="sm" value={skill.type || "TECHNICAL"} color={designTheme.buttonColor} className="text-xs font-semibold" />
-                                                      {skill.proficiencyLevel && (
-                                                        <Typography variant="small" className="text-gray-600 text-xs">
-                                                          {skill.proficiencyLevel}
-                                                        </Typography>
-                                                      )}
-                                                    </div>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            ) : (
-                                              <Typography variant="small" className="text-gray-500 italic">
-                                                You haven't filled up details in this section.
-                                              </Typography>
-                                            )}
-                                          </div>
-
-                                          {/* Certificates Section */}
-                                          <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                            <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>
-                                              Certificates
-                                            </Typography>
-                                            {certificates.length > 0 ? (
-                                              <div className="space-y-4">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                  {(showAllCertificates ? certificates : certificates.slice(0, INITIAL_ITEMS_LIMIT)).map((certificate, index) => (
-                                                    <Card key={index} className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-300 shadow-md hover:shadow-lg transition-shadow duration-300">
-                                                      <CardBody className="flex flex-col items-start gap-3">
-                                                        <div className="flex items-center gap-3 w-full">
-                                                          {certificate.certificateFile && (
-                                                            <Avatar
-                                                              src={URL.createObjectURL(certificate.certificateFile)}
-                                                              alt="Certificate Preview"
-                                                              size="md"
-                                                              className="ring-2 ring-gray-400 shadow-md flex-shrink-0"
-                                                            />
-                                                          )}
-                                                          <div className="flex-grow min-w-0">
-                                                            <Typography variant="h6" className="text-gray-900 font-bold text-sm truncate">
-                                                              {certificate.courseName}
-                                                            </Typography>
-                                                            {certificate.certificateNumber && (
-                                                              <Typography variant="small" className="text-gray-700 font-medium mt-1 text-xs">
-                                                                #{certificate.certificateNumber}
-                                                              </Typography>
-                                                            )}
-                                                            {certificate.issueDate && (
-                                                              <Typography variant="small" className="text-gray-600 mt-1 text-xs">
-                                                                {new Date(certificate.issueDate).toLocaleDateString()}
-                                                              </Typography>
-                                                            )}
-                                                          </div>
-                                                        </div>
-                                                      </CardBody>
-                                                    </Card>
-                                                  ))}
-                                                </div>
-                                                {certificates.length > INITIAL_ITEMS_LIMIT && (
-                                                  <div className="flex justify-center pt-2">
-                                                    <Button
-                                                      variant="text"
-                                                      size="sm"
-                                                      onClick={() => setShowAllCertificates(!showAllCertificates)}
-                                                      className={`${designTheme.textColor} font-semibold`}
-                                                    >
-                                                      {showAllCertificates ? "Show Less" : `Show All (${certificates.length})`}
-                                                    </Button>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            ) : (
-                                              <Typography variant="small" className="text-gray-500 italic">
-                                                You haven't filled up details in this section.
-                                              </Typography>
-                                            )}
-                                          </div>
-
-                                          {/* Experience Section */}
-                                          <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                            <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>
-                                              Experience
-                                            </Typography>
-                                            {experiences.length > 0 ? (
-                                              <div className="space-y-6">
-                                                {(showAllExperiences ? experiences : experiences.slice(0, INITIAL_ITEMS_LIMIT)).map((exp, index) => (
-                                                  <div key={index} className="border-l-4 border-gray-600 pl-6 pb-6 relative bg-gradient-to-r from-gray-50/50 to-transparent rounded-r-lg p-5">
-                                                    <Typography variant="h6" className="font-bold text-gray-900 mb-1 break-words">
-                                                      {exp.jobTitle}
-                                                    </Typography>
-                                                    {exp.company && (
-                                                      <Typography variant="small" className={`${designTheme.textColor} font-semibold mb-1 break-words`}>
-                                                        {exp.company}
-                                                      </Typography>
-                                                    )}
-                                                    {(exp.startDate || exp.endDate) && (
-                                                      <Typography variant="small" className="text-gray-600 font-medium mb-3 text-xs">
-                                                        {exp.startDate ? new Date(exp.startDate).toLocaleDateString() : "N/A"} -{" "}
-                                                        {exp.endDate ? new Date(exp.endDate).toLocaleDateString() : "N/A"}
-                                                      </Typography>
-                                                    )}
-                                                    {exp.responsibilities && (
-                                                      <Typography
-                                                        variant="small"
-                                                        className="text-gray-800 leading-relaxed break-words overflow-wrap-anywhere text-xs"
-                                                      >
-                                                        {exp.responsibilities}
-                                                      </Typography>
-                                                    )}
-                                                  </div>
-                                                ))}
-                                                {experiences.length > INITIAL_ITEMS_LIMIT && (
-                                                  <div className="flex justify-center pt-2">
-                                                    <Button
-                                                      variant="text"
-                                                      size="sm"
-                                                      onClick={() => setShowAllExperiences(!showAllExperiences)}
-                                                      className={`${designTheme.textColor} font-semibold`}
-                                                    >
-                                                      {showAllExperiences ? "Show Less" : `Show All (${experiences.length})`}
-                                                    </Button>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            ) : (
-                                              <Typography variant="small" className="text-gray-500 italic">
-                                                You haven't filled up details in this section.
-                                              </Typography>
-                                            )}
-                                          </div>
-
-                                          {/* Projects Section */}
-                                          <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                            <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>
-                                              Projects
-                                            </Typography>
-                                            {projects.length > 0 ? (
-                                              <div className="space-y-4">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                                  {(showAllProjects ? projects : projects.slice(0, INITIAL_ITEMS_LIMIT)).map((project, index) => (
-                                                    <Card key={index} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
-                                                      {project.projectImageFile && (
-                                                        <div className="relative h-40 overflow-hidden">
-                                                          <img
-                                                            src={URL.createObjectURL(project.projectImageFile)}
-                                                            alt={project.title || "Project"}
-                                                            className="w-full h-full object-cover"
-                                                          />
-                                                        </div>
-                                                      )}
-                                                      <CardBody className="p-4 bg-gradient-to-br from-white to-gray-50/30">
-                                                        <Typography variant="h6" className="font-bold text-gray-900 mb-2 break-words">
-                                                          {project.title || "Unnamed Project"}
-                                                        </Typography>
-                                                        {project.description && (
-                                                          <Typography
-                                                            variant="small"
-                                                            className="text-gray-700 mb-3 leading-relaxed break-words overflow-wrap-anywhere text-xs line-clamp-3"
-                                                          >
-                                                            {project.description}
-                                                          </Typography>
-                                                        )}
-                                                        {project.startDate && project.endDate && (
-                                                          <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`}>
-                                                            {new Date(project.startDate).toLocaleDateString()} -{" "}
-                                                            {new Date(project.endDate).toLocaleDateString()}
-                                                          </Typography>
-                                                        )}
-                                                      </CardBody>
-                                                    </Card>
-                                                  ))}
-                                                </div>
-                                                {projects.length > INITIAL_ITEMS_LIMIT && (
-                                                  <div className="flex justify-center pt-2">
-                                                    <Button
-                                                      variant="text"
-                                                      size="sm"
-                                                      onClick={() => setShowAllProjects(!showAllProjects)}
-                                                      className={`${designTheme.textColor} font-semibold`}
-                                                    >
-                                                      {showAllProjects ? "Show Less" : `Show All (${projects.length})`}
-                                                    </Button>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            ) : (
-                                              <Typography variant="small" className="text-gray-500 italic">
-                                                You haven't filled up details in this section.
-                                              </Typography>
-                                            )}
-                                          </div>
-
-                                          {/* Awards & Recognition Section */}
-                                          <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                            <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>
-                                              Awards & Recognition
-                                            </Typography>
-                                            {awardsRecognitions.length > 0 ? (
-                                              <div className="space-y-3">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                  {(showAllAwards ? awardsRecognitions : awardsRecognitions.slice(0, INITIAL_ITEMS_LIMIT)).map((award, index) => (
-                                                    <div key={index} className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow duration-300">
-                                                      <Typography variant="h6" className="font-bold text-gray-900 mb-2 text-sm">
-                                                        {award.title}
-                                                      </Typography>
-                                                      {award.issuer && (
-                                                        <Typography variant="small" className="text-gray-700 font-medium mb-1 text-xs">
-                                                          {award.issuer}
-                                                        </Typography>
-                                                      )}
-                                                      {award.dateReceived && (
-                                                        <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`}>
-                                                          {award.dateReceived}
-                                                        </Typography>
-                                                      )}
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                                {awardsRecognitions.length > INITIAL_ITEMS_LIMIT && (
-                                                  <div className="flex justify-center pt-2">
-                                                    <Button
-                                                      variant="text"
-                                                      size="sm"
-                                                      onClick={() => setShowAllAwards(!showAllAwards)}
-                                                      className={`${designTheme.textColor} font-semibold`}
-                                                    >
-                                                      {showAllAwards ? "Show Less" : `Show All (${awardsRecognitions.length})`}
-                                                    </Button>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            ) : (
-                                              <Typography variant="small" className="text-gray-500 italic">
-                                                You haven't filled up details in this section.
-                                              </Typography>
-                                            )}
-                                          </div>
-
-                                          {/* Education & Memberships Section */}
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            {/* Continuing Education */}
-                                            <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                              <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>
-                                                Continuing Education
-                                              </Typography>
-                                              {continuingEducations.length > 0 ? (
-                                                <div className="space-y-3">
-                                                  {(showAllEducation ? continuingEducations : continuingEducations.slice(0, INITIAL_ITEMS_LIMIT)).map((edu, index) => (
-                                                    <div key={index} className="border-l-4 border-gray-600 pl-4 py-2 bg-gradient-to-r from-gray-50/50 to-transparent rounded-r-lg">
-                                                      <Typography variant="small" className="font-bold text-gray-900 mb-1 text-xs">
-                                                        {edu.courseName}
-                                                      </Typography>
-                                                      {edu.institution && (
-                                                        <Typography variant="small" className="text-gray-700 font-medium mb-1 text-xs">
-                                                          {edu.institution}
-                                                        </Typography>
-                                                      )}
-                                                      {edu.completionDate && (
-                                                        <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`}>
-                                                          {edu.completionDate}
-                                                        </Typography>
-                                                      )}
-                                                    </div>
-                                                  ))}
-                                                  {continuingEducations.length > INITIAL_ITEMS_LIMIT && (
-                                                    <div className="flex justify-center pt-2">
-                                                      <Button
-                                                        variant="text"
-                                                        size="sm"
-                                                        onClick={() => setShowAllEducation(!showAllEducation)}
-                                                        className={`${designTheme.textColor} font-semibold text-xs`}
-                                                      >
-                                                        {showAllEducation ? "Show Less" : `Show All (${continuingEducations.length})`}
-                                                      </Button>
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              ) : (
-                                                <Typography variant="small" className="text-gray-500 italic">
-                                                  You haven't filled up details in this section.
-                                                </Typography>
-                                              )}
-                                            </div>
-
-                                            {/* Professional Memberships */}
-                                            <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                              <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>
-                                                Professional Memberships
-                                              </Typography>
-                                              {professionalMemberships.length > 0 ? (
-                                                <div className="space-y-3">
-                                                  {(showAllMemberships ? professionalMemberships : professionalMemberships.slice(0, INITIAL_ITEMS_LIMIT)).map((mem, index) => (
-                                                    <div key={index} className="border-l-4 border-gray-600 pl-4 py-2 bg-gradient-to-r from-gray-50/50 to-transparent rounded-r-lg">
-                                                      <Typography variant="small" className="font-bold text-gray-900 mb-1 text-xs">
-                                                        {mem.organization}
-                                                      </Typography>
-                                                      {mem.membershipType && (
-                                                        <Typography variant="small" className="text-gray-700 font-medium mb-1 text-xs">
-                                                          {mem.membershipType}
-                                                        </Typography>
-                                                      )}
-                                                      {mem.startDate && (
-                                                        <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`}>
-                                                          Since {mem.startDate}
-                                                        </Typography>
-                                                      )}
-                                                    </div>
-                                                  ))}
-                                                  {professionalMemberships.length > INITIAL_ITEMS_LIMIT && (
-                                                    <div className="flex justify-center pt-2">
-                                                      <Button
-                                                        variant="text"
-                                                        size="sm"
-                                                        onClick={() => setShowAllMemberships(!showAllMemberships)}
-                                                        className={`${designTheme.textColor} font-semibold text-xs`}
-                                                      >
-                                                        {showAllMemberships ? "Show Less" : `Show All (${professionalMemberships.length})`}
-                                                      </Button>
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              ) : (
-                                                <Typography variant="small" className="text-gray-500 italic">
-                                                  You haven't filled up details in this section.
-                                                </Typography>
-                                              )}
-                                            </div>
-                                          </div>
-
-                                          {/* References Section */}
-                                          <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-                                            <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>
-                                              References
-                                            </Typography>
-                                            {references.length > 0 ? (
-                                              <div className="space-y-4">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                  {(showAllReferences ? references : references.slice(0, INITIAL_ITEMS_LIMIT)).map((ref, index) => (
-                                                    <div key={index} className="bg-gradient-to-br from-white to-gray-50/30 border-2 border-gray-300 rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow duration-300">
-                                                      <Typography variant="h6" className="font-bold text-gray-900 mb-2 break-words text-sm">
-                                                        {ref.name}
-                                                      </Typography>
-                                                      {(ref.relationship || ref.position) && (
-                                                        <Typography variant="small" className="text-gray-700 font-medium mb-1 break-words text-xs">
-                                                          {ref.relationship || ref.position}
-                                                        </Typography>
-                                                      )}
-                                                      {ref.company && (
-                                                        <Typography variant="small" className={`${designTheme.textColor} mb-2 break-words font-semibold text-xs`}>
-                                                          {ref.company}
-                                                        </Typography>
-                                                      )}
-                                                      <div className="space-y-1">
-                                                        {ref.email && (
-                                                          <Typography variant="small" className="text-gray-600 break-all font-medium text-xs">
-                                                            {ref.email}
-                                                          </Typography>
-                                                        )}
-                                                        {(ref.phone || ref.contact) && (
-                                                          <Typography variant="small" className="text-gray-600 break-words font-medium text-xs">
-                                                            {ref.phone || ref.contact}
-                                                          </Typography>
-                                                        )}
-                                                      </div>
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                                {references.length > INITIAL_ITEMS_LIMIT && (
-                                                  <div className="flex justify-center pt-2">
-                                                    <Button
-                                                      variant="text"
-                                                      size="sm"
-                                                      onClick={() => setShowAllReferences(!showAllReferences)}
-                                                      className={`${designTheme.textColor} font-semibold`}
-                                                    >
-                                                      {showAllReferences ? "Show Less" : `Show All (${references.length})`}
-                                                    </Button>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            ) : (
-                                              <Typography variant="small" className="text-gray-500 italic">
-                                                You haven't filled up details in this section.
-                                              </Typography>
-                                            )}
-                                          </div>
-                                        </div>
-                                      ) : null}
                                     </div>
                                   </div>
                                 </div>
@@ -5043,32 +4533,6 @@ const PortfolioCreation = () => {
           </Card>
         </form>
       </div>
-
-      <style>{`
-        @keyframes slideInRight {
-          0% {
-            transform: translateX(100%) scale(0.9);
-            opacity: 0;
-          }
-          100% {
-            transform: translateX(0) scale(1);
-            opacity: 1;
-          }
-        }
-        
-        @keyframes shrinkWidth {
-          0% {
-            width: 100%;
-          }
-          100% {
-            width: 0%;
-          }
-        }
-        
-        .animate-slide-in-right {
-          animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-        }
-      `}</style>
     </div>
   )
 }
