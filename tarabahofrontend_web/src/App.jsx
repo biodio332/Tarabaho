@@ -63,11 +63,11 @@ function App() {
         
 
         <Route path="/signin" element={<SignIn />} />
-        <Route path="/register" element={<Register />} />
+        {/*<Route path="/register" element={<Register />} />*/}
         <Route path="/register-user" element={<RegisterUser />} />
         <Route path="/register-graduate" element={<RegisterTrabahador />} />
-        <Route path="/register-admin" element={<RegisterAdmin />} />
-        <Route path="/admin-login" element={<AdminLogin />} />
+        {/*<Route path="/register-admin" element={<RegisterAdmin />} />}*/}
+        <Route path="/admin-portal-login-tarabaho-67" element={<AdminLogin />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
 

@@ -68,7 +68,7 @@ const RegisterTrabahador = () => {
   };
 
   const handleBack = () => {
-    navigate(isAdmin ? "/admin/manage-trabahador" : "/register");
+    navigate(isAdmin ? "/admin/manage-trabahador" : "/signin");
   };
 
   const handleInputChange = (e) => {

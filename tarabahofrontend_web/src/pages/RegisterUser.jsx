@@ -167,7 +167,7 @@ const RegisterUser = () => {
   }
 
   const handleBack = () => {
-    navigate(isAdmin ? "/admin/manage-users" : "/register")
+    navigate(isAdmin ? "/admin/manage-users" : "/signin")
   }
 
   const getPasswordStrengthText = () => {
