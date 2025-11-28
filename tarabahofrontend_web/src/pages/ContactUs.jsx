@@ -92,7 +92,7 @@ const ContactUs = () => {
                 <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
                 <path d="M2 7L12 14L22 7" stroke="currentColor" strokeWidth="2" />
               </svg>
-              <span>info@Tarabaho.com</span>
+              <span>Tarabaho67@gmail.com</span>
             </div>
             <div className="flex items-center justify-center md:justify-start gap-4 text-white text-lg">
               <svg
@@ -111,7 +111,7 @@ const ContactUs = () => {
                   strokeLinejoin="round"
                 />
               </svg>
-              <span>Support: (+63) 123 456 7890</span>
+              <span>Support: (+63) 994 289 6704</span>
             </div>
           </div>
         </div>
