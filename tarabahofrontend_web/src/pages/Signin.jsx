@@ -262,10 +262,9 @@ const SignIn = () => {
                 />
               </div>
               <div className={styles.brandMessage}>
-                <h2>Find Work. Hire Talent.</h2>
+                <h2>Build Your Portfolio. Showcase Your Skills.</h2>
                 <p>
-                  Connect with skilled graduates or find opportunities that match
-                  your skills.
+                  Create a verified digital portfolio and connect with clients looking for TESDA-certified talent.
                 </p>
                 <div className={styles.featureList}>
                   <div className={styles.featureItem}>
@@ -278,14 +277,14 @@ const SignIn = () => {
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.709 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.7649 14.1003 1.98232 16.07 2.85999"
+                          d="M12 2L3 6V11C3 16.52 6.84 21.74 12 23C17.16 21.74 21 16.52 21 11V6L12 2Z"
                           stroke="white"
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         />
                         <path
-                          d="M22 4L12 14.01L9 11.01"
+                          d="M9 12L11 14L15 10"
                           stroke="white"
                           strokeWidth="2"
                           strokeLinecap="round"
@@ -293,7 +292,7 @@ const SignIn = () => {
                         />
                       </svg>
                     </div>
-                    <span>Verified graduates</span>
+                    <span>Verified Credentials</span>
                   </div>
                   <div className={styles.featureItem}>
                     <div className={styles.featureIcon}>
@@ -305,14 +304,14 @@ const SignIn = () => {
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                          d="M4 3H14L20 9V21H4V3Z"
                           stroke="white"
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         />
                         <path
-                          d="M12 6V12L16 14"
+                          d="M14 3V9H20"
                           stroke="white"
                           strokeWidth="2"
                           strokeLinecap="round"
@@ -320,7 +319,7 @@ const SignIn = () => {
                         />
                       </svg>
                     </div>
-                    <span>Flexible schedules</span>
+                    <span>Professional digital portfolio</span>
                   </div>
                   <div className={styles.featureItem}>
                     <div className={styles.featureIcon}>
@@ -332,7 +331,21 @@ const SignIn = () => {
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M20 6L9 17L4 12"
+                          d="M10 13C10.5304 13 11.0391 13.2107 11.4142 13.5858C11.7893 13.9609 12 14.4696 12 15C12 15.5304 11.7893 16.0391 11.4142 16.4142C11.0391 16.7893 10.5304 17 10 17H7C6.46957 17 5.96086 16.7893 5.58579 16.4142C5.21071 16.0391 5 15.5304 5 15V9C5 8.46957 5.21071 7.96086 5.58579 7.58579C5.96086 7.21071 6.46957 7 7 7H10C10.5304 7 11.0391 7.21071 11.4142 7.58579C11.7893 7.96086 12 8.46957 12 9"
+                          stroke="white"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M17 12H13"
+                          stroke="white"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M15 10L17 12L15 14"
                           stroke="white"
                           strokeWidth="2"
                           strokeLinecap="round"
@@ -340,7 +353,7 @@ const SignIn = () => {
                         />
                       </svg>
                     </div>
-                    <span>Secure payments</span>
+                    <span>Shareable client-ready profile</span>
                   </div>
                 </div>
               </div>
