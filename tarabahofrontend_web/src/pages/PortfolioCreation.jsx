@@ -447,6 +447,13 @@ const PortfolioCreation = () => {
   const selectMenuProps = { className: "z-[9999]" }
   const selectContainerProps = { className: "relative z-[60]" }
 
+  // Helper function to check if course type should always show sections
+  const shouldAlwaysShowSections = (courseType) => {
+    return courseType === "Automotive and Land Transportation" || 
+           courseType === "Maritime" || 
+           courseType === "Decorative Crafts"
+  }
+
   const steps = [
     { id: 0, name: "Profile Photo", required: false },
     { id: 1, name: "Basic Information", required: true },
@@ -1504,7 +1511,7 @@ const PortfolioCreation = () => {
                     size="lg"
                     label="Select NC Level"
                     value={formData.ncLevel || ""}
-                    onChange={(val) => setFormData((prev) => ({ ...prev, ncLevel: val }))}
+                    onChange={(val) => setFormData((prev) => ({ ...prev, ncLevel: val || "" }))}
                     menuProps={selectMenuProps}
                     containerProps={selectContainerProps}
                     disabled={isLoading}
@@ -2191,7 +2198,7 @@ const PortfolioCreation = () => {
                       <Select
                         size="lg"
                         label="Select Proficiency Level"
-                        value={newSkill.proficiencyLevel}
+                        value={newSkill.proficiencyLevel || ""}
                         onChange={(val) =>
                           setNewSkill((prev) => ({ ...prev, proficiencyLevel: val || "" }))
                         }
@@ -2374,7 +2381,18 @@ const PortfolioCreation = () => {
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                         rows={3}
+                        maxLength={300}
                       />
+                      <div className="flex justify-between items-center mt-1">
+                        <Typography variant="small" className="text-gray-500">
+                          {newExperience.responsibilities.length}/300 characters
+                        </Typography>
+                        {newExperience.responsibilities.length > 300 && (
+                          <Typography variant="small" color="red">
+                            Responsibilities cannot exceed 300 characters.
+                          </Typography>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex justify-center gap-4">
@@ -4436,6 +4454,491 @@ const PortfolioCreation = () => {
                                           <Typography variant="small" className="text-gray-500 italic">
                                             You haven't filled up details in this section.
                                           </Typography>
+                                        )}
+                                      </div>
+
+                                      {/* Skills */}
+                                      <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding} mb-6`}>
+                                        <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>
+                                          Skills
+                                        </Typography>
+                                        {(skills.length > 0 || shouldAlwaysShowSections(formData.primaryCourseType)) ? (
+                                          skills.length > 0 ? (
+                                            <div className="space-y-3">
+                                              {skills.map((skill, index) => (
+                                                <div key={index} className="pb-3 border-b border-gray-50 last:border-b-0">
+                                                  <Typography variant="small" className="font-medium text-gray-800 mb-1">
+                                                    {skill.name}
+                                                  </Typography>
+                                                  <div className="flex items-center space-x-2">
+                                                    <Chip size="md" value={skill.type || "TECHNICAL"} color={designTheme.buttonColor} className="text-xs font-light" />
+                                                    {skill.proficiencyLevel && (
+                                                      <Typography variant="small" color="gray" className="text-xs">
+                                                        {skill.proficiencyLevel}
+                                                      </Typography>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <Typography variant="small" className="text-gray-500 italic">
+                                              {shouldAlwaysShowSections(formData.primaryCourseType) 
+                                                ? "You haven't filled up details in this section."
+                                                : "No skills added yet"}
+                                            </Typography>
+                                          )
+                                        ) : (
+                                          <Typography variant="small" className="text-gray-500 italic">
+                                            No skills added yet
+                                          </Typography>
+                                        )}
+                                      </div>
+
+                                      {/* TESDA Information - Always show for Automotive, Maritime, and Decorative Crafts */}
+                                      {(shouldAlwaysShowSections(formData.primaryCourseType) || formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration || formData.tesdaRegistrationNumber) && (
+                                        <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
+                                          <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>
+                                            TESDA Information
+                                          </Typography>
+                                          {(formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration || formData.tesdaRegistrationNumber) ? (
+                                            <div className="space-y-4">
+                                              {formData.ncLevel && (
+                                                <div>
+                                                  <Typography variant="small" color="gray" className="font-medium mb-1">
+                                                    NC Level
+                                                  </Typography>
+                                                  <Typography variant="small" className="text-gray-800">
+                                                    {formData.ncLevel}
+                                                  </Typography>
+                                                </div>
+                                              )}
+                                              {formData.trainingCenter && (
+                                                <div>
+                                                  <Typography variant="small" color="gray" className="font-medium mb-1">
+                                                    Training Center
+                                                  </Typography>
+                                                  <Typography variant="small" className="text-gray-800">
+                                                    {formData.trainingCenter}
+                                                  </Typography>
+                                                </div>
+                                              )}
+                                              {formData.scholarshipType && (
+                                                <div>
+                                                  <Typography variant="small" color="gray" className="font-medium mb-1">
+                                                    Scholarship Type
+                                                  </Typography>
+                                                  <Typography variant="small" className="text-gray-800">
+                                                    {formData.scholarshipType}
+                                                  </Typography>
+                                                </div>
+                                              )}
+                                              {formData.trainingDuration && (
+                                                <div>
+                                                  <Typography variant="small" color="gray" className="font-medium mb-1">
+                                                    Training Duration
+                                                  </Typography>
+                                                  <Typography variant="small" className="text-gray-800">
+                                                    {formData.trainingDuration}
+                                                  </Typography>
+                                                </div>
+                                              )}
+                                              {formData.tesdaRegistrationNumber && (
+                                                <div>
+                                                  <Typography variant="small" color="gray" className="font-medium mb-1">
+                                                    Registration Number
+                                                  </Typography>
+                                                  <Typography variant="small" className="text-gray-800">
+                                                    {formData.tesdaRegistrationNumber}
+                                                  </Typography>
+                                                </div>
+                                              )}
+                                            </div>
+                                          ) : (
+                                            <Typography variant="small" className="text-gray-500 italic">
+                                              You haven't filled up details in this section.
+                                            </Typography>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Main Content Area */}
+                                    <div className={`${
+                                      designTheme.contentGrid.includes("lg:grid-cols-4") ? "lg:col-span-3" : 
+                                      designTheme.contentGrid.includes("lg:grid-cols-3") ? "lg:col-span-2" : 
+                                      designTheme.contentGrid.includes("lg:grid-cols-2") ? "lg:col-span-1" : 
+                                      ""
+                                    }`}>
+                                      {/* Certificates */}
+                                      <div>
+                                        <Typography variant="h4" className={`font-light ${designTheme.textColor} ${designTheme.typographySize.includes("text-4xl") ? "text-xl md:text-2xl" : designTheme.typographySize.includes("text-3xl") ? "text-lg md:text-xl" : "text-2xl"} mb-8`}>
+                                          Certificates
+                                        </Typography>
+                                        {(certificates.length > 0 || shouldAlwaysShowSections(formData.primaryCourseType)) ? (
+                                          certificates.length > 0 ? (
+                                            <div className="space-y-4">
+                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                {(showAllCertificates ? certificates : certificates.slice(0, INITIAL_ITEMS_LIMIT)).map((certificate, index) => (
+                                                  <Card key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                                    <CardBody className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                                      <div className="flex items-center gap-4">
+                                                        {certificate.certificateFile && (
+                                                          <Avatar
+                                                            src={URL.createObjectURL(certificate.certificateFile)}
+                                                            alt="Certificate Preview"
+                                                            size="lg"
+                                                            className={`ring-2 ${designTheme.borderColor}`}
+                                                          />
+                                                        )}
+                                                        <div>
+                                                          <Typography variant="h6" className="text-gray-800 font-semibold">
+                                                            {certificate.courseName}
+                                                          </Typography>
+                                                          <Typography variant="small" className="text-gray-600">
+                                                            Certificate #: {certificate.certificateNumber}
+                                                          </Typography>
+                                                          <Typography variant="small" className="text-gray-600">
+                                                            Issued: {certificate.issueDate ? new Date(certificate.issueDate).toLocaleDateString() : "N/A"}
+                                                          </Typography>
+                                                        </div>
+                                                      </div>
+                                                    </CardBody>
+                                                  </Card>
+                                                ))}
+                                              </div>
+                                              {certificates.length > INITIAL_ITEMS_LIMIT && (
+                                                <div className="flex justify-center pt-2">
+                                                  <Button
+                                                    variant="text"
+                                                    size="sm"
+                                                    onClick={() => setShowAllCertificates(!showAllCertificates)}
+                                                    className={`${designTheme.textColor} font-semibold`}
+                                                  >
+                                                    {showAllCertificates ? "Show Less" : `Show All (${certificates.length})`}
+                                                  </Button>
+                                                </div>
+                                              )}
+                                            </div>
+                                          ) : (
+                                            <div className="bg-white border border-gray-100 rounded-lg p-6">
+                                              <Typography variant="small" className="text-gray-500 italic">
+                                                You haven't filled up details in this section.
+                                              </Typography>
+                                            </div>
+                                          )
+                                        ) : (
+                                          <div className="bg-white border border-gray-100 rounded-lg p-6">
+                                            <Typography variant="small" className="text-gray-500 italic">
+                                              No certificates added yet
+                                            </Typography>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Experience */}
+                                      <div>
+                                        <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl mb-8`}>
+                                          Experience
+                                        </Typography>
+                                        {(experiences.length > 0 || shouldAlwaysShowSections(formData.primaryCourseType)) ? (
+                                          experiences.length > 0 ? (
+                                            <div className="space-y-8">
+                                              {(showAllExperiences ? experiences : experiences.slice(0, INITIAL_ITEMS_LIMIT)).map((exp, index) => (
+                                                <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-8 pb-8`}>
+                                                  <Typography variant="h6" className="font-medium mb-2">
+                                                    {exp.jobTitle}
+                                                  </Typography>
+                                                  {exp.company && (
+                                                    <Typography variant="small" className={`${designTheme.textColor} mb-2`}>
+                                                      {exp.company}
+                                                    </Typography>
+                                                  )}
+                                                  {(exp.startDate || exp.endDate) && (
+                                                    <Typography variant="small" color="gray" className="mb-2">
+                                                      {exp.startDate ? new Date(exp.startDate).toLocaleDateString() : "N/A"} -{" "}
+                                                      {exp.endDate ? new Date(exp.endDate).toLocaleDateString() : "N/A"}
+                                                    </Typography>
+                                                  )}
+                                                  {exp.responsibilities && (
+                                                    <Typography variant="small" className="text-gray-700 leading-relaxed break-words overflow-wrap-anywhere">
+                                                      {exp.responsibilities}
+                                                    </Typography>
+                                                  )}
+                                                </div>
+                                              ))}
+                                              {experiences.length > INITIAL_ITEMS_LIMIT && (
+                                                <div className="flex justify-center pt-2">
+                                                  <Button
+                                                    variant="text"
+                                                    size="sm"
+                                                    onClick={() => setShowAllExperiences(!showAllExperiences)}
+                                                    className={`${designTheme.textColor} font-semibold`}
+                                                  >
+                                                    {showAllExperiences ? "Show Less" : `Show All (${experiences.length})`}
+                                                  </Button>
+                                                </div>
+                                              )}
+                                            </div>
+                                          ) : (
+                                            <div className="bg-white border border-gray-100 rounded-lg p-6">
+                                              <Typography variant="small" className="text-gray-500 italic">
+                                                You haven't filled up details in this section.
+                                              </Typography>
+                                            </div>
+                                          )
+                                        ) : (
+                                          <div className="bg-white border border-gray-100 rounded-lg p-6">
+                                            <Typography variant="small" className="text-gray-500 italic">
+                                              No experience added yet
+                                            </Typography>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Projects */}
+                                      <div>
+                                        <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl mb-8`}>
+                                          Projects
+                                        </Typography>
+                                        {(projects.length > 0 || shouldAlwaysShowSections(formData.primaryCourseType)) ? (
+                                          projects.length > 0 ? (
+                                            <div className="space-y-4">
+                                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                {(showAllProjects ? projects : projects.slice(0, INITIAL_ITEMS_LIMIT)).map((project, index) => (
+                                                  <Card key={index} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                                                    {project.projectImageFile && (
+                                                      <div className="relative h-48 overflow-hidden">
+                                                        <img
+                                                          src={URL.createObjectURL(project.projectImageFile)}
+                                                          alt={project.title || "Project"}
+                                                          className="w-full h-full object-cover"
+                                                        />
+                                                      </div>
+                                                    )}
+                                                    <CardBody className="p-5">
+                                                      <Typography variant="h6" className="font-bold text-black mb-2 text-lg" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                                        {project.title || "Unnamed Project"}
+                                                      </Typography>
+                                                      {project.description && (
+                                                        <Typography
+                                                          variant="small"
+                                                          className="text-black mb-3 leading-relaxed text-base line-clamp-3"
+                                                          style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.6", fontWeight: 400 }}
+                                                        >
+                                                          {project.description}
+                                                        </Typography>
+                                                      )}
+                                                      {project.startDate && project.endDate && (
+                                                        <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                                          {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
+                                                        </Typography>
+                                                      )}
+                                                    </CardBody>
+                                                  </Card>
+                                                ))}
+                                              </div>
+                                              {projects.length > INITIAL_ITEMS_LIMIT && (
+                                                <div className="flex justify-center pt-2">
+                                                  <Button
+                                                    variant="text"
+                                                    size="sm"
+                                                    onClick={() => setShowAllProjects(!showAllProjects)}
+                                                    className={`${designTheme.textColor} font-semibold`}
+                                                  >
+                                                    {showAllProjects ? "Show Less" : `Show All (${projects.length})`}
+                                                  </Button>
+                                                </div>
+                                              )}
+                                            </div>
+                                          ) : (
+                                            <div className="bg-white border border-gray-100 rounded-lg p-6">
+                                              <Typography variant="small" className="text-gray-500 italic">
+                                                You haven't filled up details in this section.
+                                              </Typography>
+                                            </div>
+                                          )
+                                        ) : (
+                                          <div className="bg-white border border-gray-100 rounded-lg p-6">
+                                            <Typography variant="small" className="text-gray-500 italic">
+                                              No projects added yet
+                                            </Typography>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Awards & Recognition */}
+                                      <div>
+                                        <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl mb-8`}>
+                                          Awards & Recognition
+                                        </Typography>
+                                        {(awardsRecognitions.length > 0 || shouldAlwaysShowSections(formData.primaryCourseType)) ? (
+                                          awardsRecognitions.length > 0 ? (
+                                            <div className="space-y-4">
+                                              {awardsRecognitions.map((award, index) => (
+                                                <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
+                                                  <Typography variant="h6" className="font-medium mb-2">
+                                                    {award.title}
+                                                  </Typography>
+                                                  {award.issuer && (
+                                                    <Typography variant="small" color="gray" className="mb-1">
+                                                      Issued by: {award.issuer}
+                                                    </Typography>
+                                                  )}
+                                                  {award.dateReceived && (
+                                                    <Typography variant="small" className={designTheme.textColor}>
+                                                      {award.dateReceived}
+                                                    </Typography>
+                                                  )}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <div className="bg-white border border-gray-100 rounded-lg p-6">
+                                              <Typography variant="small" className="text-gray-500 italic">
+                                                You haven't filled up details in this section.
+                                              </Typography>
+                                            </div>
+                                          )
+                                        ) : (
+                                          <div className="bg-white border border-gray-100 rounded-lg p-6">
+                                            <Typography variant="small" className="text-gray-500 italic">
+                                              No awards or recognition added yet
+                                            </Typography>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Education & Memberships */}
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        {/* Continuing Education */}
+                                        <div>
+                                          <Typography variant="h5" className={`font-light ${designTheme.textColor} mb-6`}>
+                                            Continuing Education
+                                          </Typography>
+                                          {(continuingEducations.length > 0 || shouldAlwaysShowSections(formData.primaryCourseType)) ? (
+                                            continuingEducations.length > 0 ? (
+                                              <div className="space-y-4">
+                                                {continuingEducations.map((edu, index) => (
+                                                  <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2`}>
+                                                    <Typography variant="small" className="font-medium mb-1">
+                                                      {edu.courseName}
+                                                    </Typography>
+                                                    {edu.institution && (
+                                                      <Typography variant="small" color="gray" className="mb-1">
+                                                        {edu.institution}
+                                                      </Typography>
+                                                    )}
+                                                    {edu.completionDate && (
+                                                      <Typography variant="small" className={designTheme.textColor}>
+                                                        {edu.completionDate}
+                                                      </Typography>
+                                                    )}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            ) : (
+                                              <Typography variant="small" className="text-gray-500 italic">
+                                                You haven't filled up details in this section.
+                                              </Typography>
+                                            )
+                                          ) : (
+                                            <Typography variant="small" className="text-gray-500 italic">
+                                              No continuing education added yet
+                                            </Typography>
+                                          )}
+                                        </div>
+
+                                        {/* Professional Memberships */}
+                                        <div>
+                                          <Typography variant="h5" className={`font-light ${designTheme.textColor} mb-6`}>
+                                            Professional Memberships
+                                          </Typography>
+                                          {(professionalMemberships.length > 0 || shouldAlwaysShowSections(formData.primaryCourseType)) ? (
+                                            professionalMemberships.length > 0 ? (
+                                              <div className="space-y-4">
+                                                {professionalMemberships.map((mem, index) => (
+                                                  <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2`}>
+                                                    <Typography variant="small" className="font-medium mb-1">
+                                                      {mem.organization}
+                                                    </Typography>
+                                                    {mem.membershipType && (
+                                                      <Typography variant="small" color="gray" className="mb-1">
+                                                        {mem.membershipType}
+                                                      </Typography>
+                                                    )}
+                                                    {mem.startDate && (
+                                                      <Typography variant="small" className={designTheme.textColor}>
+                                                        Since {mem.startDate}
+                                                      </Typography>
+                                                    )}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            ) : (
+                                              <Typography variant="small" className="text-gray-500 italic">
+                                                You haven't filled up details in this section.
+                                              </Typography>
+                                            )
+                                          ) : (
+                                            <Typography variant="small" className="text-gray-500 italic">
+                                              No professional memberships added yet
+                                            </Typography>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* References */}
+                                      <div>
+                                        <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl mb-8`}>
+                                          References
+                                        </Typography>
+                                        {(references.length > 0 || shouldAlwaysShowSections(formData.primaryCourseType)) ? (
+                                          references.length > 0 ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                              {references.map((ref, index) => (
+                                                <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
+                                                  <Typography variant="h6" className="font-medium mb-2 break-words">
+                                                    {ref.name}
+                                                  </Typography>
+                                                  {(ref.relationship || ref.position) && (
+                                                    <Typography variant="small" color="gray" className="mb-1 break-words">
+                                                      {ref.relationship || ref.position}
+                                                    </Typography>
+                                                  )}
+                                                  {ref.company && (
+                                                    <Typography variant="small" className={`${designTheme.textColor} mb-3 break-words`}>
+                                                      {ref.company}
+                                                    </Typography>
+                                                  )}
+                                                  <div className="space-y-1">
+                                                    {ref.email && (
+                                                      <Typography variant="small" color="gray" className="break-all">
+                                                        {ref.email}
+                                                      </Typography>
+                                                    )}
+                                                    {(ref.phone || ref.contact) && (
+                                                      <Typography variant="small" color="gray" className="break-words">
+                                                        {ref.phone || ref.contact}
+                                                      </Typography>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <div className="bg-white border border-gray-100 rounded-lg p-6">
+                                              <Typography variant="small" className="text-gray-500 italic">
+                                                You haven't filled up details in this section.
+                                              </Typography>
+                                            </div>
+                                          )
+                                        ) : (
+                                          <div className="bg-white border border-gray-100 rounded-lg p-6">
+                                            <Typography variant="small" className="text-gray-500 italic">
+                                              No references added yet
+                                            </Typography>
+                                          </div>
                                         )}
                                       </div>
                                     </div>
