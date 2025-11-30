@@ -2,10 +2,11 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background: linear-gradient(to bottom, #003366, #001a40);
+    background: linear-gradient(to bottom right, #001233, #023e8a, #0077b6);
     color: white;
     width: 100vw; /* Changed from 100vw to prevent horizontal scrolling */
     overflow-x: hidden; /* Prevent horizontal scrolling */
+    position: relative;
   }
   
   .about-us-content {
@@ -14,6 +15,8 @@
     max-width: 1200px;
     margin: 0 auto;
     width: 100%; /* Changed from 100vw to prevent horizontal scrolling */
+    position: relative;
+    z-index: 1;
   }
   
   .about-us-title {
