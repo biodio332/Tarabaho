@@ -23,6 +23,8 @@ import {
 } from "@material-tailwind/react"
 
 const VALID_SKILL_TYPES = ["TECHNICAL", "LANGUAGE", "DIGITAL", "SOFT", "INDUSTRY_SPECIFIC"]
+const SKILL_PROFICIENCY_LEVELS = ["Beginner", "Intermediate", "Advanced", "Expert"]
+const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV", "NC V", "NC VI", "Additional"]
 
 const ViewPortfolio = () => {
   const { graduateId } = useParams()
@@ -55,6 +57,8 @@ const ViewPortfolio = () => {
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState("")
   const [saveError, setSaveError] = useState("")
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [isNcLevelAdditional, setIsNcLevelAdditional] = useState(false)
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null)
   const [modifiedCertificates, setModifiedCertificates] = useState(new Set())
   const [modifiedProjects, setModifiedProjects] = useState(new Set())
@@ -116,6 +120,95 @@ const ViewPortfolio = () => {
       return `${baseUrl}/portfolio/${graduateId}?share=${currentToken}`
     }
     return `${baseUrl}/portfolio/${graduateId}`
+  }
+
+  // Validation functions
+  const updateFieldError = (fieldName, errorMessage) => {
+    setFieldErrors((prev) => {
+      const updated = { ...prev }
+      if (errorMessage) {
+        updated[fieldName] = errorMessage
+      } else {
+        delete updated[fieldName]
+      }
+      return updated
+    })
+  }
+
+  const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+
+  const isValidWebsiteUrl = (value) => {
+    if (!value) return true
+    const trimmedValue = value.trim()
+    if (!/^https:\/\/(www\.)?/i.test(trimmedValue)) {
+      return false
+    }
+    try {
+      const url = new URL(trimmedValue)
+      return url.protocol === "https:"
+    } catch (err) {
+      return false
+    }
+  }
+
+  const validateField = (fieldName, value) => {
+    const trimmedValue = typeof value === "string" ? value.trim() : value
+    let message = ""
+
+    switch (fieldName) {
+      case "tesdaRegistrationNumber":
+        if (trimmedValue && !/^\d+$/.test(trimmedValue)) {
+          message = "TESDA registration number must contain digits only."
+        }
+        break
+      case "email":
+        if (trimmedValue) {
+          if (!isValidEmail(trimmedValue) || !trimmedValue.toLowerCase().endsWith("@gmail.com")) {
+            message = "Please provide a valid Gmail address."
+          }
+        }
+        break
+      case "phone":
+        if (trimmedValue) {
+          if (!/^\d+$/.test(trimmedValue)) {
+            message = "Phone number must contain digits only."
+          } else if (trimmedValue.length !== 11) {
+            message = "Phone number must be exactly 11 digits."
+          }
+        }
+        break
+      case "website":
+        if (trimmedValue && !isValidWebsiteUrl(trimmedValue)) {
+          message = "Website must be a valid https URL (e.g., https://www.example.com)."
+        }
+        break
+      case "certificateNumber":
+        if (trimmedValue && !/^\d+$/.test(trimmedValue)) {
+          message = "Certificate number must contain digits only."
+        }
+        break
+      case "referencePhone":
+        if (!trimmedValue) {
+          message = "Reference phone number is required."
+        } else if (!/^\d+$/.test(trimmedValue)) {
+          message = "Reference phone number must contain digits only."
+        } else if (trimmedValue.length !== 11) {
+          message = "Reference phone number must be exactly 11 digits."
+        }
+        break
+      case "referenceEmail":
+        if (!trimmedValue) {
+          message = "Reference email is required."
+        } else if (!isValidEmail(trimmedValue) || !trimmedValue.toLowerCase().endsWith("@gmail.com")) {
+          message = "Please provide a valid Gmail address."
+        }
+        break
+      default:
+        break
+    }
+
+    updateFieldError(fieldName, message)
+    return !message
   }
 
   // Get design theme colors and layout based on designTemplate
@@ -909,10 +1002,12 @@ const fetchPublicDataWithToken = async () => {
       })
       setModifiedCertificates(new Set())
       setModifiedProjects(new Set())
+      setIsNcLevelAdditional(false)
     } else {
       // Exiting edit mode - cancel all edits
       setEditingPortfolio(null)
       setSelectedAvatarFile(null)
+      setIsNcLevelAdditional(false)
       setEditingSections({
         header: false,
         contact: false,
@@ -964,19 +1059,73 @@ const fetchPublicDataWithToken = async () => {
       }
       setEditingPortfolio(portfolioCopy)
     }
-    setEditingSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }))
+    setEditingSections((prev) => {
+      const newState = {
+        ...prev,
+        [section]: !prev[section],
+      }
+      // Initialize isNcLevelAdditional when entering TESDA edit mode
+      if (section === "tesda" && newState.tesda) {
+        const currentNcLevel = editingPortfolio?.ncLevel || portfolio?.ncLevel
+        if (currentNcLevel && !NC_LEVEL_OPTIONS.slice(0, -1).includes(currentNcLevel)) {
+          setIsNcLevelAdditional(true)
+        } else {
+          setIsNcLevelAdditional(false)
+        }
+      }
+      return newState
+    })
     setSaveError("")
   }
 
   const handleFieldChange = (field, value) => {
+    // Handle NC Level "Additional" selection
+    if (field === "ncLevel") {
+      if (value === "Additional") {
+        setIsNcLevelAdditional(true)
+        // Keep the previous custom value if it exists and is not a standard option, otherwise set empty
+        const prevValue = editingPortfolio?.ncLevel
+        if (prevValue && !NC_LEVEL_OPTIONS.slice(0, -1).includes(prevValue)) {
+          // Keep the custom value, don't update ncLevel
+          setSaveError("")
+          return
+        } else {
+          // Set to empty string for new custom input
+          setEditingPortfolio((prev) => ({
+            ...prev,
+            [field]: "",
+          }))
+          setSaveError("")
+          return
+        }
+      } else if (NC_LEVEL_OPTIONS.slice(0, -1).includes(value)) {
+        // Standard NC level selected
+        setIsNcLevelAdditional(false)
+        setEditingPortfolio((prev) => ({
+          ...prev,
+          [field]: value,
+        }))
+        setSaveError("")
+        return
+      } else {
+        // Custom value being typed (when isNcLevelAdditional is true)
+        setEditingPortfolio((prev) => ({
+          ...prev,
+          [field]: value,
+        }))
+        setSaveError("")
+        return
+      }
+    }
     setEditingPortfolio((prev) => ({
       ...prev,
       [field]: value,
     }))
     setSaveError("")
+    // Validate fields that need validation
+    if (["email", "phone", "website", "tesdaRegistrationNumber"].includes(field)) {
+      validateField(field, value)
+    }
   }
 
   const handleArrayFieldChange = (arrayName, index, field, value) => {
@@ -986,6 +1135,38 @@ const fetchPublicDataWithToken = async () => {
       return { ...prev, [arrayName]: updatedArray }
     })
     setSaveError("")
+    // Validate specific fields
+    if (arrayName === "references") {
+      if (field === "phone" || field === "contact") {
+        validateField("referencePhone", value)
+        // Also store error with indexed key for display
+        const fieldKey = `referencePhone_${index}`
+        const trimmedValue = typeof value === "string" ? value.trim() : value
+        let message = ""
+        if (!trimmedValue) {
+          message = "Reference phone number is required."
+        } else if (!/^\d+$/.test(trimmedValue)) {
+          message = "Reference phone number must contain digits only."
+        } else if (trimmedValue.length !== 11) {
+          message = "Reference phone number must be exactly 11 digits."
+        }
+        updateFieldError(fieldKey, message)
+      } else if (field === "email") {
+        validateField("referenceEmail", value)
+        // Also store error with indexed key for display
+        const fieldKey = `referenceEmail_${index}`
+        const trimmedValue = typeof value === "string" ? value.trim() : value
+        let message = ""
+        if (!trimmedValue) {
+          message = "Reference email is required."
+        } else if (!isValidEmail(trimmedValue) || !trimmedValue.toLowerCase().endsWith("@gmail.com")) {
+          message = "Please provide a valid Gmail address."
+        }
+        updateFieldError(fieldKey, message)
+      }
+    } else if (arrayName === "certificates" && field === "certificateNumber") {
+      validateField("certificateNumber", value)
+    }
   }
 
   const handleAddArrayItem = (arrayName, newItem) => {
@@ -1038,6 +1219,10 @@ const fetchPublicDataWithToken = async () => {
     const { name, value } = e.target
     setNewCertificate((prev) => ({ ...prev, [name]: value }))
     setSaveError("")
+    // Validate certificate number
+    if (name === "certificateNumber") {
+      validateField("certificateNumber", value)
+    }
   }
 
   const handleProjectInputChange = (e) => {
@@ -2693,13 +2878,21 @@ const fetchPublicDataWithToken = async () => {
                           Email
                         </Typography>
                         {isEditMode && editingSections.contact ? (
-                          <Input
-                            size="md"
-                            value={editingPortfolio?.email || ""}
-                            onChange={(e) => handleFieldChange("email", e.target.value)}
-                            placeholder="Email address"
-                            className="!border-gray-300"
-                          />
+                          <>
+                            <Input
+                              type="email"
+                              size="md"
+                              value={editingPortfolio?.email || ""}
+                              onChange={(e) => handleFieldChange("email", e.target.value)}
+                              placeholder="Email address"
+                              className={`!border-gray-300 ${fieldErrors.email ? "!border-red-500" : ""}`}
+                            />
+                            {fieldErrors.email && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                {fieldErrors.email}
+                              </Typography>
+                            )}
+                          </>
                         ) : (
                           <Typography variant="small" className="text-gray-900 break-all font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
                             {portfolio.email}
@@ -2713,13 +2906,24 @@ const fetchPublicDataWithToken = async () => {
                           Phone
                         </Typography>
                         {isEditMode && editingSections.contact ? (
-                          <Input
-                            size="md"
-                            value={editingPortfolio?.phone || ""}
-                            onChange={(e) => handleFieldChange("phone", e.target.value)}
-                            placeholder="Phone number"
-                            className="!border-gray-300"
-                          />
+                          <>
+                            <Input
+                              type="tel"
+                              size="md"
+                              value={editingPortfolio?.phone || ""}
+                              onChange={(e) => handleFieldChange("phone", e.target.value)}
+                              placeholder="Phone number"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              maxLength={11}
+                              className={`!border-gray-300 ${fieldErrors.phone ? "!border-red-500" : ""}`}
+                            />
+                            {fieldErrors.phone && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                {fieldErrors.phone}
+                              </Typography>
+                            )}
+                          </>
                         ) : (
                           <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
                             {portfolio.phone}
@@ -2733,13 +2937,21 @@ const fetchPublicDataWithToken = async () => {
                           Website
                         </Typography>
                         {isEditMode && editingSections.contact ? (
-                          <Input
-                            size="md"
-                            value={editingPortfolio?.website || ""}
-                            onChange={(e) => handleFieldChange("website", e.target.value)}
-                            placeholder="Website URL"
-                            className="!border-gray-300"
-                          />
+                          <>
+                            <Input
+                              type="url"
+                              size="md"
+                              value={editingPortfolio?.website || ""}
+                              onChange={(e) => handleFieldChange("website", e.target.value)}
+                              placeholder="https://www.example.com"
+                              className={`!border-gray-300 ${fieldErrors.website ? "!border-red-500" : ""}`}
+                            />
+                            {fieldErrors.website && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                {fieldErrors.website}
+                              </Typography>
+                            )}
+                          </>
                         ) : (
                           <Typography variant="small" className="text-gray-900 break-all font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
                             {portfolio.website}
@@ -2834,13 +3046,21 @@ const fetchPublicDataWithToken = async () => {
                                 <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                                   Proficiency Level
                                 </Typography>
-                              <Input
-                                size="md"
-                                value={skill.proficiencyLevel || ""}
-                                onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
-                                  placeholder="e.g. Advanced"
-                                className="!border-gray-300"
-                              />
+                                <Select
+                                  size="md"
+                                  label="Select Proficiency Level"
+                                  value={skill.proficiencyLevel || "Beginner"}
+                                  onChange={(value) =>
+                                    handleArrayFieldChange("skills", index, "proficiencyLevel", value || "Beginner")
+                                  }
+                                  className="!border-gray-300 [&>div]:text-gray-900"
+                                >
+                                  {SKILL_PROFICIENCY_LEVELS.map((level) => (
+                                    <Option key={level} value={level}>
+                                      {level}
+                                    </Option>
+                                  ))}
+                                </Select>
                               </div>
                             </div>
                           ) : (
@@ -2919,13 +3139,42 @@ const fetchPublicDataWithToken = async () => {
                           NC Level
                         </Typography>
                         {isEditMode && editingSections.tesda ? (
-                          <Input
-                            size="md"
-                            value={editingPortfolio?.ncLevel || ""}
-                            onChange={(e) => handleFieldChange("ncLevel", e.target.value)}
-                            placeholder="NC Level"
-                            className="!border-gray-300"
-                          />
+                          <>
+                            <Select
+                              size="md"
+                              label="Select NC Level"
+                              value={
+                                editingPortfolio?.ncLevel && NC_LEVEL_OPTIONS.slice(0, -1).includes(editingPortfolio.ncLevel)
+                                  ? editingPortfolio.ncLevel
+                                  : editingPortfolio?.ncLevel && !NC_LEVEL_OPTIONS.slice(0, -1).includes(editingPortfolio.ncLevel)
+                                  ? "Additional"
+                                  : ""
+                              }
+                              onChange={(value) => handleFieldChange("ncLevel", value || "")}
+                              className="!border-gray-300 [&>div]:text-gray-900"
+                            >
+                              {NC_LEVEL_OPTIONS.map((level) => (
+                                <Option key={level} value={level}>
+                                  {level}
+                                </Option>
+                              ))}
+                            </Select>
+                            {((editingPortfolio?.ncLevel && !NC_LEVEL_OPTIONS.slice(0, -1).includes(editingPortfolio.ncLevel)) || isNcLevelAdditional) && (
+                              <div className="mt-2">
+                                <Input
+                                  size="md"
+                                  value={
+                                    editingPortfolio?.ncLevel && !NC_LEVEL_OPTIONS.slice(0, -1).includes(editingPortfolio.ncLevel)
+                                      ? editingPortfolio.ncLevel
+                                      : ""
+                                  }
+                                  onChange={(e) => handleFieldChange("ncLevel", e.target.value)}
+                                  placeholder="Enter custom NC Level"
+                                  className="!border-gray-300"
+                                />
+                              </div>
+                            )}
+                          </>
                         ) : (
                           <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
                             {portfolio.ncLevel}
@@ -2999,13 +3248,22 @@ const fetchPublicDataWithToken = async () => {
                           Registration Number
                         </Typography>
                         {isEditMode && editingSections.tesda ? (
-                          <Input
-                            size="md"
-                            value={editingPortfolio?.tesdaRegistrationNumber || ""}
-                            onChange={(e) => handleFieldChange("tesdaRegistrationNumber", e.target.value)}
-                            placeholder="Registration Number"
-                            className="!border-gray-300"
-                          />
+                          <>
+                            <Input
+                              size="md"
+                              value={editingPortfolio?.tesdaRegistrationNumber || ""}
+                              onChange={(e) => handleFieldChange("tesdaRegistrationNumber", e.target.value)}
+                              placeholder="Registration Number"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              className={`!border-gray-300 ${fieldErrors.tesdaRegistrationNumber ? "!border-red-500" : ""}`}
+                            />
+                            {fieldErrors.tesdaRegistrationNumber && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                {fieldErrors.tesdaRegistrationNumber}
+                              </Typography>
+                            )}
+                          </>
                         ) : (
                           <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
                             {portfolio.tesdaRegistrationNumber}
@@ -3173,9 +3431,16 @@ const fetchPublicDataWithToken = async () => {
                                   value={newCertificate.certificateNumber}
                                   onChange={handleCertificateInputChange}
                                   placeholder="Enter certificate number"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
                                   required
-                                  className="!border-gray-300 focus:!border-blue-500"
+                                  className={`!border-gray-300 focus:!border-blue-500 ${fieldErrors.certificateNumber ? "!border-red-500" : ""}`}
                                 />
+                                {fieldErrors.certificateNumber && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    {fieldErrors.certificateNumber}
+                                  </Typography>
+                                )}
                               </div>
                             </div>
                             <div className="mt-4">
@@ -3488,7 +3753,18 @@ const fetchPublicDataWithToken = async () => {
                                   placeholder="Summarize key contributions"
                                   className="!border-gray-300"
                                   rows={3}
+                                  maxLength={300}
                                 />
+                                <div className="flex justify-between items-center mt-1">
+                                  <Typography variant="small" className="text-gray-500">
+                                    {(exp.responsibilities || exp.description || "").length}/300 characters
+                                  </Typography>
+                                  {(exp.responsibilities || exp.description || "").length > 300 && (
+                                    <Typography variant="small" color="red">
+                                      Responsibilities cannot exceed 300 characters.
+                                    </Typography>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -3618,7 +3894,18 @@ const fetchPublicDataWithToken = async () => {
                                 required
                                 className="!border-gray-300 focus:!border-blue-500"
                                 rows={3}
+                                maxLength={300}
                               />
+                              <div className="flex justify-between items-center mt-1">
+                                <Typography variant="small" className="text-gray-500">
+                                  {newProject.description.length}/300 characters
+                                </Typography>
+                                {newProject.description.length > 300 && (
+                                  <Typography variant="small" color="red">
+                                    Description cannot exceed 300 characters.
+                                  </Typography>
+                                )}
+                              </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                               <div>
@@ -4319,21 +4606,35 @@ const fetchPublicDataWithToken = async () => {
                                   size="md"
                                   value={ref.email || ""}
                                   onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
-                                  placeholder="name@example.com"
-                                  className="!border-gray-300"
+                                  placeholder="name@gmail.com"
+                                  className={`!border-gray-300 ${fieldErrors[`referenceEmail_${index}`] ? "!border-red-500" : ""}`}
                                 />
+                                {fieldErrors[`referenceEmail_${index}`] && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    {fieldErrors[`referenceEmail_${index}`]}
+                                  </Typography>
+                                )}
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                   Phone
                                 </Typography>
                                 <Input
+                                  type="tel"
                                   size="md"
                                   value={ref.phone || ref.contact || ""}
                                   onChange={(e) => handleArrayFieldChange("references", index, "phone", e.target.value)}
-                                  placeholder="+63 900 000 0000"
-                                  className="!border-gray-300"
+                                  placeholder="Phone number"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  maxLength={11}
+                                  className={`!border-gray-300 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
                                 />
+                                {fieldErrors[`referencePhone_${index}`] && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    {fieldErrors[`referencePhone_${index}`]}
+                                  </Typography>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -4581,13 +4882,21 @@ const fetchPublicDataWithToken = async () => {
                               Email
                             </Typography>
                             {isEditMode && editingSections.contact ? (
-                              <Input
-                                size="md"
-                                value={editingPortfolio?.email || ""}
-                                onChange={(e) => handleFieldChange("email", e.target.value)}
-                                placeholder="Email address"
-                                className="!border-gray-300"
-                              />
+                              <>
+                                <Input
+                                  type="email"
+                                  size="md"
+                                  value={editingPortfolio?.email || ""}
+                                  onChange={(e) => handleFieldChange("email", e.target.value)}
+                                  placeholder="Email address"
+                                  className={`!border-gray-300 ${fieldErrors.email ? "!border-red-500" : ""}`}
+                                />
+                                {fieldErrors.email && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    {fieldErrors.email}
+                                  </Typography>
+                                )}
+                              </>
                             ) : (
                               <Typography variant="small" className="text-black break-all text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
                                 {portfolio?.email}
@@ -4601,13 +4910,24 @@ const fetchPublicDataWithToken = async () => {
                               Phone
                             </Typography>
                             {isEditMode && editingSections.contact ? (
-                              <Input
-                                size="md"
-                                value={editingPortfolio?.phone || ""}
-                                onChange={(e) => handleFieldChange("phone", e.target.value)}
-                                placeholder="Phone number"
-                                className="!border-gray-300"
-                              />
+                              <>
+                                <Input
+                                  type="tel"
+                                  size="md"
+                                  value={editingPortfolio?.phone || ""}
+                                  onChange={(e) => handleFieldChange("phone", e.target.value)}
+                                  placeholder="Phone number"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  maxLength={11}
+                                  className={`!border-gray-300 ${fieldErrors.phone ? "!border-red-500" : ""}`}
+                                />
+                                {fieldErrors.phone && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    {fieldErrors.phone}
+                                  </Typography>
+                                )}
+                              </>
                             ) : (
                               <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
                                 {portfolio?.phone}
@@ -4621,13 +4941,21 @@ const fetchPublicDataWithToken = async () => {
                               Website
                             </Typography>
                             {isEditMode && editingSections.contact ? (
-                              <Input
-                                size="md"
-                                value={editingPortfolio?.website || ""}
-                                onChange={(e) => handleFieldChange("website", e.target.value)}
-                                placeholder="Website URL"
-                                className="!border-gray-300"
-                              />
+                              <>
+                                <Input
+                                  type="url"
+                                  size="md"
+                                  value={editingPortfolio?.website || ""}
+                                  onChange={(e) => handleFieldChange("website", e.target.value)}
+                                  placeholder="https://www.example.com"
+                                  className={`!border-gray-300 ${fieldErrors.website ? "!border-red-500" : ""}`}
+                                />
+                                {fieldErrors.website && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    {fieldErrors.website}
+                                  </Typography>
+                                )}
+                              </>
                             ) : (
                               <Typography variant="small" className="text-black break-all text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
                                 {portfolio?.website}
@@ -4683,13 +5011,42 @@ const fetchPublicDataWithToken = async () => {
                               NC Level
                             </Typography>
                             {isEditMode && editingSections.tesda ? (
-                              <Input
-                                size="md"
-                                value={editingPortfolio?.ncLevel || ""}
-                                onChange={(e) => handleFieldChange("ncLevel", e.target.value)}
-                                placeholder="NC Level"
-                                className="!border-gray-300"
-                              />
+                              <>
+                                <Select
+                                  size="md"
+                                  label="Select NC Level"
+                                  value={
+                                    editingPortfolio?.ncLevel && NC_LEVEL_OPTIONS.slice(0, -1).includes(editingPortfolio.ncLevel)
+                                      ? editingPortfolio.ncLevel
+                                      : editingPortfolio?.ncLevel && !NC_LEVEL_OPTIONS.slice(0, -1).includes(editingPortfolio.ncLevel)
+                                      ? "Additional"
+                                      : ""
+                                  }
+                                  onChange={(value) => handleFieldChange("ncLevel", value || "")}
+                                  className="!border-gray-300 [&>div]:text-gray-900"
+                                >
+                                  {NC_LEVEL_OPTIONS.map((level) => (
+                                    <Option key={level} value={level}>
+                                      {level}
+                                    </Option>
+                                  ))}
+                                </Select>
+                                {((editingPortfolio?.ncLevel && !NC_LEVEL_OPTIONS.slice(0, -1).includes(editingPortfolio.ncLevel)) || isNcLevelAdditional) && (
+                                  <div className="mt-2">
+                                    <Input
+                                      size="md"
+                                      value={
+                                        editingPortfolio?.ncLevel && !NC_LEVEL_OPTIONS.slice(0, -1).includes(editingPortfolio.ncLevel)
+                                          ? editingPortfolio.ncLevel
+                                          : ""
+                                      }
+                                      onChange={(e) => handleFieldChange("ncLevel", e.target.value)}
+                                      placeholder="Enter custom NC Level"
+                                      className="!border-gray-300"
+                                    />
+                                  </div>
+                                )}
+                              </>
                             ) : (
                               <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
                                 {portfolio?.ncLevel}
@@ -4763,13 +5120,22 @@ const fetchPublicDataWithToken = async () => {
                               Registration Number
                             </Typography>
                             {isEditMode && editingSections.tesda ? (
-                              <Input
-                                size="md"
-                                value={editingPortfolio?.tesdaRegistrationNumber || ""}
-                                onChange={(e) => handleFieldChange("tesdaRegistrationNumber", e.target.value)}
-                                placeholder="Registration Number"
-                                className="!border-gray-300"
-                              />
+                              <>
+                                <Input
+                                  size="md"
+                                  value={editingPortfolio?.tesdaRegistrationNumber || ""}
+                                  onChange={(e) => handleFieldChange("tesdaRegistrationNumber", e.target.value)}
+                                  placeholder="Registration Number"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  className={`!border-gray-300 ${fieldErrors.tesdaRegistrationNumber ? "!border-red-500" : ""}`}
+                                />
+                                {fieldErrors.tesdaRegistrationNumber && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    {fieldErrors.tesdaRegistrationNumber}
+                                  </Typography>
+                                )}
+                              </>
                             ) : (
                               <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
                                 {portfolio?.tesdaRegistrationNumber}
@@ -4870,13 +5236,21 @@ const fetchPublicDataWithToken = async () => {
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                   Proficiency Level
                                 </Typography>
-                              <Input
-                                size="md"
-                                value={skill.proficiencyLevel || ""}
-                                onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
-                                  placeholder="e.g. Intermediate"
-                                className="!border-gray-300"
-                              />
+                                <Select
+                                  size="md"
+                                  label="Select Proficiency Level"
+                                  value={skill.proficiencyLevel || "Beginner"}
+                                  onChange={(value) =>
+                                    handleArrayFieldChange("skills", index, "proficiencyLevel", value || "Beginner")
+                                  }
+                                  className="!border-gray-300 [&>div]:text-gray-900"
+                                >
+                                  {SKILL_PROFICIENCY_LEVELS.map((level) => (
+                                    <Option key={level} value={level}>
+                                      {level}
+                                    </Option>
+                                  ))}
+                                </Select>
                               </div>
                             </div>
                           ) : (
@@ -5002,9 +5376,16 @@ const fetchPublicDataWithToken = async () => {
                                 value={newCertificate.certificateNumber}
                                 onChange={handleCertificateInputChange}
                                 placeholder="Enter certificate number"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 required
-                                className="!border-gray-300 focus:!border-red-500"
+                                className={`!border-gray-300 focus:!border-red-500 ${fieldErrors.certificateNumber ? "!border-red-500" : ""}`}
                               />
+                              {fieldErrors.certificateNumber && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  {fieldErrors.certificateNumber}
+                                </Typography>
+                              )}
                             </div>
                           </div>
                           <div className="mt-4">
@@ -5306,14 +5687,25 @@ const fetchPublicDataWithToken = async () => {
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                   Responsibilities
                                 </Typography>
-                              <Textarea
-                                size="md"
-                                value={exp.responsibilities || ""}
-                                onChange={(e) => handleArrayFieldChange("experiences", index, "responsibilities", e.target.value)}
+                                <Textarea
+                                  size="md"
+                                  value={exp.responsibilities || ""}
+                                  onChange={(e) => handleArrayFieldChange("experiences", index, "responsibilities", e.target.value)}
                                   placeholder="Summarize major contributions"
-                                className="!border-gray-300"
-                                rows={3}
-                              />
+                                  className="!border-gray-300"
+                                  rows={3}
+                                  maxLength={300}
+                                />
+                                <div className="flex justify-between items-center mt-1">
+                                  <Typography variant="small" className="text-gray-500">
+                                    {(exp.responsibilities || "").length}/300 characters
+                                  </Typography>
+                                  {(exp.responsibilities || "").length > 300 && (
+                                    <Typography variant="small" color="red">
+                                      Responsibilities cannot exceed 300 characters.
+                                    </Typography>
+                                  )}
+                                </div>
                               </div>
                               <div className="flex justify-end">
                                 <IconButton
@@ -5480,7 +5872,18 @@ const fetchPublicDataWithToken = async () => {
                               required
                               className="!border-gray-300 focus:!border-red-500"
                               rows={3}
+                              maxLength={300}
                             />
+                            <div className="flex justify-between items-center mt-1">
+                              <Typography variant="small" className="text-gray-500">
+                                {newProject.description.length}/300 characters
+                              </Typography>
+                              {newProject.description.length > 300 && (
+                                <Typography variant="small" color="red">
+                                  Description cannot exceed 300 characters.
+                                </Typography>
+                              )}
+                            </div>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             <div>
@@ -6302,25 +6705,40 @@ const fetchPublicDataWithToken = async () => {
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                     Email
                                   </Typography>
-                                <Input
-                                  size="md"
-                                  value={ref.email || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
-                                    placeholder="name@example.com"
-                                  className="!border-gray-300"
-                                />
+                                  <Input
+                                    type="email"
+                                    size="md"
+                                    value={ref.email || ""}
+                                    onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
+                                    placeholder="name@gmail.com"
+                                    className={`!border-gray-300 ${fieldErrors[`referenceEmail_${index}`] ? "!border-red-500" : ""}`}
+                                  />
+                                  {fieldErrors[`referenceEmail_${index}`] && (
+                                    <Typography variant="small" color="red" className="mt-1">
+                                      {fieldErrors[`referenceEmail_${index}`]}
+                                    </Typography>
+                                  )}
                                 </div>
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                     Contact Number
                                   </Typography>
-                                <Input
-                                  size="md"
-                                  value={ref.contact || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "contact", e.target.value)}
-                                    placeholder="+63 900 000 0000"
-                                  className="!border-gray-300"
-                                />
+                                  <Input
+                                    type="tel"
+                                    size="md"
+                                    value={ref.contact || ""}
+                                    onChange={(e) => handleArrayFieldChange("references", index, "contact", e.target.value)}
+                                    placeholder="Phone number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    maxLength={11}
+                                    className={`!border-gray-300 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
+                                  />
+                                  {fieldErrors[`referencePhone_${index}`] && (
+                                    <Typography variant="small" color="red" className="mt-1">
+                                      {fieldErrors[`referencePhone_${index}`]}
+                                    </Typography>
+                                  )}
                                 </div>
                                 <div className="flex justify-end">
                                   <IconButton
@@ -6831,13 +7249,21 @@ const fetchPublicDataWithToken = async () => {
                       Email
                     </Typography>
                     {isEditMode && editingSections.contact ? (
-                      <Input
-                        size="md"
-                        value={editingPortfolio?.email || ""}
-                        onChange={(e) => handleFieldChange("email", e.target.value)}
-                        placeholder="Email address"
-                        className="!border-gray-300"
-                      />
+                      <>
+                        <Input
+                          type="email"
+                          size="md"
+                          value={editingPortfolio?.email || ""}
+                          onChange={(e) => handleFieldChange("email", e.target.value)}
+                          placeholder="Email address"
+                          className={`!border-gray-300 ${fieldErrors.email ? "!border-red-500" : ""}`}
+                        />
+                        {fieldErrors.email && (
+                          <Typography variant="small" color="red" className="mt-1">
+                            {fieldErrors.email}
+                          </Typography>
+                        )}
+                      </>
                     ) : (
                       <Typography variant="small" className="text-gray-800 break-all">
                         {portfolio.email}
@@ -6851,13 +7277,24 @@ const fetchPublicDataWithToken = async () => {
                       Phone
                     </Typography>
                     {isEditMode && editingSections.contact ? (
-                      <Input
-                        size="md"
-                        value={editingPortfolio?.phone || ""}
-                        onChange={(e) => handleFieldChange("phone", e.target.value)}
-                        placeholder="Phone number"
-                        className="!border-gray-300"
-                      />
+                      <>
+                        <Input
+                          type="tel"
+                          size="md"
+                          value={editingPortfolio?.phone || ""}
+                          onChange={(e) => handleFieldChange("phone", e.target.value)}
+                          placeholder="Phone number"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={11}
+                          className={`!border-gray-300 ${fieldErrors.phone ? "!border-red-500" : ""}`}
+                        />
+                        {fieldErrors.phone && (
+                          <Typography variant="small" color="red" className="mt-1">
+                            {fieldErrors.phone}
+                          </Typography>
+                        )}
+                      </>
                     ) : (
                       <Typography variant="small" className="text-gray-800">
                         {portfolio.phone}
@@ -6871,13 +7308,21 @@ const fetchPublicDataWithToken = async () => {
                       Website
                     </Typography>
                     {isEditMode && editingSections.contact ? (
-                      <Input
-                        size="md"
-                        value={editingPortfolio?.website || ""}
-                        onChange={(e) => handleFieldChange("website", e.target.value)}
-                        placeholder="Website URL"
-                        className="!border-gray-300"
-                      />
+                      <>
+                        <Input
+                          type="url"
+                          size="md"
+                          value={editingPortfolio?.website || ""}
+                          onChange={(e) => handleFieldChange("website", e.target.value)}
+                          placeholder="https://www.example.com"
+                          className={`!border-gray-300 ${fieldErrors.website ? "!border-red-500" : ""}`}
+                        />
+                        {fieldErrors.website && (
+                          <Typography variant="small" color="red" className="mt-1">
+                            {fieldErrors.website}
+                          </Typography>
+                        )}
+                      </>
                     ) : (
                       <Typography variant="small" className="text-gray-800 break-all">
                         {portfolio.website}
@@ -6978,13 +7423,21 @@ const fetchPublicDataWithToken = async () => {
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Proficiency Level
                             </Typography>
-                          <Input
-                            size="md"
-                            value={skill.proficiencyLevel || ""}
-                            onChange={(e) => handleArrayFieldChange("skills", index, "proficiencyLevel", e.target.value)}
-                              placeholder="e.g. Advanced"
-                            className="!border-gray-300"
-                          />
+                            <Select
+                              size="md"
+                              label="Select Proficiency Level"
+                              value={skill.proficiencyLevel || "Beginner"}
+                              onChange={(value) =>
+                                handleArrayFieldChange("skills", index, "proficiencyLevel", value || "Beginner")
+                              }
+                              className="!border-gray-300 [&>div]:text-gray-900"
+                            >
+                              {SKILL_PROFICIENCY_LEVELS.map((level) => (
+                                <Option key={level} value={level}>
+                                  {level}
+                                </Option>
+                              ))}
+                            </Select>
                           </div>
                         </div>
                       ) : (
@@ -7067,13 +7520,42 @@ const fetchPublicDataWithToken = async () => {
                       NC Level
                     </Typography>
                     {isEditMode && editingSections.tesda ? (
-                      <Input
-                        size="md"
-                        value={editingPortfolio?.ncLevel || ""}
-                        onChange={(e) => handleFieldChange("ncLevel", e.target.value)}
-                        placeholder="NC Level"
-                        className="!border-gray-300"
-                      />
+                      <>
+                        <Select
+                          size="md"
+                          label="Select NC Level"
+                          value={
+                            editingPortfolio?.ncLevel && NC_LEVEL_OPTIONS.slice(0, -1).includes(editingPortfolio.ncLevel)
+                              ? editingPortfolio.ncLevel
+                              : editingPortfolio?.ncLevel && !NC_LEVEL_OPTIONS.slice(0, -1).includes(editingPortfolio.ncLevel)
+                              ? "Additional"
+                              : ""
+                          }
+                          onChange={(value) => handleFieldChange("ncLevel", value || "")}
+                          className="!border-gray-300 [&>div]:text-gray-900"
+                        >
+                          {NC_LEVEL_OPTIONS.map((level) => (
+                            <Option key={level} value={level}>
+                              {level}
+                            </Option>
+                          ))}
+                        </Select>
+                        {((editingPortfolio?.ncLevel && !NC_LEVEL_OPTIONS.slice(0, -1).includes(editingPortfolio.ncLevel)) || isNcLevelAdditional) && (
+                          <div className="mt-2">
+                            <Input
+                              size="md"
+                              value={
+                                editingPortfolio?.ncLevel && !NC_LEVEL_OPTIONS.slice(0, -1).includes(editingPortfolio.ncLevel)
+                                  ? editingPortfolio.ncLevel
+                                  : ""
+                              }
+                              onChange={(e) => handleFieldChange("ncLevel", e.target.value)}
+                              placeholder="Enter custom NC Level"
+                              className="!border-gray-300"
+                            />
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <Typography variant="small" className="text-gray-800">
                         {portfolio.ncLevel}
@@ -7147,13 +7629,22 @@ const fetchPublicDataWithToken = async () => {
                       Registration Number
                     </Typography>
                     {isEditMode && editingSections.tesda ? (
-                      <Input
-                        size="md"
-                        value={editingPortfolio?.tesdaRegistrationNumber || ""}
-                        onChange={(e) => handleFieldChange("tesdaRegistrationNumber", e.target.value)}
-                        placeholder="TESDA Registration Number"
-                        className="!border-gray-300"
-                      />
+                      <>
+                        <Input
+                          size="md"
+                          value={editingPortfolio?.tesdaRegistrationNumber || ""}
+                          onChange={(e) => handleFieldChange("tesdaRegistrationNumber", e.target.value)}
+                          placeholder="TESDA Registration Number"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          className={`!border-gray-300 ${fieldErrors.tesdaRegistrationNumber ? "!border-red-500" : ""}`}
+                        />
+                        {fieldErrors.tesdaRegistrationNumber && (
+                          <Typography variant="small" color="red" className="mt-1">
+                            {fieldErrors.tesdaRegistrationNumber}
+                          </Typography>
+                        )}
+                      </>
                     ) : (
                       <Typography variant="small" className="text-gray-800">
                         {portfolio.tesdaRegistrationNumber}
@@ -7239,9 +7730,16 @@ const fetchPublicDataWithToken = async () => {
                         value={newCertificate.certificateNumber}
                         onChange={handleCertificateInputChange}
                         placeholder="Enter certificate number"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         required
-                        className="!border-gray-300 focus:!border-blue-500"
+                        className={`!border-gray-300 focus:!border-blue-500 ${fieldErrors.certificateNumber ? "!border-red-500" : ""}`}
                       />
+                      {fieldErrors.certificateNumber && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          {fieldErrors.certificateNumber}
+                        </Typography>
+                      )}
                     </div>
                   </div>
                   <div className="mt-4">
@@ -7534,16 +8032,27 @@ const fetchPublicDataWithToken = async () => {
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Responsibilities / Highlights
                             </Typography>
-                          <Textarea
-                            size="md"
+                            <Textarea
+                              size="md"
                               value={exp.responsibilities || exp.description || ""}
-                            onChange={(e) =>
+                              onChange={(e) =>
                                 handleArrayFieldChange("experiences", index, "responsibilities", e.target.value)
-                            }
+                              }
                               placeholder="Summarize key contributions"
-                            className="!border-gray-300"
-                            rows={3}
-                          />
+                              className="!border-gray-300"
+                              rows={3}
+                              maxLength={300}
+                            />
+                            <div className="flex justify-between items-center mt-1">
+                              <Typography variant="small" className="text-gray-500">
+                                {(exp.responsibilities || exp.description || "").length}/300 characters
+                              </Typography>
+                              {(exp.responsibilities || exp.description || "").length > 300 && (
+                                <Typography variant="small" color="red">
+                                  Responsibilities cannot exceed 300 characters.
+                                </Typography>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ) : (
@@ -7680,7 +8189,18 @@ const fetchPublicDataWithToken = async () => {
                       required
                       className="!border-gray-300 focus:!border-blue-500"
                       rows={3}
+                      maxLength={300}
                     />
+                    <div className="flex justify-between items-center mt-1">
+                      <Typography variant="small" className="text-gray-500">
+                        {newProject.description.length}/300 characters
+                      </Typography>
+                      {newProject.description.length > 300 && (
+                        <Typography variant="small" color="red">
+                          Description cannot exceed 300 characters.
+                        </Typography>
+                      )}
+                    </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
@@ -8389,26 +8909,40 @@ const fetchPublicDataWithToken = async () => {
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Email
                             </Typography>
-                          <Input
-                            type="email"
-                            size="md"
-                            value={ref.email || ""}
-                            onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
-                              placeholder="name@example.com"
-                            className="!border-gray-300"
-                          />
+                            <Input
+                              type="email"
+                              size="md"
+                              value={ref.email || ""}
+                              onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
+                              placeholder="name@gmail.com"
+                              className={`!border-gray-300 ${fieldErrors[`referenceEmail_${index}`] ? "!border-red-500" : ""}`}
+                            />
+                            {fieldErrors[`referenceEmail_${index}`] && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                {fieldErrors[`referenceEmail_${index}`]}
+                              </Typography>
+                            )}
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Phone
                             </Typography>
-                          <Input
-                            size="md"
-                            value={ref.phone || ref.contact || ""}
-                            onChange={(e) => handleArrayFieldChange("references", index, "phone", e.target.value)}
-                              placeholder="+63 900 000 0000"
-                            className="!border-gray-300"
-                          />
+                            <Input
+                              type="tel"
+                              size="md"
+                              value={ref.phone || ref.contact || ""}
+                              onChange={(e) => handleArrayFieldChange("references", index, "phone", e.target.value)}
+                              placeholder="Phone number"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              maxLength={11}
+                              className={`!border-gray-300 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
+                            />
+                            {fieldErrors[`referencePhone_${index}`] && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                {fieldErrors[`referencePhone_${index}`]}
+                              </Typography>
+                            )}
                           </div>
                         </div>
                       ) : (
@@ -8537,43 +9071,25 @@ const fetchPublicDataWithToken = async () => {
 
 
             <div className="flex flex-wrap gap-4 justify-center">
-              <Button
-                onClick={handleEditModeToggle}
-                color={isEditMode ? "red" : "blue"}
-                size="lg"
-                className="font-light flex items-center gap-2"
-              >
-                {isEditMode ? (
-                  <>
-                    <FaTimes className="w-4 h-4" />
-                    Cancel Edit
-                  </>
-                ) : (
-                  <>
-                    <FaPen className="w-4 h-4" />
-                    Edit Portfolio
-                  </>
-                )}
-              </Button>
-              {isEditMode && (
+              {!isEditMode ? (
                 <Button
-                  onClick={handleSavePortfolio}
+                  onClick={handleEditModeToggle}
+                  color="blue"
+                  size="lg"
+                  className="font-light flex items-center gap-2"
+                >
+                  <FaPen className="w-4 h-4" />
+                  Edit Portfolio
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleEditModeToggle}
                   color="green"
                   size="lg"
                   className="font-light flex items-center gap-2"
-                  disabled={isSaving}
                 >
-                  {isSaving ? (
-                    <>
-                      <Spinner className="w-4 h-4" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <FaSave className="w-4 h-4" />
-                      Save Changes
-                    </>
-                  )}
+                  <FaCheckCircle className="w-4 h-4" />
+                  Done Editing
                 </Button>
               )}
               {!isEditMode && (

@@ -69,6 +69,7 @@ const PortfolioCreation = () => {
   const [editingEducationIndex, setEditingEducationIndex] = useState(null)
   const [editingMembershipIndex, setEditingMembershipIndex] = useState(null)
   const [editingReferenceIndex, setEditingReferenceIndex] = useState(null)
+  const [isNcLevelOthers, setIsNcLevelOthers] = useState(false)
   const [newProject, setNewProject] = useState({
     title: "",
     description: "",
@@ -239,7 +240,7 @@ const PortfolioCreation = () => {
     return !message
   }
 
-  const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV", "NC V", "NC VI"]
+  const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV", "NC V", "NC VI", "Others"]
 
   // Get design theme for preview (matching ViewPortfolio.jsx)
   const getDesignTheme = (template) => {
@@ -571,6 +572,14 @@ const PortfolioCreation = () => {
     }
     fetchTokenAndProfileData()
   }, [BACKEND_URL, navigate])
+
+  // Initialize isNcLevelOthers if formData.ncLevel is a custom value (only on mount)
+  useEffect(() => {
+    // Check if initial value is a custom NC Level (not in standard options)
+    if (formData.ncLevel && !NC_LEVEL_OPTIONS.slice(0, -1).includes(formData.ncLevel)) {
+      setIsNcLevelOthers(true)
+    }
+  }, []) // Only run on mount
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -1760,23 +1769,57 @@ const PortfolioCreation = () => {
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                     NC Level
                   </Typography>
-                  <Select
-                    size="lg"
-                    label="Select NC Level"
-                    value={formData.ncLevel || ""}
-                    onChange={(val) => setFormData((prev) => ({ ...prev, ncLevel: val || "" }))}
-                    menuProps={selectMenuProps}
-                    containerProps={selectContainerProps}
-                    disabled={isLoading}
-                    className="!border-gray-300 focus:!border-blue-500"
-                  >
-                    <Option value="">None</Option>
-                    {NC_LEVEL_OPTIONS.map((level) => (
-                      <Option key={level} value={level}>
-                        {level}
-                      </Option>
-                    ))}
-                  </Select>
+                  {isNcLevelOthers ? (
+                    <Input
+                      size="lg"
+                      value={formData.ncLevel || ""}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        setFormData((prev) => ({ ...prev, ncLevel: value }))
+                      }}
+                      onBlur={(e) => {
+                        // Automatically return to dropdown if input is empty
+                        if (!e.target.value || e.target.value.trim() === "") {
+                          setIsNcLevelOthers(false)
+                          setFormData((prev) => ({ ...prev, ncLevel: "" }))
+                        }
+                      }}
+                      placeholder="Enter custom NC Level (e.g., NC VII, NC VIII)"
+                      disabled={isLoading}
+                      className="!border-gray-300 focus:!border-blue-500"
+                      autoComplete="off"
+                    />
+                  ) : (
+                    <Select
+                      size="lg"
+                      label="Select NC Level"
+                      value={
+                        formData.ncLevel && NC_LEVEL_OPTIONS.slice(0, -1).includes(formData.ncLevel)
+                          ? formData.ncLevel
+                          : ""
+                      }
+                      onChange={(val) => {
+                        if (val === "Others") {
+                          setIsNcLevelOthers(true)
+                          setFormData((prev) => ({ ...prev, ncLevel: "" }))
+                        } else {
+                          setIsNcLevelOthers(false)
+                          setFormData((prev) => ({ ...prev, ncLevel: val || "" }))
+                        }
+                      }}
+                      menuProps={selectMenuProps}
+                      containerProps={selectContainerProps}
+                      disabled={isLoading}
+                      className="!border-gray-300 focus:!border-blue-500"
+                    >
+                      <Option value="">None</Option>
+                      {NC_LEVEL_OPTIONS.map((level) => (
+                        <Option key={level} value={level}>
+                          {level}
+                        </Option>
+                      ))}
+                    </Select>
+                  )}
                 </div>
 
                 <div>
@@ -2011,7 +2054,18 @@ const PortfolioCreation = () => {
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                         rows={3}
+                        maxLength={300}
                       />
+                      <div className="flex justify-between items-center mt-1">
+                        <Typography variant="small" className="text-gray-500">
+                          {newProject.description.length}/300 characters
+                        </Typography>
+                        {newProject.description.length > 300 && (
+                          <Typography variant="small" color="red">
+                            Description cannot exceed 300 characters.
+                          </Typography>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
@@ -2154,16 +2208,16 @@ const PortfolioCreation = () => {
                           >
                             <FaPen className="w-5 h-5" />
                           </Button>
-                          <Button
-                            variant="text"
-                            color="red"
-                            size="sm"
-                            onClick={() => handleRemoveProject(proj.id)}
-                            disabled={isLoading}
-                            className="hover:bg-red-100 focus:bg-red-100"
-                          >
-                            <FaTrash className="w-5 h-5" />
-                          </Button>
+                        <Button
+                          variant="text"
+                          color="red"
+                          size="sm"
+                          onClick={() => handleRemoveProject(proj.id)}
+                          disabled={isLoading}
+                          className="hover:bg-red-100 focus:bg-red-100"
+                        >
+                          <FaTrash className="w-5 h-5" />
+                        </Button>
                         </div>
                       </CardBody>
                     </Card>
@@ -2546,16 +2600,16 @@ const PortfolioCreation = () => {
                           >
                             <FaPen className="w-5 h-5" />
                           </Button>
-                          <Button
-                            variant="text"
-                            color="red"
-                            size="sm"
-                            onClick={() => handleRemoveSkill(index)}
-                            disabled={isLoading}
-                            className="hover:bg-red-100 focus:bg-red-100"
-                          >
-                            <FaTrash className="w-5 h-5" />
-                          </Button>
+                        <Button
+                          variant="text"
+                          color="red"
+                          size="sm"
+                          onClick={() => handleRemoveSkill(index)}
+                          disabled={isLoading}
+                          className="hover:bg-red-100 focus:bg-red-100"
+                        >
+                          <FaTrash className="w-5 h-5" />
+                        </Button>
                         </div>
                       </CardBody>
                     </Card>
@@ -2739,16 +2793,16 @@ const PortfolioCreation = () => {
                             >
                               <FaPen className="w-5 h-5" />
                             </Button>
-                            <Button
-                              variant="text"
-                              color="red"
-                              size="sm"
-                              onClick={() => handleRemoveExperience(index)}
-                              disabled={isLoading}
-                              className="hover:bg-red-100 focus:bg-red-100"
-                            >
-                              <FaTrash className="w-5 h-5" />
-                            </Button>
+                          <Button
+                            variant="text"
+                            color="red"
+                            size="sm"
+                            onClick={() => handleRemoveExperience(index)}
+                            disabled={isLoading}
+                            className="hover:bg-red-100 focus:bg-red-100"
+                          >
+                            <FaTrash className="w-5 h-5" />
+                          </Button>
                           </div>
                         </div>
                         {(exp.startDate || exp.endDate) && (
@@ -2909,16 +2963,16 @@ const PortfolioCreation = () => {
                           >
                             <FaPen className="w-5 h-5" />
                           </Button>
-                          <Button
-                            variant="text"
-                            color="red"
-                            size="sm"
-                            onClick={() => handleRemoveAward(index)}
-                            disabled={isLoading}
-                            className="hover:bg-red-100 focus:bg-red-100"
-                          >
-                            <FaTrash className="w-5 h-5" />
-                          </Button>
+                        <Button
+                          variant="text"
+                          color="red"
+                          size="sm"
+                          onClick={() => handleRemoveAward(index)}
+                          disabled={isLoading}
+                          className="hover:bg-red-100 focus:bg-red-100"
+                        >
+                          <FaTrash className="w-5 h-5" />
+                        </Button>
                         </div>
                       </CardBody>
                     </Card>
@@ -3067,16 +3121,16 @@ const PortfolioCreation = () => {
                           >
                             <FaPen className="w-5 h-5" />
                           </Button>
-                          <Button
-                            variant="text"
-                            color="red"
-                            size="sm"
-                            onClick={() => handleRemoveEducation(index)}
-                            disabled={isLoading}
-                            className="hover:bg-red-100 focus:bg-red-100"
-                          >
-                            <FaTrash className="w-5 h-5" />
-                          </Button>
+                        <Button
+                          variant="text"
+                          color="red"
+                          size="sm"
+                          onClick={() => handleRemoveEducation(index)}
+                          disabled={isLoading}
+                          className="hover:bg-red-100 focus:bg-red-100"
+                        >
+                          <FaTrash className="w-5 h-5" />
+                        </Button>
                         </div>
                       </CardBody>
                     </Card>
@@ -3225,16 +3279,16 @@ const PortfolioCreation = () => {
                           >
                             <FaPen className="w-5 h-5" />
                           </Button>
-                          <Button
-                            variant="text"
-                            color="red"
-                            size="sm"
-                            onClick={() => handleRemoveMembership(index)}
-                            disabled={isLoading}
-                            className="hover:bg-red-100 focus:bg-red-100"
-                          >
-                            <FaTrash className="w-5 h-5" />
-                          </Button>
+                        <Button
+                          variant="text"
+                          color="red"
+                          size="sm"
+                          onClick={() => handleRemoveMembership(index)}
+                          disabled={isLoading}
+                          className="hover:bg-red-100 focus:bg-red-100"
+                        >
+                          <FaTrash className="w-5 h-5" />
+                        </Button>
                         </div>
                       </CardBody>
                     </Card>
@@ -3440,16 +3494,16 @@ const PortfolioCreation = () => {
                           >
                             <FaPen className="w-5 h-5" />
                           </Button>
-                          <Button
-                            variant="text"
-                            color="red"
-                            size="sm"
-                            onClick={() => handleRemoveReference(index)}
-                            disabled={isLoading}
-                            className="hover:bg-red-100 focus:bg-red-100"
-                          >
-                            <FaTrash className="w-5 h-5" />
-                          </Button>
+                        <Button
+                          variant="text"
+                          color="red"
+                          size="sm"
+                          onClick={() => handleRemoveReference(index)}
+                          disabled={isLoading}
+                          className="hover:bg-red-100 focus:bg-red-100"
+                        >
+                          <FaTrash className="w-5 h-5" />
+                        </Button>
                         </div>
                       </CardBody>
                     </Card>
