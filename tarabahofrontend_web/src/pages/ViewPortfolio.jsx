@@ -121,7 +121,7 @@ const ViewPortfolio = () => {
   // Get design theme colors and layout based on designTemplate
   const getDesignTheme = (template) => {
     const themes = {
-      "bread-pastry": {
+      "Default Template 2": {
         headerGradient: "from-amber-500 via-orange-500 to-amber-600",
         headerBg: "bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600",
         accentColor: "amber",
@@ -171,7 +171,7 @@ const ViewPortfolio = () => {
         typographySize: "text-5xl md:text-6xl lg:text-7xl",
         titleWeight: "font-extrabold",
       },
-      "housekeeping": {
+      "Default Template 1": {
         headerGradient: "from-blue-500 via-indigo-500 to-blue-600",
         headerBg: "bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800",
         accentColor: "blue",
@@ -196,7 +196,7 @@ const ViewPortfolio = () => {
         typographySize: "text-5xl md:text-6xl lg:text-7xl",
         titleWeight: "font-extralight",
       },
-      "food-beverage": {
+      "Agriculture and Fishery": {
         headerGradient: "from-gray-800 via-gray-700 to-gray-900",
         headerBg: "bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900",
         accentColor: "gray",
@@ -221,7 +221,7 @@ const ViewPortfolio = () => {
         typographySize: "text-3xl md:text-4xl lg:text-5xl",
         titleWeight: "font-bold",
       },
-      "bartending-barista": {
+      "Tourism": {
         headerGradient: "from-purple-500 via-violet-500 to-purple-600",
         headerBg: "bg-gradient-to-br from-purple-500 via-violet-500 to-purple-600",
         accentColor: "purple",
@@ -2632,9 +2632,9 @@ const fetchPublicDataWithToken = async () => {
         }
       `}</style>
 
-      <div className={`min-h-screen ${portfolio?.designTemplate === "food-beverage" ? "bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200" : portfolio?.designTemplate === "bartending-barista" ? "bg-white" : "bg-gray-50"} py-8 px-4`}>
+      <div className={`min-h-screen ${portfolio?.designTemplate === "Agriculture and Fishery" ? "bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200" : portfolio?.designTemplate === "Tourism" ? "bg-white" : "bg-gray-50"} py-8 px-4`}>
       <div className="max-w-7xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
-        {portfolio?.designTemplate === "food-beverage" ? (
+        {portfolio?.designTemplate === "Agriculture and Fishery" ? (
           <div className="px-6 py-8 bg-gradient-to-br from-gray-50 via-gray-100 via-gray-200 to-gray-100" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left Sidebar - Profile Image, Contact, Skills, TESDA */}
@@ -4408,7 +4408,7 @@ const fetchPublicDataWithToken = async () => {
               </div>
             </div>
           </div>
-        ) : portfolio?.designTemplate === "bartending-barista" ? (
+        ) : portfolio?.designTemplate === "Tourism" ? (
           /* Tourism - Modern Centered Layout with Clean Résumé Style */
           <div className="bg-white min-h-screen" style={{ fontFamily: "'Montserrat', 'Roboto', 'Inter', sans-serif" }}>
             {/* Header Section - Clean Modern Résumé Style */}

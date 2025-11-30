@@ -62,6 +62,13 @@ const PortfolioCreation = () => {
   const [isAddingReference, setIsAddingReference] = useState(false)
   const [isAddingCertificate, setIsAddingCertificate] = useState(false)
   const [editingCertificateId, setEditingCertificateId] = useState(null)
+  const [editingProjectId, setEditingProjectId] = useState(null)
+  const [editingSkillIndex, setEditingSkillIndex] = useState(null)
+  const [editingExperienceIndex, setEditingExperienceIndex] = useState(null)
+  const [editingAwardIndex, setEditingAwardIndex] = useState(null)
+  const [editingEducationIndex, setEditingEducationIndex] = useState(null)
+  const [editingMembershipIndex, setEditingMembershipIndex] = useState(null)
+  const [editingReferenceIndex, setEditingReferenceIndex] = useState(null)
   const [newProject, setNewProject] = useState({
     title: "",
     description: "",
@@ -72,7 +79,7 @@ const PortfolioCreation = () => {
   const [newSkill, setNewSkill] = useState({
     name: "",
     type: "TECHNICAL",
-    proficiencyLevel: "",
+    proficiencyLevel: "Beginner",
   })
   const [newExperience, setNewExperience] = useState({
     jobTitle: "",
@@ -136,13 +143,12 @@ const PortfolioCreation = () => {
 
   const validSkillTypes = ["TECHNICAL", "LANGUAGE", "DIGITAL", "SOFT", "INDUSTRY_SPECIFIC"]
 
-  // Course type to design template mapping
+  // Course type to design template mapping (using course type names directly)
   const courseTypeTemplates = {
-    "Agriculture and Fishery": "food-beverage",
-    "Automotive and Land Transportation": "housekeeping",
-    "Decorative Crafts": "bread-pastry",
-    "Maritime": "housekeeping",
-    "Tourism": "bartending-barista"
+    "Agriculture and Fishery": "Agriculture and Fishery",
+    "Default Template 1": "Default Template 1",
+    "Default Template 2": "Default Template 2",
+    "Tourism": "Tourism"
   }
 
   const updateFieldError = (fieldName, errorMessage) => {
@@ -238,7 +244,7 @@ const PortfolioCreation = () => {
   // Get design theme for preview (matching ViewPortfolio.jsx)
   const getDesignTheme = (template) => {
     const themes = {
-      "bread-pastry": {
+      "Default Template 2": {
         headerGradient: "from-amber-500 via-orange-500 to-amber-600",
         headerBg: "bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600",
         accentColor: "amber",
@@ -288,7 +294,7 @@ const PortfolioCreation = () => {
         typographySize: "text-5xl md:text-6xl lg:text-7xl",
         titleWeight: "font-extrabold",
       },
-      "housekeeping": {
+      "Default Template 1": {
         headerGradient: "from-blue-500 via-indigo-500 to-blue-600",
         headerBg: "bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800",
         accentColor: "blue",
@@ -313,7 +319,7 @@ const PortfolioCreation = () => {
         typographySize: "text-5xl md:text-6xl lg:text-7xl",
         titleWeight: "font-extralight",
       },
-      "food-beverage": {
+      "Agriculture and Fishery": {
         headerGradient: "from-gray-800 via-gray-700 to-gray-900",
         headerBg: "bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900",
         accentColor: "gray",
@@ -338,7 +344,7 @@ const PortfolioCreation = () => {
         typographySize: "text-3xl md:text-4xl lg:text-5xl",
         titleWeight: "font-bold",
       },
-      "bartending-barista": {
+      "Tourism": {
         headerGradient: "from-purple-500 via-violet-500 to-purple-600",
         headerBg: "bg-gradient-to-br from-purple-500 via-violet-500 to-purple-600",
         accentColor: "purple",
@@ -395,7 +401,7 @@ const PortfolioCreation = () => {
   // Get layout properties for preview
   const getPreviewLayout = (template) => {
     const layouts = {
-      "bread-pastry": {
+      "Default Template 2": {
         headerLayout: "flex-col items-center text-center",
         avatarSize: "w-16 h-16",
         cardStyle: "rounded-2xl",
@@ -407,19 +413,19 @@ const PortfolioCreation = () => {
         cardStyle: "rounded-xl border-2",
         cardPadding: "p-5",
       },
-      "housekeeping": {
+      "Default Template 1": {
         headerLayout: "flex-row items-center text-left",
         avatarSize: "w-20 h-20",
         cardStyle: "rounded-lg",
         cardPadding: "p-5",
       },
-      "food-beverage": {
+      "Agriculture and Fishery": {
         headerLayout: "flex-row-reverse items-center text-right",
         avatarSize: "w-16 h-16",
         cardStyle: "rounded-3xl",
         cardPadding: "p-6",
       },
-      "bartending-barista": {
+      "Tourism": {
         headerLayout: "flex-col items-center text-center",
         avatarSize: "w-14 h-14",
         cardStyle: "rounded-full border-4",
@@ -437,21 +443,25 @@ const PortfolioCreation = () => {
 
   const courseTypes = [
     "Agriculture and Fishery",
-    "Automotive and Land Transportation",
-    "Decorative Crafts",
-    "Maritime",
+    "Default Template 1",
+    "Default Template 2",
     "Tourism"
   ]
 
   const SKILL_PROFICIENCY_LEVELS = ["Beginner", "Intermediate", "Advanced", "Expert"]
-  const selectMenuProps = { className: "z-[9999]" }
-  const selectContainerProps = { className: "relative z-[60]" }
+  const selectMenuProps = { 
+    className: "!z-[99999]",
+    style: { zIndex: 99999 }
+  }
+  const selectContainerProps = { 
+    className: "relative !z-[99999]",
+    style: { zIndex: 99999 }
+  }
 
   // Helper function to check if course type should always show sections
   const shouldAlwaysShowSections = (courseType) => {
-    return courseType === "Automotive and Land Transportation" || 
-           courseType === "Maritime" || 
-           courseType === "Decorative Crafts"
+    return courseType === "Default Template 1" || 
+           courseType === "Default Template 2"
   }
 
   const steps = [
@@ -679,7 +689,8 @@ const PortfolioCreation = () => {
       return
     }
     setSkills((prev) => [...prev, { ...newSkill }])
-    setNewSkill({ name: "", type: "TECHNICAL", proficiencyLevel: "" })
+    setNewSkill({ name: "", type: "TECHNICAL", proficiencyLevel: "Beginner" })
+    setEditingSkillIndex(null)
     setIsAddingSkill(false)
     setError("")
   }
@@ -691,6 +702,7 @@ const PortfolioCreation = () => {
     }
     setExperiences((prev) => [...prev, { ...newExperience }])
     setNewExperience({ jobTitle: "", company: "", startDate: "", endDate: "", responsibilities: "" })
+    setEditingExperienceIndex(null)
     setIsAddingExperience(false)
     setError("")
   }
@@ -702,6 +714,7 @@ const PortfolioCreation = () => {
     }
     setAwardsRecognitions((prev) => [...prev, { ...newAward }])
     setNewAward({ title: "", issuer: "", dateReceived: "" })
+    setEditingAwardIndex(null)
     setIsAddingAward(false)
     setError("")
   }
@@ -713,6 +726,7 @@ const PortfolioCreation = () => {
     }
     setContinuingEducations((prev) => [...prev, { ...newEducation }])
     setNewEducation({ courseName: "", institution: "", completionDate: "" })
+    setEditingEducationIndex(null)
     setIsAddingEducation(false)
     setError("")
   }
@@ -724,6 +738,7 @@ const PortfolioCreation = () => {
     }
     setProfessionalMemberships((prev) => [...prev, { ...newMembership }])
     setNewMembership({ organization: "", membershipType: "", startDate: "" })
+    setEditingMembershipIndex(null)
     setIsAddingMembership(false)
     setError("")
   }
@@ -756,6 +771,7 @@ const PortfolioCreation = () => {
       endDate: "",
       projectImageFile: null,
     })
+    setEditingProjectId(null)
     setIsAddingProject(false)
     setError("")
   }
@@ -778,6 +794,7 @@ const PortfolioCreation = () => {
     }
     setReferences((prev) => [...prev, referenceToAdd])
     setNewReference({ name: "", relationship: "", phone: "", company: "", email: "" })
+    setEditingReferenceIndex(null)
     setIsAddingReference(false)
     updateFieldError("referencePhone", "")
     updateFieldError("referenceEmail", "")
@@ -863,6 +880,230 @@ const PortfolioCreation = () => {
 
   const handleRemoveCertificate = (id) => {
     setCertificates((prev) => prev.filter((cert) => cert.id !== id))
+  }
+
+  const handleEditProject = (project) => {
+    setEditingProjectId(project.id)
+    setNewProject({
+      title: project.title,
+      description: project.description,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      projectImageFile: null, // Don't carry over the file for editing
+    })
+    setIsAddingProject(true)
+  }
+
+  const handleUpdateProject = () => {
+    if (!newProject.title) {
+      setError("Please fill in the project title.")
+      return
+    }
+    // Image file is optional when editing - can keep existing image
+    setProjects((prev) =>
+      prev.map((proj) =>
+        proj.id === editingProjectId
+          ? {
+              ...proj,
+              title: newProject.title,
+              description: newProject.description,
+              startDate: newProject.startDate,
+              endDate: newProject.endDate,
+              projectImageFile: newProject.projectImageFile,
+              preview: newProject.projectImageFile
+                ? URL.createObjectURL(newProject.projectImageFile)
+                : proj.preview,
+            }
+          : proj,
+      ),
+    )
+    setNewProject({
+      title: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      projectImageFile: null,
+    })
+    setEditingProjectId(null)
+    setIsAddingProject(false)
+    setError("")
+  }
+
+  const handleEditSkill = (skill, index) => {
+    setEditingSkillIndex(index)
+    setNewSkill({
+      name: skill.name,
+      type: skill.type,
+      proficiencyLevel: skill.proficiencyLevel || "Beginner",
+    })
+    setIsAddingSkill(true)
+  }
+
+  const handleUpdateSkill = () => {
+    if (!newSkill.name || newSkill.name.trim() === "") {
+      setError("Please fill in the skill name.")
+      return
+    }
+    if (!validSkillTypes.includes(newSkill.type)) {
+      setError(`Please select a valid skill type: ${validSkillTypes.join(", ")}`)
+      return
+    }
+    setSkills((prev) =>
+      prev.map((skill, index) =>
+        index === editingSkillIndex ? { ...newSkill } : skill,
+      ),
+    )
+    setNewSkill({ name: "", type: "TECHNICAL", proficiencyLevel: "Beginner" })
+    setEditingSkillIndex(null)
+    setIsAddingSkill(false)
+    setError("")
+  }
+
+  const handleEditExperience = (experience, index) => {
+    setEditingExperienceIndex(index)
+    setNewExperience({
+      jobTitle: experience.jobTitle,
+      company: experience.company,
+      startDate: experience.startDate,
+      endDate: experience.endDate,
+      responsibilities: experience.responsibilities,
+    })
+    setIsAddingExperience(true)
+  }
+
+  const handleUpdateExperience = () => {
+    if (!newExperience.jobTitle || !newExperience.company) {
+      setError("Please fill in the job title and company.")
+      return
+    }
+    setExperiences((prev) =>
+      prev.map((exp, index) =>
+        index === editingExperienceIndex ? { ...newExperience } : exp,
+      ),
+    )
+    setNewExperience({ jobTitle: "", company: "", startDate: "", endDate: "", responsibilities: "" })
+    setEditingExperienceIndex(null)
+    setIsAddingExperience(false)
+    setError("")
+  }
+
+  const handleEditAward = (award, index) => {
+    setEditingAwardIndex(index)
+    setNewAward({
+      title: award.title,
+      issuer: award.issuer,
+      dateReceived: award.dateReceived,
+    })
+    setIsAddingAward(true)
+  }
+
+  const handleUpdateAward = () => {
+    if (!newAward.title) {
+      setError("Please fill in the award title.")
+      return
+    }
+    setAwardsRecognitions((prev) =>
+      prev.map((award, index) =>
+        index === editingAwardIndex ? { ...newAward } : award,
+      ),
+    )
+    setNewAward({ title: "", issuer: "", dateReceived: "" })
+    setEditingAwardIndex(null)
+    setIsAddingAward(false)
+    setError("")
+  }
+
+  const handleEditEducation = (education, index) => {
+    setEditingEducationIndex(index)
+    setNewEducation({
+      courseName: education.courseName,
+      institution: education.institution,
+      completionDate: education.completionDate,
+    })
+    setIsAddingEducation(true)
+  }
+
+  const handleUpdateEducation = () => {
+    if (!newEducation.courseName) {
+      setError("Please fill in the course name.")
+      return
+    }
+    setContinuingEducations((prev) =>
+      prev.map((edu, index) =>
+        index === editingEducationIndex ? { ...newEducation } : edu,
+      ),
+    )
+    setNewEducation({ courseName: "", institution: "", completionDate: "" })
+    setEditingEducationIndex(null)
+    setIsAddingEducation(false)
+    setError("")
+  }
+
+  const handleEditMembership = (membership, index) => {
+    setEditingMembershipIndex(index)
+    setNewMembership({
+      organization: membership.organization,
+      membershipType: membership.membershipType,
+      startDate: membership.startDate,
+    })
+    setIsAddingMembership(true)
+  }
+
+  const handleUpdateMembership = () => {
+    if (!newMembership.organization) {
+      setError("Please fill in the organization name.")
+      return
+    }
+    setProfessionalMemberships((prev) =>
+      prev.map((mem, index) =>
+        index === editingMembershipIndex ? { ...newMembership } : mem,
+      ),
+    )
+    setNewMembership({ organization: "", membershipType: "", startDate: "" })
+    setEditingMembershipIndex(null)
+    setIsAddingMembership(false)
+    setError("")
+  }
+
+  const handleEditReference = (reference, index) => {
+    setEditingReferenceIndex(index)
+    setNewReference({
+      name: reference.name,
+      relationship: reference.relationship || reference.position,
+      phone: reference.phone || reference.contact,
+      company: reference.company,
+      email: reference.email,
+    })
+    setIsAddingReference(true)
+  }
+
+  const handleUpdateReference = () => {
+    if (!newReference.name) {
+      setError("Please fill in the reference name.")
+      return
+    }
+    const phoneValid = validateField("referencePhone", newReference.phone)
+    const emailValid = validateField("referenceEmail", newReference.email)
+    if (!phoneValid || !emailValid) {
+      setError("Please provide valid reference contact details.")
+      return
+    }
+    const referenceToUpdate = {
+      ...newReference,
+      position: newReference.relationship,
+      contact: newReference.phone,
+    }
+    setReferences((prev) =>
+      prev.map((ref, index) =>
+        index === editingReferenceIndex ? referenceToUpdate : ref,
+      ),
+    )
+    setNewReference({ name: "", relationship: "", phone: "", company: "", email: "" })
+    setEditingReferenceIndex(null)
+    setIsAddingReference(false)
+    updateFieldError("referencePhone", "")
+    updateFieldError("referenceEmail", "")
+    setError("")
   }
 
   const handleRemoveSkill = (index) => {
@@ -1252,6 +1493,18 @@ const PortfolioCreation = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 relative overflow-hidden">
+      {/* Global style to ensure dropdowns appear above navigation */}
+      <style>{`
+        .material-tailwind-select-menu {
+          z-index: 99999 !important;
+        }
+        [data-popper-placement] {
+          z-index: 99999 !important;
+        }
+        .material-tailwind-select-menu > div {
+          z-index: 99999 !important;
+        }
+      `}</style>
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl animate-pulse"></div>
@@ -1711,6 +1964,7 @@ const PortfolioCreation = () => {
                   color="blue"
                   onClick={() => {
                     setIsAddingProject(true)
+                    setEditingProjectId(null)
                     setNewProject({
                       title: "",
                       description: "",
@@ -1791,12 +2045,14 @@ const PortfolioCreation = () => {
 
                   <div className="flex flex-col items-center space-y-4 mb-6">
                     <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                      Project Image *
+                      Project Image {editingProjectId ? "(Optional - leave unchanged or upload new)" : "*"}
                     </Typography>
                     <Avatar
                       src={
                         newProject.projectImageFile
                           ? URL.createObjectURL(newProject.projectImageFile)
+                          : editingProjectId && projects.find(p => p.id === editingProjectId)?.preview
+                          ? projects.find(p => p.id === editingProjectId).preview
                           : "/placeholder.svg"
                       }
                       alt="Project Preview"
@@ -1805,7 +2061,11 @@ const PortfolioCreation = () => {
                       onClick={handleProjectImageClick}
                     />
                     <Typography variant="small" className="text-gray-600 text-center">
-                      {newProject.projectImageFile ? newProject.projectImageFile.name : "Click to upload project image"}
+                      {newProject.projectImageFile 
+                        ? newProject.projectImageFile.name 
+                        : editingProjectId && projects.find(p => p.id === editingProjectId)?.preview
+                        ? "Click to change image (or leave unchanged)"
+                        : "Click to upload project image"}
                     </Typography>
                     <Button
                       variant="gradient"
@@ -1831,18 +2091,18 @@ const PortfolioCreation = () => {
                     <Button
                       variant="filled"
                       color="green"
-                      onClick={handleAddProject}
+                      onClick={editingProjectId ? handleUpdateProject : handleAddProject}
                       disabled={isLoading}
                       className="flex items-center gap-2"
                     >
-                      <FaPlus className="w-4 h-4" />
-                      Add Project
+                      {editingProjectId ? "Update" : "Add"} Project
                     </Button>
                     <Button
                       variant="outlined"
                       color="gray"
                       onClick={() => {
                         setIsAddingProject(false)
+                        setEditingProjectId(null)
                         setNewProject({
                           title: "",
                           description: "",
@@ -1883,16 +2143,28 @@ const PortfolioCreation = () => {
                             </Typography>
                           )}
                         </div>
-                        <Button
-                          variant="text"
-                          color="red"
-                          size="sm"
-                          onClick={() => handleRemoveProject(proj.id)}
-                          disabled={isLoading}
-                          className="hover:bg-red-100 focus:bg-red-100"
-                        >
-                          <FaTrash className="w-5 h-5" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="text"
+                            color="blue"
+                            size="sm"
+                            onClick={() => handleEditProject(proj)}
+                            disabled={isLoading}
+                            className="hover:bg-blue-100 focus:bg-blue-100"
+                          >
+                            <FaPen className="w-5 h-5" />
+                          </Button>
+                          <Button
+                            variant="text"
+                            color="red"
+                            size="sm"
+                            onClick={() => handleRemoveProject(proj.id)}
+                            disabled={isLoading}
+                            className="hover:bg-red-100 focus:bg-red-100"
+                          >
+                            <FaTrash className="w-5 h-5" />
+                          </Button>
+                        </div>
                       </CardBody>
                     </Card>
                   ))}
@@ -2144,7 +2416,10 @@ const PortfolioCreation = () => {
                 <Button
                   variant="gradient"
                   color="blue"
-                  onClick={() => setIsAddingSkill(true)}
+                  onClick={() => {
+                    setIsAddingSkill(true)
+                    setEditingSkillIndex(null)
+                  }}
                   disabled={isLoading}
                   className="flex items-center gap-2"
                 >
@@ -2198,16 +2473,15 @@ const PortfolioCreation = () => {
                       <Select
                         size="lg"
                         label="Select Proficiency Level"
-                        value={newSkill.proficiencyLevel || ""}
+                        value={newSkill.proficiencyLevel || "Beginner"}
                         onChange={(val) =>
-                          setNewSkill((prev) => ({ ...prev, proficiencyLevel: val || "" }))
+                          setNewSkill((prev) => ({ ...prev, proficiencyLevel: val || "Beginner" }))
                         }
                         menuProps={selectMenuProps}
                         containerProps={selectContainerProps}
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       >
-                        <Option value="">Not specified</Option>
                         {SKILL_PROFICIENCY_LEVELS.map((level) => (
                           <Option key={level} value={level}>
                             {level}
@@ -2220,16 +2494,19 @@ const PortfolioCreation = () => {
                     <Button
                       variant="filled"
                       color="green"
-                      onClick={handleAddSkill}
+                      onClick={editingSkillIndex !== null ? handleUpdateSkill : handleAddSkill}
                       disabled={isLoading}
                       className="flex items-center gap-2"
                     >
-                      Add
+                      {editingSkillIndex !== null ? "Update" : "Add"}
                     </Button>
                     <Button
                       variant="outlined"
                       color="gray"
-                      onClick={() => setIsAddingSkill(false)}
+                      onClick={() => {
+                        setIsAddingSkill(false)
+                        setEditingSkillIndex(null)
+                      }}
                       disabled={isLoading}
                     >
                       Cancel
@@ -2258,16 +2535,28 @@ const PortfolioCreation = () => {
                             </Typography>
                           )}
                         </div>
-                        <Button
-                          variant="text"
-                          color="red"
-                          size="sm"
-                          onClick={() => handleRemoveSkill(index)}
-                          disabled={isLoading}
-                          className="hover:bg-red-100 focus:bg-red-100"
-                        >
-                          <FaTrash className="w-5 h-5" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="text"
+                            color="blue"
+                            size="sm"
+                            onClick={() => handleEditSkill(skill, index)}
+                            disabled={isLoading}
+                            className="hover:bg-blue-100 focus:bg-blue-100"
+                          >
+                            <FaPen className="w-5 h-5" />
+                          </Button>
+                          <Button
+                            variant="text"
+                            color="red"
+                            size="sm"
+                            onClick={() => handleRemoveSkill(index)}
+                            disabled={isLoading}
+                            className="hover:bg-red-100 focus:bg-red-100"
+                          >
+                            <FaTrash className="w-5 h-5" />
+                          </Button>
+                        </div>
                       </CardBody>
                     </Card>
                   ))}
@@ -2299,7 +2588,10 @@ const PortfolioCreation = () => {
                 <Button
                   variant="gradient"
                   color="blue"
-                  onClick={() => setIsAddingExperience(true)}
+                  onClick={() => {
+                    setIsAddingExperience(true)
+                    setEditingExperienceIndex(null)
+                  }}
                   disabled={isLoading}
                   className="flex items-center gap-2"
                 >
@@ -2399,16 +2691,19 @@ const PortfolioCreation = () => {
                     <Button
                       variant="filled"
                       color="green"
-                      onClick={handleAddExperience}
+                      onClick={editingExperienceIndex !== null ? handleUpdateExperience : handleAddExperience}
                       disabled={isLoading}
                       className="flex items-center gap-2"
                     >
-                      Add
+                      {editingExperienceIndex !== null ? "Update" : "Add"}
                     </Button>
                     <Button
                       variant="outlined"
                       color="gray"
-                      onClick={() => setIsAddingExperience(false)}
+                      onClick={() => {
+                        setIsAddingExperience(false)
+                        setEditingExperienceIndex(null)
+                      }}
                       disabled={isLoading}
                     >
                       Cancel
@@ -2433,16 +2728,28 @@ const PortfolioCreation = () => {
                               {exp.company}
                             </Typography>
                           </div>
-                          <Button
-                            variant="text"
-                            color="red"
-                            size="sm"
-                            onClick={() => handleRemoveExperience(index)}
-                            disabled={isLoading}
-                            className="hover:bg-red-100 focus:bg-red-100"
-                          >
-                            <FaTrash className="w-5 h-5" />
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="text"
+                              color="blue"
+                              size="sm"
+                              onClick={() => handleEditExperience(exp, index)}
+                              disabled={isLoading}
+                              className="hover:bg-blue-100 focus:bg-blue-100"
+                            >
+                              <FaPen className="w-5 h-5" />
+                            </Button>
+                            <Button
+                              variant="text"
+                              color="red"
+                              size="sm"
+                              onClick={() => handleRemoveExperience(index)}
+                              disabled={isLoading}
+                              className="hover:bg-red-100 focus:bg-red-100"
+                            >
+                              <FaTrash className="w-5 h-5" />
+                            </Button>
+                          </div>
                         </div>
                         {(exp.startDate || exp.endDate) && (
                           <Typography variant="small" className="text-gray-500 mb-2">
@@ -2486,7 +2793,10 @@ const PortfolioCreation = () => {
                 <Button
                   variant="gradient"
                   color="blue"
-                  onClick={() => setIsAddingAward(true)}
+                  onClick={() => {
+                    setIsAddingAward(true)
+                    setEditingAwardIndex(null)
+                  }}
                   disabled={isLoading}
                   className="flex items-center gap-2"
                 >
@@ -2545,16 +2855,19 @@ const PortfolioCreation = () => {
                     <Button
                       variant="filled"
                       color="green"
-                      onClick={handleAddAward}
+                      onClick={editingAwardIndex !== null ? handleUpdateAward : handleAddAward}
                       disabled={isLoading}
                       className="flex items-center gap-2"
                     >
-                      Add
+                      {editingAwardIndex !== null ? "Update" : "Add"}
                     </Button>
                     <Button
                       variant="outlined"
                       color="gray"
-                      onClick={() => setIsAddingAward(false)}
+                      onClick={() => {
+                        setIsAddingAward(false)
+                        setEditingAwardIndex(null)
+                      }}
                       disabled={isLoading}
                     >
                       Cancel
@@ -2585,16 +2898,28 @@ const PortfolioCreation = () => {
                             </Typography>
                           )}
                         </div>
-                        <Button
-                          variant="text"
-                          color="red"
-                          size="sm"
-                          onClick={() => handleRemoveAward(index)}
-                          disabled={isLoading}
-                          className="hover:bg-red-100 focus:bg-red-100"
-                        >
-                          <FaTrash className="w-5 h-5" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="text"
+                            color="blue"
+                            size="sm"
+                            onClick={() => handleEditAward(award, index)}
+                            disabled={isLoading}
+                            className="hover:bg-blue-100 focus:bg-blue-100"
+                          >
+                            <FaPen className="w-5 h-5" />
+                          </Button>
+                          <Button
+                            variant="text"
+                            color="red"
+                            size="sm"
+                            onClick={() => handleRemoveAward(index)}
+                            disabled={isLoading}
+                            className="hover:bg-red-100 focus:bg-red-100"
+                          >
+                            <FaTrash className="w-5 h-5" />
+                          </Button>
+                        </div>
                       </CardBody>
                     </Card>
                   ))}
@@ -2626,7 +2951,10 @@ const PortfolioCreation = () => {
                 <Button
                   variant="gradient"
                   color="blue"
-                  onClick={() => setIsAddingEducation(true)}
+                  onClick={() => {
+                    setIsAddingEducation(true)
+                    setEditingEducationIndex(null)
+                  }}
                   disabled={isLoading}
                   className="flex items-center gap-2"
                 >
@@ -2685,16 +3013,19 @@ const PortfolioCreation = () => {
                     <Button
                       variant="filled"
                       color="green"
-                      onClick={handleAddEducation}
+                      onClick={editingEducationIndex !== null ? handleUpdateEducation : handleAddEducation}
                       disabled={isLoading}
                       className="flex items-center gap-2"
                     >
-                      Add
+                      {editingEducationIndex !== null ? "Update" : "Add"}
                     </Button>
                     <Button
                       variant="outlined"
                       color="gray"
-                      onClick={() => setIsAddingEducation(false)}
+                      onClick={() => {
+                        setIsAddingEducation(false)
+                        setEditingEducationIndex(null)
+                      }}
                       disabled={isLoading}
                     >
                       Cancel
@@ -2725,16 +3056,28 @@ const PortfolioCreation = () => {
                             </Typography>
                           )}
                         </div>
-                        <Button
-                          variant="text"
-                          color="red"
-                          size="sm"
-                          onClick={() => handleRemoveEducation(index)}
-                          disabled={isLoading}
-                          className="hover:bg-red-100 focus:bg-red-100"
-                        >
-                          <FaTrash className="w-5 h-5" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="text"
+                            color="blue"
+                            size="sm"
+                            onClick={() => handleEditEducation(edu, index)}
+                            disabled={isLoading}
+                            className="hover:bg-blue-100 focus:bg-blue-100"
+                          >
+                            <FaPen className="w-5 h-5" />
+                          </Button>
+                          <Button
+                            variant="text"
+                            color="red"
+                            size="sm"
+                            onClick={() => handleRemoveEducation(index)}
+                            disabled={isLoading}
+                            className="hover:bg-red-100 focus:bg-red-100"
+                          >
+                            <FaTrash className="w-5 h-5" />
+                          </Button>
+                        </div>
                       </CardBody>
                     </Card>
                   ))}
@@ -2766,7 +3109,10 @@ const PortfolioCreation = () => {
                 <Button
                   variant="gradient"
                   color="blue"
-                  onClick={() => setIsAddingMembership(true)}
+                  onClick={() => {
+                    setIsAddingMembership(true)
+                    setEditingMembershipIndex(null)
+                  }}
                   disabled={isLoading}
                   className="flex items-center gap-2"
                 >
@@ -2825,16 +3171,19 @@ const PortfolioCreation = () => {
                     <Button
                       variant="filled"
                       color="green"
-                      onClick={handleAddMembership}
+                      onClick={editingMembershipIndex !== null ? handleUpdateMembership : handleAddMembership}
                       disabled={isLoading}
                       className="flex items-center gap-2"
                     >
-                      Add
+                      {editingMembershipIndex !== null ? "Update" : "Add"}
                     </Button>
                     <Button
                       variant="outlined"
                       color="gray"
-                      onClick={() => setIsAddingMembership(false)}
+                      onClick={() => {
+                        setIsAddingMembership(false)
+                        setEditingMembershipIndex(null)
+                      }}
                       disabled={isLoading}
                     >
                       Cancel
@@ -2865,16 +3214,28 @@ const PortfolioCreation = () => {
                             </Typography>
                           )}
                         </div>
-                        <Button
-                          variant="text"
-                          color="red"
-                          size="sm"
-                          onClick={() => handleRemoveMembership(index)}
-                          disabled={isLoading}
-                          className="hover:bg-red-100 focus:bg-red-100"
-                        >
-                          <FaTrash className="w-5 h-5" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="text"
+                            color="blue"
+                            size="sm"
+                            onClick={() => handleEditMembership(mem, index)}
+                            disabled={isLoading}
+                            className="hover:bg-blue-100 focus:bg-blue-100"
+                          >
+                            <FaPen className="w-5 h-5" />
+                          </Button>
+                          <Button
+                            variant="text"
+                            color="red"
+                            size="sm"
+                            onClick={() => handleRemoveMembership(index)}
+                            disabled={isLoading}
+                            className="hover:bg-red-100 focus:bg-red-100"
+                          >
+                            <FaTrash className="w-5 h-5" />
+                          </Button>
+                        </div>
                       </CardBody>
                     </Card>
                   ))}
@@ -2906,7 +3267,10 @@ const PortfolioCreation = () => {
                 <Button
                   variant="gradient"
                   color="blue"
-                  onClick={() => setIsAddingReference(true)}
+                  onClick={() => {
+                    setIsAddingReference(true)
+                    setEditingReferenceIndex(null)
+                  }}
                   disabled={isLoading}
                   className="flex items-center gap-2"
                 >
@@ -3009,17 +3373,18 @@ const PortfolioCreation = () => {
                     <Button
                       variant="filled"
                       color="green"
-                      onClick={handleAddReference}
+                      onClick={editingReferenceIndex !== null ? handleUpdateReference : handleAddReference}
                       disabled={isLoading}
                       className="flex items-center gap-2"
                     >
-                      Add
+                      {editingReferenceIndex !== null ? "Update" : "Add"}
                     </Button>
                     <Button
                       variant="outlined"
                       color="gray"
                       onClick={() => {
                         setIsAddingReference(false)
+                        setEditingReferenceIndex(null)
                         setNewReference({ name: "", relationship: "", phone: "", company: "", email: "" })
                         updateFieldError("referencePhone", "")
                         updateFieldError("referenceEmail", "")
@@ -3064,16 +3429,28 @@ const PortfolioCreation = () => {
                             </Typography>
                           )}
                         </div>
-                        <Button
-                          variant="text"
-                          color="red"
-                          size="sm"
-                          onClick={() => handleRemoveReference(index)}
-                          disabled={isLoading}
-                          className="hover:bg-red-100 focus:bg-red-100"
-                        >
-                          <FaTrash className="w-5 h-5" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="text"
+                            color="blue"
+                            size="sm"
+                            onClick={() => handleEditReference(ref, index)}
+                            disabled={isLoading}
+                            className="hover:bg-blue-100 focus:bg-blue-100"
+                          >
+                            <FaPen className="w-5 h-5" />
+                          </Button>
+                          <Button
+                            variant="text"
+                            color="red"
+                            size="sm"
+                            onClick={() => handleRemoveReference(index)}
+                            disabled={isLoading}
+                            className="hover:bg-red-100 focus:bg-red-100"
+                          >
+                            <FaTrash className="w-5 h-5" />
+                          </Button>
+                        </div>
                       </CardBody>
                     </Card>
                   ))}
@@ -3179,7 +3556,7 @@ const PortfolioCreation = () => {
                         const designTheme = getDesignTheme(formData.designTemplate)
                         return (
                           <>
-                            {formData.designTemplate === "food-beverage" ? (
+                            {formData.designTemplate === "Agriculture and Fishery" ? (
                               /* Agriculture and Fishery - Custom Layout */
                               <div className="px-6 py-8 bg-gradient-to-br from-gray-50 via-gray-100 via-gray-200 to-gray-100" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -3756,7 +4133,7 @@ const PortfolioCreation = () => {
                                 </div>
                               </div>
                               </div>
-                            ) : formData.designTemplate === "bartending-barista" ? (
+                            ) : formData.designTemplate === "Tourism" ? (
                               /* Tourism - Modern Centered Layout with Grayscale Theme */
                               <div className="bg-white min-h-screen" style={{ fontFamily: "'Montserrat', 'Roboto', 'Inter', sans-serif" }}>
                                 {/* Header Section - Clean Modern Résumé Style */}
@@ -4495,7 +4872,7 @@ const PortfolioCreation = () => {
                                         )}
                                       </div>
 
-                                      {/* TESDA Information - Always show for Automotive, Maritime, and Decorative Crafts */}
+                                      {/* TESDA Information - Always show for Default Template 1 and Default Template 2 */}
                                       {(shouldAlwaysShowSections(formData.primaryCourseType) || formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration || formData.tesdaRegistrationNumber) && (
                                         <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
                                           <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>
@@ -4968,8 +5345,8 @@ const PortfolioCreation = () => {
 
           {/* Navigation Buttons */}
           <Card className="backdrop-blur-sm bg-white/70 border-0 shadow-xl">
-            <CardBody className="p-6">
-              <div className="flex justify-between items-center gap-4">
+            <CardBody className="p-6 px-4">
+              <div className="flex justify-between items-center gap-4 max-w-7xl mx-auto">
                 <Button
                   type="button"
                   variant="outlined"
