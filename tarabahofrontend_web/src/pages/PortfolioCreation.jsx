@@ -217,19 +217,19 @@ const PortfolioCreation = () => {
         }
         break
       case "referencePhone":
-        if (!trimmedValue) {
-          message = "Reference phone number is required."
-        } else if (!/^\d+$/.test(trimmedValue)) {
-          message = "Reference phone number must contain digits only."
-        } else if (trimmedValue.length !== 11) {
-          message = "Reference phone number must be exactly 11 digits."
+        if (trimmedValue) {
+          if (!/^\d+$/.test(trimmedValue)) {
+            message = "Reference phone number must contain digits only."
+          } else if (trimmedValue.length !== 11) {
+            message = "Reference phone number must be exactly 11 digits."
+          }
         }
         break
       case "referenceEmail":
-        if (!trimmedValue) {
-          message = "Reference email is required."
-        } else if (!isValidEmail(trimmedValue)) {
-          message = "Please provide a valid email address."
+        if (trimmedValue) {
+          if (!isValidEmail(trimmedValue)) {
+            message = "Please provide a valid email address."
+          }
         }
         break
       default:
@@ -790,11 +790,20 @@ const PortfolioCreation = () => {
       setError("Please fill in the reference name.")
       return
     }
-    const phoneValid = validateField("referencePhone", newReference.phone)
-    const emailValid = validateField("referenceEmail", newReference.email)
-    if (!phoneValid || !emailValid) {
-      setError("Please provide valid reference contact details.")
-      return
+    // Only validate format if there's input (fields are optional)
+    if (newReference.phone) {
+      const phoneValid = validateField("referencePhone", newReference.phone)
+      if (!phoneValid) {
+        setError("Please provide valid reference contact details.")
+        return
+      }
+    }
+    if (newReference.email) {
+      const emailValid = validateField("referenceEmail", newReference.email)
+      if (!emailValid) {
+        setError("Please provide valid reference contact details.")
+        return
+      }
     }
     const referenceToAdd = {
       ...newReference,
@@ -1091,11 +1100,20 @@ const PortfolioCreation = () => {
       setError("Please fill in the reference name.")
       return
     }
-    const phoneValid = validateField("referencePhone", newReference.phone)
-    const emailValid = validateField("referenceEmail", newReference.email)
-    if (!phoneValid || !emailValid) {
-      setError("Please provide valid reference contact details.")
-      return
+    // Only validate format if there's input (fields are optional)
+    if (newReference.phone) {
+      const phoneValid = validateField("referencePhone", newReference.phone)
+      if (!phoneValid) {
+        setError("Please provide valid reference contact details.")
+        return
+      }
+    }
+    if (newReference.email) {
+      const emailValid = validateField("referenceEmail", newReference.email)
+      if (!emailValid) {
+        setError("Please provide valid reference contact details.")
+        return
+      }
     }
     const referenceToUpdate = {
       ...newReference,
@@ -4414,19 +4432,31 @@ const PortfolioCreation = () => {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                           {(showAllCertificates ? certificates : certificates.slice(0, INITIAL_ITEMS_LIMIT)).map((certificate, index) => (
                                             <div key={index} className="pb-3 border-b border-gray-200">
-                                              <Typography variant="h6" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
-                                                {certificate.courseName}
-                                              </Typography>
-                                              {certificate.certificateNumber && (
-                                                <Typography variant="small" className="text-black font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
-                                                  #{certificate.certificateNumber}
-                                                </Typography>
-                                              )}
-                                              {certificate.issueDate && (
-                                                <Typography variant="small" className="text-gray-600 text-sm mt-1" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                                  {new Date(certificate.issueDate).toLocaleDateString()}
-                                                </Typography>
-                                              )}
+                                              <div className="flex items-center gap-3">
+                                                {certificate.preview && (
+                                                  <Avatar
+                                                    src={certificate.preview}
+                                                    alt="Certificate Preview"
+                                                    size="md"
+                                                    className="ring-2 ring-red-300 flex-shrink-0"
+                                                  />
+                                                )}
+                                                <div className="flex-grow min-w-0">
+                                                  <Typography variant="h6" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                                    {certificate.courseName}
+                                                  </Typography>
+                                                  {certificate.certificateNumber && (
+                                                    <Typography variant="small" className="text-black font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                      #{certificate.certificateNumber}
+                                                    </Typography>
+                                                  )}
+                                                  {certificate.issueDate && (
+                                                    <Typography variant="small" className="text-gray-600 text-sm mt-1" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                                      {new Date(certificate.issueDate).toLocaleDateString()}
+                                                    </Typography>
+                                                  )}
+                                                </div>
+                                              </div>
                                             </div>
                                           ))}
                                           {certificates.length > INITIAL_ITEMS_LIMIT && (

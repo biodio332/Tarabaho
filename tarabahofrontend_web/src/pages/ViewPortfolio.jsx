@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Fragment } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
 import axios from "axios"
-import { FaPen, FaSave, FaTimes, FaPlus, FaTrash, FaCheckCircle, FaExclamationCircle } from "react-icons/fa"
+import { FaPen, FaSave, FaTimes, FaPlus, FaTrash, FaCheckCircle, FaExclamationCircle, FaCamera } from "react-icons/fa"
 import {
   Card,
   CardBody,
@@ -188,19 +188,19 @@ const ViewPortfolio = () => {
         }
         break
       case "referencePhone":
-        if (!trimmedValue) {
-          message = "Reference phone number is required."
-        } else if (!/^\d+$/.test(trimmedValue)) {
-          message = "Reference phone number must contain digits only."
-        } else if (trimmedValue.length !== 11) {
-          message = "Reference phone number must be exactly 11 digits."
+        if (trimmedValue) {
+          if (!/^\d+$/.test(trimmedValue)) {
+            message = "Reference phone number must contain digits only."
+          } else if (trimmedValue.length !== 11) {
+            message = "Reference phone number must be exactly 11 digits."
+          }
         }
         break
       case "referenceEmail":
-        if (!trimmedValue) {
-          message = "Reference email is required."
-        } else if (!isValidEmail(trimmedValue) || !trimmedValue.toLowerCase().endsWith("@gmail.com")) {
-          message = "Please provide a valid Gmail address."
+        if (trimmedValue) {
+          if (!isValidEmail(trimmedValue) || !trimmedValue.toLowerCase().endsWith("@gmail.com")) {
+            message = "Please provide a valid Gmail address."
+          }
         }
         break
       default:
@@ -1131,7 +1131,16 @@ const fetchPublicDataWithToken = async () => {
   const handleArrayFieldChange = (arrayName, index, field, value) => {
     setEditingPortfolio((prev) => {
       const updatedArray = [...prev[arrayName]]
-      updatedArray[index] = { ...updatedArray[index], [field]: value }
+      // For phone/contact fields, ensure we clear both fields when value is empty
+      if (arrayName === "references" && (field === "phone" || field === "contact")) {
+        updatedArray[index] = { 
+          ...updatedArray[index], 
+          phone: value || "",
+          contact: value || ""
+        }
+      } else {
+        updatedArray[index] = { ...updatedArray[index], [field]: value }
+      }
       return { ...prev, [arrayName]: updatedArray }
     })
     setSaveError("")
@@ -1143,12 +1152,12 @@ const fetchPublicDataWithToken = async () => {
         const fieldKey = `referencePhone_${index}`
         const trimmedValue = typeof value === "string" ? value.trim() : value
         let message = ""
-        if (!trimmedValue) {
-          message = "Reference phone number is required."
-        } else if (!/^\d+$/.test(trimmedValue)) {
-          message = "Reference phone number must contain digits only."
-        } else if (trimmedValue.length !== 11) {
-          message = "Reference phone number must be exactly 11 digits."
+        if (trimmedValue) {
+          if (!/^\d+$/.test(trimmedValue)) {
+            message = "Reference phone number must contain digits only."
+          } else if (trimmedValue.length !== 11) {
+            message = "Reference phone number must be exactly 11 digits."
+          }
         }
         updateFieldError(fieldKey, message)
       } else if (field === "email") {
@@ -1157,10 +1166,10 @@ const fetchPublicDataWithToken = async () => {
         const fieldKey = `referenceEmail_${index}`
         const trimmedValue = typeof value === "string" ? value.trim() : value
         let message = ""
-        if (!trimmedValue) {
-          message = "Reference email is required."
-        } else if (!isValidEmail(trimmedValue) || !trimmedValue.toLowerCase().endsWith("@gmail.com")) {
-          message = "Please provide a valid Gmail address."
+        if (trimmedValue) {
+          if (!isValidEmail(trimmedValue) || !trimmedValue.toLowerCase().endsWith("@gmail.com")) {
+            message = "Please provide a valid Gmail address."
+          }
         }
         updateFieldError(fieldKey, message)
       }
@@ -2357,6 +2366,16 @@ const fetchPublicDataWithToken = async () => {
       const normalizedPortfolio = normalizePortfolioData(portfolioResponse.data)
       setPortfolio(normalizedPortfolio)
       
+      // Refresh graduate data if header section was saved (to update profilePicture)
+      if (section === "header") {
+        const graduateResponse = await axios.get(`${BACKEND_URL}/api/graduate/${graduateId}`, {
+          withCredentials: true,
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        setGraduate(graduateResponse.data)
+        setSelectedAvatarFile(null)
+      }
+      
       // Update editingPortfolio with fresh data, but preserve unsaved changes in sections still in edit mode
       const portfolioCopy = JSON.parse(JSON.stringify(normalizedPortfolio))
       if (portfolioCopy.experiences) {
@@ -2827,30 +2846,45 @@ const fetchPublicDataWithToken = async () => {
                 {/* Profile Image Container */}
                 {(graduate?.profilePicture || portfolio?.avatar || isEditMode) && (
                   <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 flex justify-center items-center border-2 border-gray-300 shadow-md">
-                    <Avatar
-                      src={
-                        isEditMode && selectedAvatarFile
-                          ? URL.createObjectURL(selectedAvatarFile)
-                          : graduate?.profilePicture || portfolio?.avatar || "/placeholder.svg"
-                      }
-                      alt={`${portfolio.fullName || "Profile"} Picture`}
-                      size="xxl"
-                      className="w-48 h-48 shadow-xl ring-4 ring-gray-300"
-                      onClick={isEditMode ? handleImageClick : undefined}
-                    />
-                    {isEditMode && !editingSections.header && (
-                      <div className="absolute bottom-2 right-2 rounded-full p-2 shadow-lg cursor-pointer bg-gray-500 hover:bg-gray-600"
-                        onClick={() => handleSectionEditToggle("header")}>
-                        <FaPen className="w-4 h-4 text-white" />
-                      </div>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarFileChange}
-                      ref={avatarFileInputRef}
-                      className="hidden"
-                    />
+                    <div className="relative">
+                      <Avatar
+                        src={
+                          isEditMode && selectedAvatarFile
+                            ? URL.createObjectURL(selectedAvatarFile)
+                            : graduate?.profilePicture || portfolio?.avatar || "/placeholder.svg"
+                        }
+                        alt={`${portfolio.fullName || "Profile"} Picture`}
+                        size="xxl"
+                        className="w-48 h-48 shadow-xl ring-4 ring-gray-300"
+                        onClick={isEditMode && editingSections.header ? handleImageClick : undefined}
+                      />
+                      {/* Camera Icon Overlay - Only in edit mode when editing header */}
+                      {isEditMode && editingSections.header && (
+                        <div 
+                          className="absolute rounded-full shadow-lg cursor-pointer border-2 border-white bg-white/90 hover:bg-white"
+                          onClick={handleImageClick}
+                          style={{ 
+                            bottom: '0',
+                            right: '0',
+                            transform: 'translate(15%, 15%)',
+                            width: '36px',
+                            height: '36px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <FaCamera className="w-5 h-5 md:w-6 md:h-6 text-gray-600" />
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarFileChange}
+                        ref={avatarFileInputRef}
+                        className="hidden"
+                      />
+                    </div>
                   </div>
                 )}
                 
@@ -3293,13 +3327,26 @@ const fetchPublicDataWithToken = async () => {
               {/* Right Side - Name and Main Content */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Name Container */}
-                <div className="bg-white border-2 border-gray-300 rounded-xl shadow-lg p-8 bg-gradient-to-br from-white to-gray-50/30">
+                <div className="relative bg-white border-2 border-gray-300 rounded-xl shadow-lg p-8 bg-gradient-to-br from-white to-gray-50/30">
+                  {/* Edit Button - Top Right */}
+                  {isGraduateView && isEditMode && (
+                    <div className="absolute top-4 right-4">
+                      <IconButton
+                        size="md"
+                        variant="text"
+                        className={`${editingSections.header ? "text-gray-600 hover:bg-gray-100" : "text-gray-700 hover:bg-gray-100"}`}
+                        onClick={() => handleSectionEditToggle("header")}
+                      >
+                        <FaPen className="w-4 h-4" />
+                      </IconButton>
+                    </div>
+                  )}
                   {isEditMode && editingSections.header ? (
-                    <div className="space-y-4">
+                    <div className="space-y-4 pr-12">
                       <Input
                         value={editingPortfolio?.fullName || ""}
                         onChange={(e) => handleFieldChange("fullName", e.target.value)}
-                        className={`!${designTheme.typographySize} !${designTheme.titleWeight} !bg-white/20 !border-gray-300 !text-gray-900`}
+                        className={`!${designTheme.typographySize} !${designTheme.titleWeight} !bg-white/20 !border-gray-300 !text-gray-900 !max-w-full`}
                         placeholder="Full Name"
                       />
                       <Input
@@ -3341,7 +3388,7 @@ const fetchPublicDataWithToken = async () => {
                     <>
                       <Typography
                         variant="h1"
-                        className={`${designTheme.titleWeight} ${designTheme.typographySize} tracking-tight text-gray-900 break-words`}
+                        className={`${designTheme.titleWeight} ${designTheme.typographySize} tracking-tight text-gray-900 break-words ${isGraduateView && isEditMode ? "pr-12" : ""}`}
                         style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.02em" }}
                       >
                         {portfolio.fullName || "Professional Portfolio"}
@@ -3363,18 +3410,6 @@ const fetchPublicDataWithToken = async () => {
                         >
                           {portfolio.professionalSummary}
                         </Typography>
-                      )}
-                      {isGraduateView && isEditMode && (
-                        <div className="mt-4 flex justify-end">
-                          <IconButton
-                            size="md"
-                            variant="text"
-                            className="text-gray-700 hover:bg-gray-100"
-                            onClick={() => handleSectionEditToggle("header")}
-                          >
-                            <FaPen className="w-4 h-4" />
-                          </IconButton>
-                        </div>
                       )}
                     </>
                   )}
@@ -4617,14 +4652,17 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Phone
+                                  Contact Number
                                 </Typography>
                                 <Input
                                   type="tel"
                                   size="md"
                                   value={ref.phone || ref.contact || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "phone", e.target.value)}
-                                  placeholder="Phone number"
+                                  onChange={(e) => {
+                                    const newValue = e.target.value
+                                    handleArrayFieldChange("references", index, "phone", newValue)
+                                  }}
+                                  placeholder="Contact number"
                                   inputMode="numeric"
                                   pattern="[0-9]*"
                                   maxLength={11}
@@ -4714,6 +4752,19 @@ const fetchPublicDataWithToken = async () => {
           <div className="bg-white min-h-screen" style={{ fontFamily: "'Montserrat', 'Roboto', 'Inter', sans-serif" }}>
             {/* Header Section - Clean Modern Résumé Style */}
             <div className="relative bg-white pt-16 pb-16 md:pt-20 md:pb-20 px-6 md:px-12 lg:px-16 border-b-2 border-gray-200">
+              {/* Edit Button - Top Right */}
+              {isGraduateView && isEditMode && (
+                <div className="absolute top-4 right-4 md:top-6 md:right-6 lg:top-8 lg:right-8">
+                  <IconButton 
+                    size="md" 
+                    variant="text" 
+                    onClick={() => handleSectionEditToggle("header")}
+                    className={`${editingSections.header ? "text-gray-600 hover:bg-gray-100" : "text-red-600 hover:bg-red-50"}`}
+                  >
+                    <FaPen className="w-4 h-4" />
+                  </IconButton>
+                </div>
+              )}
               <div className="max-w-7xl mx-auto">
                 {/* Centered Layout */}
                 <div className="flex flex-col items-center text-center space-y-6 md:space-y-8">
@@ -4732,12 +4783,25 @@ const fetchPublicDataWithToken = async () => {
                             size="xxl"
                             className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-none border-2 border-black shadow-lg"
                             style={{ filter: 'grayscale(100%)' }}
-                            onClick={isEditMode ? handleImageClick : undefined}
+                            onClick={isEditMode && editingSections.header ? handleImageClick : undefined}
                           />
-                          {isEditMode && !editingSections.header && (
-                            <div className="absolute bottom-2 right-2 rounded-full p-2 shadow-lg cursor-pointer bg-red-600 hover:bg-red-700"
-                              onClick={() => handleSectionEditToggle("header")}>
-                              <FaPen className="w-4 h-4 text-white" />
+                          {/* Camera Icon Overlay - Only in edit mode when editing header */}
+                          {isEditMode && editingSections.header && (
+                            <div 
+                              className="absolute rounded-full shadow-lg cursor-pointer border-2 border-white bg-white/90 hover:bg-white"
+                              onClick={handleImageClick}
+                              style={{ 
+                                bottom: '0',
+                                right: '0',
+                                transform: 'translate(15%, 15%)',
+                                width: '36px',
+                                height: '36px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              <FaCamera className="w-5 h-5 md:w-6 md:h-6 text-red-600" />
                             </div>
                           )}
                           <input
@@ -4753,14 +4817,28 @@ const fetchPublicDataWithToken = async () => {
                   </div>
                   
                   {/* Name - Large Bold Red, Centered */}
-                  <div>
+                  <div className="w-full max-w-4xl mx-auto">
                     {isEditMode && editingSections.header ? (
-                      <Input
-                        value={editingPortfolio?.fullName || ""}
-                        onChange={(e) => handleFieldChange("fullName", e.target.value)}
-                        className="!text-5xl md:!text-6xl lg:!text-7xl xl:!text-8xl !font-bold !text-red-600 !border-red-600"
-                        placeholder="Your Name"
-                      />
+                      <>
+                        <Typography variant="small" className="text-gray-600 text-xs uppercase tracking-wide font-medium mb-2 text-center" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                          Name
+                        </Typography>
+                        <input
+                          type="text"
+                          value={editingPortfolio?.fullName || ""}
+                          onChange={(e) => handleFieldChange("fullName", e.target.value)}
+                          placeholder="Your Name"
+                          className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus:border-b-2 focus:border-red-600 text-center text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-red-600 tracking-tight leading-none"
+                          style={{ 
+                            fontFamily: "'Open Sauce', sans-serif", 
+                            fontWeight: 900, 
+                            letterSpacing: "-0.02em",
+                            lineHeight: "1",
+                            padding: "0",
+                            margin: "0"
+                          }}
+                        />
+                      </>
                     ) : (
                       <Typography
                         variant="h1"
@@ -4774,14 +4852,27 @@ const fetchPublicDataWithToken = async () => {
                   
                   {/* Professional Title - Black Text, Centered */}
                   {(portfolio?.professionalTitle || (isEditMode && editingSections.header)) && (
-                    <div>
+                    <div className="w-full max-w-3xl mx-auto">
                       {isEditMode && editingSections.header ? (
-                        <Input
-                          value={editingPortfolio?.professionalTitle || ""}
-                          onChange={(e) => handleFieldChange("professionalTitle", e.target.value)}
-                          className="!text-xl md:!text-2xl !text-black !font-medium"
-                          placeholder="Professional Title"
-                        />
+                        <>
+                          <Typography variant="small" className="text-gray-600 text-xs uppercase tracking-wide font-medium mb-2 text-center" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            Professional Title
+                          </Typography>
+                          <Input
+                            value={editingPortfolio?.professionalTitle || ""}
+                            onChange={(e) => handleFieldChange("professionalTitle", e.target.value)}
+                            className="!text-xl md:!text-2xl !text-black !font-medium !text-center !w-full !px-0 !py-0 !min-h-0 !border-transparent focus:!border-gray-400 !shadow-none"
+                            placeholder="Professional Title"
+                            style={{ 
+                              fontFamily: "'Open Sauce', sans-serif", 
+                              fontWeight: 500,
+                              lineHeight: "1.5",
+                              padding: "0",
+                              margin: "0",
+                              width: "100%"
+                            }}
+                          />
+                        </>
                       ) : (
                         <Typography
                           variant="h5"
@@ -4795,9 +4886,12 @@ const fetchPublicDataWithToken = async () => {
                   )}
                   
                   {/* Professional Summary - Black Body Text, Centered */}
-                  <div className="max-w-3xl mx-auto px-4">
+                  <div className="max-w-3xl mx-auto px-4 w-full">
                     {isEditMode && editingSections.header ? (
-                      <div>
+                      <div className="w-full">
+                        <Typography variant="small" className="text-gray-600 text-xs uppercase tracking-wide font-medium mb-2 text-center" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                          Professional Summary
+                        </Typography>
                         <Textarea
                           value={editingPortfolio?.professionalSummary || ""}
                           onChange={(e) => {
@@ -4806,12 +4900,22 @@ const fetchPublicDataWithToken = async () => {
                               handleFieldChange("professionalSummary", value)
                             }
                           }}
-                          className="!text-base md:!text-lg !text-black !border-gray-300"
+                          className="!text-base md:!text-lg !text-black !border-transparent focus:!border-gray-300 !text-center !w-full !px-0 !py-0 !shadow-none"
                           placeholder="Professional Summary"
                           rows={4}
                           maxLength={300}
+                          style={{ 
+                            fontFamily: "'Open Sauce', sans-serif", 
+                            lineHeight: "1.7", 
+                            fontWeight: 400,
+                            padding: "0",
+                            margin: "0",
+                            width: "100%",
+                            wordWrap: "break-word",
+                            overflowWrap: "break-word"
+                          }}
                         />
-                        <Typography variant="small" className="text-gray-500 mt-1">
+                        <Typography variant="small" className="text-gray-500 mt-1 text-center">
                           {(editingPortfolio?.professionalSummary || "").length}/300 characters
                         </Typography>
                       </div>
@@ -5572,19 +5676,31 @@ const fetchPublicDataWithToken = async () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {(showAllCertificates ? certificates : certificates.slice(0, INITIAL_ITEMS_LIMIT)).map((certificate, index) => (
                         <div key={index} className="pb-3 border-b border-gray-200">
-                          <Typography variant="h6" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
-                            {certificate.courseName}
-                          </Typography>
-                          {certificate.certificateNumber && (
-                            <Typography variant="small" className="text-black font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
-                              #{certificate.certificateNumber}
-                            </Typography>
-                          )}
-                          {certificate.issueDate && (
-                            <Typography variant="small" className="text-gray-600 text-sm mt-1" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                              {new Date(certificate.issueDate).toLocaleDateString()}
-                            </Typography>
-                          )}
+                          <div className="flex items-center gap-3">
+                            {(certificate.preview || certificate.certificateFilePath) && (
+                              <Avatar
+                                src={certificate.preview || certificate.certificateFilePath || "/placeholder.svg"}
+                                alt="Certificate Preview"
+                                size="md"
+                                className="ring-2 ring-red-300 flex-shrink-0"
+                              />
+                            )}
+                            <div className="flex-grow min-w-0">
+                              <Typography variant="h6" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                {certificate.courseName}
+                              </Typography>
+                              {certificate.certificateNumber && (
+                                <Typography variant="small" className="text-black font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                  #{certificate.certificateNumber}
+                                </Typography>
+                              )}
+                              {certificate.issueDate && (
+                                <Typography variant="small" className="text-gray-600 text-sm mt-1" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                  {new Date(certificate.issueDate).toLocaleDateString()}
+                                </Typography>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       ))}
                       {certificates.length > INITIAL_ITEMS_LIMIT && (
@@ -6203,10 +6319,10 @@ const fetchPublicDataWithToken = async () => {
                                   Date Received
                                 </Typography>
                               <Input
+                                type="date"
                                 size="md"
                                 value={award.dateReceived || ""}
                                 onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
-                                  placeholder="YYYY-MM-DD"
                                 className="!border-gray-300"
                               />
                               </div>
@@ -6366,10 +6482,10 @@ const fetchPublicDataWithToken = async () => {
                                     Completion Date
                                   </Typography>
                                 <Input
+                                  type="date"
                                   size="md"
                                   value={edu.completionDate || ""}
                                   onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
-                                    placeholder="YYYY-MM-DD"
                                   className="!border-gray-300"
                                 />
                                 </div>
@@ -6529,10 +6645,10 @@ const fetchPublicDataWithToken = async () => {
                                     Start Date
                                   </Typography>
                                 <Input
+                                  type="date"
                                   size="md"
                                   value={mem.startDate || ""}
                                   onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
-                                    placeholder="YYYY-MM-DD"
                                   className="!border-gray-300"
                                 />
                                 </div>
@@ -6863,6 +6979,19 @@ const fetchPublicDataWithToken = async () => {
             <div className={`${designTheme.headerBg} text-white relative overflow-hidden`}>
         {/* Background pattern */}
         <div className="absolute inset-0 bg-white/5 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px] animate-pulse"></div>
+        {/* Edit Button - Top Right (not affected by animation) */}
+        {isGraduateView && isEditMode && (
+          <div className="absolute top-4 right-4 z-10">
+            <IconButton
+              size="md"
+              variant="text"
+              className={`text-white hover:bg-white/20 ${editingSections.header ? "bg-white/10" : ""}`}
+              onClick={() => handleSectionEditToggle("header")}
+            >
+              <FaPen className="w-4 h-4" />
+            </IconButton>
+          </div>
+        )}
         <div className="px-6 py-8 relative">
           {/* Back Button - Visible only in public view */}
           
@@ -6879,32 +7008,40 @@ const fetchPublicDataWithToken = async () => {
                   designTheme.accentColor === "purple" ? "bg-purple-300/30" :
                   "bg-blue-300/30"
                 }`}></div>
-                <Avatar
-                  src={
-                    isEditMode && selectedAvatarFile
-                      ? URL.createObjectURL(selectedAvatarFile)
-                      : graduate?.profilePicture || portfolio?.avatar
-                  }
-                  alt={`${portfolio.fullName || "Profile"} Picture`}
-                  size="xxl"
-                  className={`relative shadow-2xl ${designTheme.avatarSize} backdrop-blur-sm transition-all duration-500 animate-float rounded-none border-0 ${
-                    isEditMode ? "cursor-pointer hover:scale-110 hover:ring-4 hover:ring-white/50" : "hover:scale-105"
-                  }`}
-                  onClick={handleImageClick}
-                />
-                {isEditMode && !editingSections.header && (
-                  <div className={`absolute bottom-2 right-2 rounded-full p-2 shadow-lg cursor-pointer ${
-                    designTheme.accentColor === "amber" ? "bg-amber-500 hover:bg-amber-600" :
-                    designTheme.accentColor === "red" ? "bg-red-500 hover:bg-red-600" :
-                    designTheme.accentColor === "blue" ? "bg-blue-500 hover:bg-blue-600" :
-                    designTheme.accentColor === "green" ? "bg-green-500 hover:bg-green-600" :
-                    designTheme.accentColor === "purple" ? "bg-purple-500 hover:bg-purple-600" :
-                    "bg-blue-500 hover:bg-blue-600"
-                  }`}
-                    onClick={() => handleSectionEditToggle("header")}>
-                    <FaPen className="w-4 h-4 text-white" />
-                  </div>
-                )}
+                <div className="relative">
+                  <Avatar
+                    src={
+                      isEditMode && selectedAvatarFile
+                        ? URL.createObjectURL(selectedAvatarFile)
+                        : graduate?.profilePicture || portfolio?.avatar
+                    }
+                    alt={`${portfolio.fullName || "Profile"} Picture`}
+                    size="xxl"
+                    className={`relative shadow-2xl ${designTheme.avatarSize} backdrop-blur-sm transition-all duration-500 animate-float rounded-none border-0 ${
+                      isEditMode && editingSections.header ? "cursor-pointer hover:scale-110 hover:ring-4 hover:ring-white/50" : "hover:scale-105"
+                    }`}
+                    onClick={isEditMode && editingSections.header ? handleImageClick : undefined}
+                  />
+                  {/* Camera Icon Overlay - Only in edit mode when editing header */}
+                  {isEditMode && editingSections.header && (
+                    <div 
+                      className="absolute rounded-full shadow-lg cursor-pointer border-2 border-white bg-white/90 hover:bg-white"
+                      onClick={handleImageClick}
+                      style={{ 
+                        bottom: '0',
+                        right: '0',
+                        transform: 'translate(15%, 15%)',
+                        width: '36px',
+                        height: '36px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <FaCamera className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
+                    </div>
+                  )}
+                </div>
                 <input
                   type="file"
                   accept="image/*"
@@ -6934,16 +7071,6 @@ const fetchPublicDataWithToken = async () => {
                   >
                     {portfolio.fullName || "Professional Portfolio"}
                   </Typography>
-                )}
-                {isGraduateView && isEditMode && (
-                  <IconButton
-                    size="md"
-                    variant="text"
-                    className="text-white hover:bg-white/20"
-                    onClick={() => handleSectionEditToggle("header")}
-                  >
-                    <FaPen className="w-4 h-4" />
-                  </IconButton>
                 )}
               </div>
 
@@ -8925,14 +9052,17 @@ const fetchPublicDataWithToken = async () => {
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Phone
+                              Contact Number
                             </Typography>
                             <Input
                               type="tel"
                               size="md"
                               value={ref.phone || ref.contact || ""}
-                              onChange={(e) => handleArrayFieldChange("references", index, "phone", e.target.value)}
-                              placeholder="Phone number"
+                              onChange={(e) => {
+                                const newValue = e.target.value
+                                handleArrayFieldChange("references", index, "phone", newValue)
+                              }}
+                              placeholder="Contact number"
                               inputMode="numeric"
                               pattern="[0-9]*"
                               maxLength={11}
