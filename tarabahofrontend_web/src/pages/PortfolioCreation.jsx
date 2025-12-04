@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
-import { FaPlus, FaTrash, FaPen, FaChevronLeft, FaChevronRight, FaCheck } from "react-icons/fa"
+import { FaPlus, FaTrash, FaPen, FaChevronLeft, FaChevronRight, FaCheck, FaInfoCircle } from "react-icons/fa"
 import {
   Card,
   CardBody,
@@ -63,13 +63,17 @@ const PortfolioCreation = () => {
   const [isAddingCertificate, setIsAddingCertificate] = useState(false)
   const [editingCertificateId, setEditingCertificateId] = useState(null)
   const [editingProjectId, setEditingProjectId] = useState(null)
+  const [projectSubmitAttempted, setProjectSubmitAttempted] = useState(false)
+  const [experienceSubmitAttempted, setExperienceSubmitAttempted] = useState(false)
+  const [awardSubmitAttempted, setAwardSubmitAttempted] = useState(false)
+  const [educationSubmitAttempted, setEducationSubmitAttempted] = useState(false)
+  const [membershipSubmitAttempted, setMembershipSubmitAttempted] = useState(false)
   const [editingSkillIndex, setEditingSkillIndex] = useState(null)
   const [editingExperienceIndex, setEditingExperienceIndex] = useState(null)
   const [editingAwardIndex, setEditingAwardIndex] = useState(null)
   const [editingEducationIndex, setEditingEducationIndex] = useState(null)
   const [editingMembershipIndex, setEditingMembershipIndex] = useState(null)
   const [editingReferenceIndex, setEditingReferenceIndex] = useState(null)
-  const [isNcLevelOthers, setIsNcLevelOthers] = useState(false)
   const [newProject, setNewProject] = useState({
     title: "",
     description: "",
@@ -217,19 +221,19 @@ const PortfolioCreation = () => {
         }
         break
       case "referencePhone":
-        if (trimmedValue) {
-          if (!/^\d+$/.test(trimmedValue)) {
-            message = "Reference phone number must contain digits only."
-          } else if (trimmedValue.length !== 11) {
-            message = "Reference phone number must be exactly 11 digits."
-          }
+        if (!trimmedValue) {
+          message = "Reference phone number is required."
+        } else if (!/^\d+$/.test(trimmedValue)) {
+          message = "Reference phone number must contain digits only."
+        } else if (trimmedValue.length !== 11) {
+          message = "Reference phone number must be exactly 11 digits."
         }
         break
       case "referenceEmail":
-        if (trimmedValue) {
-          if (!isValidEmail(trimmedValue)) {
-            message = "Please provide a valid email address."
-          }
+        if (!trimmedValue) {
+          message = "Reference email is required."
+        } else if (!isValidEmail(trimmedValue)) {
+          message = "Please provide a valid email address."
         }
         break
       default:
@@ -240,7 +244,7 @@ const PortfolioCreation = () => {
     return !message
   }
 
-  const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV", "NC V", "NC VI", "Others"]
+  const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV", "NC V", "NC VI"]
 
   // Get design theme for preview (matching ViewPortfolio.jsx)
   const getDesignTheme = (template) => {
@@ -573,14 +577,6 @@ const PortfolioCreation = () => {
     fetchTokenAndProfileData()
   }, [BACKEND_URL, navigate])
 
-  // Initialize isNcLevelOthers if formData.ncLevel is a custom value (only on mount)
-  useEffect(() => {
-    // Check if initial value is a custom NC Level (not in standard options)
-    if (formData.ncLevel && !NC_LEVEL_OPTIONS.slice(0, -1).includes(formData.ncLevel)) {
-      setIsNcLevelOthers(true)
-    }
-  }, []) // Only run on mount
-
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -639,26 +635,149 @@ const PortfolioCreation = () => {
 
   const handleExperienceInputChange = (e) => {
     const { name, value } = e.target
+    
+    // Clear error state when user interacts with date fields to prevent showing errors at top
+    if (name === "startDate" || name === "endDate") {
+      setError("")
+    }
+    
+    // Validate year is exactly 4 digits for date fields
+    if ((name === "startDate" || name === "endDate") && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewExperience((prev) => {
+          const updated = { ...prev, [name]: correctedValue }
+          return updated
+        })
+        return
+      }
+    }
+    
     setNewExperience((prev) => ({ ...prev, [name]: value }))
     setError("")
   }
 
+  const handleExperienceInputBlur = (e) => {
+    const { name, value } = e.target
+    
+    // Validate and correct date on blur for date fields
+    if ((name === "startDate" || name === "endDate") && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewExperience((prev) => {
+          const updated = { ...prev, [name]: correctedValue }
+          return updated
+        })
+      }
+    }
+  }
+
   const handleAwardInputChange = (e) => {
     const { name, value } = e.target
+    
+    // Clear error state when user interacts with dateReceived field to prevent showing errors at top
+    if (name === "dateReceived") {
+      setError("")
+    }
+    
+    // Validate year is exactly 4 digits for dateReceived field
+    if (name === "dateReceived" && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewAward((prev) => ({ ...prev, [name]: correctedValue }))
+        return
+      }
+    }
+    
     setNewAward((prev) => ({ ...prev, [name]: value }))
     setError("")
   }
 
+  const handleAwardInputBlur = (e) => {
+    const { name, value } = e.target
+    
+    // Validate and correct date on blur for dateReceived field
+    if (name === "dateReceived" && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewAward((prev) => {
+          const updated = { ...prev, [name]: correctedValue }
+          return updated
+        })
+      }
+    }
+  }
+
   const handleEducationInputChange = (e) => {
     const { name, value } = e.target
+    
+    // Clear error state when user interacts with completionDate field to prevent showing errors at top
+    if (name === "completionDate") {
+      setError("")
+    }
+    
+    // Validate year is exactly 4 digits for completionDate field
+    if (name === "completionDate" && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewEducation((prev) => ({ ...prev, [name]: correctedValue }))
+        return
+      }
+    }
+    
     setNewEducation((prev) => ({ ...prev, [name]: value }))
     setError("")
   }
 
+  const handleEducationInputBlur = (e) => {
+    const { name, value } = e.target
+    
+    // Validate and correct date on blur for completionDate field
+    if (name === "completionDate" && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewEducation((prev) => {
+          const updated = { ...prev, [name]: correctedValue }
+          return updated
+        })
+      }
+    }
+  }
+
   const handleMembershipInputChange = (e) => {
     const { name, value } = e.target
+    
+    // Clear error state when user interacts with startDate field to prevent showing errors at top
+    if (name === "startDate") {
+      setError("")
+    }
+    
+    // Validate year is exactly 4 digits for startDate field
+    if (name === "startDate" && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewMembership((prev) => ({ ...prev, [name]: correctedValue }))
+        return
+      }
+    }
+    
     setNewMembership((prev) => ({ ...prev, [name]: value }))
     setError("")
+  }
+
+  const handleMembershipInputBlur = (e) => {
+    const { name, value } = e.target
+    
+    // Validate and correct date on blur for startDate field
+    if (name === "startDate" && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewMembership((prev) => {
+          const updated = { ...prev, [name]: correctedValue }
+          return updated
+        })
+      }
+    }
   }
 
   const handleReferenceInputChange = (e) => {
@@ -673,19 +792,112 @@ const PortfolioCreation = () => {
     setError("")
   }
 
+  const validateAndCorrectDate = (dateValue) => {
+    if (!dateValue) return dateValue
+    
+    // Date format should be YYYY-MM-DD
+    // Check if the year part has more than 4 digits
+    const datePattern = /^(\d{4,})-(\d{2})-(\d{2})$/
+    const match = dateValue.match(datePattern)
+    
+    if (match) {
+      const year = match[1]
+      const month = match[2]
+      const day = match[3]
+      
+      // If year has more than 4 digits, truncate to first 4 digits
+      if (year.length > 4) {
+        const correctedYear = year.substring(0, 4)
+        return `${correctedYear}-${month}-${day}`
+      }
+    } else if (dateValue.length > 0) {
+      // Handle cases where user might type year with more than 4 digits
+      // Check if value starts with 5+ digits followed by a dash
+      const yearMatch = dateValue.match(/^(\d{5,})(-.*)$/)
+      if (yearMatch) {
+        // Truncate year to 4 digits and keep the rest
+        const truncatedYear = dateValue.substring(0, 4)
+        const restOfValue = dateValue.substring(4)
+        return truncatedYear + restOfValue
+      }
+    }
+    
+    return dateValue
+  }
+
   const handleProjectInputChange = (e) => {
     const { name, value } = e.target
-    setNewProject((prev) => ({ ...prev, [name]: value }))
-    setError("")
+    
+    // Clear error state when user interacts with date fields to prevent showing errors at top
+    if (name === "startDate" || name === "endDate") {
+      setError("")
+    }
+    
+    // Validate year is exactly 4 digits for date fields
+    if ((name === "startDate" || name === "endDate") && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewProject((prev) => {
+          const updated = { ...prev, [name]: correctedValue }
+          return updated
+        })
+        return
+      }
+    }
+    
+    setNewProject((prev) => {
+      const updated = { ...prev, [name]: value }
+      return updated
+    })
+  }
+
+  const handleProjectInputBlur = (e) => {
+    const { name, value } = e.target
+    
+    // Validate and correct date on blur for date fields
+    if ((name === "startDate" || name === "endDate") && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewProject((prev) => {
+          const updated = { ...prev, [name]: correctedValue }
+          return updated
+        })
+      }
+    }
   }
 
   const handleCertificateInputChange = (e) => {
     const { name, value } = e.target
+    
+    // Validate year is exactly 4 digits for issueDate field
+    if (name === "issueDate" && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewCertificate((prev) => ({ ...prev, [name]: correctedValue }))
+        return
+      }
+    }
+    
     setNewCertificate((prev) => ({ ...prev, [name]: value }))
     if (name === "certificateNumber") {
       validateField("certificateNumber", value)
     }
     setError("")
+  }
+
+  const handleCertificateInputBlur = (e) => {
+    const { name, value } = e.target
+    
+    // Validate and correct date on blur for issueDate field
+    if (name === "issueDate" && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewCertificate((prev) => {
+          const updated = { ...prev, [name]: correctedValue }
+          return updated
+        })
+      }
+    }
   }
 
   const handleAddSkill = () => {
@@ -705,60 +917,134 @@ const PortfolioCreation = () => {
   }
 
   const handleAddExperience = () => {
+    setExperienceSubmitAttempted(true) // Mark that user has attempted to submit
     if (!newExperience.jobTitle || !newExperience.company) {
       setError("Please fill in the job title and company.")
+      return
+    }
+    // Validate start date is filled - return early if invalid (inline error messages will show)
+    if (!newExperience.startDate) {
+      return
+    }
+    // Validate end date is filled - return early if invalid (inline error messages will show)
+    if (!newExperience.endDate) {
+      return
+    }
+    const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+    // Validate start date is not in the future - return early if invalid (inline error messages will show)
+    if (newExperience.startDate && newExperience.startDate > today) {
+      return
+    }
+    // Validate end date is not in the future - return early if invalid (inline error messages will show)
+    if (newExperience.endDate && newExperience.endDate > today) {
+      return
+    }
+    // Validate date range - return early if invalid (inline error messages will show)
+    if (newExperience.startDate && newExperience.endDate && newExperience.endDate < newExperience.startDate) {
       return
     }
     setExperiences((prev) => [...prev, { ...newExperience }])
     setNewExperience({ jobTitle: "", company: "", startDate: "", endDate: "", responsibilities: "" })
     setEditingExperienceIndex(null)
     setIsAddingExperience(false)
+    setExperienceSubmitAttempted(false) // Reset submission attempt flag on success
     setError("")
   }
 
   const handleAddAward = () => {
+    setAwardSubmitAttempted(true) // Mark that user has attempted to submit
     if (!newAward.title) {
       setError("Please fill in the award title.")
+      return
+    }
+    // Validate dateReceived is filled - return early if invalid (inline error messages will show)
+    if (!newAward.dateReceived) {
+      return
+    }
+    const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+    // Validate dateReceived is not in the future - return early if invalid (inline error messages will show)
+    if (newAward.dateReceived && newAward.dateReceived > today) {
       return
     }
     setAwardsRecognitions((prev) => [...prev, { ...newAward }])
     setNewAward({ title: "", issuer: "", dateReceived: "" })
     setEditingAwardIndex(null)
     setIsAddingAward(false)
+    setAwardSubmitAttempted(false) // Reset submission attempt flag on success
     setError("")
   }
 
   const handleAddEducation = () => {
+    setEducationSubmitAttempted(true) // Mark that user has attempted to submit
     if (!newEducation.courseName) {
       setError("Please fill in the course name.")
+      return
+    }
+    // Validate completionDate is filled - return early if invalid (inline error messages will show)
+    if (!newEducation.completionDate) {
+      return
+    }
+    const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+    // Validate completionDate is not in the future - return early if invalid (inline error messages will show)
+    if (newEducation.completionDate && newEducation.completionDate > today) {
       return
     }
     setContinuingEducations((prev) => [...prev, { ...newEducation }])
     setNewEducation({ courseName: "", institution: "", completionDate: "" })
     setEditingEducationIndex(null)
     setIsAddingEducation(false)
+    setEducationSubmitAttempted(false) // Reset submission attempt flag on success
     setError("")
   }
 
   const handleAddMembership = () => {
+    setMembershipSubmitAttempted(true) // Mark that user has attempted to submit
     if (!newMembership.organization) {
       setError("Please fill in the organization name.")
+      return
+    }
+    // Validate startDate is filled - return early if invalid (inline error messages will show)
+    if (!newMembership.startDate) {
+      return
+    }
+    const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+    // Validate startDate is not in the future - return early if invalid (inline error messages will show)
+    if (newMembership.startDate && newMembership.startDate > today) {
       return
     }
     setProfessionalMemberships((prev) => [...prev, { ...newMembership }])
     setNewMembership({ organization: "", membershipType: "", startDate: "" })
     setEditingMembershipIndex(null)
     setIsAddingMembership(false)
+    setMembershipSubmitAttempted(false) // Reset submission attempt flag on success
     setError("")
   }
 
   const handleAddProject = () => {
+    setProjectSubmitAttempted(true) // Mark that user has attempted to submit
     if (!newProject.title) {
       setError("Please fill in the project title.")
       return
     }
-    if (!newProject.projectImageFile) {
-      setError("Please select a project image file.")
+    // Validate start date is filled - return early if invalid (inline error messages will show)
+    if (!newProject.startDate) {
+      return
+    }
+    // Validate end date is filled - return early if invalid (inline error messages will show)
+    if (!newProject.endDate) {
+      return
+    }
+    const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+    // Validate start date is not in the future - return early if invalid (inline error messages will show)
+    if (newProject.startDate && newProject.startDate > today) {
+      return
+    }
+    // Validate date range - return early if invalid (inline error messages will show)
+    if (newProject.startDate && newProject.endDate && newProject.endDate < newProject.startDate) {
+      return
+    }
+    // Validate end date is not today or future - return early if invalid (inline error messages will show)
+    if (newProject.endDate && newProject.endDate >= today) {
       return
     }
     setProjects((prev) => [
@@ -770,7 +1056,7 @@ const PortfolioCreation = () => {
         startDate: newProject.startDate,
         endDate: newProject.endDate,
         projectImageFile: newProject.projectImageFile,
-        preview: URL.createObjectURL(newProject.projectImageFile),
+        preview: newProject.projectImageFile ? URL.createObjectURL(newProject.projectImageFile) : null,
       },
     ])
     setNewProject({
@@ -782,6 +1068,7 @@ const PortfolioCreation = () => {
     })
     setEditingProjectId(null)
     setIsAddingProject(false)
+    setProjectSubmitAttempted(false) // Reset submission attempt flag on success
     setError("")
   }
 
@@ -790,20 +1077,11 @@ const PortfolioCreation = () => {
       setError("Please fill in the reference name.")
       return
     }
-    // Only validate format if there's input (fields are optional)
-    if (newReference.phone) {
-      const phoneValid = validateField("referencePhone", newReference.phone)
-      if (!phoneValid) {
-        setError("Please provide valid reference contact details.")
-        return
-      }
-    }
-    if (newReference.email) {
-      const emailValid = validateField("referenceEmail", newReference.email)
-      if (!emailValid) {
-        setError("Please provide valid reference contact details.")
-        return
-      }
+    const phoneValid = validateField("referencePhone", newReference.phone)
+    const emailValid = validateField("referenceEmail", newReference.email)
+    if (!phoneValid || !emailValid) {
+      setError("Please provide valid reference contact details.")
+      return
     }
     const referenceToAdd = {
       ...newReference,
@@ -825,6 +1103,11 @@ const PortfolioCreation = () => {
       return
     }
     if (!validateField("certificateNumber", newCertificate.certificateNumber)) {
+      return
+    }
+    // Validate issue date is not in the future - return early if invalid (inline error messages will show)
+    const today = new Date().toISOString().split('T')[0]
+    if (newCertificate.issueDate && newCertificate.issueDate > today) {
       return
     }
     setCertificates((prev) => [
@@ -868,6 +1151,11 @@ const PortfolioCreation = () => {
     if (!validateField("certificateNumber", newCertificate.certificateNumber)) {
       return
     }
+    // Validate issue date is not in the future - return early if invalid (inline error messages will show)
+    const today = new Date().toISOString().split('T')[0]
+    if (newCertificate.issueDate && newCertificate.issueDate > today) {
+      return
+    }
     setCertificates((prev) =>
       prev.map((cert) =>
         cert.id === editingCertificateId
@@ -901,6 +1189,8 @@ const PortfolioCreation = () => {
   }
 
   const handleEditProject = (project) => {
+    setError("") // Clear any existing errors when editing a project
+    setProjectSubmitAttempted(false) // Reset submission attempt flag
     setEditingProjectId(project.id)
     setNewProject({
       title: project.title,
@@ -913,8 +1203,30 @@ const PortfolioCreation = () => {
   }
 
   const handleUpdateProject = () => {
+    setProjectSubmitAttempted(true) // Mark that user has attempted to submit
     if (!newProject.title) {
       setError("Please fill in the project title.")
+      return
+    }
+    // Validate start date is filled - return early if invalid (inline error messages will show)
+    if (!newProject.startDate) {
+      return
+    }
+    // Validate end date is filled - return early if invalid (inline error messages will show)
+    if (!newProject.endDate) {
+      return
+    }
+    const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+    // Validate start date is not in the future - return early if invalid (inline error messages will show)
+    if (newProject.startDate && newProject.startDate > today) {
+      return
+    }
+    // Validate date range - return early if invalid (inline error messages will show)
+    if (newProject.startDate && newProject.endDate && newProject.endDate < newProject.startDate) {
+      return
+    }
+    // Validate end date is not today or future - return early if invalid (inline error messages will show)
+    if (newProject.endDate && newProject.endDate >= today) {
       return
     }
     // Image file is optional when editing - can keep existing image
@@ -944,6 +1256,7 @@ const PortfolioCreation = () => {
     })
     setEditingProjectId(null)
     setIsAddingProject(false)
+    setProjectSubmitAttempted(false) // Reset submission attempt flag on success
     setError("")
   }
 
@@ -978,6 +1291,7 @@ const PortfolioCreation = () => {
   }
 
   const handleEditExperience = (experience, index) => {
+    setExperienceSubmitAttempted(false) // Reset submission attempt flag when editing
     setEditingExperienceIndex(index)
     setNewExperience({
       jobTitle: experience.jobTitle,
@@ -990,8 +1304,30 @@ const PortfolioCreation = () => {
   }
 
   const handleUpdateExperience = () => {
+    setExperienceSubmitAttempted(true) // Mark that user has attempted to submit
     if (!newExperience.jobTitle || !newExperience.company) {
       setError("Please fill in the job title and company.")
+      return
+    }
+    // Validate start date is filled - return early if invalid (inline error messages will show)
+    if (!newExperience.startDate) {
+      return
+    }
+    // Validate end date is filled - return early if invalid (inline error messages will show)
+    if (!newExperience.endDate) {
+      return
+    }
+    const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+    // Validate start date is not in the future - return early if invalid (inline error messages will show)
+    if (newExperience.startDate && newExperience.startDate > today) {
+      return
+    }
+    // Validate end date is not in the future - return early if invalid (inline error messages will show)
+    if (newExperience.endDate && newExperience.endDate > today) {
+      return
+    }
+    // Validate date range - return early if invalid (inline error messages will show)
+    if (newExperience.startDate && newExperience.endDate && newExperience.endDate < newExperience.startDate) {
       return
     }
     setExperiences((prev) =>
@@ -1002,10 +1338,12 @@ const PortfolioCreation = () => {
     setNewExperience({ jobTitle: "", company: "", startDate: "", endDate: "", responsibilities: "" })
     setEditingExperienceIndex(null)
     setIsAddingExperience(false)
+    setExperienceSubmitAttempted(false) // Reset submission attempt flag on success
     setError("")
   }
 
   const handleEditAward = (award, index) => {
+    setAwardSubmitAttempted(false) // Reset submission attempt flag when editing
     setEditingAwardIndex(index)
     setNewAward({
       title: award.title,
@@ -1016,8 +1354,18 @@ const PortfolioCreation = () => {
   }
 
   const handleUpdateAward = () => {
+    setAwardSubmitAttempted(true) // Mark that user has attempted to submit
     if (!newAward.title) {
       setError("Please fill in the award title.")
+      return
+    }
+    // Validate dateReceived is filled - return early if invalid (inline error messages will show)
+    if (!newAward.dateReceived) {
+      return
+    }
+    const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+    // Validate dateReceived is not in the future - return early if invalid (inline error messages will show)
+    if (newAward.dateReceived && newAward.dateReceived > today) {
       return
     }
     setAwardsRecognitions((prev) =>
@@ -1028,10 +1376,12 @@ const PortfolioCreation = () => {
     setNewAward({ title: "", issuer: "", dateReceived: "" })
     setEditingAwardIndex(null)
     setIsAddingAward(false)
+    setAwardSubmitAttempted(false) // Reset submission attempt flag on success
     setError("")
   }
 
   const handleEditEducation = (education, index) => {
+    setEducationSubmitAttempted(false) // Reset submission attempt flag when editing
     setEditingEducationIndex(index)
     setNewEducation({
       courseName: education.courseName,
@@ -1042,8 +1392,18 @@ const PortfolioCreation = () => {
   }
 
   const handleUpdateEducation = () => {
+    setEducationSubmitAttempted(true) // Mark that user has attempted to submit
     if (!newEducation.courseName) {
       setError("Please fill in the course name.")
+      return
+    }
+    // Validate completionDate is filled - return early if invalid (inline error messages will show)
+    if (!newEducation.completionDate) {
+      return
+    }
+    const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+    // Validate completionDate is not in the future - return early if invalid (inline error messages will show)
+    if (newEducation.completionDate && newEducation.completionDate > today) {
       return
     }
     setContinuingEducations((prev) =>
@@ -1054,10 +1414,12 @@ const PortfolioCreation = () => {
     setNewEducation({ courseName: "", institution: "", completionDate: "" })
     setEditingEducationIndex(null)
     setIsAddingEducation(false)
+    setEducationSubmitAttempted(false) // Reset submission attempt flag on success
     setError("")
   }
 
   const handleEditMembership = (membership, index) => {
+    setMembershipSubmitAttempted(false) // Reset submission attempt flag when editing
     setEditingMembershipIndex(index)
     setNewMembership({
       organization: membership.organization,
@@ -1068,8 +1430,18 @@ const PortfolioCreation = () => {
   }
 
   const handleUpdateMembership = () => {
+    setMembershipSubmitAttempted(true) // Mark that user has attempted to submit
     if (!newMembership.organization) {
       setError("Please fill in the organization name.")
+      return
+    }
+    // Validate startDate is filled - return early if invalid (inline error messages will show)
+    if (!newMembership.startDate) {
+      return
+    }
+    const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+    // Validate startDate is not in the future - return early if invalid (inline error messages will show)
+    if (newMembership.startDate && newMembership.startDate > today) {
       return
     }
     setProfessionalMemberships((prev) =>
@@ -1080,6 +1452,7 @@ const PortfolioCreation = () => {
     setNewMembership({ organization: "", membershipType: "", startDate: "" })
     setEditingMembershipIndex(null)
     setIsAddingMembership(false)
+    setMembershipSubmitAttempted(false) // Reset submission attempt flag on success
     setError("")
   }
 
@@ -1100,20 +1473,11 @@ const PortfolioCreation = () => {
       setError("Please fill in the reference name.")
       return
     }
-    // Only validate format if there's input (fields are optional)
-    if (newReference.phone) {
-      const phoneValid = validateField("referencePhone", newReference.phone)
-      if (!phoneValid) {
-        setError("Please provide valid reference contact details.")
-        return
-      }
-    }
-    if (newReference.email) {
-      const emailValid = validateField("referenceEmail", newReference.email)
-      if (!emailValid) {
-        setError("Please provide valid reference contact details.")
-        return
-      }
+    const phoneValid = validateField("referencePhone", newReference.phone)
+    const emailValid = validateField("referenceEmail", newReference.email)
+    if (!phoneValid || !emailValid) {
+      setError("Please provide valid reference contact details.")
+      return
     }
     const referenceToUpdate = {
       ...newReference,
@@ -1787,57 +2151,23 @@ const PortfolioCreation = () => {
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                     NC Level
                   </Typography>
-                  {isNcLevelOthers ? (
-                    <Input
-                      size="lg"
-                      value={formData.ncLevel || ""}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        setFormData((prev) => ({ ...prev, ncLevel: value }))
-                      }}
-                      onBlur={(e) => {
-                        // Automatically return to dropdown if input is empty
-                        if (!e.target.value || e.target.value.trim() === "") {
-                          setIsNcLevelOthers(false)
-                          setFormData((prev) => ({ ...prev, ncLevel: "" }))
-                        }
-                      }}
-                      placeholder="Enter custom NC Level (e.g., NC VII, NC VIII)"
-                      disabled={isLoading}
-                      className="!border-gray-300 focus:!border-blue-500"
-                      autoComplete="off"
-                    />
-                  ) : (
-                    <Select
-                      size="lg"
-                      label="Select NC Level"
-                      value={
-                        formData.ncLevel && NC_LEVEL_OPTIONS.slice(0, -1).includes(formData.ncLevel)
-                          ? formData.ncLevel
-                          : ""
-                      }
-                      onChange={(val) => {
-                        if (val === "Others") {
-                          setIsNcLevelOthers(true)
-                          setFormData((prev) => ({ ...prev, ncLevel: "" }))
-                        } else {
-                          setIsNcLevelOthers(false)
-                          setFormData((prev) => ({ ...prev, ncLevel: val || "" }))
-                        }
-                      }}
-                      menuProps={selectMenuProps}
-                      containerProps={selectContainerProps}
-                      disabled={isLoading}
-                      className="!border-gray-300 focus:!border-blue-500"
-                    >
-                      <Option value="">None</Option>
-                      {NC_LEVEL_OPTIONS.map((level) => (
-                        <Option key={level} value={level}>
-                          {level}
-                        </Option>
-                      ))}
-                    </Select>
-                  )}
+                  <Select
+                    size="lg"
+                    label="Select NC Level"
+                    value={formData.ncLevel || ""}
+                    onChange={(val) => setFormData((prev) => ({ ...prev, ncLevel: val || "" }))}
+                    menuProps={selectMenuProps}
+                    containerProps={selectContainerProps}
+                    disabled={isLoading}
+                    className="!border-gray-300 focus:!border-blue-500"
+                  >
+                    <Option value="">None</Option>
+                    {NC_LEVEL_OPTIONS.map((level) => (
+                      <Option key={level} value={level}>
+                        {level}
+                      </Option>
+                    ))}
+                  </Select>
                 </div>
 
                 <div>
@@ -1887,9 +2217,30 @@ const PortfolioCreation = () => {
               </div>
 
               <div className="mt-6">
-                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                  TESDA Registration Number
-                </Typography>
+                <div className="mb-2 flex items-center gap-2">
+                  <Typography variant="small" className="text-gray-700 font-medium">
+                    TESDA Registration Number
+                  </Typography>
+                  <div className="relative group inline-flex items-center">
+                    <FaInfoCircle className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-gray-600 transition-colors" />
+                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-auto whitespace-normal">
+                      <div className="text-left leading-relaxed">
+                        To know your TESDA Registration Number{" "}
+                        <a 
+                          href="https://www.tesda.gov.ph/RWAC" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-300 hover:text-blue-200 underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          click here
+                        </a>
+                    
+                      </div>
+                      <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <Input
                   size="lg"
                   value={formData.tesdaRegistrationNumber}
@@ -2024,6 +2375,8 @@ const PortfolioCreation = () => {
                   variant="gradient"
                   color="blue"
                   onClick={() => {
+                    setError("") // Clear any existing errors when opening the form
+                    setProjectSubmitAttempted(false) // Reset submission attempt flag
                     setIsAddingProject(true)
                     setEditingProjectId(null)
                     setNewProject({
@@ -2072,52 +2425,86 @@ const PortfolioCreation = () => {
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                         rows={3}
-                        maxLength={300}
                       />
-                      <div className="flex justify-between items-center mt-1">
-                        <Typography variant="small" className="text-gray-500">
-                          {newProject.description.length}/300 characters
-                        </Typography>
-                        {newProject.description.length > 300 && (
-                          <Typography variant="small" color="red">
-                            Description cannot exceed 300 characters.
-                          </Typography>
-                        )}
-                      </div>
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Start Date
+                        Start Date *
                       </Typography>
                       <Input
                         type="date"
                         size="lg"
                         value={newProject.startDate}
                         onChange={handleProjectInputChange}
+                        onBlur={handleProjectInputBlur}
                         name="startDate"
+                        max={(() => {
+                          const today = new Date()
+                          return today.toISOString().split('T')[0]
+                        })()}
+                        required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
+                      {projectSubmitAttempted && !newProject.startDate && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Please fill in the start date.
+                        </Typography>
+                      )}
+                      {newProject.startDate && (() => {
+                        const today = new Date().toISOString().split('T')[0]
+                        return newProject.startDate > today
+                      })() && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Start Date cannot be a future date.
+                        </Typography>
+                      )}
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        End Date
+                        End Date *
                       </Typography>
                       <Input
                         type="date"
                         size="lg"
                         value={newProject.endDate}
                         onChange={handleProjectInputChange}
+                        onBlur={handleProjectInputBlur}
                         name="endDate"
+                        min={newProject.startDate || undefined}
+                        max={(() => {
+                          const yesterday = new Date()
+                          yesterday.setDate(yesterday.getDate() - 1)
+                          return yesterday.toISOString().split('T')[0]
+                        })()}
+                        required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
+                      {projectSubmitAttempted && !newProject.endDate && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Please fill in the end date.
+                        </Typography>
+                      )}
+                      {newProject.startDate && newProject.endDate && newProject.endDate < newProject.startDate && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          End Date cannot be before Start Date.
+                        </Typography>
+                      )}
+                      {newProject.endDate && (() => {
+                        const today = new Date().toISOString().split('T')[0]
+                        return newProject.endDate >= today
+                      })() && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          End Date cannot be today or a future date.
+                        </Typography>
+                      )}
                     </div>
                   </div>
 
                   <div className="flex flex-col items-center space-y-4 mb-6">
                     <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                      Project Image {editingProjectId ? "(Optional - leave unchanged or upload new)" : "*"}
+                      Project Image (Optional)
                     </Typography>
                     <Avatar
                       src={
@@ -2137,7 +2524,7 @@ const PortfolioCreation = () => {
                         ? newProject.projectImageFile.name 
                         : editingProjectId && projects.find(p => p.id === editingProjectId)?.preview
                         ? "Click to change image (or leave unchanged)"
-                        : "Click to upload project image"}
+                        : "Click to upload project image (optional)"}
                     </Typography>
                     <Button
                       variant="gradient"
@@ -2175,6 +2562,7 @@ const PortfolioCreation = () => {
                       onClick={() => {
                         setIsAddingProject(false)
                         setEditingProjectId(null)
+                        setProjectSubmitAttempted(false) // Reset submission attempt flag on cancel
                         setNewProject({
                           title: "",
                           description: "",
@@ -2198,7 +2586,7 @@ const PortfolioCreation = () => {
                   {projects.map((proj) => (
                     <Card key={proj.id} className="border border-gray-200 shadow-sm">
                       <CardBody className="p-6 flex items-center gap-6">
-                        <Avatar src={proj.preview} alt="Project Preview" size="xl" className="rounded-md" />
+                        <Avatar src={proj.preview || "/placeholder.svg"} alt="Project Preview" size="xl" className="rounded-md" />
                         <div className="flex-grow">
                           <Typography variant="h6" className="text-gray-900 font-bold mb-1">
                             {proj.title}
@@ -2226,16 +2614,16 @@ const PortfolioCreation = () => {
                           >
                             <FaPen className="w-5 h-5" />
                           </Button>
-                        <Button
-                          variant="text"
-                          color="red"
-                          size="sm"
-                          onClick={() => handleRemoveProject(proj.id)}
-                          disabled={isLoading}
-                          className="hover:bg-red-100 focus:bg-red-100"
-                        >
-                          <FaTrash className="w-5 h-5" />
-                        </Button>
+                          <Button
+                            variant="text"
+                            color="red"
+                            size="sm"
+                            onClick={() => handleRemoveProject(proj.id)}
+                            disabled={isLoading}
+                            className="hover:bg-red-100 focus:bg-red-100"
+                          >
+                            <FaTrash className="w-5 h-5" />
+                          </Button>
                         </div>
                       </CardBody>
                     </Card>
@@ -2334,11 +2722,24 @@ const PortfolioCreation = () => {
                         size="lg"
                         value={newCertificate.issueDate}
                         onChange={handleCertificateInputChange}
+                        onBlur={handleCertificateInputBlur}
                         name="issueDate"
+                        max={(() => {
+                          const today = new Date()
+                          return today.toISOString().split('T')[0]
+                        })()}
                         required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
+                      {newCertificate.issueDate && (() => {
+                        const today = new Date().toISOString().split('T')[0]
+                        return newCertificate.issueDate > today
+                      })() && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Issue Date cannot be a future date.
+                        </Typography>
+                      )}
                     </div>
                   </div>
 
@@ -2618,16 +3019,16 @@ const PortfolioCreation = () => {
                           >
                             <FaPen className="w-5 h-5" />
                           </Button>
-                        <Button
-                          variant="text"
-                          color="red"
-                          size="sm"
-                          onClick={() => handleRemoveSkill(index)}
-                          disabled={isLoading}
-                          className="hover:bg-red-100 focus:bg-red-100"
-                        >
-                          <FaTrash className="w-5 h-5" />
-                        </Button>
+                          <Button
+                            variant="text"
+                            color="red"
+                            size="sm"
+                            onClick={() => handleRemoveSkill(index)}
+                            disabled={isLoading}
+                            className="hover:bg-red-100 focus:bg-red-100"
+                          >
+                            <FaTrash className="w-5 h-5" />
+                          </Button>
                         </div>
                       </CardBody>
                     </Card>
@@ -2661,6 +3062,7 @@ const PortfolioCreation = () => {
                   variant="gradient"
                   color="blue"
                   onClick={() => {
+                    setExperienceSubmitAttempted(false) // Reset submission attempt flag when opening the form
                     setIsAddingExperience(true)
                     setEditingExperienceIndex(null)
                   }}
@@ -2706,31 +3108,75 @@ const PortfolioCreation = () => {
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Start Date
+                        Start Date *
                       </Typography>
                       <Input
                         type="date"
                         size="lg"
                         value={newExperience.startDate}
                         onChange={handleExperienceInputChange}
+                        onBlur={handleExperienceInputBlur}
                         name="startDate"
+                        max={(() => {
+                          const today = new Date()
+                          return today.toISOString().split('T')[0]
+                        })()}
+                        required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
+                      {experienceSubmitAttempted && !newExperience.startDate && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Please fill in the start date.
+                        </Typography>
+                      )}
+                      {newExperience.startDate && (() => {
+                        const today = new Date().toISOString().split('T')[0]
+                        return newExperience.startDate > today
+                      })() && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Start Date cannot be a future date.
+                        </Typography>
+                      )}
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        End Date
+                        End Date *
                       </Typography>
                       <Input
                         type="date"
                         size="lg"
                         value={newExperience.endDate}
                         onChange={handleExperienceInputChange}
+                        onBlur={handleExperienceInputBlur}
                         name="endDate"
+                        min={newExperience.startDate || undefined}
+                        max={(() => {
+                          const today = new Date()
+                          return today.toISOString().split('T')[0]
+                        })()}
+                        required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
+                      {experienceSubmitAttempted && !newExperience.endDate && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Please fill in the end date.
+                        </Typography>
+                      )}
+                      {newExperience.startDate && newExperience.endDate && newExperience.endDate < newExperience.startDate && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          End Date cannot be before Start Date.
+                        </Typography>
+                      )}
+                      {newExperience.endDate && (() => {
+                        const today = new Date().toISOString().split('T')[0]
+                        return newExperience.endDate > today
+                      })() && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          End Date cannot be a future date.
+                        </Typography>
+                      )}
                     </div>
                     <div className="md:col-span-2">
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
@@ -2775,6 +3221,7 @@ const PortfolioCreation = () => {
                       onClick={() => {
                         setIsAddingExperience(false)
                         setEditingExperienceIndex(null)
+                        setExperienceSubmitAttempted(false) // Reset submission attempt flag on cancel
                       }}
                       disabled={isLoading}
                     >
@@ -2811,16 +3258,16 @@ const PortfolioCreation = () => {
                             >
                               <FaPen className="w-5 h-5" />
                             </Button>
-                          <Button
-                            variant="text"
-                            color="red"
-                            size="sm"
-                            onClick={() => handleRemoveExperience(index)}
-                            disabled={isLoading}
-                            className="hover:bg-red-100 focus:bg-red-100"
-                          >
-                            <FaTrash className="w-5 h-5" />
-                          </Button>
+                            <Button
+                              variant="text"
+                              color="red"
+                              size="sm"
+                              onClick={() => handleRemoveExperience(index)}
+                              disabled={isLoading}
+                              className="hover:bg-red-100 focus:bg-red-100"
+                            >
+                              <FaTrash className="w-5 h-5" />
+                            </Button>
                           </div>
                         </div>
                         {(exp.startDate || exp.endDate) && (
@@ -2866,6 +3313,7 @@ const PortfolioCreation = () => {
                   variant="gradient"
                   color="blue"
                   onClick={() => {
+                    setAwardSubmitAttempted(false) // Reset submission attempt flag when opening the form
                     setIsAddingAward(true)
                     setEditingAwardIndex(null)
                   }}
@@ -2910,17 +3358,36 @@ const PortfolioCreation = () => {
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Date Received
+                        Date Received *
                       </Typography>
                       <Input
                         type="date"
                         size="lg"
                         value={newAward.dateReceived}
                         onChange={handleAwardInputChange}
+                        onBlur={handleAwardInputBlur}
                         name="dateReceived"
+                        max={(() => {
+                          const today = new Date()
+                          return today.toISOString().split('T')[0]
+                        })()}
+                        required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
+                      {awardSubmitAttempted && !newAward.dateReceived && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Please fill in the date received.
+                        </Typography>
+                      )}
+                      {newAward.dateReceived && (() => {
+                        const today = new Date().toISOString().split('T')[0]
+                        return newAward.dateReceived > today
+                      })() && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Date Received cannot be a future date.
+                        </Typography>
+                      )}
                     </div>
                   </div>
                   <div className="flex justify-center gap-4">
@@ -2939,6 +3406,7 @@ const PortfolioCreation = () => {
                       onClick={() => {
                         setIsAddingAward(false)
                         setEditingAwardIndex(null)
+                        setAwardSubmitAttempted(false) // Reset submission attempt flag on cancel
                       }}
                       disabled={isLoading}
                     >
@@ -2981,16 +3449,16 @@ const PortfolioCreation = () => {
                           >
                             <FaPen className="w-5 h-5" />
                           </Button>
-                        <Button
-                          variant="text"
-                          color="red"
-                          size="sm"
-                          onClick={() => handleRemoveAward(index)}
-                          disabled={isLoading}
-                          className="hover:bg-red-100 focus:bg-red-100"
-                        >
-                          <FaTrash className="w-5 h-5" />
-                        </Button>
+                          <Button
+                            variant="text"
+                            color="red"
+                            size="sm"
+                            onClick={() => handleRemoveAward(index)}
+                            disabled={isLoading}
+                            className="hover:bg-red-100 focus:bg-red-100"
+                          >
+                            <FaTrash className="w-5 h-5" />
+                          </Button>
                         </div>
                       </CardBody>
                     </Card>
@@ -3024,6 +3492,7 @@ const PortfolioCreation = () => {
                   variant="gradient"
                   color="blue"
                   onClick={() => {
+                    setEducationSubmitAttempted(false) // Reset submission attempt flag when opening the form
                     setIsAddingEducation(true)
                     setEditingEducationIndex(null)
                   }}
@@ -3068,17 +3537,36 @@ const PortfolioCreation = () => {
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Completion Date
+                        Completion Date *
                       </Typography>
                       <Input
                         type="date"
                         size="lg"
                         value={newEducation.completionDate}
                         onChange={handleEducationInputChange}
+                        onBlur={handleEducationInputBlur}
                         name="completionDate"
+                        max={(() => {
+                          const today = new Date()
+                          return today.toISOString().split('T')[0]
+                        })()}
+                        required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
+                      {educationSubmitAttempted && !newEducation.completionDate && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Please fill in the completion date.
+                        </Typography>
+                      )}
+                      {newEducation.completionDate && (() => {
+                        const today = new Date().toISOString().split('T')[0]
+                        return newEducation.completionDate > today
+                      })() && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Completion Date cannot be a future date.
+                        </Typography>
+                      )}
                     </div>
                   </div>
                   <div className="flex justify-center gap-4">
@@ -3097,6 +3585,7 @@ const PortfolioCreation = () => {
                       onClick={() => {
                         setIsAddingEducation(false)
                         setEditingEducationIndex(null)
+                        setEducationSubmitAttempted(false) // Reset submission attempt flag on cancel
                       }}
                       disabled={isLoading}
                     >
@@ -3139,16 +3628,16 @@ const PortfolioCreation = () => {
                           >
                             <FaPen className="w-5 h-5" />
                           </Button>
-                        <Button
-                          variant="text"
-                          color="red"
-                          size="sm"
-                          onClick={() => handleRemoveEducation(index)}
-                          disabled={isLoading}
-                          className="hover:bg-red-100 focus:bg-red-100"
-                        >
-                          <FaTrash className="w-5 h-5" />
-                        </Button>
+                          <Button
+                            variant="text"
+                            color="red"
+                            size="sm"
+                            onClick={() => handleRemoveEducation(index)}
+                            disabled={isLoading}
+                            className="hover:bg-red-100 focus:bg-red-100"
+                          >
+                            <FaTrash className="w-5 h-5" />
+                          </Button>
                         </div>
                       </CardBody>
                     </Card>
@@ -3182,6 +3671,7 @@ const PortfolioCreation = () => {
                   variant="gradient"
                   color="blue"
                   onClick={() => {
+                    setMembershipSubmitAttempted(false) // Reset submission attempt flag when opening the form
                     setIsAddingMembership(true)
                     setEditingMembershipIndex(null)
                   }}
@@ -3226,17 +3716,36 @@ const PortfolioCreation = () => {
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Join Date
+                        Join Date *
                       </Typography>
                       <Input
                         type="date"
                         size="lg"
                         value={newMembership.startDate}
                         onChange={handleMembershipInputChange}
+                        onBlur={handleMembershipInputBlur}
                         name="startDate"
+                        max={(() => {
+                          const today = new Date()
+                          return today.toISOString().split('T')[0]
+                        })()}
+                        required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
+                      {membershipSubmitAttempted && !newMembership.startDate && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Please fill in the join date.
+                        </Typography>
+                      )}
+                      {newMembership.startDate && (() => {
+                        const today = new Date().toISOString().split('T')[0]
+                        return newMembership.startDate > today
+                      })() && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Join Date cannot be a future date.
+                        </Typography>
+                      )}
                     </div>
                   </div>
                   <div className="flex justify-center gap-4">
@@ -3255,6 +3764,7 @@ const PortfolioCreation = () => {
                       onClick={() => {
                         setIsAddingMembership(false)
                         setEditingMembershipIndex(null)
+                        setMembershipSubmitAttempted(false) // Reset submission attempt flag on cancel
                       }}
                       disabled={isLoading}
                     >
@@ -3297,16 +3807,16 @@ const PortfolioCreation = () => {
                           >
                             <FaPen className="w-5 h-5" />
                           </Button>
-                        <Button
-                          variant="text"
-                          color="red"
-                          size="sm"
-                          onClick={() => handleRemoveMembership(index)}
-                          disabled={isLoading}
-                          className="hover:bg-red-100 focus:bg-red-100"
-                        >
-                          <FaTrash className="w-5 h-5" />
-                        </Button>
+                          <Button
+                            variant="text"
+                            color="red"
+                            size="sm"
+                            onClick={() => handleRemoveMembership(index)}
+                            disabled={isLoading}
+                            className="hover:bg-red-100 focus:bg-red-100"
+                          >
+                            <FaTrash className="w-5 h-5" />
+                          </Button>
                         </div>
                       </CardBody>
                     </Card>
@@ -3512,16 +4022,16 @@ const PortfolioCreation = () => {
                           >
                             <FaPen className="w-5 h-5" />
                           </Button>
-                        <Button
-                          variant="text"
-                          color="red"
-                          size="sm"
-                          onClick={() => handleRemoveReference(index)}
-                          disabled={isLoading}
-                          className="hover:bg-red-100 focus:bg-red-100"
-                        >
-                          <FaTrash className="w-5 h-5" />
-                        </Button>
+                          <Button
+                            variant="text"
+                            color="red"
+                            size="sm"
+                            onClick={() => handleRemoveReference(index)}
+                            disabled={isLoading}
+                            className="hover:bg-red-100 focus:bg-red-100"
+                          >
+                            <FaTrash className="w-5 h-5" />
+                          </Button>
                         </div>
                       </CardBody>
                     </Card>
@@ -4432,31 +4942,19 @@ const PortfolioCreation = () => {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                           {(showAllCertificates ? certificates : certificates.slice(0, INITIAL_ITEMS_LIMIT)).map((certificate, index) => (
                                             <div key={index} className="pb-3 border-b border-gray-200">
-                                              <div className="flex items-center gap-3">
-                                                {certificate.preview && (
-                                                  <Avatar
-                                                    src={certificate.preview}
-                                                    alt="Certificate Preview"
-                                                    size="md"
-                                                    className="ring-2 ring-red-300 flex-shrink-0"
-                                                  />
-                                                )}
-                                                <div className="flex-grow min-w-0">
-                                                  <Typography variant="h6" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
-                                                    {certificate.courseName}
-                                                  </Typography>
-                                                  {certificate.certificateNumber && (
-                                                    <Typography variant="small" className="text-black font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
-                                                      #{certificate.certificateNumber}
-                                                    </Typography>
-                                                  )}
-                                                  {certificate.issueDate && (
-                                                    <Typography variant="small" className="text-gray-600 text-sm mt-1" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                                      {new Date(certificate.issueDate).toLocaleDateString()}
-                                                    </Typography>
-                                                  )}
-                                                </div>
-                                              </div>
+                                              <Typography variant="h6" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                                {certificate.courseName}
+                                              </Typography>
+                                              {certificate.certificateNumber && (
+                                                <Typography variant="small" className="text-black font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                  #{certificate.certificateNumber}
+                                                </Typography>
+                                              )}
+                                              {certificate.issueDate && (
+                                                <Typography variant="small" className="text-gray-600 text-sm mt-1" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                                  {new Date(certificate.issueDate).toLocaleDateString()}
+                                                </Typography>
+                                              )}
                                             </div>
                                           ))}
                                           {certificates.length > INITIAL_ITEMS_LIMIT && (
