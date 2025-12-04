@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Fragment } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
 import axios from "axios"
-import { FaPen, FaSave, FaTimes, FaPlus, FaTrash, FaCheckCircle, FaExclamationCircle, FaCamera } from "react-icons/fa"
+import { FaPen, FaSave, FaTimes, FaPlus, FaTrash, FaCheckCircle, FaExclamationCircle, FaCamera, FaInfoCircle } from "react-icons/fa"
 import {
   Card,
   CardBody,
@@ -79,6 +79,12 @@ const ViewPortfolio = () => {
     endDate: "",
     projectImageFile: null,
   })
+  const [projectSubmitAttempted, setProjectSubmitAttempted] = useState(false)
+  const [certificateSubmitAttempted, setCertificateSubmitAttempted] = useState(false)
+  const [experienceSubmitAttempted, setExperienceSubmitAttempted] = useState({})
+  const [awardSubmitAttempted, setAwardSubmitAttempted] = useState({})
+  const [educationSubmitAttempted, setEducationSubmitAttempted] = useState({})
+  const [membershipSubmitAttempted, setMembershipSubmitAttempted] = useState({})
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080"
   const navigate = useNavigate()
   const [selectedProjectImage, setSelectedProjectImage] = useState(null)
@@ -1129,17 +1135,29 @@ const fetchPublicDataWithToken = async () => {
   }
 
   const handleArrayFieldChange = (arrayName, index, field, value) => {
+    // Clear error state when user interacts with date fields to prevent showing errors at top
+    if ((field === "startDate" || field === "endDate" || field === "dateReceived" || field === "completionDate") && 
+        (arrayName === "experiences" || arrayName === "awardsRecognitions" || arrayName === "continuingEducations" || arrayName === "professionalMemberships")) {
+      setSaveError("")
+    }
+    
+    // Validate year is exactly 4 digits for date fields
+    let correctedValue = value
+    if ((field === "startDate" || field === "endDate" || field === "dateReceived" || field === "completionDate") && value) {
+      correctedValue = validateAndCorrectDate(value)
+    }
+    
     setEditingPortfolio((prev) => {
       const updatedArray = [...prev[arrayName]]
       // For phone/contact fields, ensure we clear both fields when value is empty
       if (arrayName === "references" && (field === "phone" || field === "contact")) {
         updatedArray[index] = { 
           ...updatedArray[index], 
-          phone: value || "",
-          contact: value || ""
+          phone: correctedValue || "",
+          contact: correctedValue || ""
         }
       } else {
-        updatedArray[index] = { ...updatedArray[index], [field]: value }
+        updatedArray[index] = { ...updatedArray[index], [field]: correctedValue }
       }
       return { ...prev, [arrayName]: updatedArray }
     })
@@ -1147,10 +1165,10 @@ const fetchPublicDataWithToken = async () => {
     // Validate specific fields
     if (arrayName === "references") {
       if (field === "phone" || field === "contact") {
-        validateField("referencePhone", value)
+        validateField("referencePhone", correctedValue)
         // Also store error with indexed key for display
         const fieldKey = `referencePhone_${index}`
-        const trimmedValue = typeof value === "string" ? value.trim() : value
+        const trimmedValue = typeof correctedValue === "string" ? correctedValue.trim() : correctedValue
         let message = ""
         if (trimmedValue) {
           if (!/^\d+$/.test(trimmedValue)) {
@@ -1161,10 +1179,10 @@ const fetchPublicDataWithToken = async () => {
         }
         updateFieldError(fieldKey, message)
       } else if (field === "email") {
-        validateField("referenceEmail", value)
+        validateField("referenceEmail", correctedValue)
         // Also store error with indexed key for display
         const fieldKey = `referenceEmail_${index}`
-        const trimmedValue = typeof value === "string" ? value.trim() : value
+        const trimmedValue = typeof correctedValue === "string" ? correctedValue.trim() : correctedValue
         let message = ""
         if (trimmedValue) {
           if (!isValidEmail(trimmedValue) || !trimmedValue.toLowerCase().endsWith("@gmail.com")) {
@@ -1174,7 +1192,21 @@ const fetchPublicDataWithToken = async () => {
         updateFieldError(fieldKey, message)
       }
     } else if (arrayName === "certificates" && field === "certificateNumber") {
-      validateField("certificateNumber", value)
+      validateField("certificateNumber", correctedValue)
+    }
+  }
+
+  const handleArrayFieldBlur = (arrayName, index, field, value) => {
+    // Validate and correct date on blur for date fields
+    if ((field === "startDate" || field === "endDate" || field === "dateReceived" || field === "completionDate") && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setEditingPortfolio((prev) => {
+          const updatedArray = [...prev[arrayName]]
+          updatedArray[index] = { ...updatedArray[index], [field]: correctedValue }
+          return { ...prev, [arrayName]: updatedArray }
+        })
+      }
     }
   }
 
@@ -1224,8 +1256,111 @@ const fetchPublicDataWithToken = async () => {
     setSaveError("")
   }
 
+  const validateAndCorrectDate = (dateValue) => {
+    if (!dateValue) return dateValue
+    
+    // Date format should be YYYY-MM-DD
+    // Check if the year part has more than 4 digits
+    const datePattern = /^(\d{4,})-(\d{2})-(\d{2})$/
+    const match = dateValue.match(datePattern)
+    
+    if (match) {
+      const year = match[1]
+      const month = match[2]
+      const day = match[3]
+      
+      // If year has more than 4 digits, truncate to first 4 digits
+      if (year.length > 4) {
+        const correctedYear = year.substring(0, 4)
+        return `${correctedYear}-${month}-${day}`
+      }
+    } else if (dateValue.length > 0) {
+      // Handle cases where user might type year with more than 4 digits
+      // Check if value starts with 5+ digits followed by a dash
+      const yearMatch = dateValue.match(/^(\d{5,})(-.*)$/)
+      if (yearMatch) {
+        // Truncate year to 4 digits and keep the rest
+        const truncatedYear = dateValue.substring(0, 4)
+        const restOfValue = dateValue.substring(4)
+        return truncatedYear + restOfValue
+      }
+    }
+    
+    return dateValue
+  }
+
+  // Validation helper functions
+  const validateDateNotFuture = (dateValue, fieldName) => {
+    if (!dateValue) return { valid: true }
+    const today = new Date().toISOString().split('T')[0]
+    if (dateValue > today) {
+      return { 
+        valid: false, 
+        message: `${fieldName} cannot be a future date.` 
+      }
+    }
+    return { valid: true }
+  }
+
+  const validateProjectDates = (startDate, endDate) => {
+    const today = new Date().toISOString().split('T')[0]
+    
+    if (!startDate) {
+      return { valid: false, message: "Please fill in the start date." }
+    }
+    if (!endDate) {
+      return { valid: false, message: "Please fill in the end date." }
+    }
+    if (startDate > today) {
+      return { valid: false, message: "Start Date cannot be a future date." }
+    }
+    if (endDate >= today) {
+      return { valid: false, message: "End Date cannot be today or a future date." }
+    }
+    if (endDate < startDate) {
+      return { valid: false, message: "End Date cannot be before Start Date." }
+    }
+    return { valid: true }
+  }
+
+  const validateExperienceDates = (startDate, endDate) => {
+    const today = new Date().toISOString().split('T')[0]
+    
+    if (!startDate) {
+      return { valid: false, message: "Please fill in the start date." }
+    }
+    if (!endDate) {
+      return { valid: false, message: "Please fill in the end date." }
+    }
+    if (startDate > today) {
+      return { valid: false, message: "Start Date cannot be a future date." }
+    }
+    if (endDate > today) {
+      return { valid: false, message: "End Date cannot be a future date." }
+    }
+    if (endDate < startDate) {
+      return { valid: false, message: "End Date cannot be before Start Date." }
+    }
+    return { valid: true }
+  }
+
   const handleCertificateInputChange = (e) => {
     const { name, value } = e.target
+    
+    // Clear error state when user interacts with date fields to prevent showing errors at top
+    if (name === "issueDate") {
+      setSaveError("")
+    }
+    
+    // Validate year is exactly 4 digits for issueDate field
+    if (name === "issueDate" && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewCertificate((prev) => ({ ...prev, [name]: correctedValue }))
+        return
+      }
+    }
+    
     setNewCertificate((prev) => ({ ...prev, [name]: value }))
     setSaveError("")
     // Validate certificate number
@@ -1234,34 +1369,99 @@ const fetchPublicDataWithToken = async () => {
     }
   }
 
+  const handleCertificateInputBlur = (e) => {
+    const { name, value } = e.target
+    
+    // Validate and correct date on blur for issueDate field
+    if (name === "issueDate" && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewCertificate((prev) => {
+          const updated = { ...prev, [name]: correctedValue }
+          return updated
+        })
+      }
+    }
+  }
+
   const handleProjectInputChange = (e) => {
     const { name, value } = e.target
+    
+    // Clear error state when user interacts with date fields to prevent showing errors at top
+    if (name === "startDate" || name === "endDate") {
+      setSaveError("")
+    }
+    
+    // Validate year is exactly 4 digits for date fields
+    if ((name === "startDate" || name === "endDate") && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewProject((prev) => {
+          const updated = { ...prev, [name]: correctedValue }
+          return updated
+        })
+        return
+      }
+    }
+    
     setNewProject((prev) => ({ ...prev, [name]: value }))
     setSaveError("")
+  }
+
+  const handleProjectInputBlur = (e) => {
+    const { name, value } = e.target
+    
+    // Validate and correct date on blur for date fields
+    if ((name === "startDate" || name === "endDate") && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      if (correctedValue !== value) {
+        setNewProject((prev) => {
+          const updated = { ...prev, [name]: correctedValue }
+          return updated
+        })
+      }
+    }
   }
 
   const isCertificateFormValid = () => {
     return (
       newCertificate.courseName.trim() !== "" &&
       newCertificate.certificateNumber.trim() !== "" &&
-      newCertificate.issueDate.trim() !== "" &&
-      (editingCertificateId ? true : newCertificate.certificateFile !== null)
+      newCertificate.issueDate.trim() !== ""
     )
   }
 
   const isProjectFormValid = () => {
     return (
       newProject.title.trim() !== "" &&
-      newProject.description.trim() !== "" &&
       newProject.startDate.trim() !== "" &&
-      newProject.endDate.trim() !== "" &&
-      (editingProjectId ? true : newProject.projectImageFile !== null)
+      newProject.endDate.trim() !== ""
     )
   }
 
   const handleAddCertificate = () => {
+    setCertificateSubmitAttempted(true)
     if (!isCertificateFormValid()) {
-      setSaveError("Please fill in all required certificate fields, including the certificate file.")
+      setSaveError("Please fill in all required certificate fields.")
+      return
+    }
+    // Validate certificate number format - must contain only digits
+    if (newCertificate.certificateNumber && newCertificate.certificateNumber.trim() !== "") {
+      const certNumber = newCertificate.certificateNumber.trim()
+      if (!/^\d+$/.test(certNumber)) {
+        setSaveError("Certificate number must contain digits only.")
+        return
+      }
+    }
+    // Check for certificate number validation errors
+    if (fieldErrors.certificateNumber) {
+      setSaveError(fieldErrors.certificateNumber)
+      return
+    }
+    // Validate issue date is not in the future
+    const dateValidation = validateDateNotFuture(newCertificate.issueDate, "Issue Date")
+    if (!dateValidation.valid) {
+      setSaveError(dateValidation.message)
       return
     }
     const newCert = {
@@ -1283,12 +1483,20 @@ const fetchPublicDataWithToken = async () => {
     })
     setIsAddingCertificate(false)
     setEditingCertificateId(null)
+    setCertificateSubmitAttempted(false)
     setSaveError("")
   }
 
   const handleAddProject = () => {
+    setProjectSubmitAttempted(true)
     if (!isProjectFormValid()) {
-      setSaveError("Please fill in all required project fields, including the project image.")
+      setSaveError("Please fill in all required project fields.")
+      return
+    }
+    // Validate project dates
+    const dateValidation = validateProjectDates(newProject.startDate, newProject.endDate)
+    if (!dateValidation.valid) {
+      setSaveError(dateValidation.message)
       return
     }
     const newProj = {
@@ -1312,11 +1520,13 @@ const fetchPublicDataWithToken = async () => {
     })
     setIsAddingProject(false)
     setEditingProjectId(null)
+    setProjectSubmitAttempted(false)
     setSaveError("")
   }
 
   const handleEditCertificate = (certificate) => {
     setEditingCertificateId(certificate.id)
+    setCertificateSubmitAttempted(false)
     setNewCertificate({
       courseName: certificate.courseName || "",
       certificateNumber: certificate.certificateNumber || "",
@@ -1328,6 +1538,7 @@ const fetchPublicDataWithToken = async () => {
 
   const handleEditProject = (project) => {
     setEditingProjectId(project.id)
+    setProjectSubmitAttempted(false)
     // Extract date part from LocalDateTime format (YYYY-MM-DDTHH:mm:ss -> YYYY-MM-DD)
     const formatDateForInput = (dateStr) => {
       if (!dateStr) return ""
@@ -1347,8 +1558,28 @@ const fetchPublicDataWithToken = async () => {
   }
 
   const handleUpdateCertificate = () => {
+    setCertificateSubmitAttempted(true)
     if (!isCertificateFormValid()) {
       setSaveError("Please fill in all required certificate fields.")
+      return
+    }
+    // Validate certificate number format - must contain only digits
+    if (newCertificate.certificateNumber && newCertificate.certificateNumber.trim() !== "") {
+      const certNumber = newCertificate.certificateNumber.trim()
+      if (!/^\d+$/.test(certNumber)) {
+        setSaveError("Certificate number must contain digits only.")
+        return
+      }
+    }
+    // Check for certificate number validation errors
+    if (fieldErrors.certificateNumber) {
+      setSaveError(fieldErrors.certificateNumber)
+      return
+    }
+    // Validate issue date is not in the future
+    const dateValidation = validateDateNotFuture(newCertificate.issueDate, "Issue Date")
+    if (!dateValidation.valid) {
+      setSaveError(dateValidation.message)
       return
     }
     setCertificates((prev) =>
@@ -1376,12 +1607,20 @@ const fetchPublicDataWithToken = async () => {
     })
     setEditingCertificateId(null)
     setIsAddingCertificate(false)
+    setCertificateSubmitAttempted(false)
     setSaveError("")
   }
 
   const handleUpdateProject = () => {
+    setProjectSubmitAttempted(true)
     if (!isProjectFormValid()) {
       setSaveError("Please fill in all required project fields.")
+      return
+    }
+    // Validate project dates
+    const dateValidation = validateProjectDates(newProject.startDate, newProject.endDate)
+    if (!dateValidation.valid) {
+      setSaveError(dateValidation.message)
       return
     }
     setProjects((prev) =>
@@ -1411,6 +1650,7 @@ const fetchPublicDataWithToken = async () => {
     })
     setEditingProjectId(null)
     setIsAddingProject(false)
+    setProjectSubmitAttempted(false)
     setSaveError("")
   }
 
@@ -1457,6 +1697,25 @@ const fetchPublicDataWithToken = async () => {
       )
 
       for (const cert of certificates) {
+        // Validate certificate issue date before saving
+        if (cert.issueDate) {
+          const dateValidation = validateDateNotFuture(cert.issueDate, "Issue Date")
+          if (!dateValidation.valid) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: `Certificate "${cert.courseName || 'Untitled'}": ${dateValidation.message}`,
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+        }
+
         if (!modifiedCertificates.has(cert.id)) {
           if (typeof cert.id === "string" && cert.id.includes("new-")) {
           } else if (existingCertificateIds.has(cert.id)) {
@@ -1557,6 +1816,25 @@ const fetchPublicDataWithToken = async () => {
       )
 
       for (const proj of projects) {
+        // Validate project dates before saving
+        if (proj.startDate || proj.endDate) {
+          const dateValidation = validateProjectDates(proj.startDate || "", proj.endDate || "")
+          if (!dateValidation.valid) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: `Project "${proj.title || 'Untitled'}": ${dateValidation.message}`,
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+        }
+
         if (!modifiedProjects.has(proj.id)) {
           if (typeof proj.id === "string" && proj.id.includes("new-")) {
           } else if (existingProjectIds.has(proj.id)) {
@@ -1647,6 +1925,231 @@ const fetchPublicDataWithToken = async () => {
 
       setModifiedCertificates(new Set())
       setModifiedProjects(new Set())
+
+      // Validate all dates before building payload
+      // Validate experiences
+      for (const exp of editingPortfolio.experiences || []) {
+        // Check if all required fields are filled
+        if (!exp.jobTitle || exp.jobTitle.trim() === "") {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fill in all required experience fields: Job Title, Company, Start Date, and End Date.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        if (!exp.company || (exp.company && typeof exp.company === "string" && exp.company.trim() === "") && (!exp.employer || (exp.employer && typeof exp.employer === "string" && exp.employer.trim() === ""))) {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fill in all required experience fields: Job Title, Company, Start Date, and End Date.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        if (!exp.startDate || exp.startDate.trim() === "") {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fill in all required experience fields: Job Title, Company, Start Date, and End Date.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        if (!exp.endDate || exp.endDate.trim() === "") {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fill in all required experience fields: Job Title, Company, Start Date, and End Date.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        // Validate dates
+        const dateValidation = validateExperienceDates(exp.startDate || "", exp.endDate || "")
+        if (!dateValidation.valid) {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: `Experience "${exp.jobTitle}": ${dateValidation.message}`,
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+      }
+
+      // Validate awards
+      for (const award of editingPortfolio.awardsRecognitions || []) {
+        // Check if all required fields are filled
+        if (!award.title || award.title.trim() === "") {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fill in all required award fields: Award Title and Date Received are required.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        if (!award.dateReceived || award.dateReceived.trim() === "") {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fill in all required award fields: Award Title and Date Received are required.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        // Validate date is not in the future
+        const dateValidation = validateDateNotFuture(award.dateReceived, "Date Received")
+        if (!dateValidation.valid) {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: `Award "${award.title}": ${dateValidation.message}`,
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+      }
+
+      // Validate education
+      for (const edu of editingPortfolio.continuingEducations || []) {
+        // Check if all required fields are filled
+        if (!edu.courseName || edu.courseName.trim() === "") {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fill in all required education fields: Course Name and Completion Date are required.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        if (!edu.completionDate || edu.completionDate.trim() === "") {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fill in all required education fields: Course Name and Completion Date are required.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        // Validate date is not in the future
+        const dateValidation = validateDateNotFuture(edu.completionDate, "Completion Date")
+        if (!dateValidation.valid) {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: `Education "${edu.courseName}": ${dateValidation.message}`,
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+      }
+
+      // Validate memberships
+      for (const mem of editingPortfolio.professionalMemberships || []) {
+        // Check if all required fields are filled
+        if (!mem.organization || mem.organization.trim() === "") {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fill in all required membership fields: Organization and Start Date are required.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        if (!mem.startDate || mem.startDate.trim() === "") {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fill in all required membership fields: Organization and Start Date are required.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        // Validate date is not in the future
+        const dateValidation = validateDateNotFuture(mem.startDate, "Start Date")
+        if (!dateValidation.valid) {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: `Membership "${mem.organization}": ${dateValidation.message}`,
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+      }
 
       const payload = {
         graduateId,
@@ -1922,6 +2425,25 @@ const fetchPublicDataWithToken = async () => {
               }
             }
           }
+          
+          // Validate certificate number format - must contain only digits
+          if (cert.certificateNumber && cert.certificateNumber.trim() !== "") {
+            const certNumber = cert.certificateNumber.trim()
+            if (!/^\d+$/.test(certNumber)) {
+              setNotification({
+                show: true,
+                type: "error",
+                title: "Validation Error",
+                message: `Certificate "${cert.courseName || 'Untitled'}": Certificate number must contain digits only.`,
+                link: "",
+              })
+              setTimeout(() => {
+                setNotification(prev => ({ ...prev, show: false }))
+              }, 5000)
+              setIsSaving(false)
+              return
+            }
+          }
 
           const certificateData = new FormData()
           certificateData.append("courseName", cert.courseName || "")
@@ -2058,6 +2580,27 @@ const fetchPublicDataWithToken = async () => {
 
       // Handle projects section
       if (section === "projects") {
+        // Validate all project dates before saving
+        for (const proj of projects) {
+          if (proj.startDate || proj.endDate) {
+            const dateValidation = validateProjectDates(proj.startDate || "", proj.endDate || "")
+            if (!dateValidation.valid) {
+              setNotification({
+                show: true,
+                type: "error",
+                title: "Validation Error",
+                message: `Project "${proj.title || 'Untitled'}": ${dateValidation.message}`,
+                link: "",
+              })
+              setTimeout(() => {
+                setNotification(prev => ({ ...prev, show: false }))
+              }, 5000)
+              setIsSaving(false)
+              return
+            }
+          }
+        }
+
         const projectIds = []
         const existingProjectIds = new Set(
           (
@@ -2149,10 +2692,110 @@ const fetchPublicDataWithToken = async () => {
         payload.professionalSummary = editingPortfolio.professionalSummary
         payload.avatar = avatarUrl || editingPortfolio.avatar || portfolio.avatar
       } else if (section === "contact") {
+        // Check for existing field errors in contact fields
+        if (fieldErrors.email || fieldErrors.phone || fieldErrors.website) {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fix all validation errors in the contact fields before saving.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        // Validate email format - must be valid Gmail
+        if (editingPortfolio.email && editingPortfolio.email.trim() !== "") {
+          const emailValue = editingPortfolio.email.trim()
+          if (!isValidEmail(emailValue) || !emailValue.toLowerCase().endsWith("@gmail.com")) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please provide a valid Gmail address.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+        }
+        // Validate phone format - must contain only digits and be exactly 11 digits
+        if (editingPortfolio.phone && editingPortfolio.phone.trim() !== "") {
+          const phoneValue = editingPortfolio.phone.trim()
+          if (!/^\d+$/.test(phoneValue)) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Phone number must contain digits only.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          if (phoneValue.length !== 11) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Phone number must be exactly 11 digits.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+        }
+        // Validate website format - must be valid https URL
+        if (editingPortfolio.website && editingPortfolio.website.trim() !== "") {
+          const websiteValue = editingPortfolio.website.trim()
+          if (!isValidWebsiteUrl(websiteValue)) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Website must be a valid https URL (e.g., https://www.example.com).",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+        }
         payload.email = editingPortfolio.email
         payload.phone = editingPortfolio.phone
         payload.website = editingPortfolio.website
       } else if (section === "skills") {
+        // Validate all required skill fields before saving
+        for (const skill of editingPortfolio.skills || []) {
+          if (!skill.name || skill.name.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required skill fields: Skill Name is required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+        }
         payload.skills = editingPortfolio.skills
           ?.filter((skill) => skill.name && skill.name.trim() !== "") // Filter out entries with empty name
           .map((skill) => ({
@@ -2162,14 +2805,126 @@ const fetchPublicDataWithToken = async () => {
             proficiencyLevel: skill.proficiencyLevel && skill.proficiencyLevel.trim() !== "" ? skill.proficiencyLevel.trim() : null,
           })) || []
       } else if (section === "tesda") {
+        // Check for TESDA registration number validation errors
+        if (fieldErrors.tesdaRegistrationNumber) {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fix the TESDA registration number validation error before saving.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        // Validate TESDA registration number format - must contain only digits
+        if (editingPortfolio.tesdaRegistrationNumber && editingPortfolio.tesdaRegistrationNumber.trim() !== "") {
+          const regNumber = editingPortfolio.tesdaRegistrationNumber.trim()
+          if (!/^\d+$/.test(regNumber)) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "TESDA registration number must contain digits only.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+        }
         payload.ncLevel = editingPortfolio.ncLevel
         payload.trainingCenter = editingPortfolio.trainingCenter
         payload.scholarshipType = editingPortfolio.scholarshipType
         payload.trainingDuration = editingPortfolio.trainingDuration
         payload.tesdaRegistrationNumber = editingPortfolio.tesdaRegistrationNumber
       } else if (section === "experience") {
+        // Validate all required experience fields before saving
+        for (const exp of editingPortfolio.experiences || []) {
+          // Check if all required fields are filled
+          if (!exp.jobTitle || exp.jobTitle.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required experience fields: Job Title, Company, Start Date, and End Date.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          if (!exp.company || (exp.company && typeof exp.company === "string" && exp.company.trim() === "") && (!exp.employer || (exp.employer && typeof exp.employer === "string" && exp.employer.trim() === ""))) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required experience fields: Job Title, Company, Start Date, and End Date.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          if (!exp.startDate || exp.startDate.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required experience fields: Job Title, Company, Start Date, and End Date.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          if (!exp.endDate || exp.endDate.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required experience fields: Job Title, Company, Start Date, and End Date.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          // Validate dates
+          const dateValidation = validateExperienceDates(exp.startDate || "", exp.endDate || "")
+          if (!dateValidation.valid) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: `Experience "${exp.jobTitle}": ${dateValidation.message}`,
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+        }
         payload.experiences = editingPortfolio.experiences
-          ?.filter((exp) => exp.jobTitle && exp.jobTitle.trim() !== "") // Filter out entries with empty jobTitle
+          ?.filter((exp) => exp.jobTitle && exp.jobTitle.trim() !== "" && 
+                           (exp.company && exp.company.trim() !== "" || exp.employer && exp.employer.trim() !== "") &&
+                           exp.startDate && exp.startDate.trim() !== "" &&
+                           exp.endDate && exp.endDate.trim() !== "") // Filter out entries missing required fields
           .map((exp) => ({
             id: typeof exp.id === "string" && exp.id.includes("new-") ? null : exp.id,
             jobTitle: exp.jobTitle.trim(),
@@ -2179,8 +2934,55 @@ const fetchPublicDataWithToken = async () => {
             endDate: exp.endDate && exp.endDate.trim() !== "" ? exp.endDate : null,
           })) || []
       } else if (section === "awards") {
+        // Validate all required award fields before saving
+        for (const award of editingPortfolio.awardsRecognitions || []) {
+          if (!award.title || award.title.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required award fields: Award Title and Date Received are required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          if (!award.dateReceived || award.dateReceived.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required award fields: Award Title and Date Received are required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          // Validate date is not in the future
+          const dateValidation = validateDateNotFuture(award.dateReceived, "Date Received")
+          if (!dateValidation.valid) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: `Award "${award.title}": ${dateValidation.message}`,
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+        }
         payload.awardsRecognitions = editingPortfolio.awardsRecognitions
-          ?.filter((award) => award.title && award.title.trim() !== "") // Filter out entries with empty title
+          ?.filter((award) => award.title && award.title.trim() !== "" && award.dateReceived && award.dateReceived.trim() !== "") // Filter out entries missing required fields
           .map((award) => ({
             id: typeof award.id === "string" && award.id.includes("new-") ? null : award.id,
             title: award.title.trim(),
@@ -2188,8 +2990,77 @@ const fetchPublicDataWithToken = async () => {
             dateReceived: award.dateReceived && award.dateReceived.trim() !== "" ? award.dateReceived : null,
           })) || []
       } else if (section === "education") {
+        // Validate all education dates before saving
+        for (const edu of editingPortfolio.continuingEducations || []) {
+          if (edu.courseName && edu.courseName.trim() !== "") {
+            if (edu.completionDate) {
+              const dateValidation = validateDateNotFuture(edu.completionDate, "Completion Date")
+              if (!dateValidation.valid) {
+                setNotification({
+                  show: true,
+                  type: "error",
+                  title: "Validation Error",
+                  message: `Education "${edu.courseName}": ${dateValidation.message}`,
+                  link: "",
+                })
+                setTimeout(() => {
+                  setNotification(prev => ({ ...prev, show: false }))
+                }, 5000)
+                setIsSaving(false)
+                return
+              }
+            }
+          }
+        }
+        // Validate all required education fields before saving
+        for (const edu of editingPortfolio.continuingEducations || []) {
+          if (!edu.courseName || edu.courseName.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required education fields: Course Name and Completion Date are required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          if (!edu.completionDate || edu.completionDate.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required education fields: Course Name and Completion Date are required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          // Validate date is not in the future
+          const dateValidation = validateDateNotFuture(edu.completionDate, "Completion Date")
+          if (!dateValidation.valid) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: `Education "${edu.courseName}": ${dateValidation.message}`,
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+        }
         payload.continuingEducations = editingPortfolio.continuingEducations
-          ?.filter((edu) => edu.courseName && edu.courseName.trim() !== "") // Filter out entries with empty courseName
+          ?.filter((edu) => edu.courseName && edu.courseName.trim() !== "" && edu.completionDate && edu.completionDate.trim() !== "") // Filter out entries missing required fields
           .map((edu) => {
             const completionDate = edu.completionDate 
               ? (typeof edu.completionDate === 'string' && edu.completionDate.trim() !== "" ? edu.completionDate.trim() : null)
@@ -2202,8 +3073,77 @@ const fetchPublicDataWithToken = async () => {
             }
           }) || []
       } else if (section === "memberships") {
+        // Validate all membership dates before saving
+        for (const mem of editingPortfolio.professionalMemberships || []) {
+          if (mem.organization && mem.organization.trim() !== "") {
+            if (mem.startDate) {
+              const dateValidation = validateDateNotFuture(mem.startDate, "Start Date")
+              if (!dateValidation.valid) {
+                setNotification({
+                  show: true,
+                  type: "error",
+                  title: "Validation Error",
+                  message: `Membership "${mem.organization}": ${dateValidation.message}`,
+                  link: "",
+                })
+                setTimeout(() => {
+                  setNotification(prev => ({ ...prev, show: false }))
+                }, 5000)
+                setIsSaving(false)
+                return
+              }
+            }
+          }
+        }
+        // Validate all required membership fields before saving
+        for (const mem of editingPortfolio.professionalMemberships || []) {
+          if (!mem.organization || mem.organization.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required membership fields: Organization and Start Date are required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          if (!mem.startDate || mem.startDate.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required membership fields: Organization and Start Date are required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          // Validate date is not in the future
+          const dateValidation = validateDateNotFuture(mem.startDate, "Start Date")
+          if (!dateValidation.valid) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: `Membership "${mem.organization}": ${dateValidation.message}`,
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+        }
         payload.professionalMemberships = editingPortfolio.professionalMemberships
-          ?.filter((mem) => mem.organization && mem.organization.trim() !== "") // Filter out entries with empty organization
+          ?.filter((mem) => mem.organization && mem.organization.trim() !== "" && mem.startDate && mem.startDate.trim() !== "") // Filter out entries missing required fields
           .map((mem) => ({
             id: typeof mem.id === "string" && mem.id.includes("new-") ? null : mem.id,
             organization: mem.organization.trim(),
@@ -2211,8 +3151,113 @@ const fetchPublicDataWithToken = async () => {
             startDate: mem.startDate && mem.startDate.trim() !== "" ? mem.startDate : null,
           })) || []
       } else if (section === "references") {
+        // Check for any existing field errors in references
+        const hasReferenceErrors = (editingPortfolio.references || []).some((ref, index) => {
+          return fieldErrors[`referencePhone_${index}`] || fieldErrors[`referenceEmail_${index}`]
+        })
+        if (hasReferenceErrors) {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fix all validation errors in the reference fields before saving.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        // Validate all required reference fields before saving
+        for (const ref of editingPortfolio.references || []) {
+          if (!ref.name || ref.name.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required reference fields: Name, Email, and Phone are required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          if (!ref.email || ref.email.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required reference fields: Name, Email, and Phone are required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          // Check phone or contact field
+          const phoneValue = (ref.phone && typeof ref.phone === "string" && ref.phone.trim() !== "") 
+            ? ref.phone.trim() 
+            : (ref.contact && typeof ref.contact === "string" && ref.contact.trim() !== "") 
+              ? ref.contact.trim() 
+              : null
+          if (!phoneValue) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required reference fields: Name, Email, and Phone are required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          // Validate phone number format - must contain only digits
+          if (!/^\d+$/.test(phoneValue)) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: `Reference "${ref.name || 'Untitled'}": Contact number must contain digits only.`,
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          // Validate phone number length - must be exactly 11 digits
+          if (phoneValue.length !== 11) {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: `Reference "${ref.name || 'Untitled'}": Contact number must be exactly 11 digits.`,
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+        }
         payload.references = editingPortfolio.references
-          ?.filter((ref) => ref.name && ref.name.trim() !== "") // Filter out entries with empty name
+          ?.filter((ref) => {
+            // Filter out entries missing required fields
+            const hasName = ref.name && ref.name.trim() !== ""
+            const hasEmail = ref.email && ref.email.trim() !== ""
+            const hasPhone = (ref.phone && ref.phone.trim() !== "") || (ref.contact && ref.contact.trim() !== "")
+            return hasName && hasEmail && hasPhone
+          })
           .map((ref) => {
           // Get relationship value - check both relationship and position fields
           // Prioritize relationship, fallback to position
@@ -2266,7 +3311,7 @@ const fetchPublicDataWithToken = async () => {
           endDate: exp.endDate && exp.endDate.trim() !== "" ? exp.endDate : null,
         })) || []
       payload.awardsRecognitions = editingPortfolio.awardsRecognitions
-        ?.filter((award) => award.title && award.title.trim() !== "") // Filter out entries with empty title
+        ?.filter((award) => award.title && award.title.trim() !== "" && award.dateReceived && award.dateReceived.trim() !== "") // Filter out entries missing required fields
         .map((award) => ({
           id: typeof award.id === "string" && award.id.includes("new-") ? null : award.id,
           title: award.title.trim(),
@@ -2274,7 +3319,7 @@ const fetchPublicDataWithToken = async () => {
           dateReceived: award.dateReceived && award.dateReceived.trim() !== "" ? award.dateReceived : null,
         })) || []
       payload.continuingEducations = editingPortfolio.continuingEducations
-        ?.filter((edu) => edu.courseName && edu.courseName.trim() !== "") // Filter out entries with empty courseName
+        ?.filter((edu) => edu.courseName && edu.courseName.trim() !== "" && edu.completionDate && edu.completionDate.trim() !== "") // Filter out entries missing required fields
         .map((edu) => ({
           id: typeof edu.id === "string" && edu.id.includes("new-") ? null : edu.id,
           courseName: edu.courseName.trim(),
@@ -2282,7 +3327,7 @@ const fetchPublicDataWithToken = async () => {
           completionDate: edu.completionDate && edu.completionDate.trim() !== "" ? edu.completionDate : null,
         })) || []
       payload.professionalMemberships = editingPortfolio.professionalMemberships
-        ?.filter((mem) => mem.organization && mem.organization.trim() !== "") // Filter out entries with empty organization
+        ?.filter((mem) => mem.organization && mem.organization.trim() !== "" && mem.startDate && mem.startDate.trim() !== "") // Filter out entries missing required fields
         .map((mem) => ({
           id: typeof mem.id === "string" && mem.id.includes("new-") ? null : mem.id,
           organization: mem.organization.trim(),
@@ -2290,7 +3335,13 @@ const fetchPublicDataWithToken = async () => {
           startDate: mem.startDate && mem.startDate.trim() !== "" ? mem.startDate : null,
         })) || []
       payload.references = editingPortfolio.references
-        ?.filter((ref) => ref.name && ref.name.trim() !== "") // Filter out entries with empty name
+        ?.filter((ref) => {
+          // Filter out entries missing required fields
+          const hasName = ref.name && ref.name.trim() !== ""
+          const hasEmail = ref.email && ref.email.trim() !== ""
+          const hasPhone = (ref.phone && ref.phone.trim() !== "") || (ref.contact && ref.contact.trim() !== "")
+          return hasName && hasEmail && hasPhone
+        })
         .map((ref) => {
           // Get relationship value - check both relationship and position fields
           // Prioritize relationship, fallback to position
@@ -2314,14 +3365,14 @@ const fetchPublicDataWithToken = async () => {
             ref.company && typeof ref.company === "string" && ref.company.trim() !== "" ? ref.company.trim() : null
 
             return {
-          id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
-          name: ref.name.trim(),
+            id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
+            name: ref.name.trim(),
               relationship: relationshipValue,
               company: companyValue,
               email: ref.email && typeof ref.email === "string" && ref.email.trim() !== "" ? ref.email.trim() : null,
               phone: phoneValue,
             }
-        }) || []
+          }) || []
 
       // Add certificate and project IDs if they exist
       if (section === "certificates") {
@@ -3036,7 +4087,7 @@ const fetchPublicDataWithToken = async () => {
                             <div className="space-y-2">
                               <div>
                                 <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                  Skill Name
+                                  Skill Name *
                                 </Typography>
                               <div className="flex gap-2">
                                 <Input
@@ -3044,6 +4095,7 @@ const fetchPublicDataWithToken = async () => {
                                   value={skill.name || ""}
                                   onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
                                     placeholder="e.g. Latte Art"
+                                  required
                                   className="!border-gray-300 flex-1"
                                 />
                                 <IconButton
@@ -3278,9 +4330,29 @@ const fetchPublicDataWithToken = async () => {
                     )}
                     {(portfolio.tesdaRegistrationNumber || (isEditMode && editingSections.tesda)) && (
                       <div>
-                        <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          Registration Number
-                        </Typography>
+                        <div className="mb-1 flex items-center gap-2">
+                          <Typography variant="small" className="text-gray-700 font-semibold" style={{ fontFamily: "'Inter', sans-serif" }}>
+                            Registration Number
+                          </Typography>
+                          <div className="relative group inline-flex items-center">
+                            <FaInfoCircle className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-gray-600 transition-colors" />
+                            <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-auto whitespace-normal">
+                              <div className="text-left leading-relaxed">
+                                To know your TESDA Registration Number{" "}
+                                <a 
+                                  href="https://www.tesda.gov.ph/RWAC" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-blue-300 hover:text-blue-200 underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  click here
+                                </a>
+                              </div>
+                              <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
+                            </div>
+                          </div>
+                        </div>
                         {isEditMode && editingSections.tesda ? (
                           <>
                             <Input
@@ -3488,13 +4560,31 @@ const fetchPublicDataWithToken = async () => {
                                 name="issueDate"
                                 value={newCertificate.issueDate}
                                 onChange={handleCertificateInputChange}
+                                onBlur={handleCertificateInputBlur}
+                                max={(() => {
+                                  const today = new Date()
+                                  return today.toISOString().split('T')[0]
+                                })()}
                                 required
                                 className="!border-gray-300 focus:!border-blue-500"
                               />
+                              {certificateSubmitAttempted && !newCertificate.issueDate && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Please fill in the issue date.
+                                </Typography>
+                              )}
+                              {newCertificate.issueDate && (() => {
+                                const today = new Date().toISOString().split('T')[0]
+                                return newCertificate.issueDate > today
+                              })() && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Issue Date cannot be a future date.
+                                </Typography>
+                              )}
                             </div>
                             <div className="mt-4">
                               <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                                Certificate File {editingCertificateId ? "(Optional)" : "*"}
+                                Certificate File (Optional)
                               </Typography>
                               <div className="flex items-center gap-4">
                                 {newCertificate.certificateFile ? (
@@ -3552,6 +4642,7 @@ const fetchPublicDataWithToken = async () => {
                                 onClick={() => {
                                   setIsAddingCertificate(false)
                                   setEditingCertificateId(null)
+                                  setCertificateSubmitAttempted(false)
                                   setNewCertificate({
                                     courseName: "",
                                     certificateNumber: "",
@@ -3729,51 +4820,87 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                  Job Title
+                                  Job Title *
                                 </Typography>
                                 <Input
                                   size="md"
                                   value={exp.jobTitle || ""}
                                   onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
                                   placeholder="e.g. Sous Chef"
+                                  required
                                   className="!border-gray-300"
                                 />
                               </div>
                               <div>
                                 <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                  Company / Employer
+                                  Company / Employer *
                                 </Typography>
                                 <Input
                                   size="md"
                                   value={exp.company || exp.employer || ""}
                                   onChange={(e) => handleArrayFieldChange("experiences", index, "company", e.target.value)}
                                   placeholder="e.g. Bistro Manila"
+                                  required
                                   className="!border-gray-300"
                                 />
                               </div>
                               <div>
                                 <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                  Start Date
+                                  Start Date *
                                 </Typography>
                                 <Input
                                   type="date"
                                   size="md"
                                   value={exp.startDate || ""}
                                   onChange={(e) => handleArrayFieldChange("experiences", index, "startDate", e.target.value)}
+                                  onBlur={(e) => handleArrayFieldBlur("experiences", index, "startDate", e.target.value)}
+                                  max={(() => {
+                                    const today = new Date()
+                                    return today.toISOString().split('T')[0]
+                                  })()}
+                                  required
                                   className="!border-gray-300"
                                 />
+                                {exp.startDate && (() => {
+                                  const today = new Date().toISOString().split('T')[0]
+                                  return exp.startDate > today
+                                })() && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Start Date cannot be a future date.
+                                  </Typography>
+                                )}
                               </div>
                               <div>
                                 <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                  End Date
+                                  End Date *
                                 </Typography>
                                 <Input
                                   type="date"
                                   size="md"
                                   value={exp.endDate || ""}
                                   onChange={(e) => handleArrayFieldChange("experiences", index, "endDate", e.target.value)}
+                                  onBlur={(e) => handleArrayFieldBlur("experiences", index, "endDate", e.target.value)}
+                                  min={exp.startDate || undefined}
+                                  max={(() => {
+                                    const today = new Date()
+                                    return today.toISOString().split('T')[0]
+                                  })()}
+                                  required
                                   className="!border-gray-300"
                                 />
+                                {exp.startDate && exp.endDate && exp.endDate < exp.startDate && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    End Date cannot be before Start Date.
+                                  </Typography>
+                                )}
+                                {exp.endDate && (() => {
+                                  const today = new Date().toISOString().split('T')[0]
+                                  return exp.endDate > today
+                                })() && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    End Date cannot be a future date.
+                                  </Typography>
+                                )}
                               </div>
                               <div>
                                 <Typography variant="small" className="text-gray-700 font-semibold mb-1">
@@ -3918,7 +5045,7 @@ const fetchPublicDataWithToken = async () => {
                             </div>
                             <div className="mt-4">
                               <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                                Description *
+                                Description (Optional)
                               </Typography>
                               <Textarea
                                 size="lg"
@@ -3926,7 +5053,6 @@ const fetchPublicDataWithToken = async () => {
                                 value={newProject.description}
                                 onChange={handleProjectInputChange}
                                 placeholder="Describe your project"
-                                required
                                 className="!border-gray-300 focus:!border-blue-500"
                                 rows={3}
                                 maxLength={300}
@@ -3953,9 +5079,27 @@ const fetchPublicDataWithToken = async () => {
                                   name="startDate"
                                   value={newProject.startDate}
                                   onChange={handleProjectInputChange}
+                                  onBlur={handleProjectInputBlur}
+                                  max={(() => {
+                                    const today = new Date()
+                                    return today.toISOString().split('T')[0]
+                                  })()}
                                   required
                                   className="!border-gray-300 focus:!border-blue-500"
                                 />
+                                {projectSubmitAttempted && !newProject.startDate && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Please fill in the start date.
+                                  </Typography>
+                                )}
+                                {newProject.startDate && (() => {
+                                  const today = new Date().toISOString().split('T')[0]
+                                  return newProject.startDate > today
+                                })() && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Start Date cannot be a future date.
+                                  </Typography>
+                                )}
                               </div>
                               <div>
                                 <Typography variant="small" className="mb-2 text-gray-700 font-medium">
@@ -3967,14 +5111,39 @@ const fetchPublicDataWithToken = async () => {
                                   name="endDate"
                                   value={newProject.endDate}
                                   onChange={handleProjectInputChange}
+                                  onBlur={handleProjectInputBlur}
+                                  min={newProject.startDate || undefined}
+                                  max={(() => {
+                                    const yesterday = new Date()
+                                    yesterday.setDate(yesterday.getDate() - 1)
+                                    return yesterday.toISOString().split('T')[0]
+                                  })()}
                                   required
                                   className="!border-gray-300 focus:!border-blue-500"
                                 />
+                                {projectSubmitAttempted && !newProject.endDate && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Please fill in the end date.
+                                  </Typography>
+                                )}
+                                {newProject.startDate && newProject.endDate && newProject.endDate < newProject.startDate && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    End Date cannot be before Start Date.
+                                  </Typography>
+                                )}
+                                {newProject.endDate && (() => {
+                                  const today = new Date().toISOString().split('T')[0]
+                                  return newProject.endDate >= today
+                                })() && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    End Date cannot be today or a future date.
+                                  </Typography>
+                                )}
                               </div>
                             </div>
                             <div className="mt-4">
                               <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                                Project Image {editingProjectId ? "(Optional)" : "*"}
+                                Project Image (Optional)
                               </Typography>
                               <div className="flex items-center gap-4">
                                 {newProject.projectImageFile ? (
@@ -4032,6 +5201,7 @@ const fetchPublicDataWithToken = async () => {
                                 onClick={() => {
                                   setIsAddingProject(false)
                                   setEditingProjectId(null)
+                                  setProjectSubmitAttempted(false)
                                   setNewProject({
                                     title: "",
                                     description: "",
@@ -4222,13 +5392,14 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                  Award Title
+                                  Award Title *
                                 </Typography>
                                 <Input
                                   size="md"
                                   value={award.title || ""}
                                   onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
                                   placeholder="e.g. Best in Pastry Arts"
+                                  required
                                   className="!border-gray-300"
                                 />
                               </div>
@@ -4246,15 +5417,29 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                  Date Received
+                                  Date Received *
                                 </Typography>
                                 <Input
                                   type="date"
                                   size="md"
                                   value={award.dateReceived || ""}
                                   onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
+                                  onBlur={(e) => handleArrayFieldBlur("awardsRecognitions", index, "dateReceived", e.target.value)}
+                                  max={(() => {
+                                    const today = new Date()
+                                    return today.toISOString().split('T')[0]
+                                  })()}
+                                  required
                                   className="!border-gray-300"
                                 />
+                                {award.dateReceived && (() => {
+                                  const today = new Date().toISOString().split('T')[0]
+                                  return award.dateReceived > today
+                                })() && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Date Received cannot be a future date.
+                                  </Typography>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -4350,13 +5535,14 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Course Name
+                                  Course Name *
                                 </Typography>
                                 <Input
                                   size="md"
                                   value={edu.courseName || ""}
                                   onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
                                   placeholder="e.g. Advanced Baking Workshop"
+                                  required
                                   className="!border-gray-300"
                                 />
                               </div>
@@ -4374,15 +5560,29 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Completion Date
+                                  Completion Date *
                                 </Typography>
                                 <Input
                                   type="date"
                                   size="md"
                                   value={edu.completionDate || ""}
                                   onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
+                                  onBlur={(e) => handleArrayFieldBlur("continuingEducations", index, "completionDate", e.target.value)}
+                                  max={(() => {
+                                    const today = new Date()
+                                    return today.toISOString().split('T')[0]
+                                  })()}
+                                  required
                                   className="!border-gray-300"
                                 />
+                                {edu.completionDate && (() => {
+                                  const today = new Date().toISOString().split('T')[0]
+                                  return edu.completionDate > today
+                                })() && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Completion Date cannot be a future date.
+                                  </Typography>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -4473,13 +5673,14 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Organization
+                                  Organization *
                                 </Typography>
                                 <Input
                                   size="md"
                                   value={mem.organization || ""}
                                   onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
                                   placeholder="e.g. Philippine Chefs Association"
+                                  required
                                   className="!border-gray-300"
                                 />
                               </div>
@@ -4497,15 +5698,29 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Start Date
+                                  Start Date *
                                 </Typography>
                                 <Input
                                   type="date"
                                   size="md"
                                   value={mem.startDate || ""}
                                   onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
+                                  onBlur={(e) => handleArrayFieldBlur("professionalMemberships", index, "startDate", e.target.value)}
+                                  max={(() => {
+                                    const today = new Date()
+                                    return today.toISOString().split('T')[0]
+                                  })()}
+                                  required
                                   className="!border-gray-300"
                                 />
+                                {mem.startDate && (() => {
+                                  const today = new Date().toISOString().split('T')[0]
+                                  return mem.startDate > today
+                                })() && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Start Date cannot be a future date.
+                                  </Typography>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -4598,13 +5813,14 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Name
+                                  Name *
                                 </Typography>
                                 <Input
                                   size="md"
                                   value={ref.name || ""}
                                   onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
                                   placeholder="e.g. Maria Cruz"
+                                  required
                                   className="!border-gray-300"
                                 />
                               </div>
@@ -4634,7 +5850,7 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Email
+                                  Email *
                                 </Typography>
                                 <Input
                                   type="email"
@@ -4642,6 +5858,7 @@ const fetchPublicDataWithToken = async () => {
                                   value={ref.email || ""}
                                   onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
                                   placeholder="name@gmail.com"
+                                  required
                                   className={`!border-gray-300 ${fieldErrors[`referenceEmail_${index}`] ? "!border-red-500" : ""}`}
                                 />
                                 {fieldErrors[`referenceEmail_${index}`] && (
@@ -4652,7 +5869,7 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Contact Number
+                                  Contact Number *
                                 </Typography>
                                 <Input
                                   type="tel"
@@ -4666,6 +5883,7 @@ const fetchPublicDataWithToken = async () => {
                                   inputMode="numeric"
                                   pattern="[0-9]*"
                                   maxLength={11}
+                                  required
                                   className={`!border-gray-300 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
                                 />
                                 {fieldErrors[`referencePhone_${index}`] && (
@@ -5220,9 +6438,29 @@ const fetchPublicDataWithToken = async () => {
                         )}
                         {(portfolio?.tesdaRegistrationNumber || (isEditMode && editingSections.tesda)) && (
                           <div>
-                            <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
-                              Registration Number
-                            </Typography>
+                            <div className="mb-1 flex items-center gap-2">
+                              <Typography variant="small" className="text-black font-medium text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
+                                Registration Number
+                              </Typography>
+                              <div className="relative group inline-flex items-center">
+                                <FaInfoCircle className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-gray-600 transition-colors" />
+                                <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-auto whitespace-normal">
+                                  <div className="text-left leading-relaxed">
+                                    To know your TESDA Registration Number{" "}
+                                    <a 
+                                      href="https://www.tesda.gov.ph/RWAC" 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-blue-300 hover:text-blue-200 underline"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      click here
+                                    </a>
+                                  </div>
+                                  <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
+                                </div>
+                              </div>
+                            </div>
                             {isEditMode && editingSections.tesda ? (
                               <>
                                 <Input
@@ -5296,7 +6534,7 @@ const fetchPublicDataWithToken = async () => {
                             <div className="flex-1 space-y-3">
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Skill Name
+                                  Skill Name *
                                 </Typography>
                               <div className="flex gap-2">
                                 <Input
@@ -5304,6 +6542,7 @@ const fetchPublicDataWithToken = async () => {
                                   value={skill.name || ""}
                                   onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
                                     placeholder="e.g. Latte Art"
+                                  required
                                   className="!border-gray-300 flex-1"
                                 />
                                 <IconButton
@@ -5502,13 +6741,31 @@ const fetchPublicDataWithToken = async () => {
                               name="issueDate"
                               value={newCertificate.issueDate}
                               onChange={handleCertificateInputChange}
+                              onBlur={handleCertificateInputBlur}
+                              max={(() => {
+                                const today = new Date()
+                                return today.toISOString().split('T')[0]
+                              })()}
                               required
                               className="!border-gray-300 focus:!border-red-500"
                             />
+                            {certificateSubmitAttempted && !newCertificate.issueDate && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                Please fill in the issue date.
+                              </Typography>
+                            )}
+                            {newCertificate.issueDate && (() => {
+                              const today = new Date().toISOString().split('T')[0]
+                              return newCertificate.issueDate > today
+                            })() && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                Issue Date cannot be a future date.
+                              </Typography>
+                            )}
                           </div>
                           <div className="mt-4">
                             <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                              Certificate File {editingCertificateId ? "(Optional)" : "*"}
+                              Certificate File (Optional)
                             </Typography>
                             <div className="flex items-center gap-4">
                               {newCertificate.certificateFile ? (
@@ -5753,51 +7010,87 @@ const fetchPublicDataWithToken = async () => {
                             <div className="space-y-3">
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Job Title
+                                  Job Title *
                                 </Typography>
                               <Input
                                 size="md"
                                 value={exp.jobTitle || ""}
                                 onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
                                   placeholder="e.g. Barista"
+                                required
                                 className="!border-gray-300"
                               />
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Company
+                                  Company *
                                 </Typography>
                               <Input
                                 size="md"
                                 value={exp.company || ""}
                                 onChange={(e) => handleArrayFieldChange("experiences", index, "company", e.target.value)}
                                   placeholder="e.g. Brewed Cafe"
+                                required
                                 className="!border-gray-300"
                               />
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Start Date
+                                  Start Date *
                                 </Typography>
                               <Input
                                   type="date"
                                 size="md"
                                   value={exp.startDate || ""}
                                   onChange={(e) => handleArrayFieldChange("experiences", index, "startDate", e.target.value)}
+                                  onBlur={(e) => handleArrayFieldBlur("experiences", index, "startDate", e.target.value)}
+                                  max={(() => {
+                                    const today = new Date()
+                                    return today.toISOString().split('T')[0]
+                                  })()}
+                                required
                                 className="!border-gray-300"
                               />
+                                {exp.startDate && (() => {
+                                  const today = new Date().toISOString().split('T')[0]
+                                  return exp.startDate > today
+                                })() && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Start Date cannot be a future date.
+                                  </Typography>
+                                )}
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  End Date
+                                  End Date *
                                 </Typography>
                                 <Input
                                   type="date"
                                   size="md"
                                   value={exp.endDate || ""}
                                   onChange={(e) => handleArrayFieldChange("experiences", index, "endDate", e.target.value)}
+                                  onBlur={(e) => handleArrayFieldBlur("experiences", index, "endDate", e.target.value)}
+                                  min={exp.startDate || undefined}
+                                  max={(() => {
+                                    const today = new Date()
+                                    return today.toISOString().split('T')[0]
+                                  })()}
+                                  required
                                   className="!border-gray-300"
                                 />
+                                {exp.startDate && exp.endDate && exp.endDate < exp.startDate && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    End Date cannot be before Start Date.
+                                  </Typography>
+                                )}
+                                {exp.endDate && (() => {
+                                  const today = new Date().toISOString().split('T')[0]
+                                  return exp.endDate > today
+                                })() && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    End Date cannot be a future date.
+                                  </Typography>
+                                )}
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
@@ -5977,7 +7270,7 @@ const fetchPublicDataWithToken = async () => {
                           </div>
                           <div className="mt-4">
                             <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                              Description *
+                              Description (Optional)
                             </Typography>
                             <Textarea
                               size="lg"
@@ -5985,7 +7278,6 @@ const fetchPublicDataWithToken = async () => {
                               value={newProject.description}
                               onChange={handleProjectInputChange}
                               placeholder="Describe your project"
-                              required
                               className="!border-gray-300 focus:!border-red-500"
                               rows={3}
                               maxLength={300}
@@ -6012,9 +7304,27 @@ const fetchPublicDataWithToken = async () => {
                                 name="startDate"
                                 value={newProject.startDate}
                                 onChange={handleProjectInputChange}
+                                onBlur={handleProjectInputBlur}
+                                max={(() => {
+                                  const today = new Date()
+                                  return today.toISOString().split('T')[0]
+                                })()}
                                 required
                                 className="!border-gray-300 focus:!border-red-500"
                               />
+                              {projectSubmitAttempted && !newProject.startDate && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Please fill in the start date.
+                                </Typography>
+                              )}
+                              {newProject.startDate && (() => {
+                                const today = new Date().toISOString().split('T')[0]
+                                return newProject.startDate > today
+                              })() && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Start Date cannot be a future date.
+                                </Typography>
+                              )}
                             </div>
                             <div>
                               <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
@@ -6026,14 +7336,39 @@ const fetchPublicDataWithToken = async () => {
                                 name="endDate"
                                 value={newProject.endDate}
                                 onChange={handleProjectInputChange}
+                                onBlur={handleProjectInputBlur}
+                                min={newProject.startDate || undefined}
+                                max={(() => {
+                                  const yesterday = new Date()
+                                  yesterday.setDate(yesterday.getDate() - 1)
+                                  return yesterday.toISOString().split('T')[0]
+                                })()}
                                 required
                                 className="!border-gray-300 focus:!border-red-500"
                               />
+                              {projectSubmitAttempted && !newProject.endDate && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Please fill in the end date.
+                                </Typography>
+                              )}
+                              {newProject.startDate && newProject.endDate && newProject.endDate < newProject.startDate && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  End Date cannot be before Start Date.
+                                </Typography>
+                              )}
+                              {newProject.endDate && (() => {
+                                const today = new Date().toISOString().split('T')[0]
+                                return newProject.endDate >= today
+                              })() && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  End Date cannot be today or a future date.
+                                </Typography>
+                              )}
                             </div>
                           </div>
                           <div className="mt-4">
                             <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                              Project Image {editingProjectId ? "(Optional)" : "*"}
+                              Project Image (Optional)
                             </Typography>
                             <div className="flex items-center gap-4">
                               {newProject.projectImageFile ? (
@@ -6292,13 +7627,14 @@ const fetchPublicDataWithToken = async () => {
                             <div className="space-y-3">
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Award Title
+                                  Award Title *
                                 </Typography>
                               <Input
                                 size="md"
                                 value={award.title || ""}
                                 onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
                                   placeholder="e.g. Employee of the Month"
+                                required
                                 className="!border-gray-300"
                               />
                               </div>
@@ -6316,15 +7652,29 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Date Received
+                                  Date Received *
                                 </Typography>
                               <Input
                                 type="date"
                                 size="md"
                                 value={award.dateReceived || ""}
                                 onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
+                                onBlur={(e) => handleArrayFieldBlur("awardsRecognitions", index, "dateReceived", e.target.value)}
+                                max={(() => {
+                                  const today = new Date()
+                                  return today.toISOString().split('T')[0]
+                                })()}
+                                required
                                 className="!border-gray-300"
                               />
+                                {award.dateReceived && (() => {
+                                  const today = new Date().toISOString().split('T')[0]
+                                  return award.dateReceived > today
+                                })() && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Date Received cannot be a future date.
+                                  </Typography>
+                                )}
                               </div>
                               <div className="flex justify-end">
                                 <IconButton
@@ -6455,13 +7805,14 @@ const fetchPublicDataWithToken = async () => {
                               <div className="space-y-3">
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Course Name
+                                    Course Name *
                                   </Typography>
                                 <Input
                                   size="md"
                                   value={edu.courseName || ""}
                                   onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
                                     placeholder="e.g. Wine Appreciation"
+                                  required
                                   className="!border-gray-300"
                                 />
                                 </div>
@@ -6479,15 +7830,29 @@ const fetchPublicDataWithToken = async () => {
                                 </div>
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Completion Date
+                                    Completion Date *
                                   </Typography>
                                 <Input
                                   type="date"
                                   size="md"
                                   value={edu.completionDate || ""}
                                   onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
+                                  onBlur={(e) => handleArrayFieldBlur("continuingEducations", index, "completionDate", e.target.value)}
+                                  max={(() => {
+                                    const today = new Date()
+                                    return today.toISOString().split('T')[0]
+                                  })()}
+                                  required
                                   className="!border-gray-300"
                                 />
+                                  {edu.completionDate && (() => {
+                                    const today = new Date().toISOString().split('T')[0]
+                                    return edu.completionDate > today
+                                  })() && (
+                                    <Typography variant="small" color="red" className="mt-1">
+                                      Completion Date cannot be a future date.
+                                    </Typography>
+                                  )}
                                 </div>
                                 <div className="flex justify-end">
                                   <IconButton
@@ -6618,13 +7983,14 @@ const fetchPublicDataWithToken = async () => {
                               <div className="space-y-3">
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Organization
+                                    Organization *
                                   </Typography>
                                 <Input
                                   size="md"
                                   value={mem.organization || ""}
                                   onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
                                     placeholder="e.g. National Barista Guild"
+                                  required
                                   className="!border-gray-300"
                                 />
                                 </div>
@@ -6642,15 +8008,29 @@ const fetchPublicDataWithToken = async () => {
                                 </div>
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Start Date
+                                    Start Date *
                                   </Typography>
                                 <Input
                                   type="date"
                                   size="md"
                                   value={mem.startDate || ""}
                                   onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
+                                  onBlur={(e) => handleArrayFieldBlur("professionalMemberships", index, "startDate", e.target.value)}
+                                  max={(() => {
+                                    const today = new Date()
+                                    return today.toISOString().split('T')[0]
+                                  })()}
+                                  required
                                   className="!border-gray-300"
                                 />
+                                  {mem.startDate && (() => {
+                                    const today = new Date().toISOString().split('T')[0]
+                                    return mem.startDate > today
+                                  })() && (
+                                    <Typography variant="small" color="red" className="mt-1">
+                                      Start Date cannot be a future date.
+                                    </Typography>
+                                  )}
                                 </div>
                                 <div className="flex justify-end">
                                   <IconButton
@@ -6783,13 +8163,14 @@ const fetchPublicDataWithToken = async () => {
                               <div className="space-y-3">
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Name
+                                    Name *
                                   </Typography>
                                 <Input
                                   size="md"
                                   value={ref.name || ""}
                                   onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
                                     placeholder="e.g. Juan Dela Cruz"
+                                  required
                                   className="!border-gray-300"
                                 />
                                 </div>
@@ -6819,7 +8200,7 @@ const fetchPublicDataWithToken = async () => {
                                 </div>
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Email
+                                    Email *
                                   </Typography>
                                   <Input
                                     type="email"
@@ -6827,6 +8208,7 @@ const fetchPublicDataWithToken = async () => {
                                     value={ref.email || ""}
                                     onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
                                     placeholder="name@gmail.com"
+                                    required
                                     className={`!border-gray-300 ${fieldErrors[`referenceEmail_${index}`] ? "!border-red-500" : ""}`}
                                   />
                                   {fieldErrors[`referenceEmail_${index}`] && (
@@ -6837,7 +8219,7 @@ const fetchPublicDataWithToken = async () => {
                                 </div>
                                 <div>
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Contact Number
+                                    Contact Number *
                                   </Typography>
                                   <Input
                                     type="tel"
@@ -6848,6 +8230,7 @@ const fetchPublicDataWithToken = async () => {
                                     inputMode="numeric"
                                     pattern="[0-9]*"
                                     maxLength={11}
+                                    required
                                     className={`!border-gray-300 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
                                   />
                                   {fieldErrors[`referencePhone_${index}`] && (
@@ -7506,7 +8889,7 @@ const fetchPublicDataWithToken = async () => {
                         <div className="space-y-3">
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Skill Name
+                              Skill Name *
                             </Typography>
                           <div className="flex gap-2">
                             <Input
@@ -7514,6 +8897,7 @@ const fetchPublicDataWithToken = async () => {
                               value={skill.name || ""}
                               onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
                                 placeholder="e.g. Food Presentation"
+                              required
                               className="!border-gray-300 flex-1"
                             />
                             <IconButton
@@ -7752,9 +9136,29 @@ const fetchPublicDataWithToken = async () => {
                 )}
                 {(portfolio.tesdaRegistrationNumber || (isEditMode && editingSections.tesda)) && (
                   <div>
-                    <Typography variant="small" color="gray" className="font-medium mb-1">
-                      Registration Number
-                    </Typography>
+                    <div className="mb-1 flex items-center gap-2">
+                      <Typography variant="small" color="gray" className="font-medium">
+                        Registration Number
+                      </Typography>
+                      <div className="relative group inline-flex items-center">
+                        <FaInfoCircle className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-gray-600 transition-colors" />
+                        <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-auto whitespace-normal">
+                          <div className="text-left leading-relaxed">
+                            To know your TESDA Registration Number{" "}
+                            <a 
+                              href="https://www.tesda.gov.ph/RWAC" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-300 hover:text-blue-200 underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              click here
+                            </a>
+                          </div>
+                          <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
+                    </div>
                     {isEditMode && editingSections.tesda ? (
                       <>
                         <Input
@@ -7879,13 +9283,31 @@ const fetchPublicDataWithToken = async () => {
                       name="issueDate"
                       value={newCertificate.issueDate}
                       onChange={handleCertificateInputChange}
+                      onBlur={handleCertificateInputBlur}
+                      max={(() => {
+                        const today = new Date()
+                        return today.toISOString().split('T')[0]
+                      })()}
                       required
                       className="!border-gray-300 focus:!border-blue-500"
                     />
+                    {certificateSubmitAttempted && !newCertificate.issueDate && (
+                      <Typography variant="small" color="red" className="mt-1">
+                        Please fill in the issue date.
+                      </Typography>
+                    )}
+                    {newCertificate.issueDate && (() => {
+                      const today = new Date().toISOString().split('T')[0]
+                      return newCertificate.issueDate > today
+                    })() && (
+                      <Typography variant="small" color="red" className="mt-1">
+                        Issue Date cannot be a future date.
+                      </Typography>
+                    )}
                   </div>
                   <div className="mt-4">
                     <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                      Certificate File {editingCertificateId ? "(Optional)" : "*"}
+                      Certificate File (Optional)
                     </Typography>
                     <div className="flex items-center gap-4">
                       {newCertificate.certificateFile ? (
@@ -8109,51 +9531,87 @@ const fetchPublicDataWithToken = async () => {
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Job Title
+                              Job Title *
                             </Typography>
                           <Input
                             size="md"
                             value={exp.jobTitle || ""}
                             onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
                               placeholder="e.g. Sous Chef"
+                            required
                             className="!border-gray-300"
                           />
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Company / Employer
+                              Company / Employer *
                             </Typography>
                           <Input
                             size="md"
                               value={exp.company || exp.employer || ""}
                               onChange={(e) => handleArrayFieldChange("experiences", index, "company", e.target.value)}
                               placeholder="e.g. Bistro Manila"
+                            required
                             className="!border-gray-300"
                           />
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Start Date
+                              Start Date *
                             </Typography>
                             <Input
-                              type="date"
-                              size="md"
-                              value={exp.startDate || ""}
-                              onChange={(e) => handleArrayFieldChange("experiences", index, "startDate", e.target.value)}
-                              className="!border-gray-300"
-                            />
-                          </div>
-                          <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              End Date
-                            </Typography>
-                            <Input
-                              type="date"
-                              size="md"
-                              value={exp.endDate || ""}
-                              onChange={(e) => handleArrayFieldChange("experiences", index, "endDate", e.target.value)}
-                              className="!border-gray-300"
-                            />
+                                  type="date"
+                                size="md"
+                                  value={exp.startDate || ""}
+                                  onChange={(e) => handleArrayFieldChange("experiences", index, "startDate", e.target.value)}
+                                  onBlur={(e) => handleArrayFieldBlur("experiences", index, "startDate", e.target.value)}
+                                  max={(() => {
+                                    const today = new Date()
+                                    return today.toISOString().split('T')[0]
+                                  })()}
+                                required
+                                className="!border-gray-300"
+                              />
+                                {exp.startDate && (() => {
+                                  const today = new Date().toISOString().split('T')[0]
+                                  return exp.startDate > today
+                                })() && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Start Date cannot be a future date.
+                                  </Typography>
+                                )}
+                              </div>
+                              <div>
+                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                  End Date *
+                                </Typography>
+                                <Input
+                                  type="date"
+                                  size="md"
+                                  value={exp.endDate || ""}
+                                  onChange={(e) => handleArrayFieldChange("experiences", index, "endDate", e.target.value)}
+                                  onBlur={(e) => handleArrayFieldBlur("experiences", index, "endDate", e.target.value)}
+                                  min={exp.startDate || undefined}
+                                  max={(() => {
+                                    const today = new Date()
+                                    return today.toISOString().split('T')[0]
+                                  })()}
+                                  required
+                                  className="!border-gray-300"
+                                />
+                                {exp.startDate && exp.endDate && exp.endDate < exp.startDate && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    End Date cannot be before Start Date.
+                                  </Typography>
+                                )}
+                                {exp.endDate && (() => {
+                                  const today = new Date().toISOString().split('T')[0]
+                                  return exp.endDate > today
+                                })() && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    End Date cannot be a future date.
+                                  </Typography>
+                                )}
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
@@ -8305,7 +9763,7 @@ const fetchPublicDataWithToken = async () => {
                   </div>
                   <div className="mt-4">
                     <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                      Description *
+                      Description (Optional)
                     </Typography>
                     <Textarea
                       size="lg"
@@ -8313,7 +9771,6 @@ const fetchPublicDataWithToken = async () => {
                       value={newProject.description}
                       onChange={handleProjectInputChange}
                       placeholder="Describe your project"
-                      required
                       className="!border-gray-300 focus:!border-blue-500"
                       rows={3}
                       maxLength={300}
@@ -8340,9 +9797,27 @@ const fetchPublicDataWithToken = async () => {
                         name="startDate"
                         value={newProject.startDate}
                         onChange={handleProjectInputChange}
+                        onBlur={handleProjectInputBlur}
+                        max={(() => {
+                          const today = new Date()
+                          return today.toISOString().split('T')[0]
+                        })()}
                         required
                         className="!border-gray-300 focus:!border-blue-500"
                       />
+                      {projectSubmitAttempted && !newProject.startDate && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Please fill in the start date.
+                        </Typography>
+                      )}
+                      {newProject.startDate && (() => {
+                        const today = new Date().toISOString().split('T')[0]
+                        return newProject.startDate > today
+                      })() && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Start Date cannot be a future date.
+                        </Typography>
+                      )}
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
@@ -8354,14 +9829,39 @@ const fetchPublicDataWithToken = async () => {
                         name="endDate"
                         value={newProject.endDate}
                         onChange={handleProjectInputChange}
+                        onBlur={handleProjectInputBlur}
+                        min={newProject.startDate || undefined}
+                        max={(() => {
+                          const yesterday = new Date()
+                          yesterday.setDate(yesterday.getDate() - 1)
+                          return yesterday.toISOString().split('T')[0]
+                        })()}
                         required
                         className="!border-gray-300 focus:!border-blue-500"
                       />
+                      {projectSubmitAttempted && !newProject.endDate && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Please fill in the end date.
+                        </Typography>
+                      )}
+                      {newProject.startDate && newProject.endDate && newProject.endDate < newProject.startDate && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          End Date cannot be before Start Date.
+                        </Typography>
+                      )}
+                      {newProject.endDate && (() => {
+                        const today = new Date().toISOString().split('T')[0]
+                        return newProject.endDate >= today
+                      })() && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          End Date cannot be today or a future date.
+                        </Typography>
+                      )}
                     </div>
                   </div>
                   <div className="mt-4">
                     <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                      Project Image {editingProjectId ? "(Optional)" : "*"}
+                      Project Image (Optional)
                     </Typography>
                     <div className="flex items-center gap-4">
                       {newProject.projectImageFile ? (
@@ -8587,13 +10087,14 @@ const fetchPublicDataWithToken = async () => {
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Award Title
+                              Award Title *
                             </Typography>
                           <Input
                             size="md"
                             value={award.title || ""}
                             onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
                               placeholder="e.g. Best in Pastry Arts"
+                            required
                             className="!border-gray-300"
                           />
                           </div>
@@ -8611,15 +10112,29 @@ const fetchPublicDataWithToken = async () => {
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Date Received
+                              Date Received *
                             </Typography>
                           <Input
                             type="date"
                             size="md"
                             value={award.dateReceived || ""}
                             onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
+                            onBlur={(e) => handleArrayFieldBlur("awardsRecognitions", index, "dateReceived", e.target.value)}
+                            max={(() => {
+                              const today = new Date()
+                              return today.toISOString().split('T')[0]
+                            })()}
+                            required
                             className="!border-gray-300"
                           />
+                            {award.dateReceived && (() => {
+                              const today = new Date().toISOString().split('T')[0]
+                              return award.dateReceived > today
+                            })() && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                Date Received cannot be a future date.
+                              </Typography>
+                            )}
                           </div>
                         </div>
                       ) : (
@@ -8727,13 +10242,14 @@ const fetchPublicDataWithToken = async () => {
                             </div>
                             <div>
                               <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                Course Name
+                                Course Name *
                               </Typography>
                             <Input
                               size="md"
                               value={edu.courseName || ""}
                               onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
                                 placeholder="e.g. Advanced Baking Workshop"
+                              required
                               className="!border-gray-300"
                             />
                             </div>
@@ -8751,15 +10267,29 @@ const fetchPublicDataWithToken = async () => {
                             </div>
                             <div>
                               <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                Completion Date
+                                Completion Date *
                               </Typography>
                             <Input
                               type="date"
                               size="md"
                               value={edu.completionDate || ""}
                               onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
+                              onBlur={(e) => handleArrayFieldBlur("continuingEducations", index, "completionDate", e.target.value)}
+                              max={(() => {
+                                const today = new Date()
+                                return today.toISOString().split('T')[0]
+                              })()}
+                              required
                               className="!border-gray-300"
                             />
+                              {edu.completionDate && (() => {
+                                const today = new Date().toISOString().split('T')[0]
+                                return edu.completionDate > today
+                              })() && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Completion Date cannot be a future date.
+                                </Typography>
+                              )}
                             </div>
                           </div>
                         ) : (
@@ -8862,13 +10392,14 @@ const fetchPublicDataWithToken = async () => {
                             </div>
                             <div>
                               <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                Organization
+                                Organization *
                               </Typography>
                             <Input
                               size="md"
                               value={mem.organization || ""}
                               onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
                                 placeholder="e.g. Philippine Chefs Association"
+                              required
                               className="!border-gray-300"
                             />
                             </div>
@@ -8886,15 +10417,29 @@ const fetchPublicDataWithToken = async () => {
                             </div>
                             <div>
                               <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                Start Date
+                                Start Date *
                               </Typography>
                             <Input
                               type="date"
                               size="md"
                               value={mem.startDate || ""}
                               onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
+                              onBlur={(e) => handleArrayFieldBlur("professionalMemberships", index, "startDate", e.target.value)}
+                              max={(() => {
+                                const today = new Date()
+                                return today.toISOString().split('T')[0]
+                              })()}
+                              required
                               className="!border-gray-300"
                             />
+                              {mem.startDate && (() => {
+                                const today = new Date().toISOString().split('T')[0]
+                                return mem.startDate > today
+                              })() && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Start Date cannot be a future date.
+                                </Typography>
+                              )}
                             </div>
                           </div>
                         ) : (
@@ -8998,13 +10543,14 @@ const fetchPublicDataWithToken = async () => {
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Name
+                              Name *
                             </Typography>
                           <Input
                             size="md"
                             value={ref.name || ""}
                             onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
                               placeholder="e.g. Maria Cruz"
+                            required
                             className="!border-gray-300"
                           />
                           </div>
@@ -9034,7 +10580,7 @@ const fetchPublicDataWithToken = async () => {
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Email
+                              Email *
                             </Typography>
                             <Input
                               type="email"
@@ -9042,6 +10588,7 @@ const fetchPublicDataWithToken = async () => {
                               value={ref.email || ""}
                               onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
                               placeholder="name@gmail.com"
+                              required
                               className={`!border-gray-300 ${fieldErrors[`referenceEmail_${index}`] ? "!border-red-500" : ""}`}
                             />
                             {fieldErrors[`referenceEmail_${index}`] && (
@@ -9052,7 +10599,7 @@ const fetchPublicDataWithToken = async () => {
                           </div>
                           <div>
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Contact Number
+                              Contact Number *
                             </Typography>
                             <Input
                               type="tel"
@@ -9066,6 +10613,7 @@ const fetchPublicDataWithToken = async () => {
                               inputMode="numeric"
                               pattern="[0-9]*"
                               maxLength={11}
+                              required
                               className={`!border-gray-300 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
                             />
                             {fieldErrors[`referencePhone_${index}`] && (
