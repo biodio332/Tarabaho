@@ -1,9 +1,9 @@
-  "use client"
+﻿  "use client"
 
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
-import { FaPlus, FaTrash, FaPen, FaChevronLeft, FaChevronRight, FaCheck, FaInfoCircle } from "react-icons/fa"
+import { FaPlus, FaTrash, FaPen, FaChevronLeft, FaChevronRight, FaCheck, FaInfoCircle, FaCheckCircle, FaExclamationCircle, FaTimes } from "react-icons/fa"
 import {
   Card,
   CardBody,
@@ -128,6 +128,13 @@ const PortfolioCreation = () => {
   const [graduateId, setGraduateId] = useState(null)
   const [currentStep, setCurrentStep] = useState(0)
   const [completedSteps, setCompletedSteps] = useState(new Set())
+  const [errorSteps, setErrorSteps] = useState(new Set())
+  const [notification, setNotification] = useState({
+    show: false,
+    type: "success", // "success" or "error"
+    title: "",
+    message: "",
+  })
   const navigate = useNavigate()
   const avatarFileInputRef = useRef(null)
   const projectFileInputRef = useRef(null)
@@ -221,18 +228,16 @@ const PortfolioCreation = () => {
         }
         break
       case "referencePhone":
-        if (!trimmedValue) {
-          message = "Reference phone number is required."
-        } else if (!/^\d+$/.test(trimmedValue)) {
-          message = "Reference phone number must contain digits only."
-        } else if (trimmedValue.length !== 11) {
-          message = "Reference phone number must be exactly 11 digits."
+        if (trimmedValue) {
+          if (!/^\d+$/.test(trimmedValue)) {
+            message = "Reference phone number must contain digits only."
+          } else if (trimmedValue.length !== 11) {
+            message = "Reference phone number must be exactly 11 digits."
+          }
         }
         break
       case "referenceEmail":
-        if (!trimmedValue) {
-          message = "Reference email is required."
-        } else if (!isValidEmail(trimmedValue)) {
+        if (trimmedValue && !isValidEmail(trimmedValue)) {
           message = "Please provide a valid email address."
         }
         break
@@ -483,7 +488,6 @@ const PortfolioCreation = () => {
     { id: 10, name: "Professional Memberships", required: false },
     { id: 11, name: "References", required: false },
     { id: 12, name: "Additional Information", required: true },
-    { id: 13, name: "Portfolio Preview", required: false },
   ]
 
   const totalSteps = steps.length
@@ -496,17 +500,39 @@ const PortfolioCreation = () => {
     
     // Check all previous required steps
     for (let i = 0; i < stepIndex; i++) {
-      if (steps[i].required && !completedSteps.has(i)) {
+      if (steps[i].required && !isStepCompleted(i)) {
         return false
       }
     }
     return true
   }
 
-  // Check if a step is completed
+  // Check if a step has validation errors
+  const hasStepErrors = (stepIndex) => {
+    switch (stepIndex) {
+      case 1: // Basic Information
+        return false // Errors are shown inline
+      case 3: // Contact Information
+        return !!(fieldErrors.email || fieldErrors.phone || fieldErrors.website)
+      case 2: // TESDA Information
+        return !!fieldErrors.tesdaRegistrationNumber
+      default:
+        return false
+    }
+  }
+
+  // Check if a step is completed (based on actual field values, not just state)
   const isStepCompleted = (stepIndex) => {
     if (steps[stepIndex].required) {
-      return completedSteps.has(stepIndex) || validateStep(stepIndex, false)
+      // For required steps, check actual field values
+      switch (stepIndex) {
+        case 1: // Basic Information
+          return !!(formData.fullName?.trim() && formData.professionalSummary?.trim() && formData.professionalSummary.length <= 300)
+        case 12: // Additional Information
+          return !!formData.primaryCourseType
+        default:
+          return validateStep(stepIndex, false)
+      }
     }
     
     // For optional steps, check if they have any data
@@ -514,10 +540,10 @@ const PortfolioCreation = () => {
       case 0: // Profile Photo
         return previewAvatar !== "/placeholder.svg" || selectedAvatarFile !== null
       case 2: // TESDA Information
-        return formData.ncLevel || formData.trainingCenter || formData.scholarshipType || 
-               formData.trainingDuration || formData.tesdaRegistrationNumber
+        return !!(formData.ncLevel || formData.trainingCenter || formData.scholarshipType || 
+               formData.trainingDuration || formData.tesdaRegistrationNumber)
       case 3: // Contact Information
-        return formData.email || formData.phone || formData.website
+        return !!(formData.email || formData.phone || formData.website)
       case 4: // Projects
         return projects.length > 0
       case 5: // Certificates
@@ -1529,46 +1555,177 @@ const PortfolioCreation = () => {
   const handleProjectImageClick = () => projectFileInputRef.current.click()
   const handleCertificateImageClick = () => certificateFileInputRef.current.click()
 
+  // Helper function to show notifications
+  const showNotification = (type, title, message) => {
+    setNotification({
+      show: true,
+      type,
+      title,
+      message,
+    })
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => {
+      setNotification(prev => ({ ...prev, show: false }))
+    }, 4000)
+  }
+
+  // Helper functions to check if required fields are filled
+  const isProjectFormValid = () => {
+    const today = new Date().toISOString().split('T')[0]
+    return (
+      newProject.title?.trim() &&
+      newProject.startDate &&
+      newProject.endDate &&
+      newProject.startDate <= today &&
+      newProject.endDate < today &&
+      newProject.endDate >= newProject.startDate
+    )
+  }
+
+  const isCertificateFormValid = () => {
+    const today = new Date().toISOString().split('T')[0]
+    return (
+      newCertificate.courseName?.trim() &&
+      newCertificate.certificateNumber?.trim() &&
+      newCertificate.issueDate &&
+      newCertificate.issueDate <= today &&
+      !fieldErrors.certificateNumber
+    )
+  }
+
+  const isSkillFormValid = () => {
+    return newSkill.name?.trim() && validSkillTypes.includes(newSkill.type)
+  }
+
+  const isAwardFormValid = () => {
+    const today = new Date().toISOString().split('T')[0]
+    return newAward.title?.trim() && newAward.dateReceived && newAward.dateReceived <= today
+  }
+
+  const isEducationFormValid = () => {
+    const today = new Date().toISOString().split('T')[0]
+    return newEducation.courseName?.trim() && newEducation.completionDate && newEducation.completionDate <= today
+  }
+
+  const isMembershipFormValid = () => {
+    const today = new Date().toISOString().split('T')[0]
+    return newMembership.organization?.trim() && newMembership.startDate && newMembership.startDate <= today
+  }
+
+  const isReferenceFormValid = () => {
+    return (
+      newReference.name?.trim() &&
+      !fieldErrors.referencePhone &&
+      !fieldErrors.referenceEmail
+    )
+  }
+
+  const isExperienceFormValid = () => {
+    const today = new Date().toISOString().split('T')[0]
+    return (
+      newExperience.jobTitle?.trim() &&
+      newExperience.company?.trim() &&
+      newExperience.startDate &&
+      newExperience.endDate &&
+      newExperience.startDate <= today &&
+      newExperience.endDate <= today &&
+      newExperience.endDate >= newExperience.startDate
+    )
+  }
+
+  // Auto-cancel all add forms when switching steps
+  useEffect(() => {
+    // Reset all add forms when step changes
+    setIsAddingProject(false)
+    setEditingProjectId(null)
+    setProjectSubmitAttempted(false)
+    setNewProject({
+      title: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      projectImageFile: null,
+    })
+    
+    setIsAddingCertificate(false)
+    setEditingCertificateId(null)
+    setNewCertificate({
+      courseName: "",
+      certificateNumber: "",
+      issueDate: "",
+      certificateFile: null,
+    })
+    updateFieldError("certificateNumber", "")
+    
+    setIsAddingSkill(false)
+    setEditingSkillIndex(null)
+    setNewSkill({ name: "", type: "TECHNICAL", proficiencyLevel: "Beginner" })
+    
+    setIsAddingExperience(false)
+    setEditingExperienceIndex(null)
+    setExperienceSubmitAttempted(false)
+    setNewExperience({ jobTitle: "", company: "", startDate: "", endDate: "", responsibilities: "" })
+    
+    setIsAddingAward(false)
+    setEditingAwardIndex(null)
+    setAwardSubmitAttempted(false)
+    setNewAward({ title: "", issuer: "", dateReceived: "" })
+    
+    setIsAddingEducation(false)
+    setEditingEducationIndex(null)
+    setEducationSubmitAttempted(false)
+    setNewEducation({ courseName: "", institution: "", completionDate: "" })
+    
+    setIsAddingMembership(false)
+    setEditingMembershipIndex(null)
+    setMembershipSubmitAttempted(false)
+    setNewMembership({ organization: "", membershipType: "", startDate: "" })
+    
+    setIsAddingReference(false)
+    setEditingReferenceIndex(null)
+    setNewReference({ name: "", relationship: "", phone: "", company: "", email: "" })
+    updateFieldError("referencePhone", "")
+    updateFieldError("referenceEmail", "")
+  }, [currentStep])
+
   const validateStep = (step, showError = true) => {
     switch (step) {
       case 0: // Profile Photo - optional
         return true
       case 1: // Basic Information
         if (!formData.fullName || formData.fullName.trim() === "") {
-          if (showError) setError("Please fill in your full name. This field is required.")
+          if (showError) showNotification("error", "Validation Error", "Please fill in your full name. This field is required.")
           return false
         }
         if (!formData.professionalSummary || formData.professionalSummary.trim() === "") {
-          if (showError) setError("Please fill in your professional summary. This field is required.")
+          if (showError) showNotification("error", "Validation Error", "Please fill in your professional summary. This field is required.")
           return false
         }
         if (formData.professionalSummary.length > 300) {
-          if (showError) setError("Professional summary cannot exceed 300 characters.")
+          if (showError) showNotification("error", "Validation Error", "Professional summary cannot exceed 300 characters.")
           return false
         }
         return true
       case 3: // Contact Information
         if (formData.email && fieldErrors.email) {
-          if (showError) setError(fieldErrors.email)
+          if (showError) showNotification("error", "Validation Error", fieldErrors.email)
           return false
         }
         if (formData.phone && fieldErrors.phone) {
-          if (showError) setError(fieldErrors.phone)
+          if (showError) showNotification("error", "Validation Error", fieldErrors.phone)
           return false
         }
         if (formData.website && fieldErrors.website) {
-          if (showError) setError(fieldErrors.website)
+          if (showError) showNotification("error", "Validation Error", fieldErrors.website)
           return false
         }
         return true
       case 12: // Additional Information
         if (!formData.primaryCourseType || (typeof formData.primaryCourseType === "string" && formData.primaryCourseType.trim() === "")) {
-          if (showError) setError("Please fill in your primary course type. This field is required.")
+          if (showError) showNotification("error", "Validation Error", "Please fill in your primary course type. This field is required.")
           return false
         }
         return true
-      case 13: // Portfolio Preview
-        return true // Preview step is optional
       default:
         return true // Other steps are optional
     }
@@ -1585,20 +1742,18 @@ const PortfolioCreation = () => {
       // Mark current step as completed if it's a required step
       markStepAsCompleted(currentStep)
       
-      setError("")
       if (currentStep < totalSteps - 1) {
         setCurrentStep(currentStep + 1)
         window.scrollTo({ top: 0, behavior: "smooth" })
       }
     } else {
-      // Validation failed, error already set by validateStep
+      // Validation failed, error already shown by validateStep via notification
       window.scrollTo({ top: 0, behavior: "smooth" })
     }
   }
 
   const handlePreviousStep = () => {
     if (currentStep > 0) {
-      setError("")
       setCurrentStep(currentStep - 1)
       window.scrollTo({ top: 0, behavior: "smooth" })
     }
@@ -1613,14 +1768,13 @@ const PortfolioCreation = () => {
       
       // Check if we can access this step (all previous required steps completed)
       if (canAccessStep(stepIndex)) {
-        setError("")
         setCurrentStep(stepIndex)
         window.scrollTo({ top: 0, behavior: "smooth" })
       } else {
         // Find the first incomplete required step
         for (let i = 0; i < stepIndex; i++) {
-          if (steps[i].required && !completedSteps.has(i)) {
-            setError(`Please complete the "${steps[i].name}" section before proceeding.`)
+          if (steps[i].required && !isStepCompleted(i)) {
+            showNotification("error", "Step Required", `Please complete the "${steps[i].name}" section before proceeding.`)
             setCurrentStep(i)
             window.scrollTo({ top: 0, behavior: "smooth" })
             return
@@ -1630,20 +1784,43 @@ const PortfolioCreation = () => {
     }
   }
 
-  // Update completed steps when form data changes
+  // Update completed steps and error steps when form data changes
   useEffect(() => {
-    // Check and update completed status for all steps when data changes
+    // Check and update completed status and errors for all steps when data changes
     steps.forEach((step, index) => {
-      if (isStepCompleted(index)) {
+      const completed = isStepCompleted(index)
+      const hasErrors = hasStepErrors(index)
+      
+      // Update completed steps
+      if (completed) {
         setCompletedSteps((prev) => {
           if (!prev.has(index)) {
             return new Set([...prev, index])
           }
           return prev
         })
-      } else if (step.required) {
-        // Remove from completed if required step is no longer valid
+      } else {
+        // Remove from completed if step is no longer valid (even for optional steps)
         setCompletedSteps((prev) => {
+          if (prev.has(index)) {
+            const newSet = new Set(prev)
+            newSet.delete(index)
+            return newSet
+          }
+          return prev
+        })
+      }
+      
+      // Update error steps
+      if (hasErrors) {
+        setErrorSteps((prev) => {
+          if (!prev.has(index)) {
+            return new Set([...prev, index])
+          }
+          return prev
+        })
+      } else {
+        setErrorSteps((prev) => {
           if (prev.has(index)) {
             const newSet = new Set(prev)
             newSet.delete(index)
@@ -1675,6 +1852,7 @@ const PortfolioCreation = () => {
     continuingEducations,
     professionalMemberships,
     references,
+    fieldErrors,
     currentStep,
   ])
 
@@ -1689,12 +1867,11 @@ const PortfolioCreation = () => {
     }
     
     if (Object.keys(fieldErrors).length > 0) {
-      setError("Please resolve all validation errors before submitting your portfolio.")
+      showNotification("error", "Validation Error", "Please resolve all validation errors before submitting your portfolio.")
       return
     }
 
     setIsLoading(true)
-    setError("")
 
     const validatedSkills = skills.map((skill) => {
       if (!skill.name || skill.name.trim() === "") {
@@ -1713,7 +1890,7 @@ const PortfolioCreation = () => {
     try {
       const username = localStorage.getItem("username")
       if (!username || !token || !graduateId) {
-        setError("User not logged in, token missing, or graduate ID not found. Please sign in.")
+        showNotification("error", "Authentication Error", "User not logged in, token missing, or graduate ID not found. Please sign in.")
         navigate("/signin")
         setIsLoading(false)
         return
@@ -1756,7 +1933,7 @@ const PortfolioCreation = () => {
 
             // Validate professional summary length
       if (formData.professionalSummary.length > 300) {
-        setError("Professional summary cannot exceed 300 characters.")
+        showNotification("error", "Validation Error", "Professional summary cannot exceed 300 characters.")
         setIsLoading(false)
         return
       }
@@ -1856,7 +2033,11 @@ const PortfolioCreation = () => {
       }
 
       console.log("Portfolio created with ID:", portfolioId)
-      navigate("/graduate-homepage")
+      showNotification("success", "Portfolio Created", "Your portfolio has been created successfully!")
+      // Navigate after a short delay to show the notification
+      setTimeout(() => {
+        navigate("/graduate-homepage")
+      }, 2000)
     } catch (err) {
       let errorMessage = "Failed to create portfolio"
       if (err.response) {
@@ -1876,7 +2057,7 @@ const PortfolioCreation = () => {
       } else {
         errorMessage = `Network error: ${err.message}`
       }
-      setError(`Error ${err.response?.status || "Unknown"}: ${errorMessage}`)
+      showNotification("error", "Error", errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -1894,6 +2075,24 @@ const PortfolioCreation = () => {
         }
         .material-tailwind-select-menu > div {
           z-index: 99999 !important;
+        }
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        @keyframes shrinkWidth {
+          from {
+            width: 100%;
+          }
+          to {
+            width: 0%;
+          }
         }
       `}</style>
       {/* Animated background elements */}
@@ -1941,7 +2140,8 @@ const PortfolioCreation = () => {
                 <div className="flex flex-wrap gap-2 justify-center mt-4">
                   {steps.map((step, index) => {
                     const isAccessible = canAccessStep(index)
-                    const isCompleted = completedSteps.has(index) || (step.required && validateStep(index, false))
+                    const isCompleted = isStepCompleted(index)
+                    const hasErrors = errorSteps.has(index)
                     const isCurrent = index === currentStep
                     
                     return (
@@ -1953,13 +2153,19 @@ const PortfolioCreation = () => {
                         title={
                           !isAccessible
                             ? `Complete required steps before accessing "${step.name}"`
+                            : hasErrors
+                            ? `"${step.name}" has validation errors`
                             : step.required && !isCompleted
                             ? `"${step.name}" is required and not yet completed`
                             : step.name
                         }
                         className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
                           isCurrent
-                            ? "bg-blue-500 text-white shadow-lg scale-105 cursor-pointer"
+                            ? hasErrors
+                              ? "bg-red-500 text-white shadow-lg scale-105 cursor-pointer"
+                              : "bg-blue-500 text-white shadow-lg scale-105 cursor-pointer"
+                            : hasErrors
+                            ? "bg-red-500 text-white hover:bg-red-600 cursor-pointer"
                             : isCompleted
                             ? "bg-green-500 text-white hover:bg-green-600 cursor-pointer"
                             : !isAccessible
@@ -1967,7 +2173,8 @@ const PortfolioCreation = () => {
                             : "bg-gray-200 text-gray-600 hover:bg-gray-300 cursor-pointer"
                         }`}
                       >
-                        {isCompleted && <FaCheck className="w-3 h-3" />}
+                        {isCompleted && !hasErrors && <FaCheck className="w-3 h-3" />}
+                        {hasErrors && <FaExclamationCircle className="w-3 h-3" />}
                         <span>{step.name}</span>
                         {step.required && (
                           <span className="ml-1 text-red-500">*</span>
@@ -1981,14 +2188,72 @@ const PortfolioCreation = () => {
           )}
         </div>
 
-        {error && (
-          <Card className="mb-6 bg-red-50 border border-red-200">
-            <CardBody>
-              <Typography color="red" className="text-center">
-                {error}
-              </Typography>
-            </CardBody>
-          </Card>
+        {/* Enhanced Animated Notification */}
+        {notification.show && (
+          <div
+            className={`fixed top-6 right-6 z-[9999] min-w-[420px] max-w-[550px] rounded-xl shadow-2xl animate-slide-in-right backdrop-blur-sm ${
+              notification.type === "success"
+                ? "bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 border-2 border-green-400 shadow-green-200/50"
+                : "bg-gradient-to-br from-red-50 via-rose-50 to-red-100 border-2 border-red-400 shadow-red-200/50"
+            }`}
+            style={{
+              animation: "slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards",
+            }}
+          >
+            <div className="p-5">
+              <div className="flex items-start gap-4">
+                <div
+                  className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center shadow-lg ${
+                    notification.type === "success"
+                      ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white"
+                      : "bg-gradient-to-br from-red-500 to-rose-600 text-white"
+                  }`}
+                >
+                  {notification.type === "success" ? (
+                    <FaCheckCircle className="w-7 h-7" />
+                  ) : (
+                    <FaExclamationCircle className="w-7 h-7" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3
+                    className={`font-bold text-xl mb-2 ${
+                      notification.type === "success" ? "text-green-900" : "text-red-900"
+                    }`}
+                  >
+                    {notification.title}
+                  </h3>
+                  <p
+                    className={`text-base leading-relaxed ${
+                      notification.type === "success" ? "text-green-800" : "text-red-800"
+                    }`}
+                  >
+                    {notification.message}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setNotification(prev => ({ ...prev, show: false }))}
+                  className="flex-shrink-0 text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-full hover:bg-white/50"
+                  aria-label="Close notification"
+                >
+                  <FaTimes className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            {/* Enhanced Progress bar */}
+            <div className="h-1.5 bg-gray-300/50 rounded-b-xl overflow-hidden">
+              <div
+                className={`h-full ${
+                  notification.type === "success" 
+                    ? "bg-gradient-to-r from-green-500 to-emerald-600" 
+                    : "bg-gradient-to-r from-red-500 to-rose-600"
+                }`}
+                style={{
+                  animation: "shrinkWidth 4s linear forwards",
+                }}
+              />
+            </div>
+          </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -2551,7 +2816,7 @@ const PortfolioCreation = () => {
                       variant="filled"
                       color="green"
                       onClick={editingProjectId ? handleUpdateProject : handleAddProject}
-                      disabled={isLoading}
+                      disabled={isLoading || (!editingProjectId && !isProjectFormValid())}
                       className="flex items-center gap-2"
                     >
                       {editingProjectId ? "Update" : "Add"} Project
@@ -2788,7 +3053,7 @@ const PortfolioCreation = () => {
                       variant="filled"
                       color="green"
                       onClick={editingCertificateId ? handleUpdateCertificate : handleAddCertificate}
-                      disabled={isLoading}
+                      disabled={isLoading || (!editingCertificateId && !isCertificateFormValid())}
                       className="flex items-center gap-2"
                     >
                       {editingCertificateId ? "Update" : "Add"}
@@ -2968,7 +3233,7 @@ const PortfolioCreation = () => {
                       variant="filled"
                       color="green"
                       onClick={editingSkillIndex !== null ? handleUpdateSkill : handleAddSkill}
-                      disabled={isLoading}
+                      disabled={isLoading || (editingSkillIndex === null && !isSkillFormValid())}
                       className="flex items-center gap-2"
                     >
                       {editingSkillIndex !== null ? "Update" : "Add"}
@@ -3210,7 +3475,7 @@ const PortfolioCreation = () => {
                       variant="filled"
                       color="green"
                       onClick={editingExperienceIndex !== null ? handleUpdateExperience : handleAddExperience}
-                      disabled={isLoading}
+                      disabled={isLoading || (editingExperienceIndex === null && !isExperienceFormValid())}
                       className="flex items-center gap-2"
                     >
                       {editingExperienceIndex !== null ? "Update" : "Add"}
@@ -3395,7 +3660,7 @@ const PortfolioCreation = () => {
                       variant="filled"
                       color="green"
                       onClick={editingAwardIndex !== null ? handleUpdateAward : handleAddAward}
-                      disabled={isLoading}
+                      disabled={isLoading || (editingAwardIndex === null && !isAwardFormValid())}
                       className="flex items-center gap-2"
                     >
                       {editingAwardIndex !== null ? "Update" : "Add"}
@@ -3574,7 +3839,7 @@ const PortfolioCreation = () => {
                       variant="filled"
                       color="green"
                       onClick={editingEducationIndex !== null ? handleUpdateEducation : handleAddEducation}
-                      disabled={isLoading}
+                      disabled={isLoading || (editingEducationIndex === null && !isEducationFormValid())}
                       className="flex items-center gap-2"
                     >
                       {editingEducationIndex !== null ? "Update" : "Add"}
@@ -3753,7 +4018,7 @@ const PortfolioCreation = () => {
                       variant="filled"
                       color="green"
                       onClick={editingMembershipIndex !== null ? handleUpdateMembership : handleAddMembership}
-                      disabled={isLoading}
+                      disabled={isLoading || (editingMembershipIndex === null && !isMembershipFormValid())}
                       className="flex items-center gap-2"
                     >
                       {editingMembershipIndex !== null ? "Update" : "Add"}
@@ -3956,7 +4221,7 @@ const PortfolioCreation = () => {
                       variant="filled"
                       color="green"
                       onClick={editingReferenceIndex !== null ? handleUpdateReference : handleAddReference}
-                      disabled={isLoading}
+                      disabled={isLoading || (editingReferenceIndex === null && !isReferenceFormValid())}
                       className="flex items-center gap-2"
                     >
                       {editingReferenceIndex !== null ? "Update" : "Add"}
@@ -4104,31 +4369,10 @@ const PortfolioCreation = () => {
                   </Select>
                 </div>
               </div>
-            </CardBody>
-          </Card>
-          )}
 
-          {/* Step 13: Portfolio Preview */}
-          {currentStep === 13 && (
-            <Card className={`backdrop-blur-sm border-2 shadow-xl hover:shadow-2xl transition-all duration-300 ${
-              isStepCompleted(13)
-                ? "bg-green-50/70 border-green-400"
-                : "bg-white/70 border-0"
-            }`}>
-            <CardBody className="p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className={`w-1 h-8 rounded-full transition-all duration-300 ${
-                  isStepCompleted(13)
-                    ? "bg-gradient-to-b from-green-500 to-green-600"
-                    : "bg-gradient-to-b from-blue-500 to-purple-500"
-                }`}></div>
-                <Typography variant="h4" className="text-gray-800 font-semibold">
-                  Portfolio Preview
-                </Typography>
-              </div>
-
+              {/* Portfolio Preview Section */}
               {formData.primaryCourseType ? (
-                <div className="space-y-6">
+                <div className="mt-8 space-y-6">
                   <Typography variant="small" className="mb-4 text-gray-900 font-semibold" style={{ fontFamily: "'Inter', sans-serif" }}>
                     Preview of your portfolio - This is how it will appear to viewers
                   </Typography>
@@ -4718,7 +4962,7 @@ const PortfolioCreation = () => {
                             ) : formData.designTemplate === "Tourism" ? (
                               /* Tourism - Modern Centered Layout with Grayscale Theme */
                               <div className="bg-white min-h-screen" style={{ fontFamily: "'Montserrat', 'Roboto', 'Inter', sans-serif" }}>
-                                {/* Header Section - Clean Modern Résumé Style */}
+                                {/* Header Section - Clean Modern RÃ©sumÃ© Style */}
                                 <div className="relative bg-white pt-16 pb-16 md:pt-20 md:pb-20 px-6 md:px-12 lg:px-16 border-b-2 border-gray-200">
                                   <div className="max-w-7xl mx-auto">
                                     {/* Centered Layout */}
@@ -4942,19 +5186,31 @@ const PortfolioCreation = () => {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                           {(showAllCertificates ? certificates : certificates.slice(0, INITIAL_ITEMS_LIMIT)).map((certificate, index) => (
                                             <div key={index} className="pb-3 border-b border-gray-200">
-                                              <Typography variant="h6" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
-                                                {certificate.courseName}
-                                              </Typography>
-                                              {certificate.certificateNumber && (
-                                                <Typography variant="small" className="text-black font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
-                                                  #{certificate.certificateNumber}
-                                                </Typography>
-                                              )}
-                                              {certificate.issueDate && (
-                                                <Typography variant="small" className="text-gray-600 text-sm mt-1" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                                  {new Date(certificate.issueDate).toLocaleDateString()}
-                                                </Typography>
-                                              )}
+                                              <div className="flex items-center gap-3">
+                                                {certificate.certificateFile && (
+                                                  <Avatar
+                                                    src={URL.createObjectURL(certificate.certificateFile)}
+                                                    alt="Certificate Preview"
+                                                    size="md"
+                                                    className="ring-2 ring-red-300 flex-shrink-0"
+                                                  />
+                                                )}
+                                                <div className="flex-grow min-w-0">
+                                                  <Typography variant="h6" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                                    {certificate.courseName}
+                                                  </Typography>
+                                                  {certificate.certificateNumber && (
+                                                    <Typography variant="small" className="text-black font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                                      #{certificate.certificateNumber}
+                                                    </Typography>
+                                                  )}
+                                                  {certificate.issueDate && (
+                                                    <Typography variant="small" className="text-gray-600 text-sm mt-1" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                                      {new Date(certificate.issueDate).toLocaleDateString()}
+                                                    </Typography>
+                                                  )}
+                                                </div>
+                                              </div>
                                             </div>
                                           ))}
                                           {certificates.length > INITIAL_ITEMS_LIMIT && (
@@ -5912,12 +6168,12 @@ const PortfolioCreation = () => {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-12">
+                <div className="mt-8 text-center py-12">
                   <Typography variant="h6" className="text-gray-500 mb-2">
                     No Course Type Selected
                   </Typography>
                   <Typography variant="small" className="text-gray-400">
-                    Please go back to "Additional Information" step and select a course type to see the preview.
+                    Please select a course type above to see the preview.
                   </Typography>
                 </div>
               )}
@@ -5983,10 +6239,10 @@ const PortfolioCreation = () => {
                     title={
                       steps[currentStep].required && !validateStep(currentStep, false)
                         ? "Please complete all required fields before proceeding"
-                        : currentStep === 12 ? "View portfolio preview" : "Continue to next step"
+                        : "Continue to next step"
                     }
                   >
-                    {currentStep === 12 ? "View Preview" : "Next"}
+                    Next
                     <FaChevronRight className="w-4 h-4" />
                   </Button>
                 )}
