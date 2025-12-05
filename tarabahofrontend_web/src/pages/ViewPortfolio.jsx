@@ -435,7 +435,7 @@ const ViewPortfolio = () => {
             id: skill.id,
             name: skill.name || "Unnamed Skill",
             type: skill.type || "TECHNICAL",
-            proficiencyLevel: skill.proficiencyLevel || "",
+            proficiencyLevel: skill.proficiencyLevel || "Beginner",
           }))
         : [],
       experiences: portfolioData.experiences
