@@ -2679,10 +2679,21 @@ const fetchPublicDataWithToken = async () => {
       }
 
       // Build payload with all editingPortfolio data to preserve unsaved changes in other sections
+      // Exclude contact fields when not saving contact section to avoid validation errors
+      const { email, phone, website, ...editingPortfolioWithoutContact } = editingPortfolio || {}
       const payload = {
         graduateId,
-        ...editingPortfolio, // Start with editingPortfolio to preserve all current edits
+        ...editingPortfolioWithoutContact, // Start with editingPortfolio to preserve all current edits (excluding contact fields)
         avatar: section === "header" ? (avatarUrl || editingPortfolio.avatar || portfolio.avatar) : editingPortfolio.avatar || portfolio.avatar,
+      }
+      
+      // Only include contact fields if we're saving the contact section
+      // Otherwise, use the existing portfolio values to avoid sending empty/invalid contact data
+      if (section !== "contact") {
+        // Use existing portfolio contact values to preserve them
+        payload.email = portfolio?.email || null
+        payload.phone = portfolio?.phone || null
+        payload.website = portfolio?.website || null
       }
 
       // Update the specific section being saved (already in editingPortfolio, but ensure it's properly formatted)
@@ -2775,9 +2786,10 @@ const fetchPublicDataWithToken = async () => {
             return
           }
         }
-        payload.email = editingPortfolio.email
-        payload.phone = editingPortfolio.phone
-        payload.website = editingPortfolio.website
+        // Convert empty strings to null to avoid backend validation errors
+        payload.email = editingPortfolio.email && editingPortfolio.email.trim() !== "" ? editingPortfolio.email.trim() : null
+        payload.phone = editingPortfolio.phone && editingPortfolio.phone.trim() !== "" ? editingPortfolio.phone.trim() : null
+        payload.website = editingPortfolio.website && editingPortfolio.website.trim() !== "" ? editingPortfolio.website.trim() : null
       } else if (section === "skills") {
         // Validate all required skill fields before saving
         for (const skill of editingPortfolio.skills || []) {
