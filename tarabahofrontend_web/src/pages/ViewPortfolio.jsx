@@ -58,6 +58,9 @@ const ViewPortfolio = () => {
   const [saveSuccess, setSaveSuccess] = useState("")
   const [saveError, setSaveError] = useState("")
   const [fieldErrors, setFieldErrors] = useState({})
+  const [avatarFileSizeError, setAvatarFileSizeError] = useState("")
+  const [projectFileSizeError, setProjectFileSizeError] = useState("")
+  const [certificateFileSizeError, setCertificateFileSizeError] = useState("")
   const [isNcLevelAdditional, setIsNcLevelAdditional] = useState(false)
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null)
   const [modifiedCertificates, setModifiedCertificates] = useState(new Set())
@@ -157,6 +160,14 @@ const ViewPortfolio = () => {
     }
   }
 
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return ""
+    // Remove any existing +63 prefix and non-digits
+    const digitsOnly = phone.replace(/^\+63/, "").replace(/\D/g, "")
+    // Return with +63 prefix
+    return `+63${digitsOnly}`
+  }
+
   const validateField = (fieldName, value) => {
     const trimmedValue = typeof value === "string" ? value.trim() : value
     let message = ""
@@ -176,10 +187,8 @@ const ViewPortfolio = () => {
         break
       case "phone":
         if (trimmedValue) {
-          if (!/^\d+$/.test(trimmedValue)) {
-            message = "Phone number must contain digits only."
-          } else if (trimmedValue.length !== 11) {
-            message = "Phone number must be exactly 11 digits."
+          if (trimmedValue.length !== 10) {
+            message = "Phone number must be exactly 10 digits."
           }
         }
         break
@@ -195,10 +204,8 @@ const ViewPortfolio = () => {
         break
       case "referencePhone":
         if (trimmedValue) {
-          if (!/^\d+$/.test(trimmedValue)) {
-            message = "Reference phone number must contain digits only."
-          } else if (trimmedValue.length !== 11) {
-            message = "Reference phone number must be exactly 11 digits."
+          if (trimmedValue.length !== 10) {
+            message = "Reference phone number must be exactly 10 digits."
           }
         }
         break
@@ -424,7 +431,7 @@ const ViewPortfolio = () => {
       trainingDuration: portfolioData.trainingDuration || "",
       tesdaRegistrationNumber: portfolioData.tesdaRegistrationNumber || "",
       email: portfolioData.email || "",
-      phone: portfolioData.phone || "",
+      phone: portfolioData.phone ? portfolioData.phone.replace(/^\+63/, "").replace(/\D/g, "").slice(0, 10) : "",
       website: portfolioData.website || "",
       portfolioCategory: portfolioData.portfolioCategory || "",
       preferredWorkLocation: portfolioData.preferredWorkLocation || "",
@@ -499,7 +506,9 @@ const ViewPortfolio = () => {
             // Get relationship value - handle both relationship and position from backend
             const relationshipVal = ref.relationship || ref.position || ""
             // Get phone value - handle both phone and contact from backend
+            // Strip +63 prefix and non-digits, limit to 10 digits for editing
             const phoneVal = ref.phone || ref.contact || ""
+            const phoneDigits = phoneVal ? phoneVal.replace(/^\+63/, "").replace(/\D/g, "").slice(0, 10) : ""
             
             return {
             id: ref.id,
@@ -507,8 +516,8 @@ const ViewPortfolio = () => {
               relationship: relationshipVal,
               position: relationshipVal, // Keep both for backward compatibility
             company: ref.company || "",
-              phone: phoneVal,
-              contact: phoneVal, // Keep both for backward compatibility
+              phone: phoneDigits,
+              contact: phoneDigits, // Keep both for backward compatibility
             email: ref.email || "",
             }
           })
@@ -803,7 +812,7 @@ const fetchPublicDataWithToken = async () => {
         trainingDuration: portfolio.trainingDuration,
         tesdaRegistrationNumber: portfolio.tesdaRegistrationNumber,
         email: portfolio.email,
-        phone: portfolio.phone,
+        phone: portfolio.phone ? portfolio.phone.replace(/^\+63/, "").replace(/\D/g, "").slice(0, 10) : "",
         website: portfolio.website,
         portfolioCategory: portfolio.portfolioCategory,
         preferredWorkLocation: portfolio.preferredWorkLocation,
@@ -1123,14 +1132,21 @@ const fetchPublicDataWithToken = async () => {
         return
       }
     }
+    
+    // For phone number, only allow digits and limit to 10 digits
+    let processedValue = value
+    if (field === "phone") {
+      processedValue = value.replace(/\D/g, "").slice(0, 10)
+    }
+    
     setEditingPortfolio((prev) => ({
       ...prev,
-      [field]: value,
+      [field]: processedValue,
     }))
     setSaveError("")
     // Validate fields that need validation
     if (["email", "phone", "website", "tesdaRegistrationNumber"].includes(field)) {
-      validateField(field, value)
+      validateField(field, processedValue)
     }
   }
 
@@ -1147,17 +1163,23 @@ const fetchPublicDataWithToken = async () => {
       correctedValue = validateAndCorrectDate(value)
     }
     
+    // For phone/contact fields, process the value to only allow digits and limit to 10 digits
+    let finalValue = correctedValue
+    if (arrayName === "references" && (field === "phone" || field === "contact")) {
+      finalValue = correctedValue.replace(/\D/g, "").slice(0, 10)
+    }
+    
     setEditingPortfolio((prev) => {
       const updatedArray = [...prev[arrayName]]
       // For phone/contact fields, ensure we clear both fields when value is empty
       if (arrayName === "references" && (field === "phone" || field === "contact")) {
         updatedArray[index] = { 
           ...updatedArray[index], 
-          phone: correctedValue || "",
-          contact: correctedValue || ""
+          phone: finalValue || "",
+          contact: finalValue || ""
         }
       } else {
-        updatedArray[index] = { ...updatedArray[index], [field]: correctedValue }
+        updatedArray[index] = { ...updatedArray[index], [field]: finalValue }
       }
       return { ...prev, [arrayName]: updatedArray }
     })
@@ -1165,16 +1187,14 @@ const fetchPublicDataWithToken = async () => {
     // Validate specific fields
     if (arrayName === "references") {
       if (field === "phone" || field === "contact") {
-        validateField("referencePhone", correctedValue)
+        validateField("referencePhone", finalValue)
         // Also store error with indexed key for display
         const fieldKey = `referencePhone_${index}`
-        const trimmedValue = typeof correctedValue === "string" ? correctedValue.trim() : correctedValue
+        const trimmedValue = typeof finalValue === "string" ? finalValue.trim() : finalValue
         let message = ""
         if (trimmedValue) {
-          if (!/^\d+$/.test(trimmedValue)) {
-            message = "Reference phone number must contain digits only."
-          } else if (trimmedValue.length !== 11) {
-            message = "Reference phone number must be exactly 11 digits."
+          if (trimmedValue.length !== 10) {
+            message = "Reference phone number must be exactly 10 digits."
           }
         }
         updateFieldError(fieldKey, message)
@@ -1228,30 +1248,99 @@ const fetchPublicDataWithToken = async () => {
 
   const handleAvatarFileChange = (e) => {
     const file = e.target.files[0]
+    // Store previous state before processing new file
+    const previousFile = selectedAvatarFile
+    
+    // Reset input value so same file can be selected again
+    if (e.target) {
+      e.target.value = ""
+    }
+    
     if (file && !file.type.startsWith("image/")) {
       setSaveError("Please select an image file for the avatar.")
+      setAvatarFileSizeError("")
       return
     }
+    // Check file size (5MB = 5242880 bytes)
+    const maxFileSize = 5 * 1024 * 1024 // 5MB
+    if (file && file.size > maxFileSize) {
+      setAvatarFileSizeError("Image size exceeds the maximum allowed size of 5MB.")
+      // Restore previous image instead of clearing
+      setSelectedAvatarFile(previousFile)
+      setSaveError("")
+      // Clear error message after 1.5 seconds
+      setTimeout(() => {
+        setAvatarFileSizeError("")
+      }, 1500)
+      return
+    }
+    setAvatarFileSizeError("")
     setSelectedAvatarFile(file)
     setSaveError("")
   }
 
   const handleCertificateFileChange = (e) => {
     const file = e.target.files[0]
-    if (file && !file.type.startsWith("image/")) {
-      setSaveError("Please select an image file for the certificate.")
+    // Store previous state before processing new file
+    const previousFile = newCertificate.certificateFile
+    
+    // Reset input value so same file can be selected again
+    if (e.target) {
+      e.target.value = ""
+    }
+    
+    if (file && !file.type.startsWith("image/") && file.type !== "application/pdf") {
+      setSaveError("Please select an image or PDF file for the certificate.")
+      setCertificateFileSizeError("")
       return
     }
+    // Check file size (5MB = 5242880 bytes)
+    const maxFileSize = 5 * 1024 * 1024 // 5MB
+    if (file && file.size > maxFileSize) {
+      setCertificateFileSizeError("File size exceeds the maximum allowed size of 5MB.")
+      // Restore previous file instead of clearing
+      setNewCertificate((prev) => ({ ...prev, certificateFile: previousFile }))
+      setSaveError("")
+      // Clear error message after 1.5 seconds
+      setTimeout(() => {
+        setCertificateFileSizeError("")
+      }, 1500)
+      return
+    }
+    setCertificateFileSizeError("")
     setNewCertificate((prev) => ({ ...prev, certificateFile: file }))
     setSaveError("")
   }
 
   const handleProjectFileChange = (e) => {
     const file = e.target.files[0]
+    // Store previous state before processing new file
+    const previousFile = newProject.projectImageFile
+    
+    // Reset input value so same file can be selected again
+    if (e.target) {
+      e.target.value = ""
+    }
+    
     if (file && !file.type.startsWith("image/")) {
       setSaveError("Please select an image file for the project.")
+      setProjectFileSizeError("")
       return
     }
+    // Check file size (5MB = 5242880 bytes)
+    const maxFileSize = 5 * 1024 * 1024 // 5MB
+    if (file && file.size > maxFileSize) {
+      setProjectFileSizeError("Image size exceeds the maximum allowed size of 5MB.")
+      // Restore previous image instead of clearing
+      setNewProject((prev) => ({ ...prev, projectImageFile: previousFile }))
+      setSaveError("")
+      // Clear error message after 1.5 seconds
+      setTimeout(() => {
+        setProjectFileSizeError("")
+      }, 1500)
+      return
+    }
+    setProjectFileSizeError("")
     setNewProject((prev) => ({ ...prev, projectImageFile: file }))
     setSaveError("")
   }
@@ -2207,6 +2296,11 @@ const fetchPublicDataWithToken = async () => {
           } else if (ref.contact && typeof ref.contact === "string" && ref.contact.trim() !== "") {
             phoneValue = ref.contact.trim()
           }
+          
+          // Automatically prepend +63 if not already present
+          if (phoneValue) {
+            phoneValue = phoneValue.startsWith("+63") ? phoneValue : `+63${phoneValue}`
+          }
 
           return {
           id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
@@ -2736,29 +2830,15 @@ const fetchPublicDataWithToken = async () => {
             return
           }
         }
-        // Validate phone format - must contain only digits and be exactly 11 digits
+        // Validate phone format - must be exactly 10 digits
         if (editingPortfolio.phone && editingPortfolio.phone.trim() !== "") {
           const phoneValue = editingPortfolio.phone.trim()
-          if (!/^\d+$/.test(phoneValue)) {
+          if (phoneValue.length !== 10) {
             setNotification({
               show: true,
               type: "error",
               title: "Validation Error",
-              message: "Phone number must contain digits only.",
-              link: "",
-            })
-            setTimeout(() => {
-              setNotification(prev => ({ ...prev, show: false }))
-            }, 5000)
-            setIsSaving(false)
-            return
-          }
-          if (phoneValue.length !== 11) {
-            setNotification({
-              show: true,
-              type: "error",
-              title: "Validation Error",
-              message: "Phone number must be exactly 11 digits.",
+              message: "Phone number must be exactly 10 digits.",
               link: "",
             })
             setTimeout(() => {
@@ -2788,7 +2868,12 @@ const fetchPublicDataWithToken = async () => {
         }
         // Convert empty strings to null to avoid backend validation errors
         payload.email = editingPortfolio.email && editingPortfolio.email.trim() !== "" ? editingPortfolio.email.trim() : null
-        payload.phone = editingPortfolio.phone && editingPortfolio.phone.trim() !== "" ? editingPortfolio.phone.trim() : null
+        // Automatically prepend +63 if not already present
+        payload.phone = editingPortfolio.phone && editingPortfolio.phone.trim() !== "" 
+          ? (editingPortfolio.phone.trim().startsWith("+63") 
+              ? editingPortfolio.phone.trim() 
+              : `+63${editingPortfolio.phone.trim()}`)
+          : null
         payload.website = editingPortfolio.website && editingPortfolio.website.trim() !== "" ? editingPortfolio.website.trim() : null
       } else if (section === "skills") {
         // Validate all required skill fields before saving
@@ -3231,28 +3316,13 @@ const fetchPublicDataWithToken = async () => {
             setIsSaving(false)
             return
           }
-          // Validate phone number format - must contain only digits
-          if (!/^\d+$/.test(phoneValue)) {
+          // Validate phone number length - must be exactly 10 digits
+          if (phoneValue.length !== 10) {
             setNotification({
               show: true,
               type: "error",
               title: "Validation Error",
-              message: `Reference "${ref.name || 'Untitled'}": Contact number must contain digits only.`,
-              link: "",
-            })
-            setTimeout(() => {
-              setNotification(prev => ({ ...prev, show: false }))
-            }, 5000)
-            setIsSaving(false)
-            return
-          }
-          // Validate phone number length - must be exactly 11 digits
-          if (phoneValue.length !== 11) {
-            setNotification({
-              show: true,
-              type: "error",
-              title: "Validation Error",
-              message: `Reference "${ref.name || 'Untitled'}": Contact number must be exactly 11 digits.`,
+              message: `Reference "${ref.name || 'Untitled'}": Contact number must be exactly 10 digits.`,
               link: "",
             })
             setTimeout(() => {
@@ -3287,6 +3357,11 @@ const fetchPublicDataWithToken = async () => {
             phoneValue = ref.phone.trim()
           } else if (ref.contact && typeof ref.contact === "string" && ref.contact.trim() !== "") {
             phoneValue = ref.contact.trim()
+          }
+          
+          // Automatically prepend +63 if not already present
+          if (phoneValue) {
+            phoneValue = phoneValue.startsWith("+63") ? phoneValue : `+63${phoneValue}`
           }
 
           const companyValue =
@@ -3947,6 +4022,11 @@ const fetchPublicDataWithToken = async () => {
                         ref={avatarFileInputRef}
                         className="hidden"
                       />
+                      {avatarFileSizeError && (
+                        <Typography variant="small" color="red" className="mt-2 text-center">
+                          {avatarFileSizeError}
+                        </Typography>
+                      )}
                     </div>
                   </div>
                 )}
@@ -4004,17 +4084,22 @@ const fetchPublicDataWithToken = async () => {
                         </Typography>
                         {isEditMode && editingSections.contact ? (
                           <>
-                            <Input
-                              type="tel"
-                              size="md"
-                              value={editingPortfolio?.phone || ""}
-                              onChange={(e) => handleFieldChange("phone", e.target.value)}
-                              placeholder="Phone number"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              maxLength={11}
-                              className={`!border-gray-300 ${fieldErrors.phone ? "!border-red-500" : ""}`}
-                            />
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span className="text-gray-700 font-medium">+63</span>
+                              </div>
+                              <Input
+                                type="tel"
+                                size="md"
+                                value={editingPortfolio?.phone || ""}
+                                onChange={(e) => handleFieldChange("phone", e.target.value)}
+                                placeholder="1234567890"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                maxLength={10}
+                                className={`!border-gray-300 pl-12 ${fieldErrors.phone ? "!border-red-500" : ""}`}
+                              />
+                            </div>
                             {fieldErrors.phone && (
                               <Typography variant="small" color="red" className="mt-1">
                                 {fieldErrors.phone}
@@ -4023,7 +4108,7 @@ const fetchPublicDataWithToken = async () => {
                           </>
                         ) : (
                           <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                            {portfolio.phone}
+                            {formatPhoneNumber(portfolio.phone)}
                           </Typography>
                         )}
                       </div>
@@ -4637,6 +4722,11 @@ const fetchPublicDataWithToken = async () => {
                                   ref={certificateFileInputRef}
                                   className="hidden"
                                 />
+                                {certificateFileSizeError && (
+                                  <Typography variant="small" color="red" className="mt-2 text-center">
+                                    {certificateFileSizeError}
+                                  </Typography>
+                                )}
                               </div>
                             </div>
                             <div className="mt-6 flex justify-end gap-2">
@@ -4697,7 +4787,8 @@ const fetchPublicDataWithToken = async () => {
                                           src={certificate.preview || certificate.certificateFilePath || "/placeholder.svg"}
                                           alt="Certificate Preview"
                                           size="lg"
-                                          className={`ring-2 ${designTheme.borderColor}`}
+                                          className={`ring-2 ${designTheme.borderColor} cursor-pointer hover:ring-4 transition-all`}
+                                          onClick={() => handleCertificateClick(certificate)}
                                         />
                                       )}
                                       <div>
@@ -4763,7 +4854,8 @@ const fetchPublicDataWithToken = async () => {
                                     src={certificate.preview || certificate.certificateFilePath || "/placeholder.svg"}
                                     alt="Certificate Preview"
                                     size="md"
-                                    className="ring-2 ring-gray-400 shadow-md flex-shrink-0"
+                                    className="ring-2 ring-gray-400 shadow-md flex-shrink-0 cursor-pointer hover:ring-4 transition-all"
+                                    onClick={() => handleCertificateClick(certificate)}
                                   />
                                 )}
                                 <div className="flex-grow min-w-0">
@@ -4781,11 +4873,11 @@ const fetchPublicDataWithToken = async () => {
                                     </Typography>
                                   )}
                                 </div>
-                              </div>
-                            </CardBody>
-                          </Card>
-                        ))}
-                      </div>
+                            </div>
+                          </CardBody>
+                        </Card>
+                      ))}
+                    </div>
                     ) : (
                       <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
                         <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -5196,6 +5288,11 @@ const fetchPublicDataWithToken = async () => {
                                   ref={projectFileInputRef}
                                   className="hidden"
                                 />
+                                {projectFileSizeError && (
+                                  <Typography variant="small" color="red" className="mt-2 text-center">
+                                    {projectFileSizeError}
+                                  </Typography>
+                                )}
                               </div>
                             </div>
                             <div className="mt-6 flex justify-end gap-2">
@@ -5247,64 +5344,67 @@ const fetchPublicDataWithToken = async () => {
 
                         {projects && projects.length > 0 && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {projects.map((project) => (
-                              <Card key={project.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
-                                {project.projectImageFilePath && (
-                                  <div className="relative h-48 overflow-hidden">
-                                    <img
-                                      src={project.projectImageFilePath || "/placeholder.svg"}
-                                      alt={project.title || "Project"}
-                                      className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                                      onClick={() => setSelectedProjectImage(project.projectImageFilePath)}
-                                    />
-                                  </div>
-                                )}
-                                <CardBody className="p-6">
-                                  <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1">
-                                      <Typography variant="h6" className="font-medium text-gray-900 mb-2 break-words text-base">
-                                        {project.title || "Unnamed Project"}
-                                      </Typography>
-                                      {project.description && (
-                                        <Typography
-                                          variant="small"
-                                          color="gray"
-                                          className="mb-3 leading-relaxed break-words overflow-wrap-anywhere text-xs line-clamp-3"
+                            {projects.map((project) => {
+                              const projectImageSrc = project.projectImageFilePath || project.preview || "/placeholder.svg"
+                              return (
+                                <Card key={project.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
+                                  {projectImageSrc !== "/placeholder.svg" && (
+                                    <div className="relative h-48 overflow-hidden">
+                                      <img
+                                        src={projectImageSrc}
+                                        alt={project.title || "Project"}
+                                        className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                                        onClick={() => setSelectedProjectImage(projectImageSrc)}
+                                      />
+                                    </div>
+                                  )}
+                                  <CardBody className="p-6">
+                                    <div className="flex items-start justify-between gap-4">
+                                      <div className="flex-1">
+                                        <Typography variant="h6" className="font-medium text-gray-900 mb-2 break-words text-base">
+                                          {project.title || "Unnamed Project"}
+                                        </Typography>
+                                        {project.description && (
+                                          <Typography
+                                            variant="small"
+                                            color="gray"
+                                            className="mb-3 leading-relaxed break-words overflow-wrap-anywhere text-xs line-clamp-3"
+                                          >
+                                            {project.description}
+                                          </Typography>
+                                        )}
+                                        {project.startDate && project.endDate && (
+                                          <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`}>
+                                            {new Date(project.startDate).toLocaleDateString()} -{" "}
+                                            {new Date(project.endDate).toLocaleDateString()}
+                                          </Typography>
+                                        )}
+                                      </div>
+                                      <div className="flex flex-col gap-2">
+                                        <Button
+                                          size="md"
+                                          variant="text"
+                                          color={designTheme.buttonColor}
+                                          onClick={() => handleEditProject(project)}
+                                          className="flex items-center gap-1"
                                         >
-                                          {project.description}
-                                        </Typography>
-                                      )}
-                                      {project.startDate && project.endDate && (
-                                        <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`}>
-                                          {new Date(project.startDate).toLocaleDateString()} -{" "}
-                                          {new Date(project.endDate).toLocaleDateString()}
-                                        </Typography>
-                                      )}
+                                          <FaPen className="w-4 h-4" /> Edit
+                                        </Button>
+                                        <Button
+                                          size="md"
+                                          variant="text"
+                                          color="red"
+                                          onClick={() => handleRemoveProject(project.id)}
+                                          className="flex items-center gap-1"
+                                        >
+                                          <FaTrash className="w-4 h-4" /> Remove
+                                        </Button>
+                                      </div>
                                     </div>
-                                    <div className="flex flex-col gap-2">
-                                      <Button
-                                        size="md"
-                                        variant="text"
-                                        color={designTheme.buttonColor}
-                                        onClick={() => handleEditProject(project)}
-                                        className="flex items-center gap-1"
-                                      >
-                                        <FaPen className="w-4 h-4" /> Edit
-                                      </Button>
-                                      <Button
-                                        size="md"
-                                        variant="text"
-                                        color="red"
-                                        onClick={() => handleRemoveProject(project.id)}
-                                        className="flex items-center gap-1"
-                                      >
-                                        <FaTrash className="w-4 h-4" /> Remove
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </CardBody>
-                              </Card>
-                            ))}
+                                  </CardBody>
+                                </Card>
+                              )
+                            })}
                           </div>
                         )}
 
@@ -5323,15 +5423,17 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     ) : projects && projects.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {projects.map((project) => (
+                        {projects.map((project) => {
+                          const projectImageSrc = project.projectImageFilePath || project.preview || "/placeholder.svg"
+                          return (
                           <Card key={project.id} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
-                            {project.projectImageFilePath && (
+                            {projectImageSrc !== "/placeholder.svg" && (
                               <div className="relative h-40 overflow-hidden">
                                 <img
-                                  src={project.projectImageFilePath || "/placeholder.svg"}
+                                  src={projectImageSrc}
                                   alt={project.title || "Project"}
                                   className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                                  onClick={() => setSelectedProjectImage(project.projectImageFilePath)}
+                                  onClick={() => setSelectedProjectImage(projectImageSrc)}
                                 />
                               </div>
                             )}
@@ -5356,7 +5458,8 @@ const fetchPublicDataWithToken = async () => {
                               )}
                             </CardBody>
                           </Card>
-                        ))}
+                          )
+                        })}
                       </div>
                     ) : (
                       <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
@@ -5883,21 +5986,26 @@ const fetchPublicDataWithToken = async () => {
                                 <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                   Contact Number *
                                 </Typography>
-                                <Input
-                                  type="tel"
-                                  size="md"
-                                  value={ref.phone || ref.contact || ""}
-                                  onChange={(e) => {
-                                    const newValue = e.target.value
-                                    handleArrayFieldChange("references", index, "phone", newValue)
-                                  }}
-                                  placeholder="Contact number"
-                                  inputMode="numeric"
-                                  pattern="[0-9]*"
-                                  maxLength={11}
-                                  required
-                                  className={`!border-gray-300 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
-                                />
+                                <div className="relative">
+                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span className="text-gray-700 font-medium">+63</span>
+                                  </div>
+                                  <Input
+                                    type="tel"
+                                    size="md"
+                                    value={ref.phone || ref.contact || ""}
+                                    onChange={(e) => {
+                                      const newValue = e.target.value
+                                      handleArrayFieldChange("references", index, "phone", newValue)
+                                    }}
+                                    placeholder="1234567890"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    maxLength={10}
+                                    required
+                                    className={`!border-gray-300 pl-12 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
+                                  />
+                                </div>
                                 {fieldErrors[`referencePhone_${index}`] && (
                                   <Typography variant="small" color="red" className="mt-1">
                                     {fieldErrors[`referencePhone_${index}`]}
@@ -5956,7 +6064,7 @@ const fetchPublicDataWithToken = async () => {
                               )}
                               {ref.contact && (
                                 <Typography variant="small" className="text-gray-600 break-words font-medium text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                  {ref.contact}
+                                  {formatPhoneNumber(ref.contact)}
                                 </Typography>
                               )}
                             </div>
@@ -6041,6 +6149,11 @@ const fetchPublicDataWithToken = async () => {
                             ref={avatarFileInputRef}
                             className="hidden"
                           />
+                          {avatarFileSizeError && (
+                            <Typography variant="small" color="red" className="mt-2 text-center">
+                              {avatarFileSizeError}
+                            </Typography>
+                          )}
                         </>
                       )}
                     </div>
@@ -6245,17 +6358,22 @@ const fetchPublicDataWithToken = async () => {
                             </Typography>
                             {isEditMode && editingSections.contact ? (
                               <>
-                                <Input
-                                  type="tel"
-                                  size="md"
-                                  value={editingPortfolio?.phone || ""}
-                                  onChange={(e) => handleFieldChange("phone", e.target.value)}
-                                  placeholder="Phone number"
-                                  inputMode="numeric"
-                                  pattern="[0-9]*"
-                                  maxLength={11}
-                                  className={`!border-gray-300 ${fieldErrors.phone ? "!border-red-500" : ""}`}
-                                />
+                                <div className="relative">
+                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span className="text-gray-700 font-medium">+63</span>
+                                  </div>
+                                  <Input
+                                    type="tel"
+                                    size="md"
+                                    value={editingPortfolio?.phone || ""}
+                                    onChange={(e) => handleFieldChange("phone", e.target.value)}
+                                    placeholder="1234567890"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    maxLength={10}
+                                    className={`!border-gray-300 pl-12 ${fieldErrors.phone ? "!border-red-500" : ""}`}
+                                  />
+                                </div>
                                 {fieldErrors.phone && (
                                   <Typography variant="small" color="red" className="mt-1">
                                     {fieldErrors.phone}
@@ -6264,7 +6382,7 @@ const fetchPublicDataWithToken = async () => {
                               </>
                             ) : (
                               <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
-                                {portfolio?.phone}
+                                {formatPhoneNumber(portfolio?.phone)}
                               </Typography>
                             )}
                           </div>
@@ -6818,6 +6936,11 @@ const fetchPublicDataWithToken = async () => {
                                 ref={certificateFileInputRef}
                                 className="hidden"
                               />
+                              {certificateFileSizeError && (
+                                <Typography variant="small" color="red" className="mt-2 text-center">
+                                  {certificateFileSizeError}
+                                </Typography>
+                              )}
                             </div>
                           </div>
                           <div className="mt-6 flex justify-end gap-2">
@@ -6877,7 +7000,8 @@ const fetchPublicDataWithToken = async () => {
                                         src={certificate.preview || certificate.certificateFilePath || "/placeholder.svg"}
                                         alt="Certificate Preview"
                                         size="lg"
-                                        className="ring-2 ring-red-300"
+                                        className="ring-2 ring-red-300 cursor-pointer hover:ring-4 transition-all"
+                                        onClick={() => handleCertificateClick(certificate)}
                                       />
                                     )}
                                     <div>
@@ -6951,7 +7075,8 @@ const fetchPublicDataWithToken = async () => {
                                 src={certificate.preview || certificate.certificateFilePath || "/placeholder.svg"}
                                 alt="Certificate Preview"
                                 size="md"
-                                className="ring-2 ring-red-300 flex-shrink-0"
+                                className="ring-2 ring-red-300 flex-shrink-0 cursor-pointer hover:ring-4 transition-all"
+                                onClick={() => handleCertificateClick(certificate)}
                               />
                             )}
                             <div className="flex-grow min-w-0">
@@ -7421,6 +7546,11 @@ const fetchPublicDataWithToken = async () => {
                                 ref={projectFileInputRef}
                                 className="hidden"
                               />
+                              {projectFileSizeError && (
+                                <Typography variant="small" color="red" className="mt-2 text-center">
+                                  {projectFileSizeError}
+                                </Typography>
+                              )}
                             </div>
                           </div>
                           <div className="mt-6 flex justify-end gap-2">
@@ -7471,63 +7601,66 @@ const fetchPublicDataWithToken = async () => {
 
                       {projects && projects.length > 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {projects.map((project) => (
-                            <Card key={project.id} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300">
-                              {project.projectImageFilePath && (
-                                <div className="relative h-48 overflow-hidden">
-                                  <img
-                                    src={project.projectImageFilePath || "/placeholder.svg"}
-                                    alt={project.title || "Project"}
-                                    className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                                    onClick={() => setSelectedProjectImage(project.projectImageFilePath)}
-                                  />
-                                </div>
-                              )}
-                              <CardBody className="p-6">
-                                <div className="flex items-start justify-between gap-4">
-                                  <div className="flex-1">
-                                    <Typography variant="h6" className="font-bold text-black mb-2 text-lg break-words" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
-                                      {project.title || "Unnamed Project"}
-                                    </Typography>
-                                    {project.description && (
-                                      <Typography
-                                        variant="small"
-                                        className="text-black mb-3 leading-relaxed text-base break-words overflow-wrap-anywhere line-clamp-3"
-                                        style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.6", fontWeight: 400 }}
+                          {projects.map((project) => {
+                            const projectImageSrc = project.projectImageFilePath || project.preview || "/placeholder.svg"
+                            return (
+                              <Card key={project.id} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300">
+                                {projectImageSrc !== "/placeholder.svg" && (
+                                  <div className="relative h-48 overflow-hidden">
+                                    <img
+                                      src={projectImageSrc}
+                                      alt={project.title || "Project"}
+                                      className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                                      onClick={() => setSelectedProjectImage(projectImageSrc)}
+                                    />
+                                  </div>
+                                )}
+                                <CardBody className="p-6">
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1">
+                                      <Typography variant="h6" className="font-bold text-black mb-2 text-lg break-words" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                        {project.title || "Unnamed Project"}
+                                      </Typography>
+                                      {project.description && (
+                                        <Typography
+                                          variant="small"
+                                          className="text-black mb-3 leading-relaxed text-base break-words overflow-wrap-anywhere line-clamp-3"
+                                          style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.6", fontWeight: 400 }}
+                                        >
+                                          {project.description}
+                                        </Typography>
+                                      )}
+                                      {project.startDate && project.endDate && (
+                                        <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                          {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
+                                        </Typography>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                      <Button
+                                        size="md"
+                                        variant="text"
+                                        color="red"
+                                        onClick={() => handleEditProject(project)}
+                                        className="flex items-center gap-1"
                                       >
-                                        {project.description}
-                                      </Typography>
-                                    )}
-                                    {project.startDate && project.endDate && (
-                                      <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                        {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
-                                      </Typography>
-                                    )}
+                                        <FaPen className="w-4 h-4" /> Edit
+                                      </Button>
+                                      <Button
+                                        size="md"
+                                        variant="text"
+                                        color="red"
+                                        onClick={() => handleRemoveProject(project.id)}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <FaTrash className="w-4 h-4" /> Remove
+                                      </Button>
+                                    </div>
                                   </div>
-                                  <div className="flex flex-col gap-2">
-                                    <Button
-                                      size="md"
-                                      variant="text"
-                                      color="red"
-                                      onClick={() => handleEditProject(project)}
-                                      className="flex items-center gap-1"
-                                    >
-                                      <FaPen className="w-4 h-4" /> Edit
-                                    </Button>
-                                    <Button
-                                      size="md"
-                                      variant="text"
-                                      color="red"
-                                      onClick={() => handleRemoveProject(project.id)}
-                                      className="flex items-center gap-1"
-                                    >
-                                      <FaTrash className="w-4 h-4" /> Remove
-                                    </Button>
-                                  </div>
-                                </div>
-                              </CardBody>
-                            </Card>
-                          ))}
+                                </CardBody>
+                              </Card>
+                            )
+                          })}
                         </div>
                       )}
 
@@ -8233,18 +8366,23 @@ const fetchPublicDataWithToken = async () => {
                                   <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
                                     Contact Number *
                                   </Typography>
-                                  <Input
-                                    type="tel"
-                                    size="md"
-                                    value={ref.contact || ""}
-                                    onChange={(e) => handleArrayFieldChange("references", index, "contact", e.target.value)}
-                                    placeholder="Phone number"
-                                    inputMode="numeric"
-                                    pattern="[0-9]*"
-                                    maxLength={11}
-                                    required
-                                    className={`!border-gray-300 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
-                                  />
+                                  <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                      <span className="text-gray-700 font-medium">+63</span>
+                                    </div>
+                                    <Input
+                                      type="tel"
+                                      size="md"
+                                      value={ref.contact || ""}
+                                      onChange={(e) => handleArrayFieldChange("references", index, "contact", e.target.value)}
+                                      placeholder="1234567890"
+                                      inputMode="numeric"
+                                      pattern="[0-9]*"
+                                      maxLength={10}
+                                      required
+                                      className={`!border-gray-300 pl-12 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
+                                    />
+                                  </div>
                                   {fieldErrors[`referencePhone_${index}`] && (
                                     <Typography variant="small" color="red" className="mt-1">
                                       {fieldErrors[`referencePhone_${index}`]}
@@ -8285,7 +8423,7 @@ const fetchPublicDataWithToken = async () => {
                                   )}
                                   {ref.contact && (
                                     <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
-                                      {ref.contact}
+                                      {formatPhoneNumber(ref.contact)}
                                     </Typography>
                                   )}
                                 </div>
@@ -8444,6 +8582,11 @@ const fetchPublicDataWithToken = async () => {
                   ref={avatarFileInputRef}
                   className="hidden"
                 />
+                {avatarFileSizeError && (
+                  <Typography variant="small" color="red" className="mt-2 text-center">
+                    {avatarFileSizeError}
+                  </Typography>
+                )}
               </div>
             )}
 
@@ -8800,17 +8943,22 @@ const fetchPublicDataWithToken = async () => {
                     </Typography>
                     {isEditMode && editingSections.contact ? (
                       <>
-                        <Input
-                          type="tel"
-                          size="md"
-                          value={editingPortfolio?.phone || ""}
-                          onChange={(e) => handleFieldChange("phone", e.target.value)}
-                          placeholder="Phone number"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          maxLength={11}
-                          className={`!border-gray-300 ${fieldErrors.phone ? "!border-red-500" : ""}`}
-                        />
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="text-gray-700 font-medium">+63</span>
+                          </div>
+                          <Input
+                            type="tel"
+                            size="md"
+                            value={editingPortfolio?.phone || ""}
+                            onChange={(e) => handleFieldChange("phone", e.target.value)}
+                            placeholder="1234567890"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            maxLength={10}
+                            className={`!border-gray-300 pl-12 ${fieldErrors.phone ? "!border-red-500" : ""}`}
+                          />
+                        </div>
                         {fieldErrors.phone && (
                           <Typography variant="small" color="red" className="mt-1">
                             {fieldErrors.phone}
@@ -8819,7 +8967,7 @@ const fetchPublicDataWithToken = async () => {
                       </>
                     ) : (
                       <Typography variant="small" className="text-gray-800">
-                        {portfolio.phone}
+                        {formatPhoneNumber(portfolio.phone)}
                       </Typography>
                     )}
                   </div>
@@ -9360,6 +9508,11 @@ const fetchPublicDataWithToken = async () => {
                         ref={certificateFileInputRef}
                         className="hidden"
                       />
+                      {certificateFileSizeError && (
+                        <Typography variant="small" color="red" className="mt-2 text-center">
+                          {certificateFileSizeError}
+                        </Typography>
+                      )}
                     </div>
                   </div>
                   <div className="mt-6 flex justify-end gap-2">
@@ -9914,6 +10067,11 @@ const fetchPublicDataWithToken = async () => {
                         ref={projectFileInputRef}
                         className="hidden"
                       />
+                      {projectFileSizeError && (
+                        <Typography variant="small" color="red" className="mt-2 text-center">
+                          {projectFileSizeError}
+                        </Typography>
+                      )}
                     </div>
                   </div>
                   <div className="mt-6 flex justify-end gap-2">
@@ -9966,18 +10124,20 @@ const fetchPublicDataWithToken = async () => {
 
                   {projects && projects.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {projects.map((project) => (
-                        <Card key={project.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
-                          {project.projectImageFilePath && (
-                            <div className="relative h-48 overflow-hidden">
-                              <img
-                                src={project.projectImageFilePath || "/placeholder.svg"}
-                                alt={project.title || "Project"}
-                                className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                                onClick={() => setSelectedProjectImage(project.projectImageFilePath)}
-                              />
-                            </div>
-                          )}
+                      {projects.map((project) => {
+                        const projectImageSrc = project.projectImageFilePath || project.preview || "/placeholder.svg"
+                        return (
+                          <Card key={project.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
+                            {projectImageSrc !== "/placeholder.svg" && (
+                              <div className="relative h-48 overflow-hidden">
+                                <img
+                                  src={projectImageSrc}
+                                  alt={project.title || "Project"}
+                                  className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                                  onClick={() => setSelectedProjectImage(projectImageSrc)}
+                                />
+                              </div>
+                            )}
                           <CardBody className="p-6">
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex-1">
@@ -10025,7 +10185,8 @@ const fetchPublicDataWithToken = async () => {
                             </div>
                           </CardBody>
                         </Card>
-                      ))}
+                        )
+                      })}
                     </div>
                   ) : !isEditMode || !editingSections.projects ? (
                     portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
@@ -10613,21 +10774,26 @@ const fetchPublicDataWithToken = async () => {
                             <Typography variant="small" className="text-gray-700 font-semibold mb-1">
                               Contact Number *
                             </Typography>
-                            <Input
-                              type="tel"
-                              size="md"
-                              value={ref.phone || ref.contact || ""}
-                              onChange={(e) => {
-                                const newValue = e.target.value
-                                handleArrayFieldChange("references", index, "phone", newValue)
-                              }}
-                              placeholder="Contact number"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              maxLength={11}
-                              required
-                              className={`!border-gray-300 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
-                            />
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span className="text-gray-700 font-medium">+63</span>
+                              </div>
+                              <Input
+                                type="tel"
+                                size="md"
+                                value={ref.phone || ref.contact || ""}
+                                onChange={(e) => {
+                                  const newValue = e.target.value
+                                  handleArrayFieldChange("references", index, "phone", newValue)
+                                }}
+                                placeholder="1234567890"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                maxLength={10}
+                                required
+                                className={`!border-gray-300 pl-12 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
+                              />
+                            </div>
                             {fieldErrors[`referencePhone_${index}`] && (
                               <Typography variant="small" color="red" className="mt-1">
                                 {fieldErrors[`referencePhone_${index}`]}
@@ -10658,7 +10824,7 @@ const fetchPublicDataWithToken = async () => {
                             )}
                             {ref.contact && (
                               <Typography variant="small" color="gray" className="break-words">
-                                {ref.contact}
+                                {formatPhoneNumber(ref.contact)}
                               </Typography>
                             )}
                           </div>
@@ -10830,20 +10996,23 @@ const fetchPublicDataWithToken = async () => {
       {selectedCertificate && (
         <Dialog open={!!selectedCertificate} handler={() => setSelectedCertificate(null)} size="md">
           <DialogBody className="p-2 flex items-center justify-center min-h-[200px]">
-            {selectedCertificate.certificateFilePath ? (
-              selectedCertificate.certificateFilePath.endsWith(".pdf") ? (
-                <iframe
-                  src={`${selectedCertificate.certificateFilePath}#toolbar=0&navpanes=0&scrollbar=0`}
-                  title={selectedCertificate.courseName || "Certificate"}
-                  className="w-full h-[70vh]"
-                />
-              ) : (
-                <img
-                  src={selectedCertificate.certificateFilePath || "/placeholder.svg"}
-                  alt={selectedCertificate.courseName || "Certificate"}
-                  className="max-w-full max-h-[70vh] w-auto h-auto object-contain"
-                />
-              )
+            {(selectedCertificate.certificateFilePath || selectedCertificate.preview) ? (
+              (() => {
+                const certSrc = selectedCertificate.certificateFilePath || selectedCertificate.preview
+                return certSrc.endsWith(".pdf") ? (
+                  <iframe
+                    src={`${certSrc}#toolbar=0&navpanes=0&scrollbar=0`}
+                    title={selectedCertificate.courseName || "Certificate"}
+                    className="w-full h-[70vh]"
+                  />
+                ) : (
+                  <img
+                    src={certSrc || "/placeholder.svg"}
+                    alt={selectedCertificate.courseName || "Certificate"}
+                    className="max-w-full max-h-[70vh] w-auto h-auto object-contain"
+                  />
+                )
+              })()
             ) : (
               <div className="p-8 text-center">
                 <Typography variant="small">No certificate file available.</Typography>

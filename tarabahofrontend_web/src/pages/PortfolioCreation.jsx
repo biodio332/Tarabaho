@@ -123,6 +123,9 @@ const PortfolioCreation = () => {
   })
   const [error, setError] = useState("")
   const [fieldErrors, setFieldErrors] = useState({})
+  const [avatarFileSizeError, setAvatarFileSizeError] = useState("")
+  const [projectFileSizeError, setProjectFileSizeError] = useState("")
+  const [certificateFileSizeError, setCertificateFileSizeError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [token, setToken] = useState(null)
   const [graduateId, setGraduateId] = useState(null)
@@ -636,10 +639,35 @@ const PortfolioCreation = () => {
 
   const handleAvatarFileChange = (e) => {
     const file = e.target.files[0]
+    // Store previous state before processing new file
+    const previousFile = selectedAvatarFile
+    const previousPreview = previewAvatar
+    
+    // Reset input value so same file can be selected again
+    if (e.target) {
+      e.target.value = ""
+    }
+    
     if (file && !file.type.startsWith("image/")) {
       setError("Please select an image file for the avatar.")
+      setAvatarFileSizeError("")
       return
     }
+    // Check file size (5MB = 5242880 bytes)
+    const maxFileSize = 5 * 1024 * 1024 // 5MB
+    if (file && file.size > maxFileSize) {
+      setAvatarFileSizeError("Image size exceeds the maximum allowed size of 5MB.")
+      // Restore previous image instead of clearing
+      setSelectedAvatarFile(previousFile)
+      setPreviewAvatar(previousPreview)
+      setError("")
+      // Clear error message after 1.5 seconds
+      setTimeout(() => {
+        setAvatarFileSizeError("")
+      }, 1500)
+      return
+    }
+    setAvatarFileSizeError("")
     setSelectedAvatarFile(file)
     setPreviewAvatar(file ? URL.createObjectURL(file) : "/placeholder.svg")
     setError("")
@@ -647,20 +675,66 @@ const PortfolioCreation = () => {
 
   const handleProjectFileChange = (e) => {
     const file = e.target.files[0]
+    // Store previous state before processing new file
+    const previousFile = newProject.projectImageFile
+    
+    // Reset input value so same file can be selected again
+    if (e.target) {
+      e.target.value = ""
+    }
+    
     if (file && !file.type.startsWith("image/")) {
       setError("Please select an image file for the project.")
+      setProjectFileSizeError("")
       return
     }
+    // Check file size (5MB = 5242880 bytes)
+    const maxFileSize = 5 * 1024 * 1024 // 5MB
+    if (file && file.size > maxFileSize) {
+      setProjectFileSizeError("Image size exceeds the maximum allowed size of 5MB.")
+      // Restore previous image instead of clearing
+      setNewProject((prev) => ({ ...prev, projectImageFile: previousFile }))
+      setError("")
+      // Clear error message after 1.5 seconds
+      setTimeout(() => {
+        setProjectFileSizeError("")
+      }, 1500)
+      return
+    }
+    setProjectFileSizeError("")
     setNewProject((prev) => ({ ...prev, projectImageFile: file }))
     setError("")
   }
 
   const handleCertificateFileChange = (e) => {
     const file = e.target.files[0]
+    // Store previous state before processing new file
+    const previousFile = newCertificate.certificateFile
+    
+    // Reset input value so same file can be selected again
+    if (e.target) {
+      e.target.value = ""
+    }
+    
     if (file && !file.type.startsWith("image/") && file.type !== "application/pdf") {
       setError("Please select an image or PDF file for the certificate.")
+      setCertificateFileSizeError("")
       return
     }
+    // Check file size (5MB = 5242880 bytes)
+    const maxFileSize = 5 * 1024 * 1024 // 5MB
+    if (file && file.size > maxFileSize) {
+      setCertificateFileSizeError("File size exceeds the maximum allowed size of 5MB.")
+      // Restore previous file instead of clearing
+      setNewCertificate((prev) => ({ ...prev, certificateFile: previousFile }))
+      setError("")
+      // Clear error message after 1.5 seconds
+      setTimeout(() => {
+        setCertificateFileSizeError("")
+      }, 1500)
+      return
+    }
+    setCertificateFileSizeError("")
     setNewCertificate((prev) => ({ ...prev, certificateFile: file }))
     setError("")
   }
@@ -1114,6 +1188,7 @@ const PortfolioCreation = () => {
     setEditingProjectId(null)
     setIsAddingProject(false)
     setProjectSubmitAttempted(false) // Reset submission attempt flag on success
+    setProjectFileSizeError("")
     setError("")
   }
 
@@ -1174,11 +1249,13 @@ const PortfolioCreation = () => {
     })
     setIsAddingCertificate(false)
     updateFieldError("certificateNumber", "")
+    setCertificateFileSizeError("")
     setError("")
   }
 
   const handleEditCertificate = (certificate) => {
     setEditingCertificateId(certificate.id)
+    setCertificateFileSizeError("") // Clear file size error when editing
     setNewCertificate({
       courseName: certificate.courseName,
       certificateNumber: certificate.certificateNumber,
@@ -1226,6 +1303,7 @@ const PortfolioCreation = () => {
     setEditingCertificateId(null)
     setIsAddingCertificate(false)
     updateFieldError("certificateNumber", "")
+    setCertificateFileSizeError("")
     setError("")
   }
 
@@ -1236,6 +1314,7 @@ const PortfolioCreation = () => {
   const handleEditProject = (project) => {
     setError("") // Clear any existing errors when editing a project
     setProjectSubmitAttempted(false) // Reset submission attempt flag
+    setProjectFileSizeError("") // Clear file size error when editing
     setEditingProjectId(project.id)
     setNewProject({
       title: project.title,
@@ -1302,6 +1381,7 @@ const PortfolioCreation = () => {
     setEditingProjectId(null)
     setIsAddingProject(false)
     setProjectSubmitAttempted(false) // Reset submission attempt flag on success
+    setProjectFileSizeError("")
     setError("")
   }
 
@@ -2327,6 +2407,11 @@ const PortfolioCreation = () => {
                   ref={avatarFileInputRef}
                   className="hidden"
                 />
+                {avatarFileSizeError && (
+                  <Typography variant="small" color="red" className="mt-2 text-center">
+                    {avatarFileSizeError}
+                  </Typography>
+                )}
               </div>
             </CardBody>
           </Card>
@@ -2837,6 +2922,11 @@ const PortfolioCreation = () => {
                       ref={projectFileInputRef}
                       className="hidden"
                     />
+                    {projectFileSizeError && (
+                      <Typography variant="small" color="red" className="mt-2 text-center">
+                        {projectFileSizeError}
+                      </Typography>
+                    )}
                   </div>
 
                   <div className="flex justify-center gap-4">
@@ -2856,6 +2946,7 @@ const PortfolioCreation = () => {
                         setIsAddingProject(false)
                         setEditingProjectId(null)
                         setProjectSubmitAttempted(false) // Reset submission attempt flag on cancel
+                        setProjectFileSizeError("")
                         setNewProject({
                           title: "",
                           description: "",
@@ -3074,6 +3165,11 @@ const PortfolioCreation = () => {
                       ref={certificateFileInputRef}
                       className="hidden"
                     />
+                    {certificateFileSizeError && (
+                      <Typography variant="small" color="red" className="mt-2 text-center">
+                        {certificateFileSizeError}
+                      </Typography>
+                    )}
                   </div>
 
                   <div className="flex justify-center gap-4">
@@ -3092,6 +3188,7 @@ const PortfolioCreation = () => {
                       onClick={() => {
                         setIsAddingCertificate(false)
                         setEditingCertificateId(null)
+                        setCertificateFileSizeError("")
                         setNewCertificate({
                           courseName: "",
                           certificateNumber: "",
