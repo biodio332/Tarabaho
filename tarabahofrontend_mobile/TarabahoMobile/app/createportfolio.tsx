@@ -20,8 +20,9 @@ import { Ionicons, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { API_CONFIG } from "@/config";
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "https://tarabaho-backend.onrender.com";
+const BACKEND_URL = API_CONFIG.BACKEND_URL;
 const { width } = Dimensions.get('window');
 
 // NC Level options (from web implementation)

@@ -16,8 +16,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { API_CONFIG } from '@/config';
 
-const BACKEND_URL = (process.env.EXPO_PUBLIC_BACKEND_URL || 'https://tarabaho-backend.onrender.com').replace(/\/$/, '');
+const BACKEND_URL = API_CONFIG.BACKEND_URL;
 
 interface Certificate {
   id: string;

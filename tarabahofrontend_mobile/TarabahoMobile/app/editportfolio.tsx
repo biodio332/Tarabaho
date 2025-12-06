@@ -23,9 +23,10 @@ import { Ionicons } from "@expo/vector-icons"
 import TextField from "../components/ui/TextField"
 import Button from "../components/ui/Button"
 import { DatePicker } from "../components/ui/DatePicker"
+import { API_CONFIG } from '@/config';
 
 // Environment variables
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "https://tarabaho-backend.onrender.com"
+const BACKEND_URL = API_CONFIG.BACKEND_URL;
 
 // NC Level options (from web implementation)
 const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV", "NC V", "NC VI"]

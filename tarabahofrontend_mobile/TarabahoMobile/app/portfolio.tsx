@@ -238,8 +238,8 @@ function CertificateImage({ filePath, style, resizeMode }: CertificateImageProps
   )
 }
 
-// Ensure backend URL doesn't end with a slash
-const BACKEND_URL = (process.env.EXPO_PUBLIC_BACKEND_URL || "https://tarabaho-backend.onrender.com").replace(/\/$/, "")
+import { API_CONFIG } from '@/config';
+const BACKEND_URL = API_CONFIG.BACKEND_URL;
 
 interface Project {
   id?: number

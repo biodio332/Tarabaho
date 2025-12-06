@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "TarabahoMobile",
+    "name": "Tarabaho",
     "slug": "TarabahoMobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,10 +8,13 @@
     "scheme": "tarabahomobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "owner": "andrebacusmo",
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.tarabaho.mobile",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -22,7 +25,12 @@
       "predictiveBackGestureEnabled": false,
       "navigationBar": {
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "output": "static",
@@ -46,6 +54,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c040a070-1960-4b6a-b72f-91cd824b6a20"
+      }
     }
   }
 }

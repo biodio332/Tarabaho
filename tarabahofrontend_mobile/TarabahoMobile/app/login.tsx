@@ -4,8 +4,9 @@ import { useRouter } from "expo-router"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import TextField from "@/components/ui/TextField"
 import Button from "@/components/ui/Button"
+import { API_CONFIG } from '@/config';
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "https://tarabaho-backend.onrender.com"
+const BACKEND_URL = API_CONFIG.BACKEND_URL;
 
 export default function Login() {
   const [username, setUsername] = useState("")

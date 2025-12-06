@@ -4,8 +4,9 @@ import { useRouter, useLocalSearchParams } from "expo-router"
 import { Stack } from "expo-router"
 import TextField from "@/components/ui/TextField"
 import Button from "@/components/ui/Button"
+import { API_CONFIG } from '@/config';
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "https://tarabaho-backend.onrender.com"
+const BACKEND_URL = API_CONFIG.BACKEND_URL;
 
 export default function ForgotPassword() {
   const [step, setStep] = useState(1)

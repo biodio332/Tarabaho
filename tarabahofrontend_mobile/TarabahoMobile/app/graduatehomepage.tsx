@@ -25,8 +25,9 @@ import Button from '@/components/ui/Button';
 import Chart from '@/components/ui/Chart';
 import StatCard from '@/components/ui/StatCard';
 import ToggleGroup from '@/components/ui/ToggleGroup';
+import { API_CONFIG } from '@/config';
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "https://tarabaho-backend.onrender.com";
+const BACKEND_URL = API_CONFIG.BACKEND_URL;
 
 interface ViewStats {
   weeklyViews: number;
@@ -513,39 +514,73 @@ export default function GraduateHomepage() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.surface }} edges={['top', 'left', 'right']}>
+    <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }} edges={['top', 'left', 'right']}>
         <StatusBar 
           barStyle="dark-content" 
           backgroundColor={theme.colors.background}
         />
+        
+        {/* Modern Top Header */}
+        <View style={{ 
+          flexDirection: 'row', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          paddingHorizontal: 20,
+          paddingVertical: 16,
+          backgroundColor: '#ffffff',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 8,
+          elevation: 3
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              backgroundColor: '#1e40af',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: 12
+            }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: '#ffffff' }}>T</Text>
+            </View>
+            <View>
+              <Text style={{ fontSize: 22, fontWeight: '700', color: '#1f2937' }}>
+                Tarabaho
+              </Text>
+              <Text style={{ fontSize: 11, color: '#64748b', letterSpacing: 1 }}>
+                {graduateData?.firstName ? `Welcome, ${graduateData.firstName}` : 'Graduate Dashboard'}
+              </Text>
+            </View>
+          </View>
+          
+          <TouchableOpacity 
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              backgroundColor: '#f8fafc',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onPress={() => router.push('/graduateprofile')}
+          >
+            <Ionicons name="settings-outline" size={20} color="#475569" />
+          </TouchableOpacity>
+        </View>
+
       <ScrollView
         style={{ flex: 1, backgroundColor: theme.colors.background }}
         contentContainerStyle={{ 
           flexGrow: 1,
-          paddingBottom: portfolio ? 170 : 90, // Extra padding when portfolio button is visible
+          paddingBottom: 20,
         }}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }>
-        {/* Header - Enhanced Typography */}
-        <View style={viewStyles.header}>
-          <View style={viewStyles.headerContent}>
-            <View style={viewStyles.avatarContainer}>
-              <View style={viewStyles.avatarIconWrapper}>
-                <Ionicons name="briefcase-outline" size={32} color="#2563eb" />
-              </View>
-            </View>
-            <View style={viewStyles.headerText}>
-              <Text style={textStyles.welcomeText}>
-                Welcome back{graduateData?.firstName ? `, ${graduateData.firstName}` : ''}
-              </Text>
-              <Text style={textStyles.subtitleText}>
-                Track your professional growth and engagement
-              </Text>
-            </View>
-          </View>
-        </View>
 
         {portfolio ? (
           <View style={viewStyles.dashboard}>
@@ -747,6 +782,39 @@ export default function GraduateHomepage() {
                   </View>
                 </View>
               </View>
+
+              {/* View Portfolio Button - Inside chart card */}
+              <View style={{ marginTop: theme.spacing.lg, paddingTop: theme.spacing.md, borderTopWidth: 1, borderTopColor: theme.colors.border.light }}>
+                <TouchableOpacity 
+                  style={{
+                    backgroundColor: theme.colors.primary,
+                    paddingVertical: theme.spacing.md,
+                    paddingHorizontal: theme.spacing.lg,
+                    borderRadius: theme.radii.lg,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    shadowColor: theme.colors.primary,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 5,
+                  }}
+                  onPress={() => router.push('/portfolio')}
+                >
+                  <Ionicons name="eye-outline" size={24} color="#ffffff" />
+                  <Text style={{ 
+                    color: '#ffffff', 
+                    fontSize: theme.typography.body1.fontSize, 
+                    fontWeight: '600',
+                    marginLeft: theme.spacing.sm,
+                    marginRight: theme.spacing.sm,
+                  }}>
+                    View Portfolio
+                  </Text>
+                  <Ionicons name="chevron-forward" size={20} color="#ffffff" />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         ) : (
@@ -770,41 +838,6 @@ export default function GraduateHomepage() {
 
         
       </ScrollView>
-      
-      {/* Sticky View Portfolio Button */}
-      {portfolio && (
-        <View style={viewStyles.stickyButtonContainer}>
-            <TouchableOpacity 
-              style={viewStyles.stickyActionButton}
-              onPress={() => router.push('/portfolio')}
-            >
-              <Ionicons name="eye-outline" size={24} color="#ffffff" />
-              <Text style={textStyles.stickyButtonText}>View Portfolio</Text>
-              <Ionicons name="chevron-forward" size={20} color="#ffffff" />
-            </TouchableOpacity>
-        </View>
-      )}
-      
-      {/* Bottom Navigation */}
-      <View style={viewStyles.bottomNavContainer}>
-          <View style={viewStyles.bottomNav}>
-            <TouchableOpacity 
-              style={viewStyles.bottomNavItem} 
-              onPress={() => router.push('/graduatehomepage')}
-            >
-              <Ionicons name="home" size={24} color={theme.colors.primary} />
-              <Text style={textStyles.bottomNavText}>Home</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={viewStyles.bottomNavItem} 
-              onPress={() => router.push('/graduateprofile')}
-            >
-              <Ionicons name="settings-outline" size={24} color={theme.colors.text.secondary} />
-              <Text style={textStyles.bottomNavTextInactive}>Settings</Text>
-            </TouchableOpacity>
-          </View>
-      </View>
       
       {/* Time Range Modal */}
       <Modal
@@ -1398,38 +1431,6 @@ const viewStyles = StyleSheet.create<Record<string, ViewStyle>>({
     flexDirection: 'row',
     opacity: 0.8,
   },
-
-  // Bottom Navigation
-  bottomNavContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: theme.colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border.light,
-    ...theme.shadows.lg,
-    shadowOffset: { width: 0, height: -3 },
-    elevation: 15, // Higher elevation to stay above other elements
-    zIndex: 1001,
-  },
-
-  bottomNav: {
-    flexDirection: 'row',
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    minHeight: 60,
-  },
-  bottomNavItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: theme.spacing.sm,
-    minWidth: 80,
-  },
   
   // Modal Styles
   modalOverlay: {
@@ -1667,19 +1668,6 @@ const textStyles = StyleSheet.create<Record<string, TextStyle>>({
     lineHeight: theme.typography.body2.lineHeight,
     fontWeight: '500' as TextStyle['fontWeight'],
     color: theme.colors.danger,
-  },
-  // Bottom Nav Text Styles
-  bottomNavText: {
-    fontSize: theme.typography.caption.fontSize,
-    fontWeight: '600' as TextStyle['fontWeight'],
-    color: theme.colors.primary,
-    marginTop: theme.spacing.xs,
-  },
-  bottomNavTextInactive: {
-    fontSize: theme.typography.caption.fontSize,
-    fontWeight: '500' as TextStyle['fontWeight'],
-    color: theme.colors.text.secondary,
-    marginTop: theme.spacing.xs,
   },
 
   // Text Styles

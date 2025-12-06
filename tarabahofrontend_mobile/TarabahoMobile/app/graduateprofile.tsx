@@ -18,8 +18,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { Ionicons } from "@expo/vector-icons"
 import * as ImagePicker from "expo-image-picker"
 import { DatePicker } from "../components/ui/DatePicker"
+import { API_CONFIG } from '@/config';
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "https://tarabaho-backend.onrender.com"
+const BACKEND_URL = API_CONFIG.BACKEND_URL;
 
 type Graduate = {
   id?: number
