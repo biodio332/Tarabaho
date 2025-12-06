@@ -210,10 +210,8 @@ const PortfolioCreation = () => {
         break
       case "phone":
         if (trimmedValue) {
-          if (!/^\d+$/.test(trimmedValue)) {
-            message = "Phone number must contain digits only."
-          } else if (trimmedValue.length !== 11) {
-            message = "Phone number must be exactly 11 digits."
+          if (trimmedValue.length !== 10) {
+            message = "Phone number must be exactly 10 digits."
           }
         }
         break
@@ -229,10 +227,8 @@ const PortfolioCreation = () => {
         break
       case "referencePhone":
         if (trimmedValue) {
-          if (!/^\d+$/.test(trimmedValue)) {
-            message = "Reference phone number must contain digits only."
-          } else if (trimmedValue.length !== 11) {
-            message = "Reference phone number must be exactly 11 digits."
+          if (trimmedValue.length !== 10) {
+            message = "Reference phone number must be exactly 10 digits."
           }
         }
         break
@@ -250,6 +246,15 @@ const PortfolioCreation = () => {
   }
 
   const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV", "NC V", "NC VI"]
+
+  // Helper function to format phone number with +63 prefix
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return ""
+    // Remove any existing +63 prefix and non-digits
+    const digitsOnly = phone.replace(/^\+63/, "").replace(/\D/g, "")
+    // Return with +63 prefix
+    return `+63${digitsOnly}`
+  }
 
   // Get design theme for preview (matching ViewPortfolio.jsx)
   const getDesignTheme = (template) => {
@@ -605,9 +610,16 @@ const PortfolioCreation = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    let processedValue = value
+    
+    // For phone number, only allow digits and limit to 10 digits
+    if (name === "phone") {
+      processedValue = value.replace(/\D/g, "").slice(0, 10)
+    }
+    
+    setFormData((prev) => ({ ...prev, [name]: processedValue }))
     if (["tesdaRegistrationNumber", "email", "phone", "website"].includes(name)) {
-      validateField(name, value)
+      validateField(name, processedValue)
     }
     setError("")
   }
@@ -808,9 +820,16 @@ const PortfolioCreation = () => {
 
   const handleReferenceInputChange = (e) => {
     const { name, value } = e.target
-    setNewReference((prev) => ({ ...prev, [name]: value }))
+    let processedValue = value
+    
+    // For phone number, only allow digits and limit to 10 digits
     if (name === "phone") {
-      validateField("referencePhone", value)
+      processedValue = value.replace(/\D/g, "").slice(0, 10)
+    }
+    
+    setNewReference((prev) => ({ ...prev, [name]: processedValue }))
+    if (name === "phone") {
+      validateField("referencePhone", processedValue)
     }
     if (name === "email") {
       validateField("referenceEmail", value)
@@ -1955,7 +1974,7 @@ const PortfolioCreation = () => {
         trainingDuration: formData.trainingDuration || null,
         tesdaRegistrationNumber: formData.tesdaRegistrationNumber || null,
         email: formData.email || null,
-        phone: formData.phone || null,
+        phone: formData.phone ? (formData.phone.startsWith("+63") ? formData.phone : `+63${formData.phone}`) : null,
         website: formData.website || null,
         portfolioCategory: formData.portfolioCategory || null,
         preferredWorkLocation: formData.preferredWorkLocation || null,
@@ -1985,15 +2004,19 @@ const PortfolioCreation = () => {
           membershipType: mem.membershipType || null,
           startDate: mem.startDate || null,
         })),
-        references: references.map((ref) => ({
-          name: ref.name,
-          relationship: ref.relationship || ref.position || null,
-          position: ref.relationship || ref.position || null,
-          company: ref.company || null,
-          phone: ref.phone || ref.contact || null,
-          contact: ref.phone || ref.contact || null,
-          email: ref.email || null,
-        })),
+        references: references.map((ref) => {
+          const phoneValue = ref.phone || ref.contact || null
+          const formattedPhone = phoneValue ? (phoneValue.startsWith("+63") ? phoneValue : `+63${phoneValue}`) : null
+          return {
+            name: ref.name,
+            relationship: ref.relationship || ref.position || null,
+            position: ref.relationship || ref.position || null,
+            company: ref.company || null,
+            phone: formattedPhone,
+            contact: formattedPhone,
+            email: ref.email || null,
+          }
+        }),
         certificateIds: certificateIds,
       }
 
@@ -2572,24 +2595,29 @@ const PortfolioCreation = () => {
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                     Phone
                   </Typography>
-                  <Input
-                    type="tel"
-                    size="lg"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    name="phone"
-                    placeholder="Enter your phone number"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={11}
-                    disabled={isLoading}
-                    className="!border-gray-300 focus:!border-blue-500"
-                  />
-                {fieldErrors.phone && (
-                  <Typography variant="small" color="red" className="mt-1">
-                    {fieldErrors.phone}
-                  </Typography>
-                )}
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-700 font-medium">+63</span>
+                    </div>
+                    <Input
+                      type="tel"
+                      size="lg"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      name="phone"
+                      placeholder="1234567890"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={10}
+                      disabled={isLoading}
+                      className="!border-gray-300 focus:!border-blue-500 pl-12"
+                    />
+                  </div>
+                  {fieldErrors.phone && (
+                    <Typography variant="small" color="red" className="mt-1">
+                      {fieldErrors.phone}
+                    </Typography>
+                  )}
                 </div>
               </div>
 
@@ -4175,19 +4203,25 @@ const PortfolioCreation = () => {
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                         Phone
                       </Typography>
-                      <Input
-                        size="lg"
-                        value={newReference.phone}
-                        onChange={handleReferenceInputChange}
-                        name="phone"
-                        placeholder="e.g., +1234567890"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={11}
-                        required
-                        disabled={isLoading}
-                        className="!border-gray-300 focus:!border-blue-500"
-                      />
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <span className="text-gray-700 font-medium">+63</span>
+                        </div>
+                        <Input
+                          type="tel"
+                          size="lg"
+                          value={newReference.phone}
+                          onChange={handleReferenceInputChange}
+                          name="phone"
+                          placeholder="1234567890"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={10}
+                          required
+                          disabled={isLoading}
+                          className="!border-gray-300 focus:!border-blue-500 pl-12"
+                        />
+                      </div>
                       {fieldErrors.referencePhone && (
                         <Typography variant="small" color="red" className="mt-1">
                           {fieldErrors.referencePhone}
@@ -4267,7 +4301,7 @@ const PortfolioCreation = () => {
                           )}
                           {(ref.phone || ref.contact) && (
                             <Typography variant="paragraph" className="text-gray-600 text-sm mb-1">
-                              Phone: {ref.phone || ref.contact}
+                              Phone: {formatPhoneNumber(ref.phone || ref.contact)}
                             </Typography>
                           )}
                           {ref.email && (
@@ -4421,7 +4455,7 @@ const PortfolioCreation = () => {
                                                 Phone
                                               </Typography>
                                               <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                                {formData.phone}
+                                                {formatPhoneNumber(formData.phone)}
                                               </Typography>
                                             </div>
                                           )}
@@ -4927,7 +4961,7 @@ const PortfolioCreation = () => {
                                                 )}
                                                 {(ref.phone || ref.contact) && (
                                                   <Typography variant="small" className="text-gray-600 break-words font-medium text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                                    {ref.phone || ref.contact}
+                                                    {formatPhoneNumber(ref.phone || ref.contact)}
                                                   </Typography>
                                                 )}
                                               </div>
@@ -5057,7 +5091,7 @@ const PortfolioCreation = () => {
                                                   Phone
                                                 </Typography>
                                                 <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
-                                                  {formData.phone}
+                                                  {formatPhoneNumber(formData.phone)}
                                                 </Typography>
                                               </div>
                                             )}
@@ -5532,7 +5566,7 @@ const PortfolioCreation = () => {
                                                   )}
                                                   {(ref.phone || ref.contact) && (
                                                     <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
-                                                      {ref.phone || ref.contact}
+                                                      {formatPhoneNumber(ref.phone || ref.contact)}
                                                     </Typography>
                                                   )}
                                                 </div>
@@ -5650,7 +5684,7 @@ const PortfolioCreation = () => {
                                                   Phone
                                                 </Typography>
                                                 <Typography variant="small" className="text-gray-800">
-                                                  {formData.phone}
+                                                  {formatPhoneNumber(formData.phone)}
                                                 </Typography>
                                               </div>
                                             )}
@@ -6134,7 +6168,7 @@ const PortfolioCreation = () => {
                                                     )}
                                                     {(ref.phone || ref.contact) && (
                                                       <Typography variant="small" color="gray" className="break-words">
-                                                        {ref.phone || ref.contact}
+                                                        {formatPhoneNumber(ref.phone || ref.contact)}
                                                       </Typography>
                                                     )}
                                                   </div>
