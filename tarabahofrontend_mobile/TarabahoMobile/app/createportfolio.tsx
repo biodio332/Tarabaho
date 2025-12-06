@@ -24,6 +24,9 @@ import { DatePicker } from "@/components/ui/DatePicker";
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "https://tarabaho-backend.onrender.com";
 const { width } = Dimensions.get('window');
 
+// NC Level options (from web implementation)
+const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV", "NC V", "NC VI"];
+
 // Utility function to handle date conversion
 const parseDate = (dateString: string | null | undefined): Date => {
   if (!dateString) return new Date();
@@ -1023,6 +1026,32 @@ export default function CreatePortfolio() {
     </View>
   );
 
+  // Helper component for NC Level picker
+  const NCLevelPicker = ({ value, onChange }: { value: string, onChange: (value: string) => void }) => (
+    <View className="border border-gray-300 rounded-lg p-3 my-2">
+      <Text className="text-sm font-medium mb-2 text-gray-700">Select NC Level</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {NC_LEVEL_OPTIONS.map((level) => (
+          <TouchableOpacity
+            key={level}
+            onPress={() => onChange(level)}
+            className={`mr-2 px-4 py-2 rounded-full ${
+              level === value ? "bg-blue-500" : "bg-gray-200"
+            }`}
+          >
+            <Text
+              className={`text-sm ${
+                level === value ? "text-white font-semibold" : "text-gray-700"
+              }`}
+            >
+              {level}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+
   return (
     <SafeAreaView 
       className="flex-1 bg-gray-50" 
@@ -1231,11 +1260,9 @@ export default function CreatePortfolio() {
                 <Text className="text-gray-500 ml-2">(Optional)</Text>
               </View>
               
-              <TextField
-                label="NC Level"
-                value={formData.ncLevel}
-                onChangeText={(text) => handleInputChange("ncLevel", text)}
-                placeholder="e.g., NC II"
+              <NCLevelPicker 
+                value={formData.ncLevel} 
+                onChange={(value) => handleInputChange("ncLevel", value)} 
               />
               
               <TextField

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { View, Text, Image, ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from "react-native"
+import { View, Text, Image, ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, TouchableOpacity } from "react-native"
 import { useRouter } from "expo-router"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import TextField from "@/components/ui/TextField"
@@ -207,6 +207,22 @@ export default function Login() {
                   </Text>
                 </View>
               ) : null}
+
+              {/* Forgot Password Link */}
+              <View style={{ alignItems: "flex-end", marginBottom: 16 }}>
+                <TouchableOpacity
+                  onPress={() => router.push("/forgotpassword?type=user")}
+                >
+                  <Text style={{
+                    color: "#3b82f6",
+                    fontSize: 14,
+                    fontWeight: "500",
+                    textDecorationLine: "underline"
+                  }}>
+                    Forgot Password?
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
               <Button
                 title={loading ? "Signing in..." : "Sign In"}

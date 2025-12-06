@@ -27,6 +27,9 @@ import { DatePicker } from "../components/ui/DatePicker"
 // Environment variables
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "https://tarabaho-backend.onrender.com"
 
+// NC Level options (from web implementation)
+const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV", "NC V", "NC VI"]
+
 // Utility function to handle date conversion
 const parseDate = (dateString: string | null | undefined): Date => {
   if (!dateString) return new Date();
@@ -1296,12 +1299,9 @@ export default function EditPortfolioScreen() {
       
       {editingSections.tesdaInfo ? (
         <>
-          <TextField
-            label="NC Level"
-            value={portfolio?.ncLevel || ""}
-            onChangeText={(text) => handlePortfolioChange("ncLevel", text)}
-            placeholder="e.g., NC II"
-            size="medium"
+          <NCLevelPicker 
+            value={portfolio?.ncLevel || ""} 
+            onChange={(value) => handlePortfolioChange("ncLevel", value)} 
           />
           
           <TextField
@@ -2382,6 +2382,32 @@ export default function EditPortfolioScreen() {
       )}
     </View>
   )
+
+  // Helper component for NC Level picker
+  const NCLevelPicker = ({ value, onChange }: { value: string, onChange: (value: string) => void }) => (
+    <View className="border border-gray-300 rounded-lg p-3 my-2">
+      <Text className="text-sm font-medium mb-2 text-gray-700">Select NC Level</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {NC_LEVEL_OPTIONS.map((level) => (
+          <TouchableOpacity
+            key={level}
+            onPress={() => onChange(level)}
+            className={`mr-2 px-4 py-2 rounded-full ${
+              level === value ? "bg-blue-500" : "bg-gray-200"
+            }`}
+          >
+            <Text
+              className={`text-sm ${
+                level === value ? "text-white font-semibold" : "text-gray-700"
+              }`}
+            >
+              {level}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
 
   // Main render
   if (loading) {
