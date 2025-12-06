@@ -160,10 +160,9 @@ const PortfolioCreation = () => {
 
   // Course type to design template mapping (using course type names directly)
   const courseTypeTemplates = {
-    "Agriculture and Fishery": "Agriculture and Fishery",
-    "Default Template 1": "Default Template 1",
-    "Default Template 2": "Default Template 2",
-    "Tourism": "Tourism"
+    "Template 1": "Template 1",
+    "Template 2": "Template 2",
+    "Template 3": "Template 3"
   }
 
   const updateFieldError = (fieldName, errorMessage) => {
@@ -262,31 +261,6 @@ const PortfolioCreation = () => {
   // Get design theme for preview (matching ViewPortfolio.jsx)
   const getDesignTheme = (template) => {
     const themes = {
-      "Default Template 2": {
-        headerGradient: "from-amber-500 via-orange-500 to-amber-600",
-        headerBg: "bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600",
-        accentColor: "amber",
-        textColor: "text-amber-600",
-        borderColor: "border-amber-200",
-        bgColor: "bg-amber-50",
-        cardBorder: "border-amber-100",
-        buttonColor: "amber",
-        lightBg: "bg-amber-50",
-        mediumBg: "bg-amber-100",
-        darkBg: "bg-amber-200",
-        // Layout properties
-        headerLayout: "centered", // centered, left-right, right-left
-        headerTextAlign: "text-center",
-        headerFlexDirection: "flex-col items-center",
-        avatarSize: "w-64 h-64",
-        avatarPosition: "mb-6",
-        cardStyle: "rounded-2xl shadow-lg",
-        cardPadding: "p-8",
-        contentGrid: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-        sectionSpacing: "space-y-10",
-        typographySize: "text-4xl md:text-5xl lg:text-6xl",
-        titleWeight: "font-bold",
-      },
       "cookery": {
         headerGradient: "from-red-500 via-pink-500 to-red-600",
         headerBg: "bg-gradient-to-br from-red-500 via-pink-500 to-red-600",
@@ -312,7 +286,7 @@ const PortfolioCreation = () => {
         typographySize: "text-5xl md:text-6xl lg:text-7xl",
         titleWeight: "font-extrabold",
       },
-      "Default Template 1": {
+      "Template 2": {
         headerGradient: "from-blue-500 via-indigo-500 to-blue-600",
         headerBg: "bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800",
         accentColor: "blue",
@@ -337,7 +311,7 @@ const PortfolioCreation = () => {
         typographySize: "text-5xl md:text-6xl lg:text-7xl",
         titleWeight: "font-extralight",
       },
-      "Agriculture and Fishery": {
+      "Template 1": {
         headerGradient: "from-gray-800 via-gray-700 to-gray-900",
         headerBg: "bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900",
         accentColor: "gray",
@@ -362,7 +336,7 @@ const PortfolioCreation = () => {
         typographySize: "text-3xl md:text-4xl lg:text-5xl",
         titleWeight: "font-bold",
       },
-      "Tourism": {
+      "Template 3": {
         headerGradient: "from-purple-500 via-violet-500 to-purple-600",
         headerBg: "bg-gradient-to-br from-purple-500 via-violet-500 to-purple-600",
         accentColor: "purple",
@@ -419,31 +393,25 @@ const PortfolioCreation = () => {
   // Get layout properties for preview
   const getPreviewLayout = (template) => {
     const layouts = {
-      "Default Template 2": {
-        headerLayout: "flex-col items-center text-center",
-        avatarSize: "w-16 h-16",
-        cardStyle: "rounded-2xl",
-        cardPadding: "p-6",
-      },
       "cookery": {
         headerLayout: "flex-row items-center text-left",
         avatarSize: "w-20 h-20",
         cardStyle: "rounded-xl border-2",
         cardPadding: "p-5",
       },
-      "Default Template 1": {
+      "Template 2": {
         headerLayout: "flex-row items-center text-left",
         avatarSize: "w-20 h-20",
         cardStyle: "rounded-lg",
         cardPadding: "p-5",
       },
-      "Agriculture and Fishery": {
+      "Template 1": {
         headerLayout: "flex-row-reverse items-center text-right",
         avatarSize: "w-16 h-16",
         cardStyle: "rounded-3xl",
         cardPadding: "p-6",
       },
-      "Tourism": {
+      "Template 3": {
         headerLayout: "flex-col items-center text-center",
         avatarSize: "w-14 h-14",
         cardStyle: "rounded-full border-4",
@@ -460,10 +428,9 @@ const PortfolioCreation = () => {
   }
 
   const courseTypes = [
-    "Agriculture and Fishery",
-    "Default Template 1",
-    "Default Template 2",
-    "Tourism"
+    "Template 1",
+    "Template 2",
+    "Template 3"
   ]
 
   const SKILL_PROFICIENCY_LEVELS = ["Beginner", "Intermediate", "Advanced", "Expert"]
@@ -478,8 +445,7 @@ const PortfolioCreation = () => {
 
   // Helper function to check if course type should always show sections
   const shouldAlwaysShowSections = (courseType) => {
-    return courseType === "Default Template 1" || 
-           courseType === "Default Template 2"
+    return courseType === "Template 2"
   }
 
   const steps = [
@@ -4513,8 +4479,8 @@ const PortfolioCreation = () => {
                         const designTheme = getDesignTheme(formData.designTemplate)
                         return (
                           <>
-                            {formData.designTemplate === "Agriculture and Fishery" ? (
-                              /* Agriculture and Fishery - Custom Layout */
+                            {formData.designTemplate === "Template 1" ? (
+                              /* Template 1 - Custom Layout */
                               <div className="px-6 py-8 bg-gradient-to-br from-gray-50 via-gray-100 via-gray-200 to-gray-100" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                   {/* Left Sidebar - Profile Image, Contact, Skills, TESDA */}
@@ -5090,8 +5056,8 @@ const PortfolioCreation = () => {
                                 </div>
                               </div>
                               </div>
-                            ) : formData.designTemplate === "Tourism" ? (
-                              /* Tourism - Modern Centered Layout with Grayscale Theme */
+                            ) : formData.designTemplate === "Template 3" ? (
+                              /* Template 3 - Modern Centered Layout with Grayscale Theme */
                               <div className="bg-white min-h-screen" style={{ fontFamily: "'Montserrat', 'Roboto', 'Inter', sans-serif" }}>
                                 {/* Header Section - Clean Modern RÃ©sumÃ© Style */}
                                 <div className="relative bg-white pt-16 pb-16 md:pt-20 md:pb-20 px-6 md:px-12 lg:px-16 border-b-2 border-gray-200">
@@ -5841,7 +5807,7 @@ const PortfolioCreation = () => {
                                         )}
                                       </div>
 
-                                      {/* TESDA Information - Always show for Default Template 1 and Default Template 2 */}
+                                      {/* TESDA Information - Always show for Template 2 */}
                                       {(shouldAlwaysShowSections(formData.primaryCourseType) || formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration || formData.tesdaRegistrationNumber) && (
                                         <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
                                           <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>

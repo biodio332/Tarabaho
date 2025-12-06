@@ -227,31 +227,6 @@ const ViewPortfolio = () => {
   // Get design theme colors and layout based on designTemplate
   const getDesignTheme = (template) => {
     const themes = {
-      "Default Template 2": {
-        headerGradient: "from-amber-500 via-orange-500 to-amber-600",
-        headerBg: "bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600",
-        accentColor: "amber",
-        textColor: "text-amber-600",
-        borderColor: "border-amber-200",
-        bgColor: "bg-amber-50",
-        cardBorder: "border-amber-100",
-        buttonColor: "amber",
-        lightBg: "bg-amber-50",
-        mediumBg: "bg-amber-100",
-        darkBg: "bg-amber-200",
-        // Layout properties
-        headerLayout: "centered", // centered, left-right, right-left
-        headerTextAlign: "text-center",
-        headerFlexDirection: "flex-col items-center",
-        avatarSize: "w-64 h-64",
-        avatarPosition: "mb-6",
-        cardStyle: "rounded-2xl shadow-lg",
-        cardPadding: "p-8",
-        contentGrid: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-        sectionSpacing: "space-y-10",
-        typographySize: "text-4xl md:text-5xl lg:text-6xl",
-        titleWeight: "font-bold",
-      },
       "cookery": {
         headerGradient: "from-red-500 via-pink-500 to-red-600",
         headerBg: "bg-gradient-to-br from-red-500 via-pink-500 to-red-600",
@@ -277,7 +252,7 @@ const ViewPortfolio = () => {
         typographySize: "text-5xl md:text-6xl lg:text-7xl",
         titleWeight: "font-extrabold",
       },
-      "Default Template 1": {
+      "Template 2": {
         headerGradient: "from-blue-500 via-indigo-500 to-blue-600",
         headerBg: "bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800",
         accentColor: "blue",
@@ -302,7 +277,7 @@ const ViewPortfolio = () => {
         typographySize: "text-5xl md:text-6xl lg:text-7xl",
         titleWeight: "font-extralight",
       },
-      "Agriculture and Fishery": {
+      "Template 1": {
         headerGradient: "from-gray-800 via-gray-700 to-gray-900",
         headerBg: "bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900",
         accentColor: "gray",
@@ -327,7 +302,7 @@ const ViewPortfolio = () => {
         typographySize: "text-3xl md:text-4xl lg:text-5xl",
         titleWeight: "font-bold",
       },
-      "Tourism": {
+      "Template 3": {
         headerGradient: "from-purple-500 via-violet-500 to-purple-600",
         headerBg: "bg-gradient-to-br from-purple-500 via-violet-500 to-purple-600",
         accentColor: "purple",
@@ -3974,9 +3949,9 @@ const fetchPublicDataWithToken = async () => {
         }
       `}</style>
 
-      <div className={`min-h-screen ${portfolio?.designTemplate === "Agriculture and Fishery" ? "bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200" : portfolio?.designTemplate === "Tourism" ? "bg-white" : "bg-gray-50"} py-8 px-4`}>
+      <div className={`min-h-screen ${portfolio?.designTemplate === "Template 1" ? "bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200" : portfolio?.designTemplate === "Template 3" ? "bg-white" : "bg-gray-50"} py-8 px-4`}>
       <div className="max-w-7xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
-        {portfolio?.designTemplate === "Agriculture and Fishery" ? (
+        {portfolio?.designTemplate === "Template 1" ? (
           <div className="px-6 py-8 bg-gradient-to-br from-gray-50 via-gray-100 via-gray-200 to-gray-100" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left Sidebar - Profile Image, Contact, Skills, TESDA */}
@@ -6085,8 +6060,8 @@ const fetchPublicDataWithToken = async () => {
               </div>
             </div>
           </div>
-        ) : portfolio?.designTemplate === "Tourism" ? (
-          /* Tourism - Modern Centered Layout with Clean Résumé Style */
+        ) : portfolio?.designTemplate === "Template 3" ? (
+          /* Template 3 - Modern Centered Layout with Clean Résumé Style */
           <div className="bg-white min-h-screen" style={{ fontFamily: "'Montserrat', 'Roboto', 'Inter', sans-serif" }}>
             {/* Header Section - Clean Modern Résumé Style */}
             <div className="relative bg-white pt-16 pb-16 md:pt-20 md:pb-20 px-6 md:px-12 lg:px-16 border-b-2 border-gray-200">
