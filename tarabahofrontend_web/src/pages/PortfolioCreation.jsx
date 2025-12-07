@@ -2490,23 +2490,19 @@ const PortfolioCreation = () => {
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                     NC Level
                   </Typography>
-                  <Select
-                    size="lg"
-                    label="Select NC Level"
+                  <select
                     value={formData.ncLevel || ""}
-                    onChange={(val) => setFormData((prev) => ({ ...prev, ncLevel: val || "" }))}
-                    menuProps={selectMenuProps}
-                    containerProps={selectContainerProps}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, ncLevel: e.target.value || "" }))}
                     disabled={isLoading}
-                    className="!border-gray-300 focus:!border-blue-500"
+                    className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 bg-white transition-colors"
                   >
-                    <Option value="">None</Option>
+                    <option value="">Select NC Level</option>
                     {NC_LEVEL_OPTIONS.map((level) => (
-                      <Option key={level} value={level}>
+                      <option key={level} value={level}>
                         {level}
-                      </Option>
+                      </option>
                     ))}
-                  </Select>
+                  </select>
                 </div>
 
                 <div>
