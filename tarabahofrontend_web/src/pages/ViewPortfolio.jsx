@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Fragment } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
 import axios from "axios"
-import { FaPen, FaSave, FaTimes, FaPlus, FaTrash, FaCheckCircle, FaExclamationCircle, FaCamera, FaInfoCircle } from "react-icons/fa"
+import { FaPen, FaSave, FaTimes, FaPlus, FaTrash, FaCheckCircle, FaExclamationCircle, FaCamera, FaInfoCircle, FaEye, FaLock } from "react-icons/fa"
 import {
   Card,
   CardBody,
@@ -762,6 +762,65 @@ const fetchPublicDataWithToken = async () => {
         type: "error",
         title: "Failed to generate new share link",
         message: "Please try again or contact support.",
+        link: "",
+      })
+
+      // Auto-hide notification after 5 seconds
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, show: false }))
+      }, 5000)
+    }
+  }
+
+  const handleVisibilityToggle = async () => {
+    if (!portfolio || !portfolio.id || !isGraduateView) return
+
+    const newVisibility = portfolio.visibility === "PUBLIC" ? "PRIVATE" : "PUBLIC"
+    
+    try {
+      console.log("Updating visibility for portfolio ID:", portfolio.id, "to", newVisibility)
+      await axios.post(
+        `${BACKEND_URL}/api/portfolio/${portfolio.id}/visibility`,
+        newVisibility,
+        {
+          withCredentials: true,
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+        },
+      )
+
+      // Update local portfolio state
+      setPortfolio(prev => ({
+        ...prev,
+        visibility: newVisibility
+      }))
+
+      // Show success notification
+      setNotification({
+        show: true,
+        type: "success",
+        title: `Portfolio set to ${newVisibility === "PUBLIC" ? "Public" : "Private"}`,
+        message: newVisibility === "PUBLIC" 
+          ? "Your portfolio is now visible to everyone." 
+          : "Your portfolio is now private and only visible to you.",
+        link: "",
+      })
+
+      // Auto-hide notification after 3 seconds
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, show: false }))
+      }, 3000)
+    } catch (err) {
+      console.error("Failed to update visibility:", err)
+      
+      // Show error notification
+      setNotification({
+        show: true,
+        type: "error",
+        title: "Failed to update visibility",
+        message: err.response?.data || "Please try again or contact support.",
         link: "",
       })
 
@@ -3949,8 +4008,33 @@ const fetchPublicDataWithToken = async () => {
         }
       `}</style>
 
-      <div className={`min-h-screen ${portfolio?.designTemplate === "Template 1" ? "bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200" : portfolio?.designTemplate === "Template 3" ? "bg-white" : "bg-gray-50"} py-8 px-4`}>
-      <div className="max-w-7xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
+      <div className={`min-h-screen ${portfolio?.designTemplate === "Template 1" ? "bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200" : portfolio?.designTemplate === "Template 3" ? "bg-white" : "bg-gray-50"} py-8 px-4 relative`}>
+        {/* Visibility Toggle - Top Left (applies to all templates) */}
+        {isGraduateView && portfolio && (
+          <div className="absolute top-4 left-4 z-50">
+            <Button
+              variant="gradient"
+              color={portfolio.visibility === "PUBLIC" ? "green" : "gray"}
+              size="sm"
+              onClick={handleVisibilityToggle}
+              className="flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
+              title={`Portfolio is ${portfolio.visibility === "PUBLIC" ? "Public" : "Private"}. Click to change.`}
+            >
+              {portfolio.visibility === "PUBLIC" ? (
+                <>
+                  <FaEye className="w-4 h-4" />
+                  <span className="hidden sm:inline">Public</span>
+                </>
+              ) : (
+                <>
+                  <FaLock className="w-4 h-4" />
+                  <span className="hidden sm:inline">Private</span>
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+      <div className="max-w-7xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden relative">
         {portfolio?.designTemplate === "Template 1" ? (
           <div className="px-6 py-8 bg-gradient-to-br from-gray-50 via-gray-100 via-gray-200 to-gray-100" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
