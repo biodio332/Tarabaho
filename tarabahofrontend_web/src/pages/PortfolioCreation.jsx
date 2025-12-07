@@ -630,7 +630,7 @@ const PortfolioCreation = () => {
       // Clear error message after 1.5 seconds
       setTimeout(() => {
         setAvatarFileSizeError("")
-      }, 1500)
+      }, 5000)
       return
     }
     setAvatarFileSizeError("")
@@ -664,7 +664,7 @@ const PortfolioCreation = () => {
       // Clear error message after 1.5 seconds
       setTimeout(() => {
         setProjectFileSizeError("")
-      }, 1500)
+      }, 5000)
       return
     }
     setProjectFileSizeError("")
@@ -697,7 +697,7 @@ const PortfolioCreation = () => {
       // Clear error message after 1.5 seconds
       setTimeout(() => {
         setCertificateFileSizeError("")
-      }, 1500)
+      }, 5000)
       return
     }
     setCertificateFileSizeError("")

@@ -1246,7 +1246,7 @@ const fetchPublicDataWithToken = async () => {
       // Clear error message after 1.5 seconds
       setTimeout(() => {
         setAvatarFileSizeError("")
-      }, 1500)
+      }, 3000)
       return
     }
     setAvatarFileSizeError("")
@@ -1279,7 +1279,7 @@ const fetchPublicDataWithToken = async () => {
       // Clear error message after 1.5 seconds
       setTimeout(() => {
         setCertificateFileSizeError("")
-      }, 1500)
+      }, 3000)
       return
     }
     setCertificateFileSizeError("")
@@ -1312,7 +1312,7 @@ const fetchPublicDataWithToken = async () => {
       // Clear error message after 1.5 seconds
       setTimeout(() => {
         setProjectFileSizeError("")
-      }, 1500)
+      }, 3000)
       return
     }
     setProjectFileSizeError("")
