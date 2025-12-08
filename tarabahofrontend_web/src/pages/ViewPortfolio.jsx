@@ -67,8 +67,18 @@ const ViewPortfolio = () => {
   const [modifiedProjects, setModifiedProjects] = useState(new Set())
   const [isAddingCertificate, setIsAddingCertificate] = useState(false)
   const [isAddingProject, setIsAddingProject] = useState(false)
+  const [isAddingExperience, setIsAddingExperience] = useState(false)
+  const [isAddingAward, setIsAddingAward] = useState(false)
+  const [isAddingEducation, setIsAddingEducation] = useState(false)
+  const [isAddingMembership, setIsAddingMembership] = useState(false)
+  const [isAddingReference, setIsAddingReference] = useState(false)
   const [editingCertificateId, setEditingCertificateId] = useState(null)
   const [editingProjectId, setEditingProjectId] = useState(null)
+  const [editingExperienceId, setEditingExperienceId] = useState(null)
+  const [editingAwardId, setEditingAwardId] = useState(null)
+  const [editingEducationId, setEditingEducationId] = useState(null)
+  const [editingMembershipId, setEditingMembershipId] = useState(null)
+  const [editingReferenceId, setEditingReferenceId] = useState(null)
   const [newCertificate, setNewCertificate] = useState({
     courseName: "",
     certificateNumber: "",
@@ -82,9 +92,43 @@ const ViewPortfolio = () => {
     endDate: "",
     projectImageFile: null,
   })
+  const [newExperience, setNewExperience] = useState({
+    jobTitle: "",
+    company: "",
+    startDate: "",
+    endDate: "",
+    responsibilities: "",
+  })
+  const [newAward, setNewAward] = useState({
+    title: "",
+    issuer: "",
+    dateReceived: "",
+  })
+  const [newEducation, setNewEducation] = useState({
+    courseName: "",
+    institution: "",
+    completionDate: "",
+  })
+  const [newMembership, setNewMembership] = useState({
+    organization: "",
+    membershipType: "",
+    startDate: "",
+  })
+  const [newReference, setNewReference] = useState({
+    name: "",
+    relationship: "",
+    company: "",
+    email: "",
+    phone: "",
+  })
   const [projectSubmitAttempted, setProjectSubmitAttempted] = useState(false)
   const [certificateSubmitAttempted, setCertificateSubmitAttempted] = useState(false)
   const [experienceSubmitAttempted, setExperienceSubmitAttempted] = useState({})
+  const [experienceFormSubmitAttempted, setExperienceFormSubmitAttempted] = useState(false)
+  const [awardFormSubmitAttempted, setAwardFormSubmitAttempted] = useState(false)
+  const [educationFormSubmitAttempted, setEducationFormSubmitAttempted] = useState(false)
+  const [membershipFormSubmitAttempted, setMembershipFormSubmitAttempted] = useState(false)
+  const [referenceFormSubmitAttempted, setReferenceFormSubmitAttempted] = useState(false)
   const [awardSubmitAttempted, setAwardSubmitAttempted] = useState({})
   const [educationSubmitAttempted, setEducationSubmitAttempted] = useState({})
   const [membershipSubmitAttempted, setMembershipSubmitAttempted] = useState({})
@@ -1034,8 +1078,18 @@ const fetchPublicDataWithToken = async () => {
       // Reset certificate and project editing states
       setIsAddingCertificate(false)
       setIsAddingProject(false)
+      setIsAddingExperience(false)
+      setIsAddingAward(false)
+      setIsAddingEducation(false)
+      setIsAddingMembership(false)
+      setIsAddingReference(false)
       setEditingCertificateId(null)
       setEditingProjectId(null)
+      setEditingExperienceId(null)
+      setEditingAwardId(null)
+      setEditingEducationId(null)
+      setEditingMembershipId(null)
+      setEditingReferenceId(null)
       setNewCertificate({
         courseName: "",
         certificateNumber: "",
@@ -1048,6 +1102,35 @@ const fetchPublicDataWithToken = async () => {
         startDate: "",
         endDate: "",
         projectImageFile: null,
+      })
+      setNewExperience({
+        jobTitle: "",
+        company: "",
+        startDate: "",
+        endDate: "",
+        responsibilities: "",
+      })
+      setNewAward({
+        title: "",
+        issuer: "",
+        dateReceived: "",
+      })
+      setNewEducation({
+        courseName: "",
+        institution: "",
+        completionDate: "",
+      })
+      setNewMembership({
+        organization: "",
+        membershipType: "",
+        startDate: "",
+      })
+      setNewReference({
+        name: "",
+        relationship: "",
+        company: "",
+        email: "",
+        phone: "",
       })
       setModifiedCertificates(new Set())
       setModifiedProjects(new Set())
@@ -1090,6 +1173,45 @@ const fetchPublicDataWithToken = async () => {
       })
       setModifiedCertificates(new Set())
       setModifiedProjects(new Set())
+      setIsAddingExperience(false)
+      setIsAddingAward(false)
+      setIsAddingEducation(false)
+      setIsAddingMembership(false)
+      setIsAddingReference(false)
+      setEditingExperienceId(null)
+      setEditingAwardId(null)
+      setEditingEducationId(null)
+      setEditingMembershipId(null)
+      setEditingReferenceId(null)
+      setNewExperience({
+        jobTitle: "",
+        company: "",
+        startDate: "",
+        endDate: "",
+        responsibilities: "",
+      })
+      setNewAward({
+        title: "",
+        issuer: "",
+        dateReceived: "",
+      })
+      setNewEducation({
+        courseName: "",
+        institution: "",
+        completionDate: "",
+      })
+      setNewMembership({
+        organization: "",
+        membershipType: "",
+        startDate: "",
+      })
+      setNewReference({
+        name: "",
+        relationship: "",
+        company: "",
+        email: "",
+        phone: "",
+      })
     }
     setIsEditMode(!isEditMode)
   }
@@ -1109,10 +1231,32 @@ const fetchPublicDataWithToken = async () => {
       setEditingPortfolio(portfolioCopy)
     }
     setEditingSections((prev) => {
-      const newState = {
-        ...prev,
-        [section]: !prev[section],
-      }
+      const isCurrentlyOpen = prev[section]
+      
+      // If opening a section (it was closed), close all others and open only this one
+      // If closing a section (it was open), just close it
+      const newState = isCurrentlyOpen
+        ? {
+            // Closing: just toggle this section off, keep others as they were
+            ...prev,
+            [section]: false,
+          }
+        : {
+            // Opening: close all sections first, then open only this one
+            header: false,
+            contact: false,
+            skills: false,
+            tesda: false,
+            certificates: false,
+            experience: false,
+            projects: false,
+            awards: false,
+            education: false,
+            memberships: false,
+            references: false,
+            [section]: true, // Open only the clicked section
+          }
+      
       // Initialize isNcLevelAdditional when entering TESDA edit mode
       if (section === "tesda" && newState.tesda) {
         const currentNcLevel = editingPortfolio?.ncLevel || portfolio?.ncLevel
@@ -1467,6 +1611,42 @@ const fetchPublicDataWithToken = async () => {
     return { valid: true }
   }
 
+  const validateAwardDate = (dateReceived) => {
+    const today = new Date().toISOString().split('T')[0]
+    
+    if (!dateReceived) {
+      return { valid: false, message: "Please fill in the date received." }
+    }
+    if (dateReceived > today) {
+      return { valid: false, message: "Date Received cannot be a future date." }
+    }
+    return { valid: true }
+  }
+
+  const validateEducationDate = (completionDate) => {
+    const today = new Date().toISOString().split('T')[0]
+    
+    if (!completionDate) {
+      return { valid: false, message: "Please fill in the completion date." }
+    }
+    if (completionDate > today) {
+      return { valid: false, message: "Completion Date cannot be a future date." }
+    }
+    return { valid: true }
+  }
+
+  const validateMembershipDate = (startDate) => {
+    const today = new Date().toISOString().split('T')[0]
+    
+    if (!startDate) {
+      return { valid: false, message: "Please fill in the start date." }
+    }
+    if (startDate > today) {
+      return { valid: false, message: "Start Date cannot be a future date." }
+    }
+    return { valid: true }
+  }
+
   const handleCertificateInputChange = (e) => {
     const { name, value } = e.target
     
@@ -1785,6 +1965,689 @@ const fetchPublicDataWithToken = async () => {
   const handleRemoveProject = (id) => {
     setProjects((prev) => prev.filter((proj) => proj.id !== id))
     setModifiedProjects((prev) => new Set(prev).add(id))
+  }
+
+  const isExperienceFormValid = () => {
+    return (
+      newExperience.jobTitle &&
+      newExperience.jobTitle.trim() !== "" &&
+      newExperience.company &&
+      newExperience.company.trim() !== "" &&
+      newExperience.startDate &&
+      newExperience.startDate.trim() !== ""
+    )
+  }
+
+  const handleExperienceInputChange = (e) => {
+    const { name, value } = e.target
+    if (name === "startDate" || name === "endDate") {
+      setSaveError("")
+      if (value) {
+        const correctedValue = validateAndCorrectDate(value)
+        setNewExperience((prev) => ({
+          ...prev,
+          [name]: correctedValue,
+        }))
+      } else {
+        setNewExperience((prev) => ({
+          ...prev,
+          [name]: value,
+        }))
+      }
+    } else {
+      setNewExperience((prev) => ({
+        ...prev,
+        [name]: value,
+      }))
+    }
+  }
+
+  const handleExperienceInputBlur = (e) => {
+    const { name, value } = e.target
+    if (name === "startDate" || name === "endDate") {
+      if (value) {
+        const correctedValue = validateAndCorrectDate(value)
+        setNewExperience((prev) => ({
+          ...prev,
+          [name]: correctedValue,
+        }))
+      }
+    }
+  }
+
+  const handleAddExperience = () => {
+    setExperienceFormSubmitAttempted(true)
+    if (!isExperienceFormValid()) {
+      setSaveError("Please fill in all required experience fields (Job Title, Company, Start Date).")
+      return
+    }
+    // Validate dates - if endDate is provided, use full validation; otherwise just validate startDate
+    if (newExperience.endDate && newExperience.endDate.trim() !== "") {
+      const dateValidation = validateExperienceDates(newExperience.startDate, newExperience.endDate)
+      if (!dateValidation.valid) {
+        setSaveError(dateValidation.message)
+        return
+      }
+    } else {
+      // If endDate is not provided, just validate startDate is not in the future
+      const today = new Date().toISOString().split('T')[0]
+      if (newExperience.startDate > today) {
+        setSaveError("Start Date cannot be a future date.")
+        return
+      }
+    }
+    const newExp = {
+      id: `new-${Date.now()}`,
+      jobTitle: newExperience.jobTitle,
+      company: newExperience.company,
+      employer: newExperience.company,
+      startDate: newExperience.startDate,
+      endDate: newExperience.endDate || "",
+      responsibilities: newExperience.responsibilities || "",
+      description: newExperience.responsibilities || "",
+    }
+    console.log(`[Template: ${portfolio?.designTemplate || 'default'}] ✅ Experience created with ID:`, newExp.id, "Data:", newExp)
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      experiences: [...(prev.experiences || []), newExp],
+    }))
+    setNewExperience({
+      jobTitle: "",
+      company: "",
+      startDate: "",
+      endDate: "",
+      responsibilities: "",
+    })
+    setIsAddingExperience(false)
+    setExperienceFormSubmitAttempted(false)
+    setSaveError("")
+  }
+
+  const handleEditExperience = (exp) => {
+    setEditingExperienceId(exp.id)
+    setExperienceFormSubmitAttempted(false)
+    const formatDateForInput = (dateStr) => {
+      if (!dateStr) return ""
+      if (!dateStr.includes("T")) return dateStr
+      return dateStr.split("T")[0]
+    }
+    setNewExperience({
+      jobTitle: exp.jobTitle || "",
+      company: exp.company || exp.employer || "",
+      startDate: formatDateForInput(exp.startDate) || "",
+      endDate: formatDateForInput(exp.endDate) || "",
+      responsibilities: exp.responsibilities || exp.description || "",
+    })
+    setIsAddingExperience(true)
+  }
+
+  const handleUpdateExperience = () => {
+    setExperienceFormSubmitAttempted(true)
+    if (!isExperienceFormValid()) {
+      setSaveError("Please fill in all required experience fields (Job Title, Company, Start Date).")
+      return
+    }
+    // Validate dates - if endDate is provided, use full validation; otherwise just validate startDate
+    if (newExperience.endDate && newExperience.endDate.trim() !== "") {
+      const dateValidation = validateExperienceDates(newExperience.startDate, newExperience.endDate)
+      if (!dateValidation.valid) {
+        setSaveError(dateValidation.message)
+        return
+      }
+    } else {
+      // If endDate is not provided, just validate startDate is not in the future
+      const today = new Date().toISOString().split('T')[0]
+      if (newExperience.startDate > today) {
+        setSaveError("Start Date cannot be a future date.")
+        return
+      }
+    }
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      experiences: (prev.experiences || []).map((exp) =>
+        exp.id === editingExperienceId
+          ? {
+              ...exp,
+              jobTitle: newExperience.jobTitle,
+              company: newExperience.company,
+              employer: newExperience.company,
+              startDate: newExperience.startDate,
+              endDate: newExperience.endDate || "",
+              responsibilities: newExperience.responsibilities || "",
+              description: newExperience.responsibilities || "",
+            }
+          : exp,
+      ),
+    }))
+    setNewExperience({
+      jobTitle: "",
+      company: "",
+      startDate: "",
+      endDate: "",
+      responsibilities: "",
+    })
+    setEditingExperienceId(null)
+    setIsAddingExperience(false)
+    setExperienceFormSubmitAttempted(false)
+    setSaveError("")
+  }
+
+  // Awards & Recognition handlers
+  const isAwardFormValid = () => {
+    return (
+      newAward.title &&
+      newAward.title.trim() !== "" &&
+      newAward.dateReceived &&
+      newAward.dateReceived.trim() !== ""
+    )
+  }
+
+  const handleAwardInputChange = (e) => {
+    const { name, value } = e.target
+    if (name === "dateReceived") {
+      setSaveError("")
+      if (value) {
+        const correctedValue = validateAndCorrectDate(value)
+        setNewAward((prev) => ({
+          ...prev,
+          [name]: correctedValue,
+        }))
+      } else {
+        setNewAward((prev) => ({
+          ...prev,
+          [name]: value,
+        }))
+      }
+    } else {
+      setNewAward((prev) => ({
+        ...prev,
+        [name]: value,
+      }))
+    }
+  }
+
+  const handleAwardInputBlur = (e) => {
+    const { name, value } = e.target
+    if (name === "dateReceived" && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      setNewAward((prev) => ({
+        ...prev,
+        [name]: correctedValue,
+      }))
+    }
+  }
+
+  const handleAddAward = () => {
+    setAwardFormSubmitAttempted(true)
+    if (!isAwardFormValid()) {
+      setSaveError("Please fill in all required award fields (Title, Date Received).")
+      return
+    }
+    const dateValidation = validateAwardDate(newAward.dateReceived)
+    if (!dateValidation.valid) {
+      setSaveError(dateValidation.message)
+      return
+    }
+    const newAwardItem = {
+      id: `new-${Date.now()}`,
+      title: newAward.title,
+      issuer: newAward.issuer || "",
+      dateReceived: newAward.dateReceived,
+    }
+    console.log(`[Template: ${portfolio?.designTemplate || 'default'}] ✅ Award created with ID:`, newAwardItem.id, "Data:", newAwardItem)
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      awardsRecognitions: [...(prev.awardsRecognitions || []), newAwardItem],
+    }))
+    setNewAward({
+      title: "",
+      issuer: "",
+      dateReceived: "",
+    })
+    setIsAddingAward(false)
+    setAwardFormSubmitAttempted(false)
+    setSaveError("")
+  }
+
+  const handleEditAward = (award) => {
+    setEditingAwardId(award.id)
+    setAwardFormSubmitAttempted(false)
+    const formatDateForInput = (dateStr) => {
+      if (!dateStr) return ""
+      if (!dateStr.includes("T")) return dateStr
+      return dateStr.split("T")[0]
+    }
+    setNewAward({
+      title: award.title || "",
+      issuer: award.issuer || "",
+      dateReceived: formatDateForInput(award.dateReceived) || "",
+    })
+    setIsAddingAward(true)
+  }
+
+  const handleUpdateAward = () => {
+    setAwardFormSubmitAttempted(true)
+    if (!isAwardFormValid()) {
+      setSaveError("Please fill in all required award fields (Title, Date Received).")
+      return
+    }
+    const dateValidation = validateAwardDate(newAward.dateReceived)
+    if (!dateValidation.valid) {
+      setSaveError(dateValidation.message)
+      return
+    }
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      awardsRecognitions: (prev.awardsRecognitions || []).map((award) =>
+        award.id === editingAwardId
+          ? {
+              ...award,
+              title: newAward.title,
+              issuer: newAward.issuer || "",
+              dateReceived: newAward.dateReceived,
+            }
+          : award,
+      ),
+    }))
+    setNewAward({
+      title: "",
+      issuer: "",
+      dateReceived: "",
+    })
+    setEditingAwardId(null)
+    setIsAddingAward(false)
+    setAwardFormSubmitAttempted(false)
+    setSaveError("")
+  }
+
+  // Continuing Education handlers
+  const isEducationFormValid = () => {
+    return (
+      newEducation.courseName &&
+      newEducation.courseName.trim() !== "" &&
+      newEducation.completionDate &&
+      newEducation.completionDate.trim() !== ""
+    )
+  }
+
+  const handleEducationInputChange = (e) => {
+    const { name, value } = e.target
+    if (name === "completionDate") {
+      setSaveError("")
+      if (value) {
+        const correctedValue = validateAndCorrectDate(value)
+        setNewEducation((prev) => ({
+          ...prev,
+          [name]: correctedValue,
+        }))
+      } else {
+        setNewEducation((prev) => ({
+          ...prev,
+          [name]: value,
+        }))
+      }
+    } else {
+      setNewEducation((prev) => ({
+        ...prev,
+        [name]: value,
+      }))
+    }
+  }
+
+  const handleEducationInputBlur = (e) => {
+    const { name, value } = e.target
+    if (name === "completionDate" && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      setNewEducation((prev) => ({
+        ...prev,
+        [name]: correctedValue,
+      }))
+    }
+  }
+
+  const handleAddEducation = () => {
+    setEducationFormSubmitAttempted(true)
+    if (!isEducationFormValid()) {
+      setSaveError("Please fill in all required education fields (Course Name, Completion Date).")
+      return
+    }
+    const dateValidation = validateEducationDate(newEducation.completionDate)
+    if (!dateValidation.valid) {
+      setSaveError(dateValidation.message)
+      return
+    }
+    const newEducationItem = {
+      id: `new-${Date.now()}`,
+      courseName: newEducation.courseName,
+      institution: newEducation.institution || "",
+      completionDate: newEducation.completionDate,
+    }
+    console.log(`[Template: ${portfolio?.designTemplate || 'default'}] ✅ Education created with ID:`, newEducationItem.id, "Data:", newEducationItem)
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      continuingEducations: [...(prev.continuingEducations || []), newEducationItem],
+    }))
+    setNewEducation({
+      courseName: "",
+      institution: "",
+      completionDate: "",
+    })
+    setIsAddingEducation(false)
+    setEducationFormSubmitAttempted(false)
+    setSaveError("")
+  }
+
+  const handleEditEducation = (edu) => {
+    setEditingEducationId(edu.id)
+    setEducationFormSubmitAttempted(false)
+    const formatDateForInput = (dateStr) => {
+      if (!dateStr) return ""
+      if (!dateStr.includes("T")) return dateStr
+      return dateStr.split("T")[0]
+    }
+    setNewEducation({
+      courseName: edu.courseName || "",
+      institution: edu.institution || "",
+      completionDate: formatDateForInput(edu.completionDate) || "",
+    })
+    setIsAddingEducation(true)
+  }
+
+  const handleUpdateEducation = () => {
+    setEducationFormSubmitAttempted(true)
+    if (!isEducationFormValid()) {
+      setSaveError("Please fill in all required education fields (Course Name, Completion Date).")
+      return
+    }
+    const dateValidation = validateEducationDate(newEducation.completionDate)
+    if (!dateValidation.valid) {
+      setSaveError(dateValidation.message)
+      return
+    }
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      continuingEducations: (prev.continuingEducations || []).map((edu) =>
+        edu.id === editingEducationId
+          ? {
+              ...edu,
+              courseName: newEducation.courseName,
+              institution: newEducation.institution || "",
+              completionDate: newEducation.completionDate,
+            }
+          : edu,
+      ),
+    }))
+    setNewEducation({
+      courseName: "",
+      institution: "",
+      completionDate: "",
+    })
+    setEditingEducationId(null)
+    setIsAddingEducation(false)
+    setEducationFormSubmitAttempted(false)
+    setSaveError("")
+  }
+
+  // Professional Memberships handlers
+  const isMembershipFormValid = () => {
+    return (
+      newMembership.organization &&
+      newMembership.organization.trim() !== "" &&
+      newMembership.startDate &&
+      newMembership.startDate.trim() !== ""
+    )
+  }
+
+  const handleMembershipInputChange = (e) => {
+    const { name, value } = e.target
+    if (name === "startDate") {
+      setSaveError("")
+      if (value) {
+        const correctedValue = validateAndCorrectDate(value)
+        setNewMembership((prev) => ({
+          ...prev,
+          [name]: correctedValue,
+        }))
+      } else {
+        setNewMembership((prev) => ({
+          ...prev,
+          [name]: value,
+        }))
+      }
+    } else {
+      setNewMembership((prev) => ({
+        ...prev,
+        [name]: value,
+      }))
+    }
+  }
+
+  const handleMembershipInputBlur = (e) => {
+    const { name, value } = e.target
+    if (name === "startDate" && value) {
+      const correctedValue = validateAndCorrectDate(value)
+      setNewMembership((prev) => ({
+        ...prev,
+        [name]: correctedValue,
+      }))
+    }
+  }
+
+  const handleAddMembership = () => {
+    setMembershipFormSubmitAttempted(true)
+    if (!isMembershipFormValid()) {
+      setSaveError("Please fill in all required membership fields (Organization, Start Date).")
+      return
+    }
+    const dateValidation = validateMembershipDate(newMembership.startDate)
+    if (!dateValidation.valid) {
+      setSaveError(dateValidation.message)
+      return
+    }
+    const newMembershipItem = {
+      id: `new-${Date.now()}`,
+      organization: newMembership.organization,
+      membershipType: newMembership.membershipType || "",
+      startDate: newMembership.startDate,
+    }
+    console.log(`[Template: ${portfolio?.designTemplate || 'default'}] ✅ Membership created with ID:`, newMembershipItem.id, "Data:", newMembershipItem)
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      professionalMemberships: [...(prev.professionalMemberships || []), newMembershipItem],
+    }))
+    setNewMembership({
+      organization: "",
+      membershipType: "",
+      startDate: "",
+    })
+    setIsAddingMembership(false)
+    setMembershipFormSubmitAttempted(false)
+    setSaveError("")
+  }
+
+  const handleEditMembership = (mem) => {
+    setEditingMembershipId(mem.id)
+    setMembershipFormSubmitAttempted(false)
+    const formatDateForInput = (dateStr) => {
+      if (!dateStr) return ""
+      if (!dateStr.includes("T")) return dateStr
+      return dateStr.split("T")[0]
+    }
+    setNewMembership({
+      organization: mem.organization || "",
+      membershipType: mem.membershipType || "",
+      startDate: formatDateForInput(mem.startDate) || "",
+    })
+    setIsAddingMembership(true)
+  }
+
+  const handleUpdateMembership = () => {
+    setMembershipFormSubmitAttempted(true)
+    if (!isMembershipFormValid()) {
+      setSaveError("Please fill in all required membership fields (Organization, Start Date).")
+      return
+    }
+    const dateValidation = validateMembershipDate(newMembership.startDate)
+    if (!dateValidation.valid) {
+      setSaveError(dateValidation.message)
+      return
+    }
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      professionalMemberships: (prev.professionalMemberships || []).map((mem) =>
+        mem.id === editingMembershipId
+          ? {
+              ...mem,
+              organization: newMembership.organization,
+              membershipType: newMembership.membershipType || "",
+              startDate: newMembership.startDate,
+            }
+          : mem,
+      ),
+    }))
+    setNewMembership({
+      organization: "",
+      membershipType: "",
+      startDate: "",
+    })
+    setEditingMembershipId(null)
+    setIsAddingMembership(false)
+    setMembershipFormSubmitAttempted(false)
+    setSaveError("")
+  }
+
+  // References handlers
+  const isReferenceFormValid = () => {
+    return (
+      newReference.name &&
+      newReference.name.trim() !== "" &&
+      newReference.email &&
+      newReference.email.trim() !== "" &&
+      (newReference.phone && newReference.phone.trim() !== "")
+    )
+  }
+
+  const handleReferenceInputChange = (e) => {
+    const { name, value } = e.target
+    if (name === "phone" || name === "contact") {
+      // Strip non-digits and limit to 10 digits
+      const numericValue = value.replace(/\D/g, "").slice(0, 10)
+      setNewReference((prev) => ({
+        ...prev,
+        phone: numericValue,
+        contact: numericValue,
+      }))
+      // Validate phone
+      if (numericValue) {
+        validateField("referencePhone", numericValue)
+      }
+    } else if (name === "email") {
+      setNewReference((prev) => ({
+        ...prev,
+        [name]: value,
+      }))
+      // Validate email
+      if (value) {
+        validateField("referenceEmail", value)
+      }
+    } else {
+      setNewReference((prev) => ({
+        ...prev,
+        [name]: value,
+      }))
+    }
+  }
+
+  const handleAddReference = () => {
+    setReferenceFormSubmitAttempted(true)
+    if (!isReferenceFormValid()) {
+      setSaveError("Please fill in all required reference fields (Name, Email, Phone).")
+      return
+    }
+    // Check for validation errors
+    if (fieldErrors.referenceEmail || fieldErrors.referencePhone) {
+      setSaveError("Please fix the validation errors before adding the reference.")
+      return
+    }
+    const newReferenceItem = {
+      id: `new-${Date.now()}`,
+      name: newReference.name,
+      relationship: newReference.relationship || "",
+      position: newReference.relationship || "",
+      company: newReference.company || "",
+      email: newReference.email,
+      phone: newReference.phone || "",
+      contact: newReference.phone || "",
+    }
+    console.log(`[Template: ${portfolio?.designTemplate || 'default'}] ✅ Reference created with ID:`, newReferenceItem.id, "Data:", newReferenceItem)
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      references: [...(prev.references || []), newReferenceItem],
+    }))
+    setNewReference({
+      name: "",
+      relationship: "",
+      company: "",
+      email: "",
+      phone: "",
+    })
+    setIsAddingReference(false)
+    setReferenceFormSubmitAttempted(false)
+    setSaveError("")
+  }
+
+  const handleEditReference = (ref) => {
+    setEditingReferenceId(ref.id)
+    setReferenceFormSubmitAttempted(false)
+    setNewReference({
+      name: ref.name || "",
+      relationship: ref.relationship || ref.position || "",
+      company: ref.company || "",
+      email: ref.email || "",
+      phone: ref.phone || ref.contact || "",
+    })
+    setIsAddingReference(true)
+  }
+
+  const handleUpdateReference = () => {
+    setReferenceFormSubmitAttempted(true)
+    if (!isReferenceFormValid()) {
+      setSaveError("Please fill in all required reference fields (Name, Email, Phone).")
+      return
+    }
+    // Check for validation errors
+    if (fieldErrors.referenceEmail || fieldErrors.referencePhone) {
+      setSaveError("Please fix the validation errors before updating the reference.")
+      return
+    }
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      references: (prev.references || []).map((ref) =>
+        ref.id === editingReferenceId
+          ? {
+              ...ref,
+              name: newReference.name,
+              relationship: newReference.relationship || "",
+              position: newReference.relationship || "",
+              company: newReference.company || "",
+              email: newReference.email,
+              phone: newReference.phone || "",
+              contact: newReference.phone || "",
+            }
+          : ref,
+      ),
+    }))
+    setNewReference({
+      name: "",
+      relationship: "",
+      company: "",
+      email: "",
+      phone: "",
+    })
+    setEditingReferenceId(null)
+    setIsAddingReference(false)
+    setReferenceFormSubmitAttempted(false)
+    setSaveError("")
   }
 
   const handleCertificateImageClick = () => certificateFileInputRef.current?.click()
@@ -2935,6 +3798,7 @@ const fetchPublicDataWithToken = async () => {
             type: skill.type && skill.type.trim() !== "" ? skill.type.trim() : "TECHNICAL",
             proficiencyLevel: skill.proficiencyLevel && skill.proficiencyLevel.trim() !== "" ? skill.proficiencyLevel.trim() : null,
           })) || []
+        console.log(`[Template: ${portfolio?.designTemplate || 'default'}] 💾 Saving Skills section - IDs:`, payload.skills.map(s => s.id))
       } else if (section === "tesda") {
         // Check for TESDA registration number validation errors
         if (fieldErrors.tesdaRegistrationNumber) {
@@ -3431,6 +4295,7 @@ const fetchPublicDataWithToken = async () => {
           startDate: exp.startDate && exp.startDate.trim() !== "" ? exp.startDate : null,
           endDate: exp.endDate && exp.endDate.trim() !== "" ? exp.endDate : null,
         })) || []
+      console.log(`[Template: ${portfolio?.designTemplate || 'default'}] 💾 Saving Experiences section - IDs:`, payload.experiences.map(e => e.id))
       payload.awardsRecognitions = editingPortfolio.awardsRecognitions
         ?.filter((award) => award.title && award.title.trim() !== "" && award.dateReceived && award.dateReceived.trim() !== "") // Filter out entries missing required fields
         .map((award) => ({
@@ -3439,6 +4304,7 @@ const fetchPublicDataWithToken = async () => {
           issuer: award.issuer && award.issuer.trim() !== "" ? award.issuer.trim() : null,
           dateReceived: award.dateReceived && award.dateReceived.trim() !== "" ? award.dateReceived : null,
         })) || []
+      console.log(`[Template: ${portfolio?.designTemplate || 'default'}] 💾 Saving Awards section - IDs:`, payload.awardsRecognitions.map(a => a.id))
       payload.continuingEducations = editingPortfolio.continuingEducations
         ?.filter((edu) => edu.courseName && edu.courseName.trim() !== "" && edu.completionDate && edu.completionDate.trim() !== "") // Filter out entries missing required fields
         .map((edu) => ({
@@ -3447,6 +4313,7 @@ const fetchPublicDataWithToken = async () => {
           institution: edu.institution && edu.institution.trim() !== "" ? edu.institution.trim() : null,
           completionDate: edu.completionDate && edu.completionDate.trim() !== "" ? edu.completionDate : null,
         })) || []
+      console.log(`[Template: ${portfolio?.designTemplate || 'default'}] 💾 Saving Education section - IDs:`, payload.continuingEducations.map(e => e.id))
       payload.professionalMemberships = editingPortfolio.professionalMemberships
         ?.filter((mem) => mem.organization && mem.organization.trim() !== "" && mem.startDate && mem.startDate.trim() !== "") // Filter out entries missing required fields
         .map((mem) => ({
@@ -3455,6 +4322,7 @@ const fetchPublicDataWithToken = async () => {
           membershipType: mem.membershipType && mem.membershipType.trim() !== "" ? mem.membershipType.trim() : null,
           startDate: mem.startDate && mem.startDate.trim() !== "" ? mem.startDate : null,
         })) || []
+      console.log(`[Template: ${portfolio?.designTemplate || 'default'}] 💾 Saving Memberships section - IDs:`, payload.professionalMemberships.map(m => m.id))
       payload.references = editingPortfolio.references
         ?.filter((ref) => {
           // Filter out entries missing required fields
@@ -3494,6 +4362,7 @@ const fetchPublicDataWithToken = async () => {
               phone: phoneValue,
             }
           }) || []
+      console.log(`[Template: ${portfolio?.designTemplate || 'default'}] 💾 Saving References section - IDs:`, payload.references.map(r => r.id))
 
       // Add certificate and project IDs if they exist
       if (section === "certificates") {
@@ -3504,8 +4373,25 @@ const fetchPublicDataWithToken = async () => {
           })
         ).data.map((cert) => cert.id)
         payload.certificateIds = existingCertificateIds
-      } else if (editingPortfolio.certificateIds || portfolio.certificateIds) {
-        payload.certificateIds = editingPortfolio.certificateIds || portfolio.certificateIds
+      } else {
+        // For all other sections, always fetch current certificates from database
+        // and filter to only include certificates that belong to this portfolio
+        // This prevents certificates from losing their portfolioId when saving other sections
+        try {
+          const certificatesResponse = await axios.get(`${BACKEND_URL}/api/certificate/graduate/${graduateId}`, {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          // Filter certificates to only include those that belong to this portfolio
+          const portfolioCertificateIds = certificatesResponse.data
+            .filter((cert) => cert.portfolioId === portfolioId)
+            .map((cert) => cert.id)
+          payload.certificateIds = portfolioCertificateIds
+        } catch (err) {
+          console.error("Failed to fetch certificates for portfolio:", err)
+          // Fallback to existing certificateIds if fetch fails
+          payload.certificateIds = editingPortfolio.certificateIds || portfolio.certificateIds || []
+        }
       }
 
       if (section === "projects") {
@@ -4108,7 +4994,7 @@ const fetchPublicDataWithToken = async () => {
                     )}
                   </div>
                   <div className="space-y-3">
-                    {(portfolio.email || isEditMode) && (
+                    {(portfolio.email || (isEditMode && editingSections.contact)) && (
                       <div>
                         <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
                           Email
@@ -4136,7 +5022,7 @@ const fetchPublicDataWithToken = async () => {
                         )}
                       </div>
                     )}
-                    {(portfolio.phone || isEditMode) && (
+                    {(portfolio.phone || (isEditMode && editingSections.contact)) && (
                       <div>
                         <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
                           Phone
@@ -4172,7 +5058,7 @@ const fetchPublicDataWithToken = async () => {
                         )}
                       </div>
                     )}
-                    {(portfolio.website || isEditMode) && (
+                    {(portfolio.website || (isEditMode && editingSections.contact)) && (
                       <div>
                         <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
                           Website
@@ -4351,9 +5237,7 @@ const fetchPublicDataWithToken = async () => {
                       )}
                     </div>
                   ) : (
-                    <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                      No skills added yet
-                    </Typography>
+                    <div></div>
                   )}
                 </div>
 
@@ -4939,11 +5823,6 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                     ) : (
                       <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
-                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No certificates added yet"}
-                        </Typography>
                       </div>
                     )}
                   </div>
@@ -4966,125 +5845,136 @@ const fetchPublicDataWithToken = async () => {
                       )}
                     </div>
                     {isEditMode && editingSections.experience ? (
-                      <div className="space-y-8">
-                        {(editingPortfolio?.experiences || []).map((exp, index) => (
-                          <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-8 pb-8`}>
+                      <div className="space-y-4">
+                        {isAddingExperience && (
+                          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                            <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                              {editingExperienceId ? "Edit Experience" : "Add New Experience"}
+                            </Typography>
                             <div className="space-y-4">
-                              <div className="flex justify-end -mt-2">
-                                <IconButton
-                                  size="md"
-                                  variant="text"
-                                  color="red"
-                                  onClick={() => handleRemoveArrayItem("experiences", index)}
-                                  aria-label="Remove experience"
-                                >
-                                  <FaTrash className="w-4 h-4" />
-                                </IconButton>
-                              </div>
                               <div>
-                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                                   Job Title *
                                 </Typography>
                                 <Input
-                                  size="md"
-                                  value={exp.jobTitle || ""}
-                                  onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
+                                  size="lg"
+                                  name="jobTitle"
+                                  value={newExperience.jobTitle}
+                                  onChange={handleExperienceInputChange}
                                   placeholder="e.g. Sous Chef"
                                   required
-                                  className="!border-gray-300"
+                                  className="!border-gray-300 focus:!border-blue-500"
                                 />
+                                {experienceFormSubmitAttempted && !newExperience.jobTitle && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Please fill in the job title.
+                                  </Typography>
+                                )}
                               </div>
                               <div>
-                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                                   Company / Employer *
                                 </Typography>
                                 <Input
-                                  size="md"
-                                  value={exp.company || exp.employer || ""}
-                                  onChange={(e) => handleArrayFieldChange("experiences", index, "company", e.target.value)}
+                                  size="lg"
+                                  name="company"
+                                  value={newExperience.company}
+                                  onChange={handleExperienceInputChange}
                                   placeholder="e.g. Bistro Manila"
                                   required
-                                  className="!border-gray-300"
+                                  className="!border-gray-300 focus:!border-blue-500"
                                 />
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                  Start Date *
-                                </Typography>
-                                <Input
-                                  type="date"
-                                  size="md"
-                                  value={exp.startDate || ""}
-                                  onChange={(e) => handleArrayFieldChange("experiences", index, "startDate", e.target.value)}
-                                  onBlur={(e) => handleArrayFieldBlur("experiences", index, "startDate", e.target.value)}
-                                  max={(() => {
-                                    const today = new Date()
-                                    return today.toISOString().split('T')[0]
-                                  })()}
-                                  required
-                                  className="!border-gray-300"
-                                />
-                                {exp.startDate && (() => {
-                                  const today = new Date().toISOString().split('T')[0]
-                                  return exp.startDate > today
-                                })() && (
+                                {experienceFormSubmitAttempted && !newExperience.company && (
                                   <Typography variant="small" color="red" className="mt-1">
-                                    Start Date cannot be a future date.
+                                    Please fill in the company.
                                   </Typography>
                                 )}
                               </div>
-                              <div>
-                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                  End Date *
-                                </Typography>
-                                <Input
-                                  type="date"
-                                  size="md"
-                                  value={exp.endDate || ""}
-                                  onChange={(e) => handleArrayFieldChange("experiences", index, "endDate", e.target.value)}
-                                  onBlur={(e) => handleArrayFieldBlur("experiences", index, "endDate", e.target.value)}
-                                  min={exp.startDate || undefined}
-                                  max={(() => {
-                                    const today = new Date()
-                                    return today.toISOString().split('T')[0]
-                                  })()}
-                                  required
-                                  className="!border-gray-300"
-                                />
-                                {exp.startDate && exp.endDate && exp.endDate < exp.startDate && (
-                                  <Typography variant="small" color="red" className="mt-1">
-                                    End Date cannot be before Start Date.
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                    Start Date *
                                   </Typography>
-                                )}
-                                {exp.endDate && (() => {
-                                  const today = new Date().toISOString().split('T')[0]
-                                  return exp.endDate > today
-                                })() && (
-                                  <Typography variant="small" color="red" className="mt-1">
-                                    End Date cannot be a future date.
+                                  <Input
+                                    type="date"
+                                    size="lg"
+                                    name="startDate"
+                                    value={newExperience.startDate}
+                                    onChange={handleExperienceInputChange}
+                                    onBlur={handleExperienceInputBlur}
+                                    max={(() => {
+                                      const today = new Date()
+                                      return today.toISOString().split('T')[0]
+                                    })()}
+                                    required
+                                    className="!border-gray-300 focus:!border-blue-500"
+                                  />
+                                  {experienceFormSubmitAttempted && !newExperience.startDate && (
+                                    <Typography variant="small" color="red" className="mt-1">
+                                      Please fill in the start date.
+                                    </Typography>
+                                  )}
+                                  {newExperience.startDate && (() => {
+                                    const today = new Date().toISOString().split('T')[0]
+                                    return newExperience.startDate > today
+                                  })() && (
+                                    <Typography variant="small" color="red" className="mt-1">
+                                      Start Date cannot be a future date.
+                                    </Typography>
+                                  )}
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                    End Date
                                   </Typography>
-                                )}
+                                  <Input
+                                    type="date"
+                                    size="lg"
+                                    name="endDate"
+                                    value={newExperience.endDate}
+                                    onChange={handleExperienceInputChange}
+                                    onBlur={handleExperienceInputBlur}
+                                    min={newExperience.startDate || undefined}
+                                    max={(() => {
+                                      const today = new Date()
+                                      return today.toISOString().split('T')[0]
+                                    })()}
+                                    className="!border-gray-300 focus:!border-blue-500"
+                                  />
+                                  {newExperience.startDate && newExperience.endDate && newExperience.endDate < newExperience.startDate && (
+                                    <Typography variant="small" color="red" className="mt-1">
+                                      End Date cannot be before Start Date.
+                                    </Typography>
+                                  )}
+                                  {newExperience.endDate && (() => {
+                                    const today = new Date().toISOString().split('T')[0]
+                                    return newExperience.endDate > today
+                                  })() && (
+                                    <Typography variant="small" color="red" className="mt-1">
+                                      End Date cannot be a future date.
+                                    </Typography>
+                                  )}
+                                </div>
                               </div>
                               <div>
-                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                                   Responsibilities / Highlights
                                 </Typography>
                                 <Textarea
-                                  size="md"
-                                  value={exp.responsibilities || exp.description || ""}
-                                  onChange={(e) =>
-                                    handleArrayFieldChange("experiences", index, "responsibilities", e.target.value)
-                                  }
+                                  size="lg"
+                                  name="responsibilities"
+                                  value={newExperience.responsibilities}
+                                  onChange={handleExperienceInputChange}
                                   placeholder="Summarize key contributions"
-                                  className="!border-gray-300"
+                                  className="!border-gray-300 focus:!border-blue-500"
                                   rows={3}
                                   maxLength={300}
                                 />
                                 <div className="flex justify-between items-center mt-1">
                                   <Typography variant="small" className="text-gray-500">
-                                    {(exp.responsibilities || exp.description || "").length}/300 characters
+                                    {newExperience.responsibilities.length}/300 characters
                                   </Typography>
-                                  {(exp.responsibilities || exp.description || "").length > 300 && (
+                                  {newExperience.responsibilities.length > 300 && (
                                     <Typography variant="small" color="red">
                                       Responsibilities cannot exceed 300 characters.
                                     </Typography>
@@ -5092,26 +5982,116 @@ const fetchPublicDataWithToken = async () => {
                                 </div>
                               </div>
                             </div>
+                            <div className="mt-6 flex justify-end gap-2">
+                              <Button
+                                variant="gradient"
+                                color={designTheme.buttonColor}
+                                onClick={editingExperienceId ? handleUpdateExperience : handleAddExperience}
+                                disabled={!isExperienceFormValid()}
+                              >
+                                {editingExperienceId ? "Update Experience" : "Add Experience"}
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                color="gray"
+                                onClick={() => {
+                                  setIsAddingExperience(false)
+                                  setEditingExperienceId(null)
+                                  setExperienceFormSubmitAttempted(false)
+                                  setNewExperience({
+                                    jobTitle: "",
+                                    company: "",
+                                    startDate: "",
+                                    endDate: "",
+                                    responsibilities: "",
+                                  })
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
                           </div>
-                        ))}
-                        <Button
-                          variant="outlined"
-                          size="md"
-                          color={designTheme.buttonColor}
-                          onClick={() =>
-                            handleAddArrayItem("experiences", {
-                              jobTitle: "",
-                              employer: "",
-                              description: "",
-                              startDate: "",
-                              endDate: "",
-                            })
-                          }
-                          className="w-full flex items-center justify-center gap-2"
-                        >
-                          <FaPlus className="w-4 h-4" />
-                          Add Experience
-                        </Button>
+                        )}
+
+                        {!isAddingExperience && (
+                          <Button
+                            variant="outlined"
+                            color={designTheme.buttonColor}
+                            onClick={() => {
+                              setIsAddingExperience(true)
+                              setEditingExperienceId(null)
+                              setNewExperience({
+                                jobTitle: "",
+                                company: "",
+                                startDate: "",
+                                endDate: "",
+                                responsibilities: "",
+                              })
+                            }}
+                            className="flex items-center gap-2 w-full"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Experience
+                          </Button>
+                        )}
+
+                        {(editingPortfolio?.experiences || []).length > 0 && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {(editingPortfolio?.experiences || []).map((exp, index) => (
+                              <Card key={exp.id || index} className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
+                                <CardBody className="p-6">
+                                  <div className="space-y-2">
+                                    <div className="flex justify-end -mt-2 gap-2">
+                                      <Button
+                                        size="md"
+                                        variant="text"
+                                        color={designTheme.buttonColor}
+                                        onClick={() => handleEditExperience(exp)}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <FaPen className="w-4 h-4" /> Edit
+                                      </Button>
+                                      <IconButton
+                                        size="md"
+                                        variant="text"
+                                        color="red"
+                                        onClick={() => handleRemoveArrayItem("experiences", index)}
+                                        aria-label="Remove experience"
+                                      >
+                                        <FaTrash className="w-4 h-4" />
+                                      </IconButton>
+                                    </div>
+                                    <div>
+                                      <Typography variant="h6" className="font-medium text-gray-800 mb-2 break-words">
+                                        {exp.jobTitle}
+                                      </Typography>
+                                      {exp.company && (
+                                        <Typography variant="small" className={`${designTheme.textColor} font-medium mb-2 break-words`}>
+                                          {exp.company}
+                                        </Typography>
+                                      )}
+                                      {(exp.startDate || exp.endDate) && (
+                                        <Typography variant="small" color="gray" className="mb-4">
+                                          {exp.startDate ? new Date(exp.startDate).toLocaleDateString() : "N/A"} -{" "}
+                                          {exp.endDate ? new Date(exp.endDate).toLocaleDateString() : "N/A"}
+                                        </Typography>
+                                      )}
+                                      {exp.responsibilities && (
+                                        <Typography
+                                          variant="small"
+                                          className="text-gray-700 leading-relaxed break-words overflow-wrap-anywhere"
+                                        >
+                                          {exp.responsibilities}
+                                        </Typography>
+                                      )}
+                                    </div>
+                                  </div>
+                                </CardBody>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+
                         <div className="mt-6 flex justify-end">
                           <Button
                             variant="gradient"
@@ -5126,42 +6106,39 @@ const fetchPublicDataWithToken = async () => {
                         </div>
                       </div>
                     ) : portfolio.experiences && portfolio.experiences.length > 0 ? (
-                      <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {portfolio.experiences.map((exp, index) => (
-                          <div key={index} className="border-l-4 border-gray-600 pl-6 pb-6 relative bg-gradient-to-r from-gray-50/50 to-transparent rounded-r-lg p-5">
-                            <Typography variant="h6" className="font-bold text-gray-900 mb-1 break-words text-base" style={{ fontFamily: "'Inter', sans-serif" }}>
-                              {exp.jobTitle}
-                            </Typography>
-                            {exp.company && (
-                              <Typography variant="small" className={`${designTheme.textColor} font-semibold mb-1 break-words text-sm`} style={{ fontFamily: "'Inter', sans-serif" }}>
-                                {exp.company}
+                          <Card key={index} className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
+                            <CardBody className="p-6">
+                              <Typography variant="h6" className="font-medium text-gray-900 mb-2 break-words text-base" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                {exp.jobTitle}
                               </Typography>
-                            )}
-                            {(exp.startDate || exp.endDate) && (
-                              <Typography variant="small" className="text-gray-600 font-medium mb-3 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                {exp.startDate ? new Date(exp.startDate).toLocaleDateString() : "N/A"} -{" "}
-                                {exp.endDate ? new Date(exp.endDate).toLocaleDateString() : "N/A"}
-                              </Typography>
-                            )}
-                            {exp.responsibilities && (
-                              <Typography
-                                variant="small"
-                                className="text-gray-800 leading-relaxed break-words overflow-wrap-anywhere text-xs"
-                                style={{ fontFamily: "'Inter', sans-serif", lineHeight: "1.6" }}
-                              >
-                                {exp.responsibilities}
-                              </Typography>
-                            )}
-                          </div>
+                              {exp.company && (
+                                <Typography variant="small" className={`${designTheme.textColor} font-semibold mb-2 break-words text-sm`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                  {exp.company}
+                                </Typography>
+                              )}
+                              {(exp.startDate || exp.endDate) && (
+                                <Typography variant="small" className="text-gray-600 font-medium mb-3 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                  {exp.startDate ? new Date(exp.startDate).toLocaleDateString() : "N/A"} -{" "}
+                                  {exp.endDate ? new Date(exp.endDate).toLocaleDateString() : "N/A"}
+                                </Typography>
+                              )}
+                              {exp.responsibilities && (
+                                <Typography
+                                  variant="small"
+                                  className="text-gray-800 leading-relaxed break-words overflow-wrap-anywhere text-xs"
+                                  style={{ fontFamily: "'Inter', sans-serif", lineHeight: "1.6" }}
+                                >
+                                  {exp.responsibilities}
+                                </Typography>
+                              )}
+                            </CardBody>
+                          </Card>
                         ))}
                       </div>
                     ) : (
                       <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
-                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No experience added yet"}
-                        </Typography>
                       </div>
                     )}
                   </div>
@@ -5522,11 +6499,6 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     ) : (
                       <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
-                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No projects added yet"}
-                        </Typography>
                       </div>
                     )}
                   </div>
@@ -5550,65 +6522,70 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                     {isEditMode && editingSections.awards ? (
                       <div className="space-y-4">
-                        {(editingPortfolio?.awardsRecognitions || []).map((award, index) => (
-                          <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
-                            <div className="space-y-3">
-                              <div className="flex justify-end -mt-2">
-                                <IconButton
-                                  size="md"
-                                  variant="text"
-                                  color="red"
-                                  onClick={() => handleRemoveArrayItem("awardsRecognitions", index)}
-                                  aria-label="Remove award"
-                                >
-                                  <FaTrash className="w-4 h-4" />
-                                </IconButton>
-                              </div>
+                        {isAddingAward && (
+                          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                            <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                              {editingAwardId ? "Edit Award" : "Add New Award"}
+                            </Typography>
+                            <div className="space-y-4">
                               <div>
-                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                                   Award Title *
                                 </Typography>
                                 <Input
-                                  size="md"
-                                  value={award.title || ""}
-                                  onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
+                                  size="lg"
+                                  name="title"
+                                  value={newAward.title}
+                                  onChange={handleAwardInputChange}
                                   placeholder="e.g. Best in Pastry Arts"
                                   required
-                                  className="!border-gray-300"
+                                  className="!border-gray-300 focus:!border-blue-500"
                                 />
+                                {awardFormSubmitAttempted && !newAward.title && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Please fill in the award title.
+                                  </Typography>
+                                )}
                               </div>
                               <div>
-                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                                   Issuer
                                 </Typography>
                                 <Input
-                                  size="md"
-                                  value={award.issuer || ""}
-                                  onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "issuer", e.target.value)}
+                                  size="lg"
+                                  name="issuer"
+                                  value={newAward.issuer}
+                                  onChange={handleAwardInputChange}
                                   placeholder="e.g. TESDA"
-                                  className="!border-gray-300"
+                                  className="!border-gray-300 focus:!border-blue-500"
                                 />
                               </div>
                               <div>
-                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                                   Date Received *
                                 </Typography>
                                 <Input
                                   type="date"
-                                  size="md"
-                                  value={award.dateReceived || ""}
-                                  onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
-                                  onBlur={(e) => handleArrayFieldBlur("awardsRecognitions", index, "dateReceived", e.target.value)}
+                                  size="lg"
+                                  name="dateReceived"
+                                  value={newAward.dateReceived}
+                                  onChange={handleAwardInputChange}
+                                  onBlur={handleAwardInputBlur}
                                   max={(() => {
                                     const today = new Date()
                                     return today.toISOString().split('T')[0]
                                   })()}
                                   required
-                                  className="!border-gray-300"
+                                  className="!border-gray-300 focus:!border-blue-500"
                                 />
-                                {award.dateReceived && (() => {
+                                {awardFormSubmitAttempted && !newAward.dateReceived && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Please fill in the date received.
+                                  </Typography>
+                                )}
+                                {newAward.dateReceived && (() => {
                                   const today = new Date().toISOString().split('T')[0]
-                                  return award.dateReceived > today
+                                  return newAward.dateReceived > today
                                 })() && (
                                   <Typography variant="small" color="red" className="mt-1">
                                     Date Received cannot be a future date.
@@ -5616,18 +6593,101 @@ const fetchPublicDataWithToken = async () => {
                                 )}
                               </div>
                             </div>
+                            <div className="mt-6 flex justify-end gap-2">
+                              <Button
+                                variant="gradient"
+                                color={designTheme.buttonColor}
+                                onClick={editingAwardId ? handleUpdateAward : handleAddAward}
+                                disabled={!isAwardFormValid()}
+                              >
+                                {editingAwardId ? "Update Award" : "Add Award"}
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                color="gray"
+                                onClick={() => {
+                                  setIsAddingAward(false)
+                                  setEditingAwardId(null)
+                                  setAwardFormSubmitAttempted(false)
+                                  setNewAward({
+                                    title: "",
+                                    issuer: "",
+                                    dateReceived: "",
+                                  })
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
                           </div>
-                        ))}
-                        <Button
-                          variant="outlined"
-                          size="md"
-                          color={designTheme.buttonColor}
-                          onClick={() => handleAddArrayItem("awardsRecognitions", { title: "", issuer: "", dateReceived: "" })}
-                          className="w-full flex items-center justify-center gap-2"
-                        >
-                          <FaPlus className="w-4 h-4" />
-                          Add Award
-                        </Button>
+                        )}
+
+                        {!isAddingAward && (
+                          <Button
+                            variant="outlined"
+                            color={designTheme.buttonColor}
+                            onClick={() => {
+                              setIsAddingAward(true)
+                              setEditingAwardId(null)
+                              setNewAward({
+                                title: "",
+                                issuer: "",
+                                dateReceived: "",
+                              })
+                            }}
+                            className="flex items-center gap-2 w-full"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Award
+                          </Button>
+                        )}
+
+                        {(editingPortfolio?.awardsRecognitions || []).length > 0 && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {(editingPortfolio?.awardsRecognitions || []).map((award, index) => (
+                              <Card key={award.id || index} className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow duration-300">
+                                <CardBody>
+                                  <div className="space-y-2">
+                                    <div className="flex justify-end -mt-2 gap-2">
+                                      <Button
+                                        size="md"
+                                        variant="text"
+                                        color={designTheme.buttonColor}
+                                        onClick={() => handleEditAward(award)}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <FaPen className="w-3 h-3" /> Edit
+                                      </Button>
+                                      <IconButton
+                                        size="md"
+                                        variant="text"
+                                        color="red"
+                                        onClick={() => handleRemoveArrayItem("awardsRecognitions", index)}
+                                        aria-label="Remove award"
+                                      >
+                                        <FaTrash className="w-3 h-3" />
+                                      </IconButton>
+                                    </div>
+                                    <Typography variant="h6" className="font-bold text-gray-900 mb-2 text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                      {award.title}
+                                    </Typography>
+                                    {award.issuer && (
+                                      <Typography variant="small" className="text-gray-700 font-medium mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                        {award.issuer}
+                                      </Typography>
+                                    )}
+                                    {award.dateReceived && (
+                                      <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                        {award.dateReceived ? new Date(award.dateReceived).toLocaleDateString() : ""}
+                                      </Typography>
+                                    )}
+                                  </div>
+                                </CardBody>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+
                         <div className="mt-6 flex justify-end">
                           <Button
                             variant="gradient"
@@ -5664,11 +6724,6 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     ) : (
                       <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
-                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No awards or recognition added yet"}
-                        </Typography>
                       </div>
                     )}
                   </div>
@@ -5694,82 +6749,173 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                       {isEditMode && editingSections.education ? (
                         <div className="space-y-3">
-                          {(editingPortfolio?.continuingEducations || []).map((edu, index) => (
-                            <div key={index} className="border-l-2 border-gray-200 pl-4 py-2 bg-white rounded-lg shadow-sm">
-                              <div className="flex justify-end -mt-2">
-                                <IconButton
-                                  size="md"
-                                  variant="text"
-                                  color="red"
-                                  onClick={() => handleRemoveArrayItem("continuingEducations", index)}
-                                  aria-label="Remove education"
-                                >
-                                  <FaTrash className="w-3 h-3" />
-                                </IconButton>
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Course Name *
-                                </Typography>
-                                <Input
-                                  size="md"
-                                  value={edu.courseName || ""}
-                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
-                                  placeholder="e.g. Advanced Baking Workshop"
-                                  required
-                                  className="!border-gray-300"
-                                />
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Institution
-                                </Typography>
-                                <Input
-                                  size="md"
-                                  value={edu.institution || ""}
-                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
-                                  placeholder="e.g. TESDA Training Center"
-                                  className="!border-gray-300"
-                                />
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Completion Date *
-                                </Typography>
-                                <Input
-                                  type="date"
-                                  size="md"
-                                  value={edu.completionDate || ""}
-                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
-                                  onBlur={(e) => handleArrayFieldBlur("continuingEducations", index, "completionDate", e.target.value)}
-                                  max={(() => {
-                                    const today = new Date()
-                                    return today.toISOString().split('T')[0]
-                                  })()}
-                                  required
-                                  className="!border-gray-300"
-                                />
-                                {edu.completionDate && (() => {
-                                  const today = new Date().toISOString().split('T')[0]
-                                  return edu.completionDate > today
-                                })() && (
-                                  <Typography variant="small" color="red" className="mt-1">
-                                    Completion Date cannot be a future date.
+                          {isAddingEducation && (
+                            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                              <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                                {editingEducationId ? "Edit Education" : "Add New Education"}
+                              </Typography>
+                              <div className="space-y-4">
+                                <div>
+                                  <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                    Course Name *
                                   </Typography>
-                                )}
+                                  <Input
+                                    size="lg"
+                                    name="courseName"
+                                    value={newEducation.courseName}
+                                    onChange={handleEducationInputChange}
+                                    placeholder="e.g. Advanced Baking Workshop"
+                                    required
+                                    className="!border-gray-300 focus:!border-blue-500"
+                                  />
+                                  {educationFormSubmitAttempted && !newEducation.courseName && (
+                                    <Typography variant="small" color="red" className="mt-1">
+                                      Please fill in the course name.
+                                    </Typography>
+                                  )}
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                    Institution
+                                  </Typography>
+                                  <Input
+                                    size="lg"
+                                    name="institution"
+                                    value={newEducation.institution}
+                                    onChange={handleEducationInputChange}
+                                    placeholder="e.g. TESDA Training Center"
+                                    className="!border-gray-300 focus:!border-blue-500"
+                                  />
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                    Completion Date *
+                                  </Typography>
+                                  <Input
+                                    type="date"
+                                    size="lg"
+                                    name="completionDate"
+                                    value={newEducation.completionDate}
+                                    onChange={handleEducationInputChange}
+                                    onBlur={handleEducationInputBlur}
+                                    max={(() => {
+                                      const today = new Date()
+                                      return today.toISOString().split('T')[0]
+                                    })()}
+                                    required
+                                    className="!border-gray-300 focus:!border-blue-500"
+                                  />
+                                  {educationFormSubmitAttempted && !newEducation.completionDate && (
+                                    <Typography variant="small" color="red" className="mt-1">
+                                      Please fill in the completion date.
+                                    </Typography>
+                                  )}
+                                  {newEducation.completionDate && (() => {
+                                    const today = new Date().toISOString().split('T')[0]
+                                    return newEducation.completionDate > today
+                                  })() && (
+                                    <Typography variant="small" color="red" className="mt-1">
+                                      Completion Date cannot be a future date.
+                                    </Typography>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="mt-6 flex justify-end gap-2">
+                                <Button
+                                  variant="gradient"
+                                  color={designTheme.buttonColor}
+                                  onClick={editingEducationId ? handleUpdateEducation : handleAddEducation}
+                                  disabled={!isEducationFormValid()}
+                                >
+                                  {editingEducationId ? "Update Education" : "Add Education"}
+                                </Button>
+                                <Button
+                                  variant="outlined"
+                                  color="gray"
+                                  onClick={() => {
+                                    setIsAddingEducation(false)
+                                    setEditingEducationId(null)
+                                    setEducationFormSubmitAttempted(false)
+                                    setNewEducation({
+                                      courseName: "",
+                                      institution: "",
+                                      completionDate: "",
+                                    })
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
                               </div>
                             </div>
-                          ))}
-                          <Button
-                            variant="outlined"
-                            size="md"
-                            color={designTheme.buttonColor}
-                            onClick={() => handleAddArrayItem("continuingEducations", { courseName: "", institution: "", completionDate: "" })}
-                            className="w-full flex items-center justify-center gap-2"
-                          >
-                            <FaPlus className="w-4 h-4" />
-                            Add Education
-                          </Button>
+                          )}
+
+                          {!isAddingEducation && (
+                            <Button
+                              variant="outlined"
+                              size="md"
+                              color={designTheme.buttonColor}
+                              onClick={() => {
+                                setIsAddingEducation(true)
+                                setEditingEducationId(null)
+                                setNewEducation({
+                                  courseName: "",
+                                  institution: "",
+                                  completionDate: "",
+                                })
+                              }}
+                              className="w-full flex items-center justify-center gap-2"
+                            >
+                              <FaPlus className="w-4 h-4" />
+                              Add Education
+                            </Button>
+                          )}
+
+                          {(editingPortfolio?.continuingEducations || []).length > 0 && (
+                            <div className="space-y-3">
+                              {(editingPortfolio?.continuingEducations || []).map((edu, index) => (
+                                <div key={edu.id || index} className="border-l-2 border-gray-200 pl-4 py-2 bg-white rounded-lg shadow-sm">
+                                  <div className="space-y-2">
+                                    <div className="flex justify-end -mt-2 gap-2">
+                                      <Button
+                                        size="md"
+                                        variant="text"
+                                        color={designTheme.buttonColor}
+                                        onClick={() => handleEditEducation(edu)}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <FaPen className="w-3 h-3" /> Edit
+                                      </Button>
+                                      <IconButton
+                                        size="md"
+                                        variant="text"
+                                        color="red"
+                                        onClick={() => handleRemoveArrayItem("continuingEducations", index)}
+                                        aria-label="Remove education"
+                                      >
+                                        <FaTrash className="w-3 h-3" />
+                                      </IconButton>
+                                    </div>
+                                    <div>
+                                      <Typography variant="small" className="font-bold text-gray-900 mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                        {edu.courseName}
+                                      </Typography>
+                                      {edu.institution && (
+                                        <Typography variant="small" className="text-gray-600 mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                          {edu.institution}
+                                        </Typography>
+                                      )}
+                                      {edu.completionDate && (
+                                        <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                          {edu.completionDate ? new Date(edu.completionDate).toLocaleDateString() : ""}
+                                        </Typography>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
                           <div className="mt-4 flex justify-end">
                             <Button
                               variant="gradient"
@@ -5805,11 +6951,7 @@ const fetchPublicDataWithToken = async () => {
                           ))}
                         </div>
                       ) : (
-                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No continuing education added yet"}
-                        </Typography>
+                        <div></div>
                       )}
                     </div>
 
@@ -5832,82 +6974,173 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                       {isEditMode && editingSections.memberships ? (
                         <div className="space-y-3">
-                          {(editingPortfolio?.professionalMemberships || []).map((mem, index) => (
-                            <div key={index} className="border-l-2 border-gray-200 pl-4 py-2 bg-white rounded-lg shadow-sm">
-                              <div className="flex justify-end -mt-2">
-                                <IconButton
-                                  size="md"
-                                  variant="text"
-                                  color="red"
-                                  onClick={() => handleRemoveArrayItem("professionalMemberships", index)}
-                                  aria-label="Remove membership"
-                                >
-                                  <FaTrash className="w-3 h-3" />
-                                </IconButton>
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Organization *
-                                </Typography>
-                                <Input
-                                  size="md"
-                                  value={mem.organization || ""}
-                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
-                                  placeholder="e.g. Philippine Chefs Association"
-                                  required
-                                  className="!border-gray-300"
-                                />
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Membership Type
-                                </Typography>
-                                <Input
-                                  size="md"
-                                  value={mem.membershipType || ""}
-                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
-                                  placeholder="e.g. Regular Member"
-                                  className="!border-gray-300"
-                                />
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Start Date *
-                                </Typography>
-                                <Input
-                                  type="date"
-                                  size="md"
-                                  value={mem.startDate || ""}
-                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
-                                  onBlur={(e) => handleArrayFieldBlur("professionalMemberships", index, "startDate", e.target.value)}
-                                  max={(() => {
-                                    const today = new Date()
-                                    return today.toISOString().split('T')[0]
-                                  })()}
-                                  required
-                                  className="!border-gray-300"
-                                />
-                                {mem.startDate && (() => {
-                                  const today = new Date().toISOString().split('T')[0]
-                                  return mem.startDate > today
-                                })() && (
-                                  <Typography variant="small" color="red" className="mt-1">
-                                    Start Date cannot be a future date.
+                          {isAddingMembership && (
+                            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                              <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                                {editingMembershipId ? "Edit Membership" : "Add New Membership"}
+                              </Typography>
+                              <div className="space-y-4">
+                                <div>
+                                  <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                    Organization *
                                   </Typography>
-                                )}
+                                  <Input
+                                    size="lg"
+                                    name="organization"
+                                    value={newMembership.organization}
+                                    onChange={handleMembershipInputChange}
+                                    placeholder="e.g. Philippine Chefs Association"
+                                    required
+                                    className="!border-gray-300 focus:!border-blue-500"
+                                  />
+                                  {membershipFormSubmitAttempted && !newMembership.organization && (
+                                    <Typography variant="small" color="red" className="mt-1">
+                                      Please fill in the organization.
+                                    </Typography>
+                                  )}
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                    Membership Type
+                                  </Typography>
+                                  <Input
+                                    size="lg"
+                                    name="membershipType"
+                                    value={newMembership.membershipType}
+                                    onChange={handleMembershipInputChange}
+                                    placeholder="e.g. Regular Member"
+                                    className="!border-gray-300 focus:!border-blue-500"
+                                  />
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                    Start Date *
+                                  </Typography>
+                                  <Input
+                                    type="date"
+                                    size="lg"
+                                    name="startDate"
+                                    value={newMembership.startDate}
+                                    onChange={handleMembershipInputChange}
+                                    onBlur={handleMembershipInputBlur}
+                                    max={(() => {
+                                      const today = new Date()
+                                      return today.toISOString().split('T')[0]
+                                    })()}
+                                    required
+                                    className="!border-gray-300 focus:!border-blue-500"
+                                  />
+                                  {membershipFormSubmitAttempted && !newMembership.startDate && (
+                                    <Typography variant="small" color="red" className="mt-1">
+                                      Please fill in the start date.
+                                    </Typography>
+                                  )}
+                                  {newMembership.startDate && (() => {
+                                    const today = new Date().toISOString().split('T')[0]
+                                    return newMembership.startDate > today
+                                  })() && (
+                                    <Typography variant="small" color="red" className="mt-1">
+                                      Start Date cannot be a future date.
+                                    </Typography>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="mt-6 flex justify-end gap-2">
+                                <Button
+                                  variant="gradient"
+                                  color={designTheme.buttonColor}
+                                  onClick={editingMembershipId ? handleUpdateMembership : handleAddMembership}
+                                  disabled={!isMembershipFormValid()}
+                                >
+                                  {editingMembershipId ? "Update Membership" : "Add Membership"}
+                                </Button>
+                                <Button
+                                  variant="outlined"
+                                  color="gray"
+                                  onClick={() => {
+                                    setIsAddingMembership(false)
+                                    setEditingMembershipId(null)
+                                    setMembershipFormSubmitAttempted(false)
+                                    setNewMembership({
+                                      organization: "",
+                                      membershipType: "",
+                                      startDate: "",
+                                    })
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
                               </div>
                             </div>
-                          ))}
-                          <Button
-                            variant="outlined"
-                            size="md"
-                            color={designTheme.buttonColor}
-                            onClick={() => handleAddArrayItem("professionalMemberships", { organization: "", membershipType: "", startDate: "" })}
-                            className="w-full flex items-center justify-center gap-2"
-                          >
-                            <FaPlus className="w-4 h-4" />
-                            Add Membership
-                          </Button>
+                          )}
+
+                          {!isAddingMembership && (
+                            <Button
+                              variant="outlined"
+                              size="md"
+                              color={designTheme.buttonColor}
+                              onClick={() => {
+                                setIsAddingMembership(true)
+                                setEditingMembershipId(null)
+                                setNewMembership({
+                                  organization: "",
+                                  membershipType: "",
+                                  startDate: "",
+                                })
+                              }}
+                              className="w-full flex items-center justify-center gap-2"
+                            >
+                              <FaPlus className="w-4 h-4" />
+                              Add Membership
+                            </Button>
+                          )}
+
+                          {(editingPortfolio?.professionalMemberships || []).length > 0 && (
+                            <div className="space-y-3">
+                              {(editingPortfolio?.professionalMemberships || []).map((mem, index) => (
+                                <div key={mem.id || index} className="border-l-2 border-gray-200 pl-4 py-2 bg-white rounded-lg shadow-sm">
+                                  <div className="space-y-2">
+                                    <div className="flex justify-end -mt-2 gap-2">
+                                      <Button
+                                        size="md"
+                                        variant="text"
+                                        color={designTheme.buttonColor}
+                                        onClick={() => handleEditMembership(mem)}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <FaPen className="w-3 h-3" /> Edit
+                                      </Button>
+                                      <IconButton
+                                        size="md"
+                                        variant="text"
+                                        color="red"
+                                        onClick={() => handleRemoveArrayItem("professionalMemberships", index)}
+                                        aria-label="Remove membership"
+                                      >
+                                        <FaTrash className="w-3 h-3" />
+                                      </IconButton>
+                                    </div>
+                                    <div>
+                                      <Typography variant="small" className="font-bold text-gray-900 mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                        {mem.organization}
+                                      </Typography>
+                                      {mem.membershipType && (
+                                        <Typography variant="small" className="text-gray-600 mb-1 text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                          {mem.membershipType}
+                                        </Typography>
+                                      )}
+                                      {mem.startDate && (
+                                        <Typography variant="small" className={`${designTheme.textColor} font-semibold text-xs`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                          {mem.startDate ? new Date(mem.startDate).toLocaleDateString() : ""}
+                                        </Typography>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
                           <div className="mt-4 flex justify-end">
                             <Button
                               variant="gradient"
@@ -5943,11 +7176,7 @@ const fetchPublicDataWithToken = async () => {
                           ))}
                         </div>
                       ) : (
-                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No professional memberships added yet"}
-                        </Typography>
+                        <div></div>
                       )}
                     </div>
                   </div>
@@ -5971,78 +7200,84 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                     {isEditMode && editingSections.references ? (
                       <div className="space-y-4">
-                        {(editingPortfolio?.references || []).map((ref, index) => (
-                          <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
-                            <div className="space-y-3">
-                              <div className="flex justify-end -mt-2">
-                                <IconButton
-                                  size="md"
-                                  variant="text"
-                                  color="red"
-                                  onClick={() => handleRemoveArrayItem("references", index)}
-                                  aria-label="Remove reference"
-                                >
-                                  <FaTrash className="w-4 h-4" />
-                                </IconButton>
-                              </div>
+                        {isAddingReference && (
+                          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                            <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                              {editingReferenceId ? "Edit Reference" : "Add New Reference"}
+                            </Typography>
+                            <div className="space-y-4">
                               <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                                   Name *
                                 </Typography>
                                 <Input
-                                  size="md"
-                                  value={ref.name || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
+                                  size="lg"
+                                  name="name"
+                                  value={newReference.name}
+                                  onChange={handleReferenceInputChange}
                                   placeholder="e.g. Maria Cruz"
                                   required
-                                  className="!border-gray-300"
+                                  className="!border-gray-300 focus:!border-blue-500"
                                 />
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Relationship / Position
-                                </Typography>
-                                <Input
-                                  size="md"
-                                  value={ref.relationship || ref.position || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "relationship", e.target.value)}
-                                  placeholder="e.g. Training Supervisor"
-                                  className="!border-gray-300"
-                                />
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Company
-                                </Typography>
-                                <Input
-                                  size="md"
-                                  value={ref.company || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "company", e.target.value)}
-                                  placeholder="e.g. Cafe Delight"
-                                  className="!border-gray-300"
-                                />
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Email *
-                                </Typography>
-                                <Input
-                                  type="email"
-                                  size="md"
-                                  value={ref.email || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
-                                  placeholder="name@gmail.com"
-                                  required
-                                  className={`!border-gray-300 ${fieldErrors[`referenceEmail_${index}`] ? "!border-red-500" : ""}`}
-                                />
-                                {fieldErrors[`referenceEmail_${index}`] && (
+                                {referenceFormSubmitAttempted && !newReference.name && (
                                   <Typography variant="small" color="red" className="mt-1">
-                                    {fieldErrors[`referenceEmail_${index}`]}
+                                    Please fill in the name.
                                   </Typography>
                                 )}
                               </div>
                               <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                  Relationship / Position
+                                </Typography>
+                                <Input
+                                  size="lg"
+                                  name="relationship"
+                                  value={newReference.relationship}
+                                  onChange={handleReferenceInputChange}
+                                  placeholder="e.g. Training Supervisor"
+                                  className="!border-gray-300 focus:!border-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                  Company
+                                </Typography>
+                                <Input
+                                  size="lg"
+                                  name="company"
+                                  value={newReference.company}
+                                  onChange={handleReferenceInputChange}
+                                  placeholder="e.g. Cafe Delight"
+                                  className="!border-gray-300 focus:!border-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                  Email *
+                                </Typography>
+                                <Input
+                                  type="email"
+                                  size="lg"
+                                  name="email"
+                                  value={newReference.email}
+                                  onChange={handleReferenceInputChange}
+                                  placeholder="name@gmail.com"
+                                  required
+                                  className={`!border-gray-300 focus:!border-blue-500 ${fieldErrors.referenceEmail ? "!border-red-500" : ""}`}
+                                />
+                                {fieldErrors.referenceEmail && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    {fieldErrors.referenceEmail}
+                                  </Typography>
+                                )}
+                                {referenceFormSubmitAttempted && !newReference.email && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Please fill in the email.
+                                  </Typography>
+                                )}
+                              </div>
+                              <div>
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                                   Contact Number *
                                 </Typography>
                                 <div className="relative">
@@ -6051,39 +7286,140 @@ const fetchPublicDataWithToken = async () => {
                                   </div>
                                   <Input
                                     type="tel"
-                                    size="md"
-                                    value={ref.phone || ref.contact || ""}
-                                    onChange={(e) => {
-                                      const newValue = e.target.value
-                                      handleArrayFieldChange("references", index, "phone", newValue)
-                                    }}
+                                    size="lg"
+                                    name="phone"
+                                    value={newReference.phone}
+                                    onChange={handleReferenceInputChange}
                                     placeholder="1234567890"
                                     inputMode="numeric"
                                     pattern="[0-9]*"
                                     maxLength={10}
                                     required
-                                    className={`!border-gray-300 pl-12 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
+                                    className={`!border-gray-300 pl-12 focus:!border-blue-500 ${fieldErrors.referencePhone ? "!border-red-500" : ""}`}
                                   />
                                 </div>
-                                {fieldErrors[`referencePhone_${index}`] && (
+                                {fieldErrors.referencePhone && (
                                   <Typography variant="small" color="red" className="mt-1">
-                                    {fieldErrors[`referencePhone_${index}`]}
+                                    {fieldErrors.referencePhone}
+                                  </Typography>
+                                )}
+                                {referenceFormSubmitAttempted && !newReference.phone && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Please fill in the contact number.
                                   </Typography>
                                 )}
                               </div>
                             </div>
+                            <div className="mt-6 flex justify-end gap-2">
+                              <Button
+                                variant="gradient"
+                                color={designTheme.buttonColor}
+                                onClick={editingReferenceId ? handleUpdateReference : handleAddReference}
+                                disabled={!isReferenceFormValid()}
+                              >
+                                {editingReferenceId ? "Update Reference" : "Add Reference"}
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                color="gray"
+                                onClick={() => {
+                                  setIsAddingReference(false)
+                                  setEditingReferenceId(null)
+                                  setReferenceFormSubmitAttempted(false)
+                                  setNewReference({
+                                    name: "",
+                                    relationship: "",
+                                    company: "",
+                                    email: "",
+                                    phone: "",
+                                  })
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
                           </div>
-                        ))}
-                        <Button
-                          variant="outlined"
-                          size="md"
-                          color={designTheme.buttonColor}
-                          onClick={() => handleAddArrayItem("references", { name: "", relationship: "", company: "", email: "", phone: "" })}
-                          className="w-full flex items-center justify-center gap-2"
-                        >
-                          <FaPlus className="w-4 h-4" />
-                          Add Reference
-                        </Button>
+                        )}
+
+                        {!isAddingReference && (
+                          <Button
+                            variant="outlined"
+                            size="md"
+                            color={designTheme.buttonColor}
+                            onClick={() => {
+                              setIsAddingReference(true)
+                              setEditingReferenceId(null)
+                              setNewReference({
+                                name: "",
+                                relationship: "",
+                                company: "",
+                                email: "",
+                                phone: "",
+                              })
+                            }}
+                            className="w-full flex items-center justify-center gap-2"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Reference
+                          </Button>
+                        )}
+
+                        {(editingPortfolio?.references || []).length > 0 && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {(editingPortfolio?.references || []).map((ref, index) => (
+                              <Card key={ref.id || index} className="bg-gradient-to-br from-white to-gray-50/30 border-2 border-gray-300 rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow duration-300">
+                                <CardBody>
+                                  <div className="space-y-2">
+                                    <div className="flex justify-end -mt-2 gap-2">
+                                      <Button
+                                        size="md"
+                                        variant="text"
+                                        color={designTheme.buttonColor}
+                                        onClick={() => handleEditReference(ref)}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <FaPen className="w-3 h-3" /> Edit
+                                      </Button>
+                                      <IconButton
+                                        size="md"
+                                        variant="text"
+                                        color="red"
+                                        onClick={() => handleRemoveArrayItem("references", index)}
+                                        aria-label="Remove reference"
+                                      >
+                                        <FaTrash className="w-3 h-3" />
+                                      </IconButton>
+                                    </div>
+                                    <Typography variant="h6" className="font-bold text-gray-900 mb-2 break-words text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                      {ref.name}
+                                    </Typography>
+                                    {ref.position && (
+                                      <Typography variant="small" className="text-gray-700 font-medium mb-1 break-words text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                        {ref.position}
+                                      </Typography>
+                                    )}
+                                    {ref.company && (
+                                      <Typography variant="small" className={`${designTheme.textColor} mb-2 break-words font-semibold text-xs`} style={{ fontFamily: "'Inter', sans-serif" }}>
+                                        {ref.company}
+                                      </Typography>
+                                    )}
+                                    {ref.email && (
+                                      <Typography variant="small" className="text-gray-600 break-words text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                        {ref.email}
+                                      </Typography>
+                                    )}
+                                    {(ref.phone || ref.contact) && (
+                                      <Typography variant="small" className="text-gray-600 break-words text-xs" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                        +63 {ref.phone || ref.contact}
+                                      </Typography>
+                                    )}
+                                  </div>
+                                </CardBody>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+
                         <div className="mt-4 flex justify-end">
                           <Button
                             variant="gradient"
@@ -6132,11 +7468,6 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     ) : (
                       <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6">
-                        <Typography variant="small" className="text-gray-700 italic font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No references added yet"}
-                        </Typography>
                       </div>
                     )}
                   </div>
@@ -6335,7 +7666,6 @@ const fetchPublicDataWithToken = async () => {
                         className="text-gray-500 leading-relaxed text-base md:text-lg italic text-center break-words overflow-wrap-anywhere"
                         style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.7", fontWeight: 400, wordWrap: "break-word", overflowWrap: "break-word" }}
                       >
-                        You haven't filled up details in this section.
                       </Typography>
                     )}
                   </div>
@@ -6476,9 +7806,7 @@ const fetchPublicDataWithToken = async () => {
                         )}
                       </div>
                     ) : (
-                      <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                        You haven't filled up details in this section.
-                      </Typography>
+                      <div></div>
                     )}
                     {isEditMode && editingSections.contact && (
                       <div className="mt-4 flex justify-end">
@@ -6676,9 +8004,7 @@ const fetchPublicDataWithToken = async () => {
                         )}
                       </div>
                     ) : (
-                      <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                        You haven't filled up details in this section.
-                      </Typography>
+                      <div></div>
                     )}
                     {isEditMode && editingSections.tesda && (
                       <div className="mt-4 flex justify-end">
@@ -6821,9 +8147,6 @@ const fetchPublicDataWithToken = async () => {
                     <div className="bg-white p-6 border-l-4 border-gray-300">
                       {isEditMode && editingSections.skills ? (
                         <div className="space-y-4">
-                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                            No skills added yet. Click the button below to add your first skill.
-                          </Typography>
                           <Button
                             variant="outlined"
                             size="md"
@@ -6836,9 +8159,7 @@ const fetchPublicDataWithToken = async () => {
                           </Button>
                         </div>
                       ) : (
-                        <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                          You haven't filled up details in this section.
-                        </Typography>
+                        <div></div>
                       )}
                     </div>
                   )}
@@ -7172,9 +8493,7 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   ) : (
                     <div className="bg-white p-6 border-l-4 border-gray-300">
-                      <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                        You haven't filled up details in this section.
-                      </Typography>
+                      <div></div>
                     </div>
                   )}
                 </div>
@@ -7197,59 +8516,78 @@ const fetchPublicDataWithToken = async () => {
                     )}
                   </div>
                   {((portfolio?.experiences && portfolio.experiences.length > 0) || (isEditMode && editingSections.experience)) ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {(isEditMode && editingSections.experience ? (editingPortfolio?.experiences || []) : (portfolio?.experiences || []))
-                        .slice(0, isEditMode && editingSections.experience ? undefined : (showAllExperiences ? undefined : INITIAL_ITEMS_LIMIT))
-                        .map((exp, index) => (
-                        <div key={index} className="pb-3 border-b border-gray-200">
-                          {isEditMode && editingSections.experience ? (
-                            <div className="space-y-3">
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Job Title *
-                                </Typography>
+                    <div className="space-y-4">
+                      {isEditMode && editingSections.experience && isAddingExperience && (
+                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                          <Typography variant="h6" className="text-gray-800 font-semibold mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            {editingExperienceId ? "Edit Experience" : "Add New Experience"}
+                          </Typography>
+                          <div className="space-y-4">
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Job Title *
+                              </Typography>
                               <Input
-                                size="md"
-                                value={exp.jobTitle || ""}
-                                onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
-                                  placeholder="e.g. Barista"
+                                size="lg"
+                                name="jobTitle"
+                                value={newExperience.jobTitle}
+                                onChange={handleExperienceInputChange}
+                                placeholder="e.g. Barista"
                                 required
-                                className="!border-gray-300"
+                                className="!border-gray-300 focus:!border-red-500"
                               />
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Company *
+                              {experienceFormSubmitAttempted && !newExperience.jobTitle && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Please fill in the job title.
                                 </Typography>
+                              )}
+                            </div>
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Company *
+                              </Typography>
                               <Input
-                                size="md"
-                                value={exp.company || ""}
-                                onChange={(e) => handleArrayFieldChange("experiences", index, "company", e.target.value)}
-                                  placeholder="e.g. Brewed Cafe"
+                                size="lg"
+                                name="company"
+                                value={newExperience.company}
+                                onChange={handleExperienceInputChange}
+                                placeholder="e.g. Brewed Cafe"
                                 required
-                                className="!border-gray-300"
+                                className="!border-gray-300 focus:!border-red-500"
                               />
-                              </div>
+                              {experienceFormSubmitAttempted && !newExperience.company && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Please fill in the company.
+                                </Typography>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
                                   Start Date *
                                 </Typography>
-                              <Input
+                                <Input
                                   type="date"
-                                size="md"
-                                  value={exp.startDate || ""}
-                                  onChange={(e) => handleArrayFieldChange("experiences", index, "startDate", e.target.value)}
-                                  onBlur={(e) => handleArrayFieldBlur("experiences", index, "startDate", e.target.value)}
+                                  size="lg"
+                                  name="startDate"
+                                  value={newExperience.startDate}
+                                  onChange={handleExperienceInputChange}
+                                  onBlur={handleExperienceInputBlur}
                                   max={(() => {
                                     const today = new Date()
                                     return today.toISOString().split('T')[0]
                                   })()}
-                                required
-                                className="!border-gray-300"
-                              />
-                                {exp.startDate && (() => {
+                                  required
+                                  className="!border-gray-300 focus:!border-red-500"
+                                />
+                                {experienceFormSubmitAttempted && !newExperience.startDate && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Please fill in the start date.
+                                  </Typography>
+                                )}
+                                {newExperience.startDate && (() => {
                                   const today = new Date().toISOString().split('T')[0]
-                                  return exp.startDate > today
+                                  return newExperience.startDate > today
                                 })() && (
                                   <Typography variant="small" color="red" className="mt-1">
                                     Start Date cannot be a future date.
@@ -7257,73 +8595,171 @@ const fetchPublicDataWithToken = async () => {
                                 )}
                               </div>
                               <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  End Date *
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                  End Date
                                 </Typography>
                                 <Input
                                   type="date"
-                                  size="md"
-                                  value={exp.endDate || ""}
-                                  onChange={(e) => handleArrayFieldChange("experiences", index, "endDate", e.target.value)}
-                                  onBlur={(e) => handleArrayFieldBlur("experiences", index, "endDate", e.target.value)}
-                                  min={exp.startDate || undefined}
+                                  size="lg"
+                                  name="endDate"
+                                  value={newExperience.endDate}
+                                  onChange={handleExperienceInputChange}
+                                  onBlur={handleExperienceInputBlur}
+                                  min={newExperience.startDate || undefined}
                                   max={(() => {
                                     const today = new Date()
                                     return today.toISOString().split('T')[0]
                                   })()}
-                                  required
-                                  className="!border-gray-300"
+                                  className="!border-gray-300 focus:!border-red-500"
                                 />
-                                {exp.startDate && exp.endDate && exp.endDate < exp.startDate && (
+                                {newExperience.startDate && newExperience.endDate && newExperience.endDate < newExperience.startDate && (
                                   <Typography variant="small" color="red" className="mt-1">
                                     End Date cannot be before Start Date.
                                   </Typography>
                                 )}
-                                {exp.endDate && (() => {
+                                {newExperience.endDate && (() => {
                                   const today = new Date().toISOString().split('T')[0]
-                                  return exp.endDate > today
+                                  return newExperience.endDate > today
                                 })() && (
                                   <Typography variant="small" color="red" className="mt-1">
                                     End Date cannot be a future date.
                                   </Typography>
                                 )}
                               </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Responsibilities
+                            </div>
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Responsibilities
+                              </Typography>
+                              <Textarea
+                                size="lg"
+                                name="responsibilities"
+                                value={newExperience.responsibilities}
+                                onChange={handleExperienceInputChange}
+                                placeholder="Summarize major contributions"
+                                className="!border-gray-300 focus:!border-red-500"
+                                rows={3}
+                                maxLength={300}
+                              />
+                              <div className="flex justify-between items-center mt-1">
+                                <Typography variant="small" className="text-gray-500">
+                                  {newExperience.responsibilities.length}/300 characters
                                 </Typography>
-                                <Textarea
-                                  size="md"
-                                  value={exp.responsibilities || ""}
-                                  onChange={(e) => handleArrayFieldChange("experiences", index, "responsibilities", e.target.value)}
-                                  placeholder="Summarize major contributions"
-                                  className="!border-gray-300"
-                                  rows={3}
-                                  maxLength={300}
-                                />
-                                <div className="flex justify-between items-center mt-1">
-                                  <Typography variant="small" className="text-gray-500">
-                                    {(exp.responsibilities || "").length}/300 characters
+                                {newExperience.responsibilities.length > 300 && (
+                                  <Typography variant="small" color="red">
+                                    Responsibilities cannot exceed 300 characters.
                                   </Typography>
-                                  {(exp.responsibilities || "").length > 300 && (
-                                    <Typography variant="small" color="red">
-                                      Responsibilities cannot exceed 300 characters.
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-6 flex justify-end gap-2">
+                            <Button
+                              variant="gradient"
+                              color="red"
+                              onClick={editingExperienceId ? handleUpdateExperience : handleAddExperience}
+                              disabled={!isExperienceFormValid()}
+                            >
+                              {editingExperienceId ? "Update Experience" : "Add Experience"}
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color="gray"
+                              onClick={() => {
+                                setIsAddingExperience(false)
+                                setEditingExperienceId(null)
+                                setExperienceFormSubmitAttempted(false)
+                                setNewExperience({
+                                  jobTitle: "",
+                                  company: "",
+                                  startDate: "",
+                                  endDate: "",
+                                  responsibilities: "",
+                                })
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {!isAddingExperience && isEditMode && editingSections.experience && (
+                        <Button
+                          variant="outlined"
+                          size="md"
+                          color="red"
+                          onClick={() => {
+                            setIsAddingExperience(true)
+                            setEditingExperienceId(null)
+                            setNewExperience({
+                              jobTitle: "",
+                              company: "",
+                              startDate: "",
+                              endDate: "",
+                              responsibilities: "",
+                            })
+                          }}
+                          className="w-full flex items-center justify-center gap-2"
+                        >
+                          <FaPlus className="w-4 h-4" />
+                          Add Experience
+                        </Button>
+                      )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {(isEditMode && editingSections.experience ? (editingPortfolio?.experiences || []) : (portfolio?.experiences || []))
+                          .slice(0, isEditMode && editingSections.experience ? undefined : (showAllExperiences ? undefined : INITIAL_ITEMS_LIMIT))
+                          .map((exp, index) => (
+                          <div key={exp.id || index} className="pb-3 border-b border-gray-200">
+                            {isEditMode && editingSections.experience ? (
+                              <div className="space-y-2">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    size="md"
+                                    variant="text"
+                                    color="red"
+                                    onClick={() => handleEditExperience(exp)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <FaPen className="w-3 h-3" /> Edit
+                                  </Button>
+                                  <IconButton
+                                    size="md"
+                                    variant="text"
+                                    color="red"
+                                    onClick={() => handleRemoveArrayItem("experiences", index)}
+                                  >
+                                    <FaTrash className="w-3 h-3" />
+                                  </IconButton>
+                                </div>
+                                <div>
+                                  <Typography variant="h6" className="font-bold text-black mb-1 text-lg" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                    {exp.jobTitle}
+                                  </Typography>
+                                  {exp.company && (
+                                    <Typography variant="small" className="text-black font-medium mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 500 }}>
+                                      {exp.company}
+                                    </Typography>
+                                  )}
+                                  {(exp.startDate || exp.endDate) && (
+                                    <Typography variant="small" className="text-gray-600 text-sm mb-2" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                      {exp.startDate ? new Date(exp.startDate).toLocaleDateString() : "N/A"} -{" "}
+                                      {exp.endDate ? new Date(exp.endDate).toLocaleDateString() : "N/A"}
+                                    </Typography>
+                                  )}
+                                  {exp.responsibilities && (
+                                    <Typography
+                                      variant="small"
+                                      className="text-black leading-relaxed text-base"
+                                      style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.7", fontWeight: 400 }}
+                                    >
+                                      {exp.responsibilities}
                                     </Typography>
                                   )}
                                 </div>
                               </div>
-                              <div className="flex justify-end">
-                                <IconButton
-                                  size="md"
-                                  variant="text"
-                                  color="red"
-                                  onClick={() => handleRemoveArrayItem("experiences", index)}
-                                >
-                                  <FaTrash className="w-3 h-3" />
-                                </IconButton>
-                              </div>
-                            </div>
-                          ) : (
+                            ) : (
                             <>
                               <Typography variant="h6" className="font-bold text-black mb-1 text-lg" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
                                 {exp.jobTitle}
@@ -7352,20 +8788,6 @@ const fetchPublicDataWithToken = async () => {
                           )}
                         </div>
                       ))}
-                      {isEditMode && editingSections.experience && (
-                        <div className="md:col-span-2">
-                          <Button
-                            variant="outlined"
-                            size="md"
-                            color="red"
-                            onClick={() => handleAddArrayItem("experiences", { jobTitle: "", company: "", startDate: "", endDate: "", responsibilities: "" })}
-                            className="w-full flex items-center justify-center gap-2"
-                          >
-                            <FaPlus className="w-4 h-4" />
-                            Add Experience
-                          </Button>
-                        </div>
-                      )}
                       {!isEditMode && portfolio?.experiences && portfolio.experiences.length > INITIAL_ITEMS_LIMIT && (
                         <div className="flex justify-left pt-2 md:col-span-2">
                           <Button
@@ -7379,21 +8801,27 @@ const fetchPublicDataWithToken = async () => {
                           </Button>
                         </div>
                       )}
+                      </div>
                     </div>
                   ) : (
                     <div className="bg-white p-6 border-l-4 border-gray-300">
-                      {isEditMode && editingSections.experience ? (
+                      {isEditMode && editingSections.experience && !isAddingExperience ? (
                         <div className="space-y-4">
-                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                            {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No experience added yet"}. Click the button below to add your first experience.
-                          </Typography>
                           <Button
                             variant="outlined"
                             size="md"
                             color="red"
-                            onClick={() => handleAddArrayItem("experiences", { jobTitle: "", company: "", startDate: "", endDate: "", responsibilities: "" })}
+                            onClick={() => {
+                              setIsAddingExperience(true)
+                              setEditingExperienceId(null)
+                              setNewExperience({
+                                jobTitle: "",
+                                company: "",
+                                startDate: "",
+                                endDate: "",
+                                responsibilities: "",
+                              })
+                            }}
                             className="w-full flex items-center justify-center gap-2"
                           >
                             <FaPlus className="w-4 h-4" />
@@ -7401,9 +8829,7 @@ const fetchPublicDataWithToken = async () => {
                           </Button>
                         </div>
                       ) : (
-                        <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                          You haven't filled up details in this section.
-                        </Typography>
+                        <div></div>
                       )}
                     </div>
                   )}
@@ -7797,9 +9223,7 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   ) : (
                     <div className="bg-white p-6 border-l-4 border-gray-300">
-                      <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                        You haven't filled up details in this section.
-                      </Typography>
+                      <div></div>
                     </div>
                   )}
                 </div>
@@ -7823,64 +9247,143 @@ const fetchPublicDataWithToken = async () => {
                   </div>
                   {((portfolio?.awardsRecognitions && portfolio.awardsRecognitions.length > 0) || (isEditMode && editingSections.awards)) ? (
                     <div className="space-y-3">
-                      {(isEditMode && editingSections.awards ? (editingPortfolio?.awardsRecognitions || []) : (portfolio?.awardsRecognitions || []))
-                        .slice(0, isEditMode && editingSections.awards ? undefined : (showAllAwards ? undefined : INITIAL_ITEMS_LIMIT))
-                        .map((award, index) => (
-                        <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
-                          {isEditMode && editingSections.awards ? (
-                            <div className="space-y-3">
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Award Title *
-                                </Typography>
+                      {isEditMode && editingSections.awards && isAddingAward && (
+                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                          <Typography variant="h6" className="text-gray-800 font-semibold mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            {editingAwardId ? "Edit Award" : "Add New Award"}
+                          </Typography>
+                          <div className="space-y-4">
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Award Title *
+                              </Typography>
                               <Input
-                                size="md"
-                                value={award.title || ""}
-                                onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
-                                  placeholder="e.g. Employee of the Month"
+                                size="lg"
+                                name="title"
+                                value={newAward.title}
+                                onChange={handleAwardInputChange}
+                                placeholder="e.g. Employee of the Month"
                                 required
-                                className="!border-gray-300"
+                                className="!border-gray-300 focus:!border-red-500"
                               />
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Issuer
+                              {awardFormSubmitAttempted && !newAward.title && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Please fill in the award title.
                                 </Typography>
+                              )}
+                            </div>
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Issuer
+                              </Typography>
                               <Input
-                                size="md"
-                                value={award.issuer || ""}
-                                onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "issuer", e.target.value)}
-                                  placeholder="e.g. Cafe Royale"
-                                className="!border-gray-300"
+                                size="lg"
+                                name="issuer"
+                                value={newAward.issuer}
+                                onChange={handleAwardInputChange}
+                                placeholder="e.g. Cafe Royale"
+                                className="!border-gray-300 focus:!border-red-500"
                               />
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Date Received *
-                                </Typography>
+                            </div>
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Date Received *
+                              </Typography>
                               <Input
                                 type="date"
-                                size="md"
-                                value={award.dateReceived || ""}
-                                onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
-                                onBlur={(e) => handleArrayFieldBlur("awardsRecognitions", index, "dateReceived", e.target.value)}
+                                size="lg"
+                                name="dateReceived"
+                                value={newAward.dateReceived}
+                                onChange={handleAwardInputChange}
+                                onBlur={handleAwardInputBlur}
                                 max={(() => {
                                   const today = new Date()
                                   return today.toISOString().split('T')[0]
                                 })()}
                                 required
-                                className="!border-gray-300"
+                                className="!border-gray-300 focus:!border-red-500"
                               />
-                                {award.dateReceived && (() => {
-                                  const today = new Date().toISOString().split('T')[0]
-                                  return award.dateReceived > today
-                                })() && (
-                                  <Typography variant="small" color="red" className="mt-1">
-                                    Date Received cannot be a future date.
-                                  </Typography>
-                                )}
-                              </div>
-                              <div className="flex justify-end">
+                              {awardFormSubmitAttempted && !newAward.dateReceived && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Please fill in the date received.
+                                </Typography>
+                              )}
+                              {newAward.dateReceived && (() => {
+                                const today = new Date().toISOString().split('T')[0]
+                                return newAward.dateReceived > today
+                              })() && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Date Received cannot be a future date.
+                                </Typography>
+                              )}
+                            </div>
+                          </div>
+                          <div className="mt-6 flex justify-end gap-2">
+                            <Button
+                              variant="gradient"
+                              color="red"
+                              onClick={editingAwardId ? handleUpdateAward : handleAddAward}
+                              disabled={!isAwardFormValid()}
+                            >
+                              {editingAwardId ? "Update Award" : "Add Award"}
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color="gray"
+                              onClick={() => {
+                                setIsAddingAward(false)
+                                setEditingAwardId(null)
+                                setAwardFormSubmitAttempted(false)
+                                setNewAward({
+                                  title: "",
+                                  issuer: "",
+                                  dateReceived: "",
+                                })
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {!isAddingAward && isEditMode && editingSections.awards && (
+                        <Button
+                          variant="outlined"
+                          size="md"
+                          color="red"
+                          onClick={() => {
+                            setIsAddingAward(true)
+                            setEditingAwardId(null)
+                            setNewAward({
+                              title: "",
+                              issuer: "",
+                              dateReceived: "",
+                            })
+                          }}
+                          className="w-full flex items-center justify-center gap-2"
+                        >
+                          <FaPlus className="w-4 h-4" />
+                          Add Award
+                        </Button>
+                      )}
+
+                      {(isEditMode && editingSections.awards ? (editingPortfolio?.awardsRecognitions || []) : (portfolio?.awardsRecognitions || []))
+                        .slice(0, isEditMode && editingSections.awards ? undefined : (showAllAwards ? undefined : INITIAL_ITEMS_LIMIT))
+                        .map((award, index) => (
+                        <div key={award.id || index} className="pb-3 border-b border-gray-200 last:border-b-0">
+                          {isEditMode && editingSections.awards ? (
+                            <div className="space-y-2">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  size="md"
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => handleEditAward(award)}
+                                  className="flex items-center gap-1"
+                                >
+                                  <FaPen className="w-3 h-3" /> Edit
+                                </Button>
                                 <IconButton
                                   size="md"
                                   variant="text"
@@ -7889,6 +9392,21 @@ const fetchPublicDataWithToken = async () => {
                                 >
                                   <FaTrash className="w-3 h-3" />
                                 </IconButton>
+                              </div>
+                              <div>
+                                <Typography variant="h6" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                  {award.title}
+                                </Typography>
+                                {award.issuer && (
+                                  <Typography variant="small" className="text-black font-medium mb-1 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                    {award.issuer}
+                                  </Typography>
+                                )}
+                                {award.dateReceived && (
+                                  <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                    {award.dateReceived ? new Date(award.dateReceived).toLocaleDateString() : ""}
+                                  </Typography>
+                                )}
                               </div>
                             </div>
                           ) : (
@@ -7903,27 +9421,13 @@ const fetchPublicDataWithToken = async () => {
                               )}
                               {award.dateReceived && (
                                 <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                  {award.dateReceived}
+                                  {award.dateReceived ? new Date(award.dateReceived).toLocaleDateString() : ""}
                                 </Typography>
                               )}
                             </>
                           )}
                         </div>
                       ))}
-                      {isEditMode && editingSections.awards && (
-                        <div className="pt-2">
-                          <Button
-                            variant="outlined"
-                            size="md"
-                            color="red"
-                            onClick={() => handleAddArrayItem("awardsRecognitions", { title: "", issuer: "", dateReceived: "" })}
-                            className="w-full flex items-center justify-center gap-2"
-                          >
-                            <FaPlus className="w-4 h-4" />
-                            Add Award
-                          </Button>
-                        </div>
-                      )}
                       {!isEditMode && portfolio?.awardsRecognitions && portfolio.awardsRecognitions.length > INITIAL_ITEMS_LIMIT && (
                         <div className="flex justify-left pt-2">
                           <Button
@@ -7942,9 +9446,6 @@ const fetchPublicDataWithToken = async () => {
                     <div className="bg-white p-6 border-l-4 border-gray-300">
                       {isEditMode && editingSections.awards ? (
                         <div className="space-y-4">
-                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                            No awards added yet. Click the button below to add your first award.
-                          </Typography>
                           <Button
                             variant="outlined"
                             size="md"
@@ -7957,9 +9458,7 @@ const fetchPublicDataWithToken = async () => {
                           </Button>
                         </div>
                       ) : (
-                        <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                          You haven't filled up details in this section.
-                        </Typography>
+                        <div></div>
                       )}
                     </div>
                   )}
@@ -8001,64 +9500,143 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                     {((portfolio?.continuingEducations && portfolio.continuingEducations.length > 0) || (isEditMode && editingSections.education)) ? (
                       <div className="space-y-3">
-                        {(isEditMode && editingSections.education ? (editingPortfolio?.continuingEducations || []) : (portfolio?.continuingEducations || []))
-                          .slice(0, isEditMode && editingSections.education ? undefined : (showAllEducation ? undefined : INITIAL_ITEMS_LIMIT))
-                          .map((edu, index) => (
-                          <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
-                            {isEditMode && editingSections.education ? (
-                              <div className="space-y-3">
-                                <div>
-                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Course Name *
-                                  </Typography>
+                        {isEditMode && editingSections.education && isAddingEducation && (
+                          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                            <Typography variant="h6" className="text-gray-800 font-semibold mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                              {editingEducationId ? "Edit Education" : "Add New Education"}
+                            </Typography>
+                            <div className="space-y-4">
+                              <div>
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                  Course Name *
+                                </Typography>
                                 <Input
-                                  size="md"
-                                  value={edu.courseName || ""}
-                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
-                                    placeholder="e.g. Wine Appreciation"
+                                  size="lg"
+                                  name="courseName"
+                                  value={newEducation.courseName}
+                                  onChange={handleEducationInputChange}
+                                  placeholder="e.g. Wine Appreciation"
                                   required
-                                  className="!border-gray-300"
+                                  className="!border-gray-300 focus:!border-red-500"
                                 />
-                                </div>
-                                <div>
-                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Institution
+                                {educationFormSubmitAttempted && !newEducation.courseName && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Please fill in the course name.
                                   </Typography>
+                                )}
+                              </div>
+                              <div>
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                  Institution
+                                </Typography>
                                 <Input
-                                  size="md"
-                                  value={edu.institution || ""}
-                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
-                                    placeholder="e.g. TESDA Training Center"
-                                  className="!border-gray-300"
+                                  size="lg"
+                                  name="institution"
+                                  value={newEducation.institution}
+                                  onChange={handleEducationInputChange}
+                                  placeholder="e.g. TESDA Training Center"
+                                  className="!border-gray-300 focus:!border-red-500"
                                 />
-                                </div>
-                                <div>
-                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Completion Date *
-                                  </Typography>
+                              </div>
+                              <div>
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                  Completion Date *
+                                </Typography>
                                 <Input
                                   type="date"
-                                  size="md"
-                                  value={edu.completionDate || ""}
-                                  onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
-                                  onBlur={(e) => handleArrayFieldBlur("continuingEducations", index, "completionDate", e.target.value)}
+                                  size="lg"
+                                  name="completionDate"
+                                  value={newEducation.completionDate}
+                                  onChange={handleEducationInputChange}
+                                  onBlur={handleEducationInputBlur}
                                   max={(() => {
                                     const today = new Date()
                                     return today.toISOString().split('T')[0]
                                   })()}
                                   required
-                                  className="!border-gray-300"
+                                  className="!border-gray-300 focus:!border-red-500"
                                 />
-                                  {edu.completionDate && (() => {
-                                    const today = new Date().toISOString().split('T')[0]
-                                    return edu.completionDate > today
-                                  })() && (
-                                    <Typography variant="small" color="red" className="mt-1">
-                                      Completion Date cannot be a future date.
-                                    </Typography>
-                                  )}
-                                </div>
-                                <div className="flex justify-end">
+                                {educationFormSubmitAttempted && !newEducation.completionDate && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Please fill in the completion date.
+                                  </Typography>
+                                )}
+                                {newEducation.completionDate && (() => {
+                                  const today = new Date().toISOString().split('T')[0]
+                                  return newEducation.completionDate > today
+                                })() && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Completion Date cannot be a future date.
+                                  </Typography>
+                                )}
+                              </div>
+                            </div>
+                            <div className="mt-6 flex justify-end gap-2">
+                              <Button
+                                variant="gradient"
+                                color="red"
+                                onClick={editingEducationId ? handleUpdateEducation : handleAddEducation}
+                                disabled={!isEducationFormValid()}
+                              >
+                                {editingEducationId ? "Update Education" : "Add Education"}
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                color="gray"
+                                onClick={() => {
+                                  setIsAddingEducation(false)
+                                  setEditingEducationId(null)
+                                  setEducationFormSubmitAttempted(false)
+                                  setNewEducation({
+                                    courseName: "",
+                                    institution: "",
+                                    completionDate: "",
+                                  })
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {!isAddingEducation && isEditMode && editingSections.education && (
+                          <Button
+                            variant="outlined"
+                            size="md"
+                            color="red"
+                            onClick={() => {
+                              setIsAddingEducation(true)
+                              setEditingEducationId(null)
+                              setNewEducation({
+                                courseName: "",
+                                institution: "",
+                                completionDate: "",
+                              })
+                            }}
+                            className="w-full flex items-center justify-center gap-2"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Education
+                          </Button>
+                        )}
+
+                        {(isEditMode && editingSections.education ? (editingPortfolio?.continuingEducations || []) : (portfolio?.continuingEducations || []))
+                          .slice(0, isEditMode && editingSections.education ? undefined : (showAllEducation ? undefined : INITIAL_ITEMS_LIMIT))
+                          .map((edu, index) => (
+                          <div key={edu.id || index} className="pb-3 border-b border-gray-200 last:border-b-0">
+                            {isEditMode && editingSections.education ? (
+                              <div className="space-y-2">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    size="md"
+                                    variant="text"
+                                    color="red"
+                                    onClick={() => handleEditEducation(edu)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <FaPen className="w-3 h-3" /> Edit
+                                  </Button>
                                   <IconButton
                                     size="md"
                                     variant="text"
@@ -8067,6 +9645,21 @@ const fetchPublicDataWithToken = async () => {
                                   >
                                     <FaTrash className="w-3 h-3" />
                                   </IconButton>
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                    {edu.courseName}
+                                  </Typography>
+                                  {edu.institution && (
+                                    <Typography variant="small" className="text-black font-medium mb-1 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                      {edu.institution}
+                                    </Typography>
+                                  )}
+                                  {edu.completionDate && (
+                                    <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                      {edu.completionDate ? new Date(edu.completionDate).toLocaleDateString() : ""}
+                                    </Typography>
+                                  )}
                                 </div>
                               </div>
                             ) : (
@@ -8081,27 +9674,13 @@ const fetchPublicDataWithToken = async () => {
                                 )}
                                 {edu.completionDate && (
                                   <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                    {edu.completionDate}
+                                    {edu.completionDate ? new Date(edu.completionDate).toLocaleDateString() : ""}
                                   </Typography>
                                 )}
                               </>
                             )}
                           </div>
                         ))}
-                        {isEditMode && editingSections.education && (
-                          <div className="pt-2">
-                            <Button
-                              variant="outlined"
-                              size="md"
-                              color="red"
-                              onClick={() => handleAddArrayItem("continuingEducations", { courseName: "", institution: "", completionDate: "" })}
-                              className="w-full flex items-center justify-center gap-2"
-                            >
-                              <FaPlus className="w-4 h-4" />
-                              Add Education
-                            </Button>
-                          </div>
-                        )}
                         {!isEditMode && portfolio?.continuingEducations && portfolio.continuingEducations.length > INITIAL_ITEMS_LIMIT && (
                           <div className="flex justify-left pt-2">
                             <Button
@@ -8120,11 +9699,6 @@ const fetchPublicDataWithToken = async () => {
                       <div className="bg-white p-6 border-l-4 border-gray-300">
                         {isEditMode && editingSections.education ? (
                           <div className="space-y-4">
-                            <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                              {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No continuing education added yet"}. Click the button below to add your first education.
-                            </Typography>
                             <Button
                               variant="outlined"
                               size="md"
@@ -8137,9 +9711,7 @@ const fetchPublicDataWithToken = async () => {
                             </Button>
                           </div>
                         ) : (
-                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                            You haven't filled up details in this section.
-                          </Typography>
+                          <div></div>
                         )}
                       </div>
                     )}
@@ -8179,64 +9751,143 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                     {((portfolio?.professionalMemberships && portfolio.professionalMemberships.length > 0) || (isEditMode && editingSections.memberships)) ? (
                       <div className="space-y-3">
-                        {(isEditMode && editingSections.memberships ? (editingPortfolio?.professionalMemberships || []) : (portfolio?.professionalMemberships || []))
-                          .slice(0, isEditMode && editingSections.memberships ? undefined : (showAllMemberships ? undefined : INITIAL_ITEMS_LIMIT))
-                          .map((mem, index) => (
-                          <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
-                            {isEditMode && editingSections.memberships ? (
-                              <div className="space-y-3">
-                                <div>
-                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Organization *
-                                  </Typography>
+                        {isEditMode && editingSections.memberships && isAddingMembership && (
+                          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                            <Typography variant="h6" className="text-gray-800 font-semibold mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                              {editingMembershipId ? "Edit Membership" : "Add New Membership"}
+                            </Typography>
+                            <div className="space-y-4">
+                              <div>
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                  Organization *
+                                </Typography>
                                 <Input
-                                  size="md"
-                                  value={mem.organization || ""}
-                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
-                                    placeholder="e.g. National Barista Guild"
+                                  size="lg"
+                                  name="organization"
+                                  value={newMembership.organization}
+                                  onChange={handleMembershipInputChange}
+                                  placeholder="e.g. National Barista Guild"
                                   required
-                                  className="!border-gray-300"
+                                  className="!border-gray-300 focus:!border-red-500"
                                 />
-                                </div>
-                                <div>
-                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Membership Type
+                                {membershipFormSubmitAttempted && !newMembership.organization && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Please fill in the organization.
                                   </Typography>
+                                )}
+                              </div>
+                              <div>
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                  Membership Type
+                                </Typography>
                                 <Input
-                                  size="md"
-                                  value={mem.membershipType || ""}
-                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
-                                    placeholder="e.g. Member / Officer"
-                                  className="!border-gray-300"
+                                  size="lg"
+                                  name="membershipType"
+                                  value={newMembership.membershipType}
+                                  onChange={handleMembershipInputChange}
+                                  placeholder="e.g. Member / Officer"
+                                  className="!border-gray-300 focus:!border-red-500"
                                 />
-                                </div>
-                                <div>
-                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Start Date *
-                                  </Typography>
+                              </div>
+                              <div>
+                                <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                  Start Date *
+                                </Typography>
                                 <Input
                                   type="date"
-                                  size="md"
-                                  value={mem.startDate || ""}
-                                  onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
-                                  onBlur={(e) => handleArrayFieldBlur("professionalMemberships", index, "startDate", e.target.value)}
+                                  size="lg"
+                                  name="startDate"
+                                  value={newMembership.startDate}
+                                  onChange={handleMembershipInputChange}
+                                  onBlur={handleMembershipInputBlur}
                                   max={(() => {
                                     const today = new Date()
                                     return today.toISOString().split('T')[0]
                                   })()}
                                   required
-                                  className="!border-gray-300"
+                                  className="!border-gray-300 focus:!border-red-500"
                                 />
-                                  {mem.startDate && (() => {
-                                    const today = new Date().toISOString().split('T')[0]
-                                    return mem.startDate > today
-                                  })() && (
-                                    <Typography variant="small" color="red" className="mt-1">
-                                      Start Date cannot be a future date.
-                                    </Typography>
-                                  )}
-                                </div>
-                                <div className="flex justify-end">
+                                {membershipFormSubmitAttempted && !newMembership.startDate && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Please fill in the start date.
+                                  </Typography>
+                                )}
+                                {newMembership.startDate && (() => {
+                                  const today = new Date().toISOString().split('T')[0]
+                                  return newMembership.startDate > today
+                                })() && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Start Date cannot be a future date.
+                                  </Typography>
+                                )}
+                              </div>
+                            </div>
+                            <div className="mt-6 flex justify-end gap-2">
+                              <Button
+                                variant="gradient"
+                                color="red"
+                                onClick={editingMembershipId ? handleUpdateMembership : handleAddMembership}
+                                disabled={!isMembershipFormValid()}
+                              >
+                                {editingMembershipId ? "Update Membership" : "Add Membership"}
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                color="gray"
+                                onClick={() => {
+                                  setIsAddingMembership(false)
+                                  setEditingMembershipId(null)
+                                  setMembershipFormSubmitAttempted(false)
+                                  setNewMembership({
+                                    organization: "",
+                                    membershipType: "",
+                                    startDate: "",
+                                  })
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {!isAddingMembership && isEditMode && editingSections.memberships && (
+                          <Button
+                            variant="outlined"
+                            size="md"
+                            color="red"
+                            onClick={() => {
+                              setIsAddingMembership(true)
+                              setEditingMembershipId(null)
+                              setNewMembership({
+                                organization: "",
+                                membershipType: "",
+                                startDate: "",
+                              })
+                            }}
+                            className="w-full flex items-center justify-center gap-2"
+                          >
+                            <FaPlus className="w-4 h-4" />
+                            Add Membership
+                          </Button>
+                        )}
+
+                        {(isEditMode && editingSections.memberships ? (editingPortfolio?.professionalMemberships || []) : (portfolio?.professionalMemberships || []))
+                          .slice(0, isEditMode && editingSections.memberships ? undefined : (showAllMemberships ? undefined : INITIAL_ITEMS_LIMIT))
+                          .map((mem, index) => (
+                          <div key={mem.id || index} className="pb-3 border-b border-gray-200 last:border-b-0">
+                            {isEditMode && editingSections.memberships ? (
+                              <div className="space-y-2">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    size="md"
+                                    variant="text"
+                                    color="red"
+                                    onClick={() => handleEditMembership(mem)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <FaPen className="w-3 h-3" /> Edit
+                                  </Button>
                                   <IconButton
                                     size="md"
                                     variant="text"
@@ -8245,6 +9896,21 @@ const fetchPublicDataWithToken = async () => {
                                   >
                                     <FaTrash className="w-3 h-3" />
                                   </IconButton>
+                                </div>
+                                <div>
+                                  <Typography variant="small" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                    {mem.organization}
+                                  </Typography>
+                                  {mem.membershipType && (
+                                    <Typography variant="small" className="text-black font-medium mb-1 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                      {mem.membershipType}
+                                    </Typography>
+                                  )}
+                                  {mem.startDate && (
+                                    <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                      {mem.startDate ? new Date(mem.startDate).toLocaleDateString() : ""}
+                                    </Typography>
+                                  )}
                                 </div>
                               </div>
                             ) : (
@@ -8259,27 +9925,13 @@ const fetchPublicDataWithToken = async () => {
                                 )}
                                 {mem.startDate && (
                                   <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                    Since {mem.startDate}
+                                    Since {mem.startDate ? new Date(mem.startDate).toLocaleDateString() : ""}
                                   </Typography>
                                 )}
                               </>
                             )}
                           </div>
                         ))}
-                        {isEditMode && editingSections.memberships && (
-                          <div className="pt-2">
-                            <Button
-                              variant="outlined"
-                              size="md"
-                              color="red"
-                              onClick={() => handleAddArrayItem("professionalMemberships", { organization: "", membershipType: "", startDate: "" })}
-                              className="w-full flex items-center justify-center gap-2"
-                            >
-                              <FaPlus className="w-4 h-4" />
-                              Add Membership
-                            </Button>
-                          </div>
-                        )}
                         {!isEditMode && portfolio?.professionalMemberships && portfolio.professionalMemberships.length > INITIAL_ITEMS_LIMIT && (
                           <div className="flex justify-left pt-2">
                             <Button
@@ -8296,18 +9948,21 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     ) : (
                       <div className="bg-white p-6 border-l-4 border-gray-300">
-                        {isEditMode && editingSections.memberships ? (
+                        {isEditMode && editingSections.memberships && !isAddingMembership ? (
                           <div className="space-y-4">
-                            <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                              {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No professional memberships added yet"}. Click the button below to add your first membership.
-                            </Typography>
                             <Button
                               variant="outlined"
                               size="md"
                               color="red"
-                              onClick={() => handleAddArrayItem("professionalMemberships", { organization: "", membershipType: "", startDate: "" })}
+                              onClick={() => {
+                                setIsAddingMembership(true)
+                                setEditingMembershipId(null)
+                                setNewMembership({
+                                  organization: "",
+                                  membershipType: "",
+                                  startDate: "",
+                                })
+                              }}
                               className="w-full flex items-center justify-center gap-2"
                             >
                               <FaPlus className="w-4 h-4" />
@@ -8315,9 +9970,7 @@ const fetchPublicDataWithToken = async () => {
                             </Button>
                           </div>
                         ) : (
-                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                            You haven't filled up details in this section.
-                          </Typography>
+                          <div></div>
                         )}
                       </div>
                     )}
@@ -8358,97 +10011,187 @@ const fetchPublicDataWithToken = async () => {
                   </div>
                   {((portfolio?.references && portfolio.references.length > 0) || (isEditMode && editingSections.references)) ? (
                     <div className="space-y-4">
+                      {isEditMode && editingSections.references && isAddingReference && (
+                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                          <Typography variant="h6" className="text-gray-800 font-semibold mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            {editingReferenceId ? "Edit Reference" : "Add New Reference"}
+                          </Typography>
+                          <div className="space-y-4">
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Name *
+                              </Typography>
+                              <Input
+                                size="lg"
+                                name="name"
+                                value={newReference.name}
+                                onChange={handleReferenceInputChange}
+                                placeholder="e.g. Juan Dela Cruz"
+                                required
+                                className="!border-gray-300 focus:!border-red-500"
+                              />
+                              {referenceFormSubmitAttempted && !newReference.name && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Please fill in the name.
+                                </Typography>
+                              )}
+                            </div>
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Position / Relationship
+                              </Typography>
+                              <Input
+                                size="lg"
+                                name="relationship"
+                                value={newReference.relationship}
+                                onChange={handleReferenceInputChange}
+                                placeholder="e.g. Training Supervisor"
+                                className="!border-gray-300 focus:!border-red-500"
+                              />
+                            </div>
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Company
+                              </Typography>
+                              <Input
+                                size="lg"
+                                name="company"
+                                value={newReference.company}
+                                onChange={handleReferenceInputChange}
+                                placeholder="e.g. Cafe Delight"
+                                className="!border-gray-300 focus:!border-red-500"
+                              />
+                            </div>
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Email *
+                              </Typography>
+                              <Input
+                                type="email"
+                                size="lg"
+                                name="email"
+                                value={newReference.email}
+                                onChange={handleReferenceInputChange}
+                                placeholder="name@gmail.com"
+                                required
+                                className={`!border-gray-300 focus:!border-red-500 ${fieldErrors.referenceEmail ? "!border-red-500" : ""}`}
+                              />
+                              {fieldErrors.referenceEmail && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  {fieldErrors.referenceEmail}
+                                </Typography>
+                              )}
+                              {referenceFormSubmitAttempted && !newReference.email && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Please fill in the email.
+                                </Typography>
+                              )}
+                            </div>
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                Contact Number *
+                              </Typography>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                  <span className="text-gray-700 font-medium">+63</span>
+                                </div>
+                                <Input
+                                  type="tel"
+                                  size="lg"
+                                  name="phone"
+                                  value={newReference.phone}
+                                  onChange={handleReferenceInputChange}
+                                  placeholder="1234567890"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  maxLength={10}
+                                  required
+                                  className={`!border-gray-300 pl-12 focus:!border-red-500 ${fieldErrors.referencePhone ? "!border-red-500" : ""}`}
+                                />
+                              </div>
+                              {fieldErrors.referencePhone && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  {fieldErrors.referencePhone}
+                                </Typography>
+                              )}
+                              {referenceFormSubmitAttempted && !newReference.phone && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Please fill in the contact number.
+                                </Typography>
+                              )}
+                            </div>
+                          </div>
+                          <div className="mt-6 flex justify-end gap-2">
+                            <Button
+                              variant="gradient"
+                              color="red"
+                              onClick={editingReferenceId ? handleUpdateReference : handleAddReference}
+                              disabled={!isReferenceFormValid()}
+                            >
+                              {editingReferenceId ? "Update Reference" : "Add Reference"}
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color="gray"
+                              onClick={() => {
+                                setIsAddingReference(false)
+                                setEditingReferenceId(null)
+                                setReferenceFormSubmitAttempted(false)
+                                setNewReference({
+                                  name: "",
+                                  relationship: "",
+                                  company: "",
+                                  email: "",
+                                  phone: "",
+                                })
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {!isAddingReference && isEditMode && editingSections.references && (
+                        <Button
+                          variant="outlined"
+                          size="md"
+                          color="red"
+                          onClick={() => {
+                            setIsAddingReference(true)
+                            setEditingReferenceId(null)
+                            setNewReference({
+                              name: "",
+                              relationship: "",
+                              company: "",
+                              email: "",
+                              phone: "",
+                            })
+                          }}
+                          className="w-full flex items-center justify-center gap-2"
+                        >
+                          <FaPlus className="w-4 h-4" />
+                          Add Reference
+                        </Button>
+                      )}
+
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         {(isEditMode && editingSections.references ? (editingPortfolio?.references || []) : (portfolio?.references || []))
                           .slice(0, isEditMode && editingSections.references ? undefined : (showAllReferences ? undefined : INITIAL_ITEMS_LIMIT))
                           .map((ref, index) => (
-                          <div key={index} className="bg-white border-l-4 border-gray-300 p-5">
+                          <div key={ref.id || index} className="bg-white border-l-4 border-gray-300 p-5">
                             {isEditMode && editingSections.references ? (
-                              <div className="space-y-3">
-                                <div>
-                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Name *
-                                  </Typography>
-                                <Input
-                                  size="md"
-                                  value={ref.name || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
-                                    placeholder="e.g. Juan Dela Cruz"
-                                  required
-                                  className="!border-gray-300"
-                                />
-                                </div>
-                                <div>
-                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Position / Relationship
-                                  </Typography>
-                                <Input
-                                  size="md"
-                                  value={ref.position || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "position", e.target.value)}
-                                    placeholder="e.g. Training Supervisor"
-                                  className="!border-gray-300"
-                                />
-                                </div>
-                                <div>
-                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Company
-                                  </Typography>
-                                <Input
-                                  size="md"
-                                  value={ref.company || ""}
-                                  onChange={(e) => handleArrayFieldChange("references", index, "company", e.target.value)}
-                                    placeholder="e.g. Cafe Delight"
-                                  className="!border-gray-300"
-                                />
-                                </div>
-                                <div>
-                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Email *
-                                  </Typography>
-                                  <Input
-                                    type="email"
+                              <div className="space-y-2">
+                                <div className="flex justify-end gap-2">
+                                  <Button
                                     size="md"
-                                    value={ref.email || ""}
-                                    onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
-                                    placeholder="name@gmail.com"
-                                    required
-                                    className={`!border-gray-300 ${fieldErrors[`referenceEmail_${index}`] ? "!border-red-500" : ""}`}
-                                  />
-                                  {fieldErrors[`referenceEmail_${index}`] && (
-                                    <Typography variant="small" color="red" className="mt-1">
-                                      {fieldErrors[`referenceEmail_${index}`]}
-                                    </Typography>
-                                  )}
-                                </div>
-                                <div>
-                                  <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                    Contact Number *
-                                  </Typography>
-                                  <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                      <span className="text-gray-700 font-medium">+63</span>
-                                    </div>
-                                    <Input
-                                      type="tel"
-                                      size="md"
-                                      value={ref.contact || ""}
-                                      onChange={(e) => handleArrayFieldChange("references", index, "contact", e.target.value)}
-                                      placeholder="1234567890"
-                                      inputMode="numeric"
-                                      pattern="[0-9]*"
-                                      maxLength={10}
-                                      required
-                                      className={`!border-gray-300 pl-12 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
-                                    />
-                                  </div>
-                                  {fieldErrors[`referencePhone_${index}`] && (
-                                    <Typography variant="small" color="red" className="mt-1">
-                                      {fieldErrors[`referencePhone_${index}`]}
-                                    </Typography>
-                                  )}
-                                </div>
-                                <div className="flex justify-end">
+                                    variant="text"
+                                    color="red"
+                                    onClick={() => handleEditReference(ref)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <FaPen className="w-3 h-3" /> Edit
+                                  </Button>
                                   <IconButton
                                     size="md"
                                     variant="text"
@@ -8457,6 +10200,33 @@ const fetchPublicDataWithToken = async () => {
                                   >
                                     <FaTrash className="w-3 h-3" />
                                   </IconButton>
+                                </div>
+                                <div>
+                                  <Typography variant="h6" className="font-bold text-black mb-2 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                    {ref.name}
+                                  </Typography>
+                                  {ref.position && (
+                                    <Typography variant="small" className="text-black font-medium mb-1 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                      {ref.position}
+                                    </Typography>
+                                  )}
+                                  {ref.company && (
+                                    <Typography variant="small" className="text-black mb-3 font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 500 }}>
+                                      {ref.company}
+                                    </Typography>
+                                  )}
+                                  <div className="space-y-1 pt-2 border-t border-gray-200">
+                                    {ref.email && (
+                                      <Typography variant="small" className="text-black break-all text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                        {ref.email}
+                                      </Typography>
+                                    )}
+                                    {ref.contact && (
+                                      <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                        {formatPhoneNumber(ref.contact)}
+                                      </Typography>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             ) : (
@@ -8491,20 +10261,6 @@ const fetchPublicDataWithToken = async () => {
                           </div>
                         ))}
                       </div>
-                      {isEditMode && editingSections.references && (
-                        <div className="pt-2">
-                          <Button
-                            variant="outlined"
-                            size="md"
-                            color="red"
-                            onClick={() => handleAddArrayItem("references", { name: "", relationship: "", company: "", email: "", phone: "" })}
-                            className="w-full flex items-center justify-center gap-2"
-                          >
-                            <FaPlus className="w-4 h-4" />
-                            Add Reference
-                          </Button>
-                        </div>
-                      )}
                       {!isEditMode && portfolio?.references && portfolio.references.length > INITIAL_ITEMS_LIMIT && (
                         <div className="flex justify-left pt-2">
                           <Button
@@ -8523,11 +10279,6 @@ const fetchPublicDataWithToken = async () => {
                     <div className="bg-white p-6 border-l-4 border-gray-300">
                       {isEditMode && editingSections.references ? (
                         <div className="space-y-4">
-                          <Typography variant="small" className="text-gray-500 italic font-medium text-sm mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                            {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No references added yet"}. Click the button below to add your first reference.
-                          </Typography>
                           <Button
                             variant="outlined"
                             size="md"
@@ -8540,9 +10291,7 @@ const fetchPublicDataWithToken = async () => {
                           </Button>
                         </div>
                       ) : (
-                        <Typography variant="small" className="text-gray-500 italic font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                          You haven't filled up details in this section.
-                        </Typography>
+                        <div></div>
                       )}
                     </div>
                   )}
@@ -8696,11 +10445,10 @@ const fetchPublicDataWithToken = async () => {
                         </>
                       ) : (
                         <Typography
-                          variant="h3"
-                          className="font-light text-white/60 text-2xl md:text-3xl tracking-wide break-words italic"
-                        >
-                          You haven't filled up details in this section.
-                        </Typography>
+                        variant="h3"
+                        className="font-light text-white/60 text-2xl md:text-3xl tracking-wide break-words italic"
+                      >
+                      </Typography>
                       )}
                     </>
                   )}
@@ -8763,11 +10511,10 @@ const fetchPublicDataWithToken = async () => {
                     </Typography>
                     ) : (
                       <Typography
-                        variant="lead"
-                        className="text-white/60 leading-relaxed text-xl md:text-2xl font-light tracking-wide break-words overflow-wrap-anywhere italic"
-                      >
-                        You haven't filled up details in this section.
-                      </Typography>
+                      variant="lead"
+                      className="text-white/60 leading-relaxed text-xl md:text-2xl font-light tracking-wide break-words overflow-wrap-anywhere italic"
+                    >
+                    </Typography>
                     )
                   )}
                 </div>
@@ -8964,10 +10711,10 @@ const fetchPublicDataWithToken = async () => {
                   </IconButton>
                 )}
               </div>
-              {(portfolio.primaryCourseType === "Automotive and Land Transportation" || portfolio.email || portfolio.phone || portfolio.website || isEditMode) ? (
-                (portfolio.email || portfolio.phone || portfolio.website || isEditMode) ? (
+              {(portfolio.primaryCourseType === "Automotive and Land Transportation" || portfolio.email || portfolio.phone || portfolio.website || (isEditMode && editingSections.contact)) ? (
+                (portfolio.email || portfolio.phone || portfolio.website || (isEditMode && editingSections.contact)) ? (
               <div className="space-y-4">
-                {(portfolio.email || isEditMode) && (
+                {(portfolio.email || (isEditMode && editingSections.contact)) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
                       Email
@@ -8995,7 +10742,7 @@ const fetchPublicDataWithToken = async () => {
                     )}
                   </div>
                 )}
-                {(portfolio.phone || isEditMode) && (
+                {(portfolio.phone || (isEditMode && editingSections.contact)) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
                       Phone
@@ -9031,7 +10778,7 @@ const fetchPublicDataWithToken = async () => {
                     )}
                   </div>
                 )}
-                {(portfolio.website || isEditMode) && (
+                {(portfolio.website || (isEditMode && editingSections.contact)) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
                       Website
@@ -9061,9 +10808,7 @@ const fetchPublicDataWithToken = async () => {
                 )}
               </div>
                 ) : (
-                  <Typography variant="small" className="text-gray-500 italic">
-                    You haven't filled up details in this section.
-                  </Typography>
+                  <div></div>
                 )
               ) : null}
               {isEditMode && editingSections.contact && (
@@ -9216,16 +10961,12 @@ const fetchPublicDataWithToken = async () => {
                   )}
                 </div>
               ) : (
-                <Typography variant="small" className="text-gray-500 italic">
-                  {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                    ? "You haven't filled up details in this section."
-                    : "No skills added yet"}
-                </Typography>
+                <div></div>
               )}
             </div>
 
-            {/* TESDA Information - Always show for Automotive and Land Transportation */}
-            {(portfolio.primaryCourseType === "Automotive and Land Transportation" || portfolio.ncLevel || portfolio.trainingCenter || portfolio.scholarshipType || portfolio.trainingDuration || portfolio.tesdaRegistrationNumber || isEditMode) && (
+            {/* TESDA Information */}
+            {(portfolio.ncLevel || portfolio.trainingCenter || portfolio.scholarshipType || portfolio.trainingDuration || portfolio.tesdaRegistrationNumber || isEditMode || portfolio?.designTemplate === "Template 2" || !portfolio?.designTemplate) && (
             <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
               <div className="flex items-center justify-between mb-6">
                 <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg`}>
@@ -9404,9 +11145,7 @@ const fetchPublicDataWithToken = async () => {
                 )}
               </div>
                 ) : (
-                  <Typography variant="small" className="text-gray-500 italic">
-                    You haven't filled up details in this section.
-                  </Typography>
+                  <div></div>
                 )}
               {isEditMode && editingSections.tesda && (
                 <div className="mt-4 flex justify-end">
@@ -9686,9 +11425,6 @@ const fetchPublicDataWithToken = async () => {
                   ) : !isEditMode || !editingSections.certificates ? (
                     portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
                       <div className="bg-white border border-gray-100 rounded-lg p-6">
-                        <Typography variant="small" className="text-gray-500 italic">
-                          You haven't filled up details in this section.
-                        </Typography>
                       </div>
                     ) : null
                   ) : null}
@@ -9709,11 +11445,6 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
-                  <Typography variant="small" className="text-gray-500 italic">
-                    {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No certificates added yet"}
-                  </Typography>
                 </div>
               )}
             </div>
@@ -9736,127 +11467,137 @@ const fetchPublicDataWithToken = async () => {
                 )}
               </div>
               {((portfolio.experiences && portfolio.experiences.length > 0) || (isEditMode && editingSections.experience) || portfolio.primaryCourseType === "Automotive and Land Transportation") ? (
-                <div className="space-y-8">
-                  {((isEditMode && editingSections.experience ? editingPortfolio?.experiences : portfolio.experiences) || []).length > 0 ? (
-                    (isEditMode && editingSections.experience ? editingPortfolio?.experiences : portfolio.experiences)?.map((exp, index) => (
-                    <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-8 pb-8`}>
-                      {isEditMode && editingSections.experience ? (
+                isEditMode && editingSections.experience ? (
+                  <div className="space-y-4">
+                    {isAddingExperience && (
+                      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                        <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                          {editingExperienceId ? "Edit Experience" : "Add New Experience"}
+                        </Typography>
                         <div className="space-y-4">
-                          <div className="flex justify-end -mt-2">
-                        <IconButton
-                          size="md"
-                          variant="text"
-                          color="red"
-                          onClick={() => handleRemoveArrayItem("experiences", index)}
-                              aria-label="Remove experience"
-                        >
-                          <FaTrash className="w-4 h-4" />
-                        </IconButton>
-                          </div>
                           <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                            <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                               Job Title *
                             </Typography>
-                          <Input
-                            size="md"
-                            value={exp.jobTitle || ""}
-                            onChange={(e) => handleArrayFieldChange("experiences", index, "jobTitle", e.target.value)}
+                            <Input
+                              size="lg"
+                              name="jobTitle"
+                              value={newExperience.jobTitle}
+                              onChange={handleExperienceInputChange}
                               placeholder="e.g. Sous Chef"
-                            required
-                            className="!border-gray-300"
-                          />
+                              required
+                              className="!border-gray-300 focus:!border-blue-500"
+                            />
+                            {experienceFormSubmitAttempted && !newExperience.jobTitle && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                Please fill in the job title.
+                              </Typography>
+                            )}
                           </div>
                           <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                            <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                               Company / Employer *
                             </Typography>
-                          <Input
-                            size="md"
-                              value={exp.company || exp.employer || ""}
-                              onChange={(e) => handleArrayFieldChange("experiences", index, "company", e.target.value)}
-                              placeholder="e.g. Bistro Manila"
-                            required
-                            className="!border-gray-300"
-                          />
-                          </div>
-                          <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Start Date *
-                            </Typography>
                             <Input
-                                  type="date"
-                                size="md"
-                                  value={exp.startDate || ""}
-                                  onChange={(e) => handleArrayFieldChange("experiences", index, "startDate", e.target.value)}
-                                  onBlur={(e) => handleArrayFieldBlur("experiences", index, "startDate", e.target.value)}
-                                  max={(() => {
-                                    const today = new Date()
-                                    return today.toISOString().split('T')[0]
-                                  })()}
+                              size="lg"
+                              name="company"
+                              value={newExperience.company}
+                              onChange={handleExperienceInputChange}
+                              placeholder="e.g. Bistro Manila"
+                              required
+                              className="!border-gray-300 focus:!border-blue-500"
+                            />
+                            {experienceFormSubmitAttempted && !newExperience.company && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                Please fill in the company.
+                              </Typography>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                Start Date *
+                              </Typography>
+                              <Input
+                                type="date"
+                                size="lg"
+                                name="startDate"
+                                value={newExperience.startDate}
+                                onChange={handleExperienceInputChange}
+                                onBlur={handleExperienceInputBlur}
+                                max={(() => {
+                                  const today = new Date()
+                                  return today.toISOString().split('T')[0]
+                                })()}
                                 required
-                                className="!border-gray-300"
+                                className="!border-gray-300 focus:!border-blue-500"
                               />
-                                {exp.startDate && (() => {
-                                  const today = new Date().toISOString().split('T')[0]
-                                  return exp.startDate > today
-                                })() && (
-                                  <Typography variant="small" color="red" className="mt-1">
-                                    Start Date cannot be a future date.
-                                  </Typography>
-                                )}
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                  End Date *
+                              {experienceFormSubmitAttempted && !newExperience.startDate && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Please fill in the start date.
                                 </Typography>
-                                <Input
-                                  type="date"
-                                  size="md"
-                                  value={exp.endDate || ""}
-                                  onChange={(e) => handleArrayFieldChange("experiences", index, "endDate", e.target.value)}
-                                  onBlur={(e) => handleArrayFieldBlur("experiences", index, "endDate", e.target.value)}
-                                  min={exp.startDate || undefined}
-                                  max={(() => {
-                                    const today = new Date()
-                                    return today.toISOString().split('T')[0]
-                                  })()}
-                                  required
-                                  className="!border-gray-300"
-                                />
-                                {exp.startDate && exp.endDate && exp.endDate < exp.startDate && (
-                                  <Typography variant="small" color="red" className="mt-1">
-                                    End Date cannot be before Start Date.
-                                  </Typography>
-                                )}
-                                {exp.endDate && (() => {
-                                  const today = new Date().toISOString().split('T')[0]
-                                  return exp.endDate > today
-                                })() && (
-                                  <Typography variant="small" color="red" className="mt-1">
-                                    End Date cannot be a future date.
-                                  </Typography>
-                                )}
+                              )}
+                              {newExperience.startDate && (() => {
+                                const today = new Date().toISOString().split('T')[0]
+                                return newExperience.startDate > today
+                              })() && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Start Date cannot be a future date.
+                                </Typography>
+                              )}
+                            </div>
+                            <div>
+                              <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                                End Date
+                              </Typography>
+                              <Input
+                                type="date"
+                                size="lg"
+                                name="endDate"
+                                value={newExperience.endDate}
+                                onChange={handleExperienceInputChange}
+                                onBlur={handleExperienceInputBlur}
+                                min={newExperience.startDate || undefined}
+                                max={(() => {
+                                  const today = new Date()
+                                  return today.toISOString().split('T')[0]
+                                })()}
+                                className="!border-gray-300 focus:!border-blue-500"
+                              />
+                              {newExperience.startDate && newExperience.endDate && newExperience.endDate < newExperience.startDate && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  End Date cannot be before Start Date.
+                                </Typography>
+                              )}
+                              {newExperience.endDate && (() => {
+                                const today = new Date().toISOString().split('T')[0]
+                                return newExperience.endDate > today
+                              })() && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  End Date cannot be a future date.
+                                </Typography>
+                              )}
+                            </div>
                           </div>
                           <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
+                            <Typography variant="small" className="mb-2 text-gray-700 font-medium">
                               Responsibilities / Highlights
                             </Typography>
                             <Textarea
-                              size="md"
-                              value={exp.responsibilities || exp.description || ""}
-                              onChange={(e) =>
-                                handleArrayFieldChange("experiences", index, "responsibilities", e.target.value)
-                              }
+                              size="lg"
+                              name="responsibilities"
+                              value={newExperience.responsibilities}
+                              onChange={handleExperienceInputChange}
                               placeholder="Summarize key contributions"
-                              className="!border-gray-300"
+                              className="!border-gray-300 focus:!border-blue-500"
                               rows={3}
                               maxLength={300}
                             />
                             <div className="flex justify-between items-center mt-1">
                               <Typography variant="small" className="text-gray-500">
-                                {(exp.responsibilities || exp.description || "").length}/300 characters
+                                {newExperience.responsibilities.length}/300 characters
                               </Typography>
-                              {(exp.responsibilities || exp.description || "").length > 300 && (
+                              {newExperience.responsibilities.length > 300 && (
                                 <Typography variant="small" color="red">
                                   Responsibilities cannot exceed 300 characters.
                                 </Typography>
@@ -9864,8 +11605,134 @@ const fetchPublicDataWithToken = async () => {
                             </div>
                           </div>
                         </div>
-                      ) : (
-                        <>
+                        <div className="mt-6 flex justify-end gap-2">
+                          <Button
+                            variant="gradient"
+                            color={designTheme.buttonColor}
+                            onClick={editingExperienceId ? handleUpdateExperience : handleAddExperience}
+                            disabled={!isExperienceFormValid()}
+                          >
+                            {editingExperienceId ? "Update Experience" : "Add Experience"}
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            color="gray"
+                            onClick={() => {
+                              setIsAddingExperience(false)
+                              setEditingExperienceId(null)
+                              setExperienceSubmitAttempted(false)
+                              setNewExperience({
+                                jobTitle: "",
+                                company: "",
+                                startDate: "",
+                                endDate: "",
+                                responsibilities: "",
+                              })
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {!isAddingExperience && (
+                      <Button
+                        variant="outlined"
+                        color={designTheme.buttonColor}
+                        onClick={() => {
+                          setIsAddingExperience(true)
+                          setEditingExperienceId(null)
+                          setNewExperience({
+                            jobTitle: "",
+                            company: "",
+                            startDate: "",
+                            endDate: "",
+                            responsibilities: "",
+                          })
+                        }}
+                        className="flex items-center gap-2 w-full"
+                      >
+                        <FaPlus className="w-4 h-4" />
+                        Add Experience
+                      </Button>
+                    )}
+
+                    {(editingPortfolio?.experiences || []).length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {(editingPortfolio?.experiences || []).map((exp, index) => (
+                          <Card key={exp.id || index} className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
+                            <CardBody className="p-6">
+                              <div className="space-y-2">
+                                <div className="flex justify-end -mt-2 gap-2">
+                                  <Button
+                                    size="md"
+                                    variant="text"
+                                    color={designTheme.buttonColor}
+                                    onClick={() => handleEditExperience(exp)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <FaPen className="w-4 h-4" /> Edit
+                                  </Button>
+                                  <IconButton
+                                    size="md"
+                                    variant="text"
+                                    color="red"
+                                    onClick={() => handleRemoveArrayItem("experiences", index)}
+                                    aria-label="Remove experience"
+                                  >
+                                    <FaTrash className="w-4 h-4" />
+                                  </IconButton>
+                                </div>
+                                <div>
+                                  <Typography variant="h6" className="font-medium text-gray-800 mb-2 break-words">
+                                    {exp.jobTitle}
+                                  </Typography>
+                                  {exp.company && (
+                                    <Typography variant="small" className={`${designTheme.textColor} font-medium mb-2 break-words`}>
+                                      {exp.company}
+                                    </Typography>
+                                  )}
+                                  {(exp.startDate || exp.endDate) && (
+                                    <Typography variant="small" color="gray" className="mb-4">
+                                      {exp.startDate ? new Date(exp.startDate).toLocaleDateString() : "N/A"} -{" "}
+                                      {exp.endDate ? new Date(exp.endDate).toLocaleDateString() : "N/A"}
+                                    </Typography>
+                                  )}
+                                  {exp.responsibilities && (
+                                    <Typography
+                                      variant="small"
+                                      className="text-gray-700 leading-relaxed break-words overflow-wrap-anywhere"
+                                    >
+                                      {exp.responsibilities}
+                                    </Typography>
+                                  )}
+                                </div>
+                              </div>
+                            </CardBody>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="mt-6 flex justify-end">
+                      <Button
+                        variant="gradient"
+                        color={designTheme.buttonColor}
+                        onClick={() => handleSaveSection("experience")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-4 h-4" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : portfolio.experiences && portfolio.experiences.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {portfolio.experiences.map((exp, index) => (
+                      <Card key={index} className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
+                        <CardBody className="p-6">
                           <Typography variant="h6" className="font-medium text-gray-800 mb-2 break-words">
                             {exp.jobTitle}
                           </Typography>
@@ -9888,61 +11755,16 @@ const fetchPublicDataWithToken = async () => {
                               {exp.responsibilities}
                             </Typography>
                           )}
-                        </>
-                      )}
-                    </div>
-                  ))
-                  ) : !isEditMode || !editingSections.experience ? (
-                    portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
-                      <div className="bg-white border border-gray-100 rounded-lg p-6">
-                        <Typography variant="small" className="text-gray-500 italic">
-                          You haven't filled up details in this section.
-                        </Typography>
-                      </div>
-                    ) : null
-                  ) : null}
-                  {isEditMode && editingSections.experience && (
-                      <Button
-                        variant="outlined"
-                        size="md"
-                        color={designTheme.buttonColor}
-                        onClick={() =>
-                          handleAddArrayItem("experiences", {
-                          jobTitle: "",
-                          employer: "",
-                          description: "",
-                          startDate: "",
-                          endDate: "",
-                        })
-                      }
-                      className="w-full flex items-center justify-center gap-2"
-                    >
-                      <FaPlus className="w-4 h-4" />
-                      Add Experience
-                    </Button>
-                  )}
-                  {isEditMode && editingSections.experience && (
-                    <div className="mt-6 flex justify-end">
-                      <Button
-                        variant="gradient"
-                        color={designTheme.buttonColor}
-                        onClick={() => handleSaveSection("experience")}
-                        disabled={isSaving}
-                        className="flex items-center gap-2"
-                      >
-                        <FaSave className="w-4 h-4" />
-                        {isSaving ? "Saving..." : "Save Changes"}
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                        </CardBody>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-white border border-gray-100 rounded-lg p-6">
+                  </div>
+                )
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
-                  <Typography variant="small" className="text-gray-500 italic">
-                    {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No experience added yet"}
-                  </Typography>
                 </div>
               )}
             </div>
@@ -10250,9 +12072,6 @@ const fetchPublicDataWithToken = async () => {
                   ) : !isEditMode || !editingSections.projects ? (
                     portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
                       <div className="bg-white border border-gray-100 rounded-lg p-6">
-                        <Typography variant="small" className="text-gray-500 italic">
-                          You haven't filled up details in this section.
-                        </Typography>
                       </div>
                     ) : null
                   ) : null}
@@ -10273,11 +12092,6 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
-                  <Typography variant="small" className="text-gray-500 italic">
-                    {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No projects added yet"}
-                  </Typography>
                 </div>
               )}
             </div>
@@ -10301,70 +12115,164 @@ const fetchPublicDataWithToken = async () => {
               </div>
               {((portfolio.awardsRecognitions && portfolio.awardsRecognitions.length > 0) || (isEditMode && editingSections.awards) || portfolio.primaryCourseType === "Automotive and Land Transportation") ? (
                 <div className="space-y-4">
-                  {((isEditMode && editingSections.awards ? editingPortfolio?.awardsRecognitions : portfolio.awardsRecognitions) || []).length > 0 ? (
-                    (isEditMode && editingSections.awards ? editingPortfolio?.awardsRecognitions : portfolio.awardsRecognitions)?.map((award, index) => (
-                    <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
-                      {isEditMode && editingSections.awards ? (
-                        <div className="space-y-3">
-                          <div className="flex justify-end -mt-2">
-                        <IconButton
-                          size="md"
-                          variant="text"
-                          color="red"
-                          onClick={() => handleRemoveArrayItem("awardsRecognitions", index)}
-                              aria-label="Remove award"
-                        >
-                          <FaTrash className="w-4 h-4" />
-                        </IconButton>
-                          </div>
-                          <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Award Title *
-                            </Typography>
+                  {isEditMode && editingSections.awards && isAddingAward && (
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                      <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                        {editingAwardId ? "Edit Award" : "Add New Award"}
+                      </Typography>
+                      <div className="space-y-4">
+                        <div>
+                          <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                            Award Title *
+                          </Typography>
                           <Input
-                            size="md"
-                            value={award.title || ""}
-                            onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "title", e.target.value)}
-                              placeholder="e.g. Best in Pastry Arts"
+                            size="lg"
+                            name="title"
+                            value={newAward.title}
+                            onChange={handleAwardInputChange}
+                            placeholder="e.g. Best in Pastry Arts"
                             required
-                            className="!border-gray-300"
+                            className="!border-gray-300 focus:!border-blue-500"
                           />
-                          </div>
-                          <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Issuer
+                          {awardFormSubmitAttempted && !newAward.title && (
+                            <Typography variant="small" color="red" className="mt-1">
+                              Please fill in the award title.
                             </Typography>
+                          )}
+                        </div>
+                        <div>
+                          <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                            Issuer
+                          </Typography>
                           <Input
-                            size="md"
-                            value={award.issuer || ""}
-                            onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "issuer", e.target.value)}
-                              placeholder="e.g. TESDA"
-                            className="!border-gray-300"
+                            size="lg"
+                            name="issuer"
+                            value={newAward.issuer}
+                            onChange={handleAwardInputChange}
+                            placeholder="e.g. TESDA"
+                            className="!border-gray-300 focus:!border-blue-500"
                           />
-                          </div>
-                          <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Date Received *
-                            </Typography>
+                        </div>
+                        <div>
+                          <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                            Date Received *
+                          </Typography>
                           <Input
                             type="date"
-                            size="md"
-                            value={award.dateReceived || ""}
-                            onChange={(e) => handleArrayFieldChange("awardsRecognitions", index, "dateReceived", e.target.value)}
-                            onBlur={(e) => handleArrayFieldBlur("awardsRecognitions", index, "dateReceived", e.target.value)}
+                            size="lg"
+                            name="dateReceived"
+                            value={newAward.dateReceived}
+                            onChange={handleAwardInputChange}
+                            onBlur={handleAwardInputBlur}
                             max={(() => {
                               const today = new Date()
                               return today.toISOString().split('T')[0]
                             })()}
                             required
-                            className="!border-gray-300"
+                            className="!border-gray-300 focus:!border-blue-500"
                           />
-                            {award.dateReceived && (() => {
-                              const today = new Date().toISOString().split('T')[0]
-                              return award.dateReceived > today
-                            })() && (
-                              <Typography variant="small" color="red" className="mt-1">
-                                Date Received cannot be a future date.
+                          {awardFormSubmitAttempted && !newAward.dateReceived && (
+                            <Typography variant="small" color="red" className="mt-1">
+                              Please fill in the date received.
+                            </Typography>
+                          )}
+                          {newAward.dateReceived && (() => {
+                            const today = new Date().toISOString().split('T')[0]
+                            return newAward.dateReceived > today
+                          })() && (
+                            <Typography variant="small" color="red" className="mt-1">
+                              Date Received cannot be a future date.
+                            </Typography>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-6 flex justify-end gap-2">
+                        <Button
+                          variant="gradient"
+                          color={designTheme.buttonColor}
+                          onClick={editingAwardId ? handleUpdateAward : handleAddAward}
+                          disabled={!isAwardFormValid()}
+                        >
+                          {editingAwardId ? "Update Award" : "Add Award"}
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="gray"
+                          onClick={() => {
+                            setIsAddingAward(false)
+                            setEditingAwardId(null)
+                            setAwardFormSubmitAttempted(false)
+                            setNewAward({
+                              title: "",
+                              issuer: "",
+                              dateReceived: "",
+                            })
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {!isAddingAward && isEditMode && editingSections.awards && (
+                    <Button
+                      variant="outlined"
+                      size="md"
+                      color={designTheme.buttonColor}
+                      onClick={() => {
+                        setIsAddingAward(true)
+                        setEditingAwardId(null)
+                        setNewAward({
+                          title: "",
+                          issuer: "",
+                          dateReceived: "",
+                        })
+                      }}
+                      className="w-full flex items-center justify-center gap-2"
+                    >
+                      <FaPlus className="w-4 h-4" />
+                      Add Award
+                    </Button>
+                  )}
+
+                  {((isEditMode && editingSections.awards ? editingPortfolio?.awardsRecognitions : portfolio.awardsRecognitions) || []).length > 0 ? (
+                    (isEditMode && editingSections.awards ? editingPortfolio?.awardsRecognitions : portfolio.awardsRecognitions)?.map((award, index) => (
+                    <div key={award.id || index} className="bg-white border border-gray-100 rounded-lg p-6">
+                      {isEditMode && editingSections.awards ? (
+                        <div className="space-y-2">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="md"
+                              variant="text"
+                              color={designTheme.buttonColor}
+                              onClick={() => handleEditAward(award)}
+                              className="flex items-center gap-1"
+                            >
+                              <FaPen className="w-3 h-3" /> Edit
+                            </Button>
+                            <IconButton
+                              size="md"
+                              variant="text"
+                              color="red"
+                              onClick={() => handleRemoveArrayItem("awardsRecognitions", index)}
+                              aria-label="Remove award"
+                            >
+                              <FaTrash className="w-3 h-3" />
+                            </IconButton>
+                          </div>
+                          <div>
+                            <Typography variant="h6" className="font-medium mb-2">
+                              {award.title}
+                            </Typography>
+                            {award.issuer && (
+                              <Typography variant="small" color="gray" className="mb-1">
+                                Issued by: {award.issuer}
+                              </Typography>
+                            )}
+                            {award.dateReceived && (
+                              <Typography variant="small" className={designTheme.textColor}>
+                                {award.dateReceived ? new Date(award.dateReceived).toLocaleDateString() : ""}
                               </Typography>
                             )}
                           </div>
@@ -10381,7 +12289,7 @@ const fetchPublicDataWithToken = async () => {
                           )}
                           {award.dateReceived && (
                             <Typography variant="small" className={designTheme.textColor}>
-                              {award.dateReceived}
+                              {award.dateReceived ? new Date(award.dateReceived).toLocaleDateString() : ""}
                             </Typography>
                           )}
                         </>
@@ -10391,24 +12299,9 @@ const fetchPublicDataWithToken = async () => {
                   ) : !isEditMode || !editingSections.awards ? (
                     portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
                       <div className="bg-white border border-gray-100 rounded-lg p-6">
-                        <Typography variant="small" className="text-gray-500 italic">
-                          You haven't filled up details in this section.
-                        </Typography>
                       </div>
                     ) : null
                   ) : null}
-                  {isEditMode && editingSections.awards && (
-                    <Button
-                      variant="outlined"
-                      size="md"
-                      color={designTheme.buttonColor}
-                      onClick={() => handleAddArrayItem("awardsRecognitions", { title: "", issuer: "", dateReceived: "" })}
-                      className="w-full flex items-center justify-center gap-2"
-                    >
-                      <FaPlus className="w-4 h-4" />
-                      Add Award
-                    </Button>
-                  )}
                   {isEditMode && editingSections.awards && (
                     <div className="mt-6 flex justify-end">
                       <Button
@@ -10426,11 +12319,6 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
-                  <Typography variant="small" className="text-gray-500 italic">
-                    {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No awards or recognition added yet"}
-                  </Typography>
                 </div>
               )}
             </div>
@@ -10456,70 +12344,164 @@ const fetchPublicDataWithToken = async () => {
                 </div>
                 {((portfolio.continuingEducations && portfolio.continuingEducations.length > 0) || (isEditMode && editingSections.education) || portfolio.primaryCourseType === "Automotive and Land Transportation") ? (
                   <div className="space-y-4">
-                    {((isEditMode && editingSections.education ? editingPortfolio?.continuingEducations : portfolio.continuingEducations) || []).length > 0 ? (
-                      (isEditMode && editingSections.education ? editingPortfolio?.continuingEducations : portfolio.continuingEducations)?.map((edu, index) => (
-                      <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2`}>
-                        {isEditMode && editingSections.education ? (
-                          <div className="space-y-3">
-                            <div className="flex justify-end -mt-2">
-                          <IconButton
-                            size="md"
-                            variant="text"
-                            color="red"
-                            onClick={() => handleRemoveArrayItem("continuingEducations", index)}
-                                aria-label="Remove education"
-                          >
-                            <FaTrash className="w-3 h-3" />
-                          </IconButton>
-                            </div>
-                            <div>
-                              <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                Course Name *
-                              </Typography>
+                    {isEditMode && editingSections.education && isAddingEducation && (
+                      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                        <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                          {editingEducationId ? "Edit Education" : "Add New Education"}
+                        </Typography>
+                        <div className="space-y-4">
+                          <div>
+                            <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                              Course Name *
+                            </Typography>
                             <Input
-                              size="md"
-                              value={edu.courseName || ""}
-                              onChange={(e) => handleArrayFieldChange("continuingEducations", index, "courseName", e.target.value)}
-                                placeholder="e.g. Advanced Baking Workshop"
+                              size="lg"
+                              name="courseName"
+                              value={newEducation.courseName}
+                              onChange={handleEducationInputChange}
+                              placeholder="e.g. Advanced Baking Workshop"
                               required
-                              className="!border-gray-300"
+                              className="!border-gray-300 focus:!border-blue-500"
                             />
-                            </div>
-                            <div>
-                              <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                Institution
+                            {educationFormSubmitAttempted && !newEducation.courseName && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                Please fill in the course name.
                               </Typography>
+                            )}
+                          </div>
+                          <div>
+                            <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                              Institution
+                            </Typography>
                             <Input
-                              size="md"
-                              value={edu.institution || ""}
-                              onChange={(e) => handleArrayFieldChange("continuingEducations", index, "institution", e.target.value)}
-                                placeholder="e.g. TESDA Training Center"
-                              className="!border-gray-300"
+                              size="lg"
+                              name="institution"
+                              value={newEducation.institution}
+                              onChange={handleEducationInputChange}
+                              placeholder="e.g. TESDA Training Center"
+                              className="!border-gray-300 focus:!border-blue-500"
                             />
-                            </div>
-                            <div>
-                              <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                Completion Date *
-                              </Typography>
+                          </div>
+                          <div>
+                            <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                              Completion Date *
+                            </Typography>
                             <Input
                               type="date"
-                              size="md"
-                              value={edu.completionDate || ""}
-                              onChange={(e) => handleArrayFieldChange("continuingEducations", index, "completionDate", e.target.value)}
-                              onBlur={(e) => handleArrayFieldBlur("continuingEducations", index, "completionDate", e.target.value)}
+                              size="lg"
+                              name="completionDate"
+                              value={newEducation.completionDate}
+                              onChange={handleEducationInputChange}
+                              onBlur={handleEducationInputBlur}
                               max={(() => {
                                 const today = new Date()
                                 return today.toISOString().split('T')[0]
                               })()}
                               required
-                              className="!border-gray-300"
+                              className="!border-gray-300 focus:!border-blue-500"
                             />
-                              {edu.completionDate && (() => {
-                                const today = new Date().toISOString().split('T')[0]
-                                return edu.completionDate > today
-                              })() && (
-                                <Typography variant="small" color="red" className="mt-1">
-                                  Completion Date cannot be a future date.
+                            {educationFormSubmitAttempted && !newEducation.completionDate && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                Please fill in the completion date.
+                              </Typography>
+                            )}
+                            {newEducation.completionDate && (() => {
+                              const today = new Date().toISOString().split('T')[0]
+                              return newEducation.completionDate > today
+                            })() && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                Completion Date cannot be a future date.
+                              </Typography>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-6 flex justify-end gap-2">
+                          <Button
+                            variant="gradient"
+                            color={designTheme.buttonColor}
+                            onClick={editingEducationId ? handleUpdateEducation : handleAddEducation}
+                            disabled={!isEducationFormValid()}
+                          >
+                            {editingEducationId ? "Update Education" : "Add Education"}
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            color="gray"
+                            onClick={() => {
+                              setIsAddingEducation(false)
+                              setEditingEducationId(null)
+                              setEducationFormSubmitAttempted(false)
+                              setNewEducation({
+                                courseName: "",
+                                institution: "",
+                                completionDate: "",
+                              })
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {!isAddingEducation && isEditMode && editingSections.education && (
+                      <Button
+                        variant="outlined"
+                        size="md"
+                        color={designTheme.buttonColor}
+                        onClick={() => {
+                          setIsAddingEducation(true)
+                          setEditingEducationId(null)
+                          setNewEducation({
+                            courseName: "",
+                            institution: "",
+                            completionDate: "",
+                          })
+                        }}
+                        className="w-full flex items-center justify-center gap-2"
+                      >
+                        <FaPlus className="w-3 h-3" />
+                        Add Education
+                      </Button>
+                    )}
+
+                    {((isEditMode && editingSections.education ? editingPortfolio?.continuingEducations : portfolio.continuingEducations) || []).length > 0 ? (
+                      (isEditMode && editingSections.education ? editingPortfolio?.continuingEducations : portfolio.continuingEducations)?.map((edu, index) => (
+                      <div key={edu.id || index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2`}>
+                        {isEditMode && editingSections.education ? (
+                          <div className="space-y-2">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                size="md"
+                                variant="text"
+                                color={designTheme.buttonColor}
+                                onClick={() => handleEditEducation(edu)}
+                                className="flex items-center gap-1"
+                              >
+                                <FaPen className="w-3 h-3" /> Edit
+                              </Button>
+                              <IconButton
+                                size="md"
+                                variant="text"
+                                color="red"
+                                onClick={() => handleRemoveArrayItem("continuingEducations", index)}
+                                aria-label="Remove education"
+                              >
+                                <FaTrash className="w-3 h-3" />
+                              </IconButton>
+                            </div>
+                            <div>
+                              <Typography variant="small" className="font-medium mb-1">
+                                {edu.courseName}
+                              </Typography>
+                              {edu.institution && (
+                                <Typography variant="small" color="gray" className="mb-1">
+                                  {edu.institution}
+                                </Typography>
+                              )}
+                              {edu.completionDate && (
+                                <Typography variant="small" className={designTheme.textColor}>
+                                  {edu.completionDate ? new Date(edu.completionDate).toLocaleDateString() : ""}
                                 </Typography>
                               )}
                             </div>
@@ -10536,7 +12518,7 @@ const fetchPublicDataWithToken = async () => {
                             )}
                             {edu.completionDate && (
                               <Typography variant="small" className={designTheme.textColor}>
-                                {edu.completionDate}
+                                {edu.completionDate ? new Date(edu.completionDate).toLocaleDateString() : ""}
                               </Typography>
                             )}
                           </>
@@ -10545,23 +12527,9 @@ const fetchPublicDataWithToken = async () => {
                     ))
                     ) : !isEditMode || !editingSections.education ? (
                       portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
-                        <Typography variant="small" className="text-gray-500 italic">
-                          You haven't filled up details in this section.
-                        </Typography>
+                        <div></div>
                       ) : null
                     ) : null}
-                    {isEditMode && editingSections.education && (
-                      <Button
-                        variant="outlined"
-                        size="md"
-                        color={designTheme.buttonColor}
-                        onClick={() => handleAddArrayItem("continuingEducations", { courseName: "", institution: "", completionDate: "" })}
-                        className="w-full flex items-center justify-center gap-2"
-                      >
-                        <FaPlus className="w-3 h-3" />
-                        Add Education
-                      </Button>
-                    )}
                     {isEditMode && editingSections.education && (
                       <div className="mt-4 flex justify-end">
                         <Button
@@ -10579,11 +12547,7 @@ const fetchPublicDataWithToken = async () => {
                     )}
                   </div>
                 ) : (
-                  <Typography variant="small" className="text-gray-500 italic">
-                    {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No continuing education added yet"}
-                  </Typography>
+                  <div></div>
                 )}
               </div>
 
@@ -10606,70 +12570,164 @@ const fetchPublicDataWithToken = async () => {
                 </div>
                 {((portfolio.professionalMemberships && portfolio.professionalMemberships.length > 0) || (isEditMode && editingSections.memberships) || portfolio.primaryCourseType === "Automotive and Land Transportation") ? (
                   <div className="space-y-4">
-                    {((isEditMode && editingSections.memberships ? editingPortfolio?.professionalMemberships : portfolio.professionalMemberships) || []).length > 0 ? (
-                      (isEditMode && editingSections.memberships ? editingPortfolio?.professionalMemberships : portfolio.professionalMemberships)?.map((mem, index) => (
-                      <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2`}>
-                        {isEditMode && editingSections.memberships ? (
-                          <div className="space-y-3">
-                            <div className="flex justify-end -mt-2">
-                          <IconButton
-                            size="md"
-                            variant="text"
-                            color="red"
-                            onClick={() => handleRemoveArrayItem("professionalMemberships", index)}
-                                aria-label="Remove membership"
-                          >
-                            <FaTrash className="w-3 h-3" />
-                          </IconButton>
-                            </div>
-                            <div>
-                              <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                Organization *
-                              </Typography>
+                    {isEditMode && editingSections.memberships && isAddingMembership && (
+                      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                        <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                          {editingMembershipId ? "Edit Membership" : "Add New Membership"}
+                        </Typography>
+                        <div className="space-y-4">
+                          <div>
+                            <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                              Organization *
+                            </Typography>
                             <Input
-                              size="md"
-                              value={mem.organization || ""}
-                              onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "organization", e.target.value)}
-                                placeholder="e.g. Philippine Chefs Association"
+                              size="lg"
+                              name="organization"
+                              value={newMembership.organization}
+                              onChange={handleMembershipInputChange}
+                              placeholder="e.g. Philippine Chefs Association"
                               required
-                              className="!border-gray-300"
+                              className="!border-gray-300 focus:!border-blue-500"
                             />
-                            </div>
-                            <div>
-                              <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                Membership Type
+                            {membershipFormSubmitAttempted && !newMembership.organization && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                Please fill in the organization.
                               </Typography>
+                            )}
+                          </div>
+                          <div>
+                            <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                              Membership Type
+                            </Typography>
                             <Input
-                              size="md"
-                              value={mem.membershipType || ""}
-                              onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "membershipType", e.target.value)}
-                                placeholder="e.g. Regular Member"
-                              className="!border-gray-300"
+                              size="lg"
+                              name="membershipType"
+                              value={newMembership.membershipType}
+                              onChange={handleMembershipInputChange}
+                              placeholder="e.g. Regular Member"
+                              className="!border-gray-300 focus:!border-blue-500"
                             />
-                            </div>
-                            <div>
-                              <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                Start Date *
-                              </Typography>
+                          </div>
+                          <div>
+                            <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                              Start Date *
+                            </Typography>
                             <Input
                               type="date"
-                              size="md"
-                              value={mem.startDate || ""}
-                              onChange={(e) => handleArrayFieldChange("professionalMemberships", index, "startDate", e.target.value)}
-                              onBlur={(e) => handleArrayFieldBlur("professionalMemberships", index, "startDate", e.target.value)}
+                              size="lg"
+                              name="startDate"
+                              value={newMembership.startDate}
+                              onChange={handleMembershipInputChange}
+                              onBlur={handleMembershipInputBlur}
                               max={(() => {
                                 const today = new Date()
                                 return today.toISOString().split('T')[0]
                               })()}
                               required
-                              className="!border-gray-300"
+                              className="!border-gray-300 focus:!border-blue-500"
                             />
-                              {mem.startDate && (() => {
-                                const today = new Date().toISOString().split('T')[0]
-                                return mem.startDate > today
-                              })() && (
-                                <Typography variant="small" color="red" className="mt-1">
-                                  Start Date cannot be a future date.
+                            {membershipFormSubmitAttempted && !newMembership.startDate && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                Please fill in the start date.
+                              </Typography>
+                            )}
+                            {newMembership.startDate && (() => {
+                              const today = new Date().toISOString().split('T')[0]
+                              return newMembership.startDate > today
+                            })() && (
+                              <Typography variant="small" color="red" className="mt-1">
+                                Start Date cannot be a future date.
+                              </Typography>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-6 flex justify-end gap-2">
+                          <Button
+                            variant="gradient"
+                            color={designTheme.buttonColor}
+                            onClick={editingMembershipId ? handleUpdateMembership : handleAddMembership}
+                            disabled={!isMembershipFormValid()}
+                          >
+                            {editingMembershipId ? "Update Membership" : "Add Membership"}
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            color="gray"
+                            onClick={() => {
+                              setIsAddingMembership(false)
+                              setEditingMembershipId(null)
+                              setMembershipFormSubmitAttempted(false)
+                              setNewMembership({
+                                organization: "",
+                                membershipType: "",
+                                startDate: "",
+                              })
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {!isAddingMembership && isEditMode && editingSections.memberships && (
+                      <Button
+                        variant="outlined"
+                        size="md"
+                        color={designTheme.buttonColor}
+                        onClick={() => {
+                          setIsAddingMembership(true)
+                          setEditingMembershipId(null)
+                          setNewMembership({
+                            organization: "",
+                            membershipType: "",
+                            startDate: "",
+                          })
+                        }}
+                        className="w-full flex items-center justify-center gap-2"
+                      >
+                        <FaPlus className="w-3 h-3" />
+                        Add Membership
+                      </Button>
+                    )}
+
+                    {((isEditMode && editingSections.memberships ? editingPortfolio?.professionalMemberships : portfolio.professionalMemberships) || []).length > 0 ? (
+                      (isEditMode && editingSections.memberships ? editingPortfolio?.professionalMemberships : portfolio.professionalMemberships)?.map((mem, index) => (
+                      <div key={mem.id || index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2`}>
+                        {isEditMode && editingSections.memberships ? (
+                          <div className="space-y-2">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                size="md"
+                                variant="text"
+                                color={designTheme.buttonColor}
+                                onClick={() => handleEditMembership(mem)}
+                                className="flex items-center gap-1"
+                              >
+                                <FaPen className="w-3 h-3" /> Edit
+                              </Button>
+                              <IconButton
+                                size="md"
+                                variant="text"
+                                color="red"
+                                onClick={() => handleRemoveArrayItem("professionalMemberships", index)}
+                                aria-label="Remove membership"
+                              >
+                                <FaTrash className="w-3 h-3" />
+                              </IconButton>
+                            </div>
+                            <div>
+                              <Typography variant="small" className="font-medium mb-1">
+                                {mem.organization}
+                              </Typography>
+                              {mem.membershipType && (
+                                <Typography variant="small" color="gray" className="mb-1">
+                                  {mem.membershipType}
+                                </Typography>
+                              )}
+                              {mem.startDate && (
+                                <Typography variant="small" className={designTheme.textColor}>
+                                  {mem.startDate ? new Date(mem.startDate).toLocaleDateString() : ""}
                                 </Typography>
                               )}
                             </div>
@@ -10686,7 +12744,7 @@ const fetchPublicDataWithToken = async () => {
                             )}
                             {mem.startDate && (
                               <Typography variant="small" className={designTheme.textColor}>
-                                Since {mem.startDate}
+                                Since {mem.startDate ? new Date(mem.startDate).toLocaleDateString() : ""}
                               </Typography>
                             )}
                           </>
@@ -10695,23 +12753,9 @@ const fetchPublicDataWithToken = async () => {
                     ))
                     ) : !isEditMode || !editingSections.memberships ? (
                       portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
-                        <Typography variant="small" className="text-gray-500 italic">
-                          You haven't filled up details in this section.
-                        </Typography>
+                        <div></div>
                       ) : null
                     ) : null}
-                    {isEditMode && editingSections.memberships && (
-                      <Button
-                        variant="outlined"
-                        size="md"
-                        color={designTheme.buttonColor}
-                        onClick={() => handleAddArrayItem("professionalMemberships", { organization: "", membershipType: "", startDate: "" })}
-                        className="w-full flex items-center justify-center gap-2"
-                      >
-                        <FaPlus className="w-3 h-3" />
-                        Add Membership
-                      </Button>
-                    )}
                     {isEditMode && editingSections.memberships && (
                       <div className="mt-4 flex justify-end">
                         <Button
@@ -10729,11 +12773,7 @@ const fetchPublicDataWithToken = async () => {
                     )}
                   </div>
                 ) : (
-                  <Typography variant="small" className="text-gray-500 italic">
-                    {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No professional memberships added yet"}
-                  </Typography>
+                  <div></div>
                 )}
               </div>
             </div>
@@ -10756,164 +12796,263 @@ const fetchPublicDataWithToken = async () => {
                 )}
               </div>
               {((portfolio.references && portfolio.references.length > 0) || (isEditMode && editingSections.references) || portfolio.primaryCourseType === "Automotive and Land Transportation") ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {((isEditMode && editingSections.references ? editingPortfolio?.references : portfolio.references) || []).length > 0 ? (
-                    (isEditMode && editingSections.references ? editingPortfolio?.references : portfolio.references)?.map((ref, index) => (
-                    <div key={index} className="bg-white border border-gray-100 rounded-lg p-6">
-                      {isEditMode && editingSections.references ? (
-                        <div className="space-y-3">
-                          <div className="flex justify-end -mt-2">
-                        <IconButton
-                          size="md"
-                          variant="text"
-                          color="red"
-                          onClick={() => handleRemoveArrayItem("references", index)}
-                              aria-label="Remove reference"
-                        >
-                          <FaTrash className="w-4 h-4" />
-                        </IconButton>
-                          </div>
-                          <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Name *
-                            </Typography>
-                          <Input
-                            size="md"
-                            value={ref.name || ""}
-                            onChange={(e) => handleArrayFieldChange("references", index, "name", e.target.value)}
-                              placeholder="e.g. Maria Cruz"
-                            required
-                            className="!border-gray-300"
-                          />
-                          </div>
-                          <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Relationship / Position
-                            </Typography>
-                          <Input
-                            size="md"
-                            value={ref.relationship || ref.position || ""}
-                            onChange={(e) => handleArrayFieldChange("references", index, "relationship", e.target.value)}
-                              placeholder="e.g. Former Training Supervisor"
-                            className="!border-gray-300"
-                          />
-                          </div>
-                          <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Company
-                            </Typography>
-                          <Input
-                            size="md"
-                            value={ref.company || ""}
-                            onChange={(e) => handleArrayFieldChange("references", index, "company", e.target.value)}
-                              placeholder="e.g. Cafe Delight"
-                            className="!border-gray-300"
-                          />
-                          </div>
-                          <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Email *
-                            </Typography>
-                            <Input
-                              type="email"
-                              size="md"
-                              value={ref.email || ""}
-                              onChange={(e) => handleArrayFieldChange("references", index, "email", e.target.value)}
-                              placeholder="name@gmail.com"
-                              required
-                              className={`!border-gray-300 ${fieldErrors[`referenceEmail_${index}`] ? "!border-red-500" : ""}`}
-                            />
-                            {fieldErrors[`referenceEmail_${index}`] && (
-                              <Typography variant="small" color="red" className="mt-1">
-                                {fieldErrors[`referenceEmail_${index}`]}
-                              </Typography>
-                            )}
-                          </div>
-                          <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Contact Number *
-                            </Typography>
-                            <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span className="text-gray-700 font-medium">+63</span>
-                              </div>
-                              <Input
-                                type="tel"
-                                size="md"
-                                value={ref.phone || ref.contact || ""}
-                                onChange={(e) => {
-                                  const newValue = e.target.value
-                                  handleArrayFieldChange("references", index, "phone", newValue)
-                                }}
-                                placeholder="1234567890"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                maxLength={10}
-                                required
-                                className={`!border-gray-300 pl-12 ${fieldErrors[`referencePhone_${index}`] ? "!border-red-500" : ""}`}
-                              />
-                            </div>
-                            {fieldErrors[`referencePhone_${index}`] && (
-                              <Typography variant="small" color="red" className="mt-1">
-                                {fieldErrors[`referencePhone_${index}`]}
-                              </Typography>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <Typography variant="h6" className="font-medium mb-2 break-words">
-                            {ref.name}
+                <div className="space-y-4">
+                  {isEditMode && editingSections.references && isAddingReference && (
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                      <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                        {editingReferenceId ? "Edit Reference" : "Add New Reference"}
+                      </Typography>
+                      <div className="space-y-4">
+                        <div>
+                          <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                            Name *
                           </Typography>
-                          {ref.position && (
-                            <Typography variant="small" color="gray" className="mb-1 break-words">
-                              {ref.position}
+                          <Input
+                            size="lg"
+                            name="name"
+                            value={newReference.name}
+                            onChange={handleReferenceInputChange}
+                            placeholder="e.g. Maria Cruz"
+                            required
+                            className="!border-gray-300 focus:!border-blue-500"
+                          />
+                          {referenceFormSubmitAttempted && !newReference.name && (
+                            <Typography variant="small" color="red" className="mt-1">
+                              Please fill in the name.
                             </Typography>
                           )}
+                        </div>
+                        <div>
+                          <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                            Relationship / Position
+                          </Typography>
+                          <Input
+                            size="lg"
+                            name="relationship"
+                            value={newReference.relationship}
+                            onChange={handleReferenceInputChange}
+                            placeholder="e.g. Former Training Supervisor"
+                            className="!border-gray-300 focus:!border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                            Company
+                          </Typography>
+                          <Input
+                            size="lg"
+                            name="company"
+                            value={newReference.company}
+                            onChange={handleReferenceInputChange}
+                            placeholder="e.g. Cafe Delight"
+                            className="!border-gray-300 focus:!border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                            Email *
+                          </Typography>
+                          <Input
+                            type="email"
+                            size="lg"
+                            name="email"
+                            value={newReference.email}
+                            onChange={handleReferenceInputChange}
+                            placeholder="name@gmail.com"
+                            required
+                            className={`!border-gray-300 focus:!border-blue-500 ${fieldErrors.referenceEmail ? "!border-red-500" : ""}`}
+                          />
+                          {fieldErrors.referenceEmail && (
+                            <Typography variant="small" color="red" className="mt-1">
+                              {fieldErrors.referenceEmail}
+                            </Typography>
+                          )}
+                          {referenceFormSubmitAttempted && !newReference.email && (
+                            <Typography variant="small" color="red" className="mt-1">
+                              Please fill in the email.
+                            </Typography>
+                          )}
+                        </div>
+                        <div>
+                          <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                            Contact Number *
+                          </Typography>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <span className="text-gray-700 font-medium">+63</span>
+                            </div>
+                            <Input
+                              type="tel"
+                              size="lg"
+                              name="phone"
+                              value={newReference.phone}
+                              onChange={handleReferenceInputChange}
+                              placeholder="1234567890"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              maxLength={10}
+                              required
+                              className={`!border-gray-300 pl-12 focus:!border-blue-500 ${fieldErrors.referencePhone ? "!border-red-500" : ""}`}
+                            />
+                          </div>
+                          {fieldErrors.referencePhone && (
+                            <Typography variant="small" color="red" className="mt-1">
+                              {fieldErrors.referencePhone}
+                            </Typography>
+                          )}
+                          {referenceFormSubmitAttempted && !newReference.phone && (
+                            <Typography variant="small" color="red" className="mt-1">
+                              Please fill in the contact number.
+                            </Typography>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-6 flex justify-end gap-2">
+                        <Button
+                          variant="gradient"
+                          color={designTheme.buttonColor}
+                          onClick={editingReferenceId ? handleUpdateReference : handleAddReference}
+                          disabled={!isReferenceFormValid()}
+                        >
+                          {editingReferenceId ? "Update Reference" : "Add Reference"}
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="gray"
+                          onClick={() => {
+                            setIsAddingReference(false)
+                            setEditingReferenceId(null)
+                            setReferenceFormSubmitAttempted(false)
+                            setNewReference({
+                              name: "",
+                              relationship: "",
+                              company: "",
+                              email: "",
+                              phone: "",
+                            })
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {!isAddingReference && isEditMode && editingSections.references && (
+                    <Button
+                      variant="outlined"
+                      size="md"
+                      color={designTheme.buttonColor}
+                      onClick={() => {
+                        setIsAddingReference(true)
+                        setEditingReferenceId(null)
+                        setNewReference({
+                          name: "",
+                          relationship: "",
+                          company: "",
+                          email: "",
+                          phone: "",
+                        })
+                      }}
+                      className="w-full flex items-center justify-center gap-2"
+                    >
+                      <FaPlus className="w-4 h-4" />
+                      Add Reference
+                    </Button>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {((isEditMode && editingSections.references ? editingPortfolio?.references : portfolio.references) || []).length > 0 ? (
+                      (isEditMode && editingSections.references ? editingPortfolio?.references : portfolio.references)?.map((ref, index) => (
+                      <div key={ref.id || index} className="bg-white border border-gray-100 rounded-lg p-6">
+                        {isEditMode && editingSections.references ? (
+                          <div className="space-y-2">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                size="md"
+                                variant="text"
+                                color={designTheme.buttonColor}
+                                onClick={() => handleEditReference(ref)}
+                                className="flex items-center gap-1"
+                              >
+                                <FaPen className="w-3 h-3" /> Edit
+                              </Button>
+                              <IconButton
+                                size="md"
+                                variant="text"
+                                color="red"
+                                onClick={() => handleRemoveArrayItem("references", index)}
+                                aria-label="Remove reference"
+                              >
+                                <FaTrash className="w-3 h-3" />
+                              </IconButton>
+                            </div>
+                            <div>
+                              <Typography variant="h6" className="font-medium mb-2 break-words">
+                                {ref.name}
+                              </Typography>
+                              {ref.position && (
+                                <Typography variant="small" color="gray" className="mb-1 break-words">
+                                  {ref.position}
+                                </Typography>
+                              )}
+                              {ref.company && (
+                                <Typography variant="small" className={`${designTheme.textColor} mb-3 break-words`}>
+                                  {ref.company}
+                                </Typography>
+                              )}
+                              <div className="space-y-1">
+                                {ref.email && (
+                                  <Typography variant="small" color="gray" className="break-all">
+                                    {ref.email}
+                                  </Typography>
+                                )}
+                                {ref.contact && (
+                                  <Typography variant="small" color="gray" className="break-words">
+                                    {formatPhoneNumber(ref.contact)}
+                                  </Typography>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <Typography variant="h6" className="font-medium mb-2 break-words">
+                              {ref.name}
+                            </Typography>
+                            {ref.position && (
+                              <Typography variant="small" color="gray" className="mb-1 break-words">
+                                {ref.position}
+                              </Typography>
+                            )}
                             {ref.company && (
                               <Typography variant="small" className={`${designTheme.textColor} mb-3 break-words`}>
                                 {ref.company}
                               </Typography>
                             )}
-                          <div className="space-y-1">
-                            {ref.email && (
-                              <Typography variant="small" color="gray" className="break-all">
-                                {ref.email}
-                              </Typography>
-                            )}
-                            {ref.contact && (
-                              <Typography variant="small" color="gray" className="break-words">
-                                {formatPhoneNumber(ref.contact)}
-                              </Typography>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))
-                  ) : !isEditMode || !editingSections.references ? (
-                    portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
-                      <div className="md:col-span-2 bg-white border border-gray-100 rounded-lg p-6">
-                        <Typography variant="small" className="text-gray-500 italic">
-                          You haven't filled up details in this section.
-                        </Typography>
+                            <div className="space-y-1">
+                              {ref.email && (
+                                <Typography variant="small" color="gray" className="break-all">
+                                  {ref.email}
+                                </Typography>
+                              )}
+                              {ref.contact && (
+                                <Typography variant="small" color="gray" className="break-words">
+                                  {formatPhoneNumber(ref.contact)}
+                                </Typography>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
-                    ) : null
-                  ) : null}
-                  {isEditMode && editingSections.references && (
-                    <div className="md:col-span-2">
-                      <Button
-                        variant="outlined"
-                        size="md"
-                        color={designTheme.buttonColor}
-                        onClick={() => handleAddArrayItem("references", { name: "", relationship: "", company: "", email: "", phone: "" })}
-                        className="w-full flex items-center justify-center gap-2"
-                      >
-                        <FaPlus className="w-4 h-4" />
-                        Add Reference
-                      </Button>
-                    </div>
-                  )}
+                    ))
+                    ) : !isEditMode || !editingSections.references ? (
+                      portfolio.primaryCourseType === "Automotive and Land Transportation" ? (
+                        <div className="md:col-span-2 bg-white border border-gray-100 rounded-lg p-6">
+                        </div>
+                      ) : null
+                    ) : null}
+                  </div>
                   {isEditMode && editingSections.references && (
                     <div className="mt-6 flex justify-end md:col-span-2">
                       <Button
@@ -10931,11 +13070,6 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               ) : (
                 <div className="bg-white border border-gray-100 rounded-lg p-6">
-                  <Typography variant="small" className="text-gray-500 italic">
-                    {portfolio.primaryCourseType === "Automotive and Land Transportation" 
-                      ? "You haven't filled up details in this section."
-                      : "No references added yet"}
-                  </Typography>
                 </div>
               )}
             </div>
