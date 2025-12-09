@@ -13242,3 +13242,4 @@ const fetchPublicDataWithToken = async () => {
 }
 
 export default ViewPortfolio
+
