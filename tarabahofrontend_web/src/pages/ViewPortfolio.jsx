@@ -922,62 +922,6 @@ const fetchPublicDataWithToken = async () => {
   // Get design theme - calculate early so it's available for all renders
   const designTheme = portfolio ? getDesignTheme(portfolio.designTemplate || "default") : getDesignTheme("default")
   
-  // Helper functions to check if sections have content (for shared view)
-  const hasProfessionalSummary = () => {
-    return portfolio?.professionalSummary && portfolio.professionalSummary.trim().length > 0
-  }
-
-  const hasContactInfo = () => {
-    return !!(portfolio?.email || portfolio?.phone || portfolio?.website)
-  }
-
-  const hasTesdaInfo = () => {
-    return !!(portfolio?.ncLevel || portfolio?.trainingCenter || portfolio?.scholarshipType || 
-              portfolio?.trainingDuration || portfolio?.tesdaRegistrationNumber)
-  }
-
-  const hasSkills = () => {
-    return portfolio?.skills && portfolio.skills.length > 0
-  }
-
-  const hasCertificates = () => {
-    return certificates && certificates.length > 0
-  }
-
-  const hasExperience = () => {
-    return portfolio?.experiences && portfolio.experiences.length > 0
-  }
-
-  const hasProjects = () => {
-    return projects && projects.length > 0
-  }
-
-  const hasEducation = () => {
-    return portfolio?.continuingEducations && portfolio.continuingEducations.length > 0
-  }
-
-  const hasAwards = () => {
-    return portfolio?.awardsRecognitions && portfolio.awardsRecognitions.length > 0
-  }
-
-  const hasMemberships = () => {
-    return portfolio?.professionalMemberships && portfolio.professionalMemberships.length > 0
-  }
-
-  const hasReferences = () => {
-    return portfolio?.references && portfolio.references.length > 0
-  }
-
-  // Check if section should be displayed (for shared view, only show if has content)
-  const shouldShowSection = (hasContent) => {
-    if (urlShareToken) {
-      // In shared view, only show sections with content
-      return hasContent
-    }
-    // In owner/authenticated view, show all sections
-    return true
-  }
-  
   // Debug: Log the design template being used
   useEffect(() => {
     if (portfolio) {
@@ -8151,10 +8095,8 @@ const fetchPublicDataWithToken = async () => {
               <div className="max-w-6xl mx-auto space-y-12">
                 
                 {/* Contact & TESDA Info - Side by Side */}
-                {(shouldShowSection(hasContactInfo()) || shouldShowSection(hasTesdaInfo())) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Contact Information */}
-                  {shouldShowSection(hasContactInfo()) && (
                   <div className="bg-white p-6 border-l-4 border-red-600">
                     <div className="flex items-center justify-between mb-4">
                       <Typography variant="h5" className="font-bold text-red-600 text-lg uppercase tracking-wide" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -8285,10 +8227,8 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     )}
                   </div>
-                  )}
 
                   {/* TESDA Information */}
-                  {shouldShowSection(hasTesdaInfo()) && (
                   <div className="bg-white p-6 border-l-4 border-red-600">
                     <div className="flex items-center justify-between mb-4">
                       <Typography variant="h5" className="font-bold text-red-600 text-lg uppercase tracking-wide" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -8485,12 +8425,9 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     )}
                   </div>
-                  )}
                 </div>
-                )}
 
                 {/* Skills */}
-                {shouldShowSection(hasSkills()) && (
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -8705,10 +8642,8 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   )}
                 </div>
-                )}
 
                 {/* Certificates */}
-                {shouldShowSection(hasCertificates()) && (
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -9021,14 +8956,12 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   ) : (
                     <div className="bg-white p-6 border-l-4 border-gray-300">
-                      <div>                      </div>
+                      <div></div>
                     </div>
                   )}
                 </div>
-                )}
 
                 {/* Experience */}
-                {shouldShowSection(hasExperience()) && (
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -9379,10 +9312,8 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   )}
                 </div>
-                )}
 
                 {/* Projects */}
-                {shouldShowSection(hasProjects()) && (
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -9759,10 +9690,8 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   )}
                 </div>
-                )}
 
                 {/* Awards & Recognition */}
-                {shouldShowSection(hasAwards()) && (
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -10012,13 +9941,10 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   )}
                 </div>
-                )}
 
                 {/* Education & Memberships */}
-                {(shouldShowSection(hasEducation()) || shouldShowSection(hasMemberships())) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Continuing Education */}
-                  {shouldShowSection(hasEducation()) && (
                   <div>
                     <div className="flex items-center justify-between mb-5">
                       <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -10268,10 +10194,8 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     )}
                   </div>
-                  )}
 
                   {/* Professional Memberships */}
-                  {shouldShowSection(hasMemberships()) && (
                   <div>
                     <div className="flex items-center justify-between mb-5">
                       <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -10529,12 +10453,9 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     )}
                   </div>
-                  )}
                 </div>
-                )}
 
                 {/* References */}
-                {shouldShowSection(hasReferences()) && (
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -10853,7 +10774,6 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   )}
                 </div>
-                )}
               </div>
             </div>
           </div>
