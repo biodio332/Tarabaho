@@ -1066,6 +1066,9 @@ const fetchPublicDataWithToken = async () => {
           description: exp.responsibilities || exp.description || "",
         }))
       }
+      // Initialize certificates and projects arrays in editingPortfolio
+      portfolioCopy.certificates = certificates ? [...certificates] : []
+      portfolioCopy.projects = projects ? [...projects] : []
       setEditingPortfolio(portfolioCopy)
       setSaveSuccess("")
       setSaveError("")
@@ -1247,8 +1250,24 @@ const fetchPublicDataWithToken = async () => {
         continuingEducations: portfolio.continuingEducations ? [...portfolio.continuingEducations] : [],
         professionalMemberships: portfolio.professionalMemberships ? [...portfolio.professionalMemberships] : [],
         references: portfolio.references ? [...portfolio.references] : [],
+        certificates: certificates ? [...certificates] : [],
+        projects: projects ? [...projects] : [],
       }
       setEditingPortfolio(portfolioCopy)
+    } else if (editingPortfolio) {
+      // If editingPortfolio exists, ensure certificates and projects are up to date when opening their sections
+      if (section === "certificates" && (!editingPortfolio.certificates || editingPortfolio.certificates.length === 0)) {
+        setEditingPortfolio((prev) => ({
+          ...prev,
+          certificates: certificates ? [...certificates] : [],
+        }))
+      }
+      if (section === "projects" && (!editingPortfolio.projects || editingPortfolio.projects.length === 0)) {
+        setEditingPortfolio((prev) => ({
+          ...prev,
+          projects: projects ? [...projects] : [],
+        }))
+      }
     }
     setEditingSections((prev) => {
       const isCurrentlyOpen = prev[section]
@@ -1318,6 +1337,29 @@ const fetchPublicDataWithToken = async () => {
           title: "",
           issuer: "",
           dateReceived: "",
+        })
+      }
+      if (section === "certificates" && !newState.certificates) {
+        setIsAddingCertificate(false)
+        setEditingCertificateId(null)
+        setCertificateSubmitAttempted(false)
+        setNewCertificate({
+          courseName: "",
+          certificateNumber: "",
+          issueDate: "",
+          certificateFile: null,
+        })
+      }
+      if (section === "projects" && !newState.projects) {
+        setIsAddingProject(false)
+        setEditingProjectId(null)
+        setProjectSubmitAttempted(false)
+        setNewProject({
+          title: "",
+          description: "",
+          startDate: "",
+          endDate: "",
+          projectImageFile: null,
         })
       }
       
@@ -1829,9 +1871,12 @@ const fetchPublicDataWithToken = async () => {
       issueDate: newCertificate.issueDate,
       certificateFile: newCertificate.certificateFile,
       preview: newCertificate.certificateFile ? URL.createObjectURL(newCertificate.certificateFile) : "/placeholder.svg",
-      portfolioId: portfolio?.id,
+      portfolioId: editingPortfolio?.id || portfolio?.id,
     }
-    setCertificates((prev) => [...prev, newCert])
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      certificates: [...(prev.certificates || []), newCert],
+    }))
     setModifiedCertificates((prev) => new Set(prev).add(newCert.id))
     setNewCertificate({
       courseName: "",
@@ -1865,9 +1910,12 @@ const fetchPublicDataWithToken = async () => {
       endDate: newProject.endDate,
       projectImageFile: newProject.projectImageFile,
       preview: newProject.projectImageFile ? URL.createObjectURL(newProject.projectImageFile) : "/placeholder.svg",
-      portfolioId: portfolio?.id,
+      portfolioId: editingPortfolio?.id || portfolio?.id,
     }
-    setProjects((prev) => [...prev, newProj])
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      projects: [...(prev.projects || []), newProj],
+    }))
     setModifiedProjects((prev) => new Set(prev).add(newProj.id))
     setNewProject({
       title: "",
@@ -1940,8 +1988,9 @@ const fetchPublicDataWithToken = async () => {
       setSaveError(dateValidation.message)
       return
     }
-    setCertificates((prev) =>
-      prev.map((cert) =>
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      certificates: (prev.certificates || []).map((cert) =>
         cert.id === editingCertificateId
           ? {
               ...cert,
@@ -1955,7 +2004,7 @@ const fetchPublicDataWithToken = async () => {
             }
           : cert,
       ),
-    )
+    }))
     setModifiedCertificates((prev) => new Set(prev).add(editingCertificateId))
     setNewCertificate({
       courseName: "",
@@ -1981,8 +2030,9 @@ const fetchPublicDataWithToken = async () => {
       setSaveError(dateValidation.message)
       return
     }
-    setProjects((prev) =>
-      prev.map((proj) =>
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      projects: (prev.projects || []).map((proj) =>
         proj.id === editingProjectId
           ? {
               ...proj,
@@ -1997,7 +2047,7 @@ const fetchPublicDataWithToken = async () => {
             }
           : proj,
       ),
-    )
+    }))
     setModifiedProjects((prev) => new Set(prev).add(editingProjectId))
     setNewProject({
       title: "",
@@ -2013,12 +2063,18 @@ const fetchPublicDataWithToken = async () => {
   }
 
   const handleRemoveCertificate = (id) => {
-    setCertificates((prev) => prev.filter((cert) => cert.id !== id))
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      certificates: (prev.certificates || []).filter((cert) => cert.id !== id),
+    }))
     setModifiedCertificates((prev) => new Set(prev).add(id))
   }
 
   const handleRemoveProject = (id) => {
-    setProjects((prev) => prev.filter((proj) => proj.id !== id))
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      projects: (prev.projects || []).filter((proj) => proj.id !== id),
+    }))
     setModifiedProjects((prev) => new Set(prev).add(id))
   }
 
@@ -2837,7 +2893,7 @@ const fetchPublicDataWithToken = async () => {
         ).data.map((cert) => cert.id),
       )
 
-      for (const cert of certificates) {
+      for (const cert of (editingPortfolio.certificates || [])) {
         // Validate certificate issue date before saving
         if (cert.issueDate) {
           const dateValidation = validateDateNotFuture(cert.issueDate, "Issue Date")
@@ -2935,7 +2991,7 @@ const fetchPublicDataWithToken = async () => {
       }
 
       const certificatesToDelete = Array.from(existingCertificateIds).filter(
-        (id) => !certificates.some((cert) => cert.id === id) && modifiedCertificates.has(id),
+        (id) => !(editingPortfolio.certificates || []).some((cert) => cert.id === id) && modifiedCertificates.has(id),
       )
       for (const certId of certificatesToDelete) {
         console.log("Deleting certificate ID:", certId)
@@ -2956,7 +3012,7 @@ const fetchPublicDataWithToken = async () => {
         ).data.map((proj) => proj.id),
       )
 
-      for (const proj of projects) {
+      for (const proj of (editingPortfolio.projects || [])) {
         // Validate project dates before saving
         if (proj.startDate || proj.endDate) {
           const dateValidation = validateProjectDates(proj.startDate || "", proj.endDate || "")
@@ -3054,7 +3110,7 @@ const fetchPublicDataWithToken = async () => {
       }
 
       const projectsToDelete = Array.from(existingProjectIds).filter(
-        (id) => !projects.some((proj) => proj.id === id) && modifiedProjects.has(id),
+        (id) => !(editingPortfolio.projects || []).some((proj) => proj.id === id) && modifiedProjects.has(id),
       )
       for (const projId of projectsToDelete) {
         console.log("Deleting project ID:", projId)
@@ -3431,6 +3487,13 @@ const fetchPublicDataWithToken = async () => {
     setSaveError("")
     setSaveSuccess("")
 
+    // Declare certificateIds and projectIds at function scope
+    let certificateIds = []
+    let projectIds = []
+    // Store refreshed certificates and projects to use in merge
+    let refreshedCertificates = null
+    let refreshedProjects = null
+
     try {
       // Ensure editingPortfolio is initialized
       if (!editingPortfolio) {
@@ -3456,6 +3519,8 @@ const fetchPublicDataWithToken = async () => {
           continuingEducations: portfolio.continuingEducations ? [...portfolio.continuingEducations] : [],
           professionalMemberships: portfolio.professionalMemberships ? [...portfolio.professionalMemberships] : [],
           references: portfolio.references ? [...portfolio.references] : [],
+          certificates: certificates ? [...certificates] : [],
+          projects: projects ? [...projects] : [],
         }
         setEditingPortfolio(portfolioCopy)
         setNotification({
@@ -3522,7 +3587,7 @@ const fetchPublicDataWithToken = async () => {
           return
         }
         
-        const certificateIds = []
+        certificateIds = []
         const existingCertificateIds = new Set(
           (
             await axios.get(`${BACKEND_URL}/api/certificate/graduate/${graduateId}`, {
@@ -3532,7 +3597,26 @@ const fetchPublicDataWithToken = async () => {
           ).data.map((cert) => cert.id),
         )
 
-        for (const cert of certificates) {
+        for (const cert of (editingPortfolio.certificates || [])) {
+          // Validate certificate issue date before saving
+          if (cert.issueDate) {
+            const dateValidation = validateDateNotFuture(cert.issueDate, "Issue Date")
+            if (!dateValidation.valid) {
+              setNotification({
+                show: true,
+                type: "error",
+                title: "Validation Error",
+                message: `Certificate "${cert.courseName || 'Untitled'}": ${dateValidation.message}`,
+                link: "",
+              })
+              setTimeout(() => {
+                setNotification(prev => ({ ...prev, show: false }))
+              }, 5000)
+              setIsSaving(false)
+              return
+            }
+          }
+
           // Skip if certificate hasn't been modified and already exists
           if (!modifiedCertificates.has(cert.id)) {
             if (typeof cert.id === "string" && cert.id.includes("new-")) {
@@ -3705,7 +3789,7 @@ const fetchPublicDataWithToken = async () => {
         }
 
         const certificatesToDelete = Array.from(existingCertificateIds).filter(
-          (id) => !certificates.some((cert) => cert.id === id) && modifiedCertificates.has(id),
+          (id) => !(editingPortfolio.certificates || []).some((cert) => cert.id === id) && modifiedCertificates.has(id),
         )
         for (const certId of certificatesToDelete) {
           await axios.delete(`${BACKEND_URL}/api/certificate/${certId}`, {
@@ -3721,13 +3805,19 @@ const fetchPublicDataWithToken = async () => {
           withCredentials: true,
           headers: { Authorization: `Bearer ${token}` },
         })
-        setCertificates(certificatesResponse.data)
+        refreshedCertificates = certificatesResponse.data
+        setCertificates(refreshedCertificates)
+        // Update editingPortfolio with refreshed certificates
+        setEditingPortfolio((prev) => ({
+          ...prev,
+          certificates: refreshedCertificates,
+        }))
       }
 
       // Handle projects section
       if (section === "projects") {
         // Validate all project dates before saving
-        for (const proj of projects) {
+        for (const proj of (editingPortfolio.projects || [])) {
           if (proj.startDate || proj.endDate) {
             const dateValidation = validateProjectDates(proj.startDate || "", proj.endDate || "")
             if (!dateValidation.valid) {
@@ -3747,7 +3837,7 @@ const fetchPublicDataWithToken = async () => {
           }
         }
 
-        const projectIds = []
+        projectIds = []
         const existingProjectIds = new Set(
           (
             await axios.get(`${BACKEND_URL}/api/project/portfolio/${portfolioId}`, {
@@ -3757,7 +3847,7 @@ const fetchPublicDataWithToken = async () => {
           ).data.map((proj) => proj.id),
         )
 
-        for (const proj of projects) {
+        for (const proj of (editingPortfolio.projects || [])) {
           if (!modifiedProjects.has(proj.id)) {
             if (typeof proj.id === "string" && proj.id.includes("new-")) {
             } else if (existingProjectIds.has(proj.id)) {
@@ -3803,7 +3893,7 @@ const fetchPublicDataWithToken = async () => {
         }
 
         const projectsToDelete = Array.from(existingProjectIds).filter(
-          (id) => !projects.some((proj) => proj.id === id) && modifiedProjects.has(id),
+          (id) => !(editingPortfolio.projects || []).some((proj) => proj.id === id) && modifiedProjects.has(id),
         )
         for (const projId of projectsToDelete) {
           await axios.delete(`${BACKEND_URL}/api/project/${projId}`, {
@@ -3820,17 +3910,93 @@ const fetchPublicDataWithToken = async () => {
             withCredentials: true,
             headers: { Authorization: `Bearer ${token}` },
           })
-          setProjects(projectsResponse.data)
+          refreshedProjects = projectsResponse.data
+          setProjects(refreshedProjects)
+          // Update editingPortfolio with refreshed projects
+          setEditingPortfolio((prev) => ({
+            ...prev,
+            projects: refreshedProjects,
+          }))
         }
       }
 
       // Build payload with all editingPortfolio data to preserve unsaved changes in other sections
       // Exclude contact fields when not saving contact section to avoid validation errors
-      const { email, phone, website, ...editingPortfolioWithoutContact } = editingPortfolio || {}
+      // Also exclude certificates and projects arrays - we only send their IDs
+      // Also exclude arrays that might have UI-only fields - we'll format them properly below
+      const { 
+        email, 
+        phone, 
+        website, 
+        certificates, 
+        projects, 
+        skills,
+        experiences,
+        awardsRecognitions,
+        continuingEducations,
+        professionalMemberships,
+        references,
+        ...editingPortfolioWithoutContact 
+      } = editingPortfolio || {}
       const payload = {
         graduateId,
-        ...editingPortfolioWithoutContact, // Start with editingPortfolio to preserve all current edits (excluding contact fields)
+        ...editingPortfolioWithoutContact, // Start with editingPortfolio to preserve all current edits (excluding arrays and contact fields)
         avatar: section === "header" ? (avatarUrl || editingPortfolio.avatar || portfolio.avatar) : editingPortfolio.avatar || portfolio.avatar,
+      }
+      
+      // Format arrays properly - use existing portfolio data for sections we're not saving
+      // This ensures we don't send UI-only fields or invalid data
+      if (section !== "skills") {
+        payload.skills = portfolio?.skills?.map((skill) => ({
+          id: skill.id,
+          name: skill.name,
+          type: skill.type,
+          proficiencyLevel: skill.proficiencyLevel || null,
+        })) || []
+      }
+      if (section !== "experience") {
+        payload.experiences = portfolio?.experiences?.map((exp) => ({
+          id: exp.id,
+          jobTitle: exp.jobTitle,
+          employer: exp.employer || exp.company || null,
+          description: exp.description || exp.responsibilities || null,
+          startDate: exp.startDate || null,
+          endDate: exp.endDate || null,
+        })) || []
+      }
+      if (section !== "awards") {
+        payload.awardsRecognitions = portfolio?.awardsRecognitions?.map((award) => ({
+          id: award.id,
+          title: award.title,
+          issuer: award.issuer || null,
+          dateReceived: award.dateReceived || null,
+        })) || []
+      }
+      if (section !== "education") {
+        payload.continuingEducations = portfolio?.continuingEducations?.map((edu) => ({
+          id: edu.id,
+          courseName: edu.courseName,
+          institution: edu.institution || null,
+          completionDate: edu.completionDate || null,
+        })) || []
+      }
+      if (section !== "memberships") {
+        payload.professionalMemberships = portfolio?.professionalMemberships?.map((mem) => ({
+          id: mem.id,
+          organization: mem.organization,
+          membershipType: mem.membershipType || null,
+          startDate: mem.startDate || null,
+        })) || []
+      }
+      if (section !== "references") {
+        payload.references = portfolio?.references?.map((ref) => ({
+          id: ref.id,
+          name: ref.name || null,
+          relationship: ref.relationship || ref.position || null,
+          company: ref.company || null,
+          email: ref.email || null,
+          phone: ref.phone || ref.contact || null,
+        })) || []
       }
       
       // Only include contact fields if we're saving the contact section
@@ -4521,13 +4687,9 @@ const fetchPublicDataWithToken = async () => {
 
       // Add certificate and project IDs if they exist
       if (section === "certificates") {
-        const existingCertificateIds = (
-          await axios.get(`${BACKEND_URL}/api/certificate/graduate/${graduateId}`, {
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${token}` },
-          })
-        ).data.map((cert) => cert.id)
-        payload.certificateIds = existingCertificateIds
+        // Use the certificateIds array that was built during certificate processing
+        // This includes newly created certificates and updated existing ones
+        payload.certificateIds = certificateIds
       } else {
         // For all other sections, always fetch current certificates from database
         // and filter to only include certificates that belong to this portfolio
@@ -4550,15 +4712,9 @@ const fetchPublicDataWithToken = async () => {
       }
 
       if (section === "projects") {
-        if (portfolioId) {
-          const existingProjectIds = (
-            await axios.get(`${BACKEND_URL}/api/project/portfolio/${portfolioId}`, {
-              withCredentials: true,
-              headers: { Authorization: `Bearer ${token}` },
-            })
-          ).data.map((proj) => proj.id)
-          payload.projectIds = existingProjectIds
-        }
+        // Use the projectIds array that was built during project processing
+        // This includes newly created projects and updated existing ones
+        payload.projectIds = projectIds
       } else if (editingPortfolio.projectIds || portfolio.projectIds) {
         payload.projectIds = editingPortfolio.projectIds || portfolio.projectIds
       }
@@ -4638,6 +4794,26 @@ const fetchPublicDataWithToken = async () => {
         ...(editingSections.references && section !== "references" && {
           references: editingPortfolio.references,
         }),
+        ...(editingSections.certificates && section !== "certificates" && {
+          certificates: editingPortfolio.certificates,
+        }),
+        ...(editingSections.projects && section !== "projects" && {
+          projects: editingPortfolio.projects,
+        }),
+      }
+      
+      // If we just saved certificates or projects, include the refreshed data
+      if (section === "certificates" && refreshedCertificates) {
+        mergedPortfolio.certificates = refreshedCertificates
+      } else if (section === "certificates") {
+        // Fallback to editingPortfolio.certificates if refreshedCertificates is not available
+        mergedPortfolio.certificates = editingPortfolio.certificates || []
+      }
+      if (section === "projects" && refreshedProjects) {
+        mergedPortfolio.projects = refreshedProjects
+      } else if (section === "projects") {
+        // Fallback to editingPortfolio.projects if refreshedProjects is not available
+        mergedPortfolio.projects = editingPortfolio.projects || []
       }
       
       setEditingPortfolio(mergedPortfolio)
@@ -5946,9 +6122,9 @@ const fetchPublicDataWithToken = async () => {
                             </Button>
                           )}
 
-                          {certificates && certificates.length > 0 && (
+                          {((isEditMode && editingSections.certificates ? (editingPortfolio?.certificates || []) : (certificates || [])).length > 0) && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {certificates.map((certificate) => (
+                              {(isEditMode && editingSections.certificates ? (editingPortfolio?.certificates || []) : (certificates || [])).map((certificate) => (
                                 <Card key={certificate.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                                   <CardBody className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                     <div className="flex items-center gap-4">
@@ -6015,7 +6191,7 @@ const fetchPublicDataWithToken = async () => {
                       </>
                     ) : certificates && certificates.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {certificates.map((certificate) => (
+                        {(isEditMode && editingSections.certificates ? (editingPortfolio?.certificates || []) : (certificates || [])).map((certificate) => (
                           <Card key={certificate.id} className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-300 shadow-md hover:shadow-lg transition-shadow duration-300">
                             <CardBody className="flex flex-col items-start gap-3">
                               <div className="flex items-center gap-3 w-full">
@@ -6605,9 +6781,9 @@ const fetchPublicDataWithToken = async () => {
                           </Button>
                         )}
 
-                        {projects && projects.length > 0 && (
+                        {((isEditMode && editingSections.projects ? (editingPortfolio?.projects || []) : (projects || [])).length > 0) && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {projects.map((project) => {
+                            {(isEditMode && editingSections.projects ? (editingPortfolio?.projects || []) : (projects || [])).map((project) => {
                               const projectImageSrc = project.projectImageFilePath || project.preview || "/placeholder.svg"
                               return (
                                 <Card key={project.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
@@ -6686,7 +6862,7 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     ) : projects && projects.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {projects.map((project) => {
+                        {(isEditMode && editingSections.projects ? (editingPortfolio?.projects || []) : (projects || [])).map((project) => {
                           const projectImageSrc = project.projectImageFilePath || project.preview || "/placeholder.svg"
                           return (
                           <Card key={project.id} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
@@ -8656,9 +8832,9 @@ const fetchPublicDataWithToken = async () => {
                           </Button>
                         )}
 
-                        {certificates && certificates.length > 0 && (
+                        {((isEditMode && editingSections.certificates ? (editingPortfolio?.certificates || []) : (certificates || [])).length > 0) && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {certificates.map((certificate) => (
+                            {(isEditMode && editingSections.certificates ? (editingPortfolio?.certificates || []) : (certificates || [])).map((certificate) => (
                               <Card key={certificate.id} className="p-4 bg-white rounded-lg border-2 border-gray-300">
                                 <CardBody className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                   <div className="flex items-center gap-4">
@@ -9371,9 +9547,9 @@ const fetchPublicDataWithToken = async () => {
                         </Button>
                       )}
 
-                      {projects && projects.length > 0 && (
+                      {((isEditMode && editingSections.projects ? (editingPortfolio?.projects || []) : (projects || [])).length > 0) && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {projects.map((project) => {
+                          {(isEditMode && editingSections.projects ? (editingPortfolio?.projects || []) : (projects || [])).map((project) => {
                             const projectImageSrc = project.projectImageFilePath || project.preview || "/placeholder.svg"
                             return (
                               <Card key={project.id} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300">
@@ -11720,9 +11896,9 @@ const fetchPublicDataWithToken = async () => {
                     </Button>
                   )}
 
-                  {certificates && certificates.length > 0 ? (
+                  {((isEditMode && editingSections.certificates ? (editingPortfolio?.certificates || []) : (certificates || [])).length > 0) ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {certificates.map((certificate) => (
+                      {(isEditMode && editingSections.certificates ? (editingPortfolio?.certificates || []) : (certificates || [])).map((certificate) => (
                         <Card key={certificate.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                           <CardBody className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                             <div className="flex items-center gap-4">
@@ -12363,9 +12539,9 @@ const fetchPublicDataWithToken = async () => {
                     </Button>
                   )}
 
-                  {projects && projects.length > 0 ? (
+                  {((isEditMode && editingSections.projects ? (editingPortfolio?.projects || []) : (projects || [])).length > 0) ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {projects.map((project) => {
+                      {(isEditMode && editingSections.projects ? (editingPortfolio?.projects || []) : (projects || [])).map((project) => {
                         const projectImageSrc = project.projectImageFilePath || project.preview || "/placeholder.svg"
                         return (
                           <Card key={project.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
