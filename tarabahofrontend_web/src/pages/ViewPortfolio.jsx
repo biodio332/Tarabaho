@@ -69,6 +69,7 @@ const ViewPortfolio = () => {
   const [isAddingProject, setIsAddingProject] = useState(false)
   const [isAddingExperience, setIsAddingExperience] = useState(false)
   const [isAddingAward, setIsAddingAward] = useState(false)
+  const [isAddingSkill, setIsAddingSkill] = useState(false)
   const [isAddingEducation, setIsAddingEducation] = useState(false)
   const [isAddingMembership, setIsAddingMembership] = useState(false)
   const [isAddingReference, setIsAddingReference] = useState(false)
@@ -76,6 +77,7 @@ const ViewPortfolio = () => {
   const [editingProjectId, setEditingProjectId] = useState(null)
   const [editingExperienceId, setEditingExperienceId] = useState(null)
   const [editingAwardId, setEditingAwardId] = useState(null)
+  const [editingSkillId, setEditingSkillId] = useState(null)
   const [editingEducationId, setEditingEducationId] = useState(null)
   const [editingMembershipId, setEditingMembershipId] = useState(null)
   const [editingReferenceId, setEditingReferenceId] = useState(null)
@@ -104,6 +106,11 @@ const ViewPortfolio = () => {
     issuer: "",
     dateReceived: "",
   })
+  const [newSkill, setNewSkill] = useState({
+    name: "",
+    type: "TECHNICAL",
+    proficiencyLevel: "Beginner",
+  })
   const [newEducation, setNewEducation] = useState({
     courseName: "",
     institution: "",
@@ -126,6 +133,7 @@ const ViewPortfolio = () => {
   const [experienceSubmitAttempted, setExperienceSubmitAttempted] = useState({})
   const [experienceFormSubmitAttempted, setExperienceFormSubmitAttempted] = useState(false)
   const [awardFormSubmitAttempted, setAwardFormSubmitAttempted] = useState(false)
+  const [skillFormSubmitAttempted, setSkillFormSubmitAttempted] = useState(false)
   const [educationFormSubmitAttempted, setEducationFormSubmitAttempted] = useState(false)
   const [membershipFormSubmitAttempted, setMembershipFormSubmitAttempted] = useState(false)
   const [referenceFormSubmitAttempted, setReferenceFormSubmitAttempted] = useState(false)
@@ -1115,6 +1123,11 @@ const fetchPublicDataWithToken = async () => {
         issuer: "",
         dateReceived: "",
       })
+      setNewSkill({
+        name: "",
+        type: "TECHNICAL",
+        proficiencyLevel: "Beginner",
+      })
       setNewEducation({
         courseName: "",
         institution: "",
@@ -1175,11 +1188,13 @@ const fetchPublicDataWithToken = async () => {
       setModifiedProjects(new Set())
       setIsAddingExperience(false)
       setIsAddingAward(false)
+      setIsAddingSkill(false)
       setIsAddingEducation(false)
       setIsAddingMembership(false)
       setIsAddingReference(false)
       setEditingExperienceId(null)
       setEditingAwardId(null)
+      setEditingSkillId(null)
       setEditingEducationId(null)
       setEditingMembershipId(null)
       setEditingReferenceId(null)
@@ -1194,6 +1209,11 @@ const fetchPublicDataWithToken = async () => {
         title: "",
         issuer: "",
         dateReceived: "",
+      })
+      setNewSkill({
+        name: "",
+        type: "TECHNICAL",
+        proficiencyLevel: "Beginner",
       })
       setNewEducation({
         courseName: "",
@@ -1266,6 +1286,41 @@ const fetchPublicDataWithToken = async () => {
           setIsNcLevelAdditional(false)
         }
       }
+      
+      // Reset form states when closing sections
+      if (section === "skills" && !newState.skills) {
+        setIsAddingSkill(false)
+        setEditingSkillId(null)
+        setSkillFormSubmitAttempted(false)
+        setNewSkill({
+          name: "",
+          type: "TECHNICAL",
+          proficiencyLevel: "Beginner",
+        })
+      }
+      if (section === "experience" && !newState.experience) {
+        setIsAddingExperience(false)
+        setEditingExperienceId(null)
+        setExperienceFormSubmitAttempted(false)
+        setNewExperience({
+          jobTitle: "",
+          company: "",
+          startDate: "",
+          endDate: "",
+          responsibilities: "",
+        })
+      }
+      if (section === "awards" && !newState.awards) {
+        setIsAddingAward(false)
+        setEditingAwardId(null)
+        setAwardFormSubmitAttempted(false)
+        setNewAward({
+          title: "",
+          issuer: "",
+          dateReceived: "",
+        })
+      }
+      
       return newState
     })
     setSaveError("")
@@ -2257,6 +2312,106 @@ const fetchPublicDataWithToken = async () => {
     setEditingAwardId(null)
     setIsAddingAward(false)
     setAwardFormSubmitAttempted(false)
+    setSaveError("")
+  }
+
+  // Skills handlers
+  const isSkillFormValid = () => {
+    return (
+      newSkill.name &&
+      newSkill.name.trim() !== "" &&
+      newSkill.type &&
+      VALID_SKILL_TYPES.includes(newSkill.type)
+    )
+  }
+
+  const handleSkillInputChange = (e) => {
+    const { name, value } = e.target
+    setNewSkill((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const handleSkillTypeChange = (value) => {
+    setNewSkill((prev) => ({
+      ...prev,
+      type: value || "TECHNICAL",
+    }))
+  }
+
+  const handleSkillProficiencyChange = (value) => {
+    setNewSkill((prev) => ({
+      ...prev,
+      proficiencyLevel: value || "Beginner",
+    }))
+  }
+
+  const handleAddSkill = () => {
+    setSkillFormSubmitAttempted(true)
+    if (!isSkillFormValid()) {
+      setSaveError("Please fill in all required skill fields (Skill Name, Skill Type).")
+      return
+    }
+    const newSkillItem = {
+      id: `new-${Date.now()}`,
+      name: newSkill.name,
+      type: newSkill.type,
+      proficiencyLevel: newSkill.proficiencyLevel || "",
+    }
+    console.log(`[Template: ${portfolio?.designTemplate || 'default'}] ✅ Skill created with ID:`, newSkillItem.id, "Data:", newSkillItem)
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      skills: [...(prev.skills || []), newSkillItem],
+    }))
+    setNewSkill({
+      name: "",
+      type: "TECHNICAL",
+      proficiencyLevel: "Beginner",
+    })
+    setIsAddingSkill(false)
+    setSkillFormSubmitAttempted(false)
+    setSaveError("")
+  }
+
+  const handleEditSkill = (skill) => {
+    setEditingSkillId(skill.id)
+    setSkillFormSubmitAttempted(false)
+    setNewSkill({
+      name: skill.name || "",
+      type: skill.type || "TECHNICAL",
+      proficiencyLevel: skill.proficiencyLevel || "Beginner",
+    })
+    setIsAddingSkill(true)
+  }
+
+  const handleUpdateSkill = () => {
+    setSkillFormSubmitAttempted(true)
+    if (!isSkillFormValid()) {
+      setSaveError("Please fill in all required skill fields (Skill Name, Skill Type).")
+      return
+    }
+    setEditingPortfolio((prev) => ({
+      ...prev,
+      skills: (prev.skills || []).map((skill) =>
+        skill.id === editingSkillId
+          ? {
+              ...skill,
+              name: newSkill.name,
+              type: newSkill.type,
+              proficiencyLevel: newSkill.proficiencyLevel || "",
+            }
+          : skill,
+      ),
+    }))
+    setNewSkill({
+      name: "",
+      type: "TECHNICAL",
+      proficiencyLevel: "Beginner",
+    })
+    setEditingSkillId(null)
+    setIsAddingSkill(false)
+    setSkillFormSubmitAttempted(false)
     setSaveError("")
   }
 
@@ -5121,74 +5276,158 @@ const fetchPublicDataWithToken = async () => {
                       </IconButton>
                     )}
                   </div>
-                  {((portfolio.skills && portfolio.skills.length > 0) || (isEditMode && editingSections.skills)) ? (
+                  {isEditMode && editingSections.skills && isAddingSkill && (
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                      <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                        {editingSkillId ? "Edit Skill" : "Add New Skill"}
+                      </Typography>
+                      <div className="space-y-4">
+                        <div>
+                          <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                            Skill Name *
+                          </Typography>
+                          <Input
+                            size="lg"
+                            name="name"
+                            value={newSkill.name}
+                            onChange={handleSkillInputChange}
+                            placeholder="e.g. Latte Art"
+                            required
+                            className="!border-gray-300 focus:!border-blue-500"
+                          />
+                          {skillFormSubmitAttempted && !newSkill.name && (
+                            <Typography variant="small" color="red" className="mt-1">
+                              Please fill in the skill name.
+                            </Typography>
+                          )}
+                        </div>
+                        <div>
+                          <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                            Skill Type *
+                          </Typography>
+                          <Select
+                            size="lg"
+                            label="Select Skill Type"
+                            value={newSkill.type || "TECHNICAL"}
+                            onChange={handleSkillTypeChange}
+                            className="!border-gray-300 focus:!border-blue-500"
+                          >
+                            {VALID_SKILL_TYPES.map((type) => (
+                              <Option key={type} value={type}>
+                                {type}
+                              </Option>
+                            ))}
+                          </Select>
+                          {skillFormSubmitAttempted && !newSkill.type && (
+                            <Typography variant="small" color="red" className="mt-1">
+                              Please select a skill type.
+                            </Typography>
+                          )}
+                        </div>
+                        <div>
+                          <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                            Proficiency Level
+                          </Typography>
+                          <Select
+                            size="lg"
+                            label="Select Proficiency Level"
+                            value={newSkill.proficiencyLevel || "Beginner"}
+                            onChange={handleSkillProficiencyChange}
+                            className="!border-gray-300 focus:!border-blue-500"
+                          >
+                            {SKILL_PROFICIENCY_LEVELS.map((level) => (
+                              <Option key={level} value={level}>
+                                {level}
+                              </Option>
+                            ))}
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="mt-6 flex justify-end gap-2">
+                        <Button
+                          variant="gradient"
+                          color={designTheme.buttonColor}
+                          onClick={editingSkillId ? handleUpdateSkill : handleAddSkill}
+                          disabled={!isSkillFormValid()}
+                        >
+                          {editingSkillId ? "Update Skill" : "Add Skill"}
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="gray"
+                          onClick={() => {
+                            setIsAddingSkill(false)
+                            setEditingSkillId(null)
+                            setSkillFormSubmitAttempted(false)
+                            setNewSkill({
+                              name: "",
+                              type: "TECHNICAL",
+                              proficiencyLevel: "Beginner",
+                            })
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {!isAddingSkill && isEditMode && editingSections.skills && (
+                    <Button
+                      variant="outlined"
+                      color={designTheme.buttonColor}
+                      onClick={() => {
+                        setIsAddingSkill(true)
+                        setEditingSkillId(null)
+                        setNewSkill({
+                          name: "",
+                          type: "TECHNICAL",
+                          proficiencyLevel: "Beginner",
+                        })
+                      }}
+                      className="flex items-center gap-2 w-full mb-4"
+                    >
+                      <FaPlus className="w-4 h-4" />
+                      Add Skill
+                    </Button>
+                  )}
+
+                  {((portfolio.skills && portfolio.skills.length > 0) || (isEditMode && editingSections.skills && (editingPortfolio?.skills || []).length > 0)) ? (
                     <div className="space-y-3">
-                      {(isEditMode && editingSections.skills ? editingPortfolio?.skills : portfolio.skills)?.map((skill, index) => (
-                        <div key={index} className="pb-3 border-b border-gray-200 last:border-b-0">
+                      {(isEditMode && editingSections.skills ? (editingPortfolio?.skills || []) : (portfolio?.skills || []))?.map((skill, index) => (
+                        <div key={skill.id || index} className="pb-3 border-b border-gray-200 last:border-b-0">
                           {isEditMode && editingSections.skills ? (
                             <div className="space-y-2">
-                              <div>
-                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                  Skill Name *
-                                </Typography>
-                              <div className="flex gap-2">
-                                <Input
+                              <div className="flex justify-end gap-2 -mt-2">
+                                <Button
                                   size="md"
-                                  value={skill.name || ""}
-                                  onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
-                                    placeholder="e.g. Latte Art"
-                                  required
-                                  className="!border-gray-300 flex-1"
-                                />
+                                  variant="text"
+                                  color={designTheme.buttonColor}
+                                  onClick={() => handleEditSkill(skill)}
+                                  className="flex items-center gap-1"
+                                >
+                                  <FaPen className="w-3 h-3" /> Edit
+                                </Button>
                                 <IconButton
                                   size="md"
                                   variant="text"
                                   color="red"
                                   onClick={() => handleRemoveArrayItem("skills", index)}
+                                  aria-label="Remove skill"
                                 >
                                   <FaTrash className="w-3 h-3" />
                                 </IconButton>
                               </div>
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                  Skill Type
-                                </Typography>
-                                <Select
-                                  size="md"
-                                  label="Select Skill Type"
-                                  value={skill.type || "TECHNICAL"}
-                                  onChange={(value) =>
-                                    handleArrayFieldChange("skills", index, "type", value || "TECHNICAL")
-                                  }
-                                  className="!border-gray-300 [&>div]:text-gray-900"
-                                >
-                                  {VALID_SKILL_TYPES.map((type) => (
-                                    <Option key={type} value={type}>
-                                      {type}
-                                    </Option>
-                                  ))}
-                                </Select>
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                                  Proficiency Level
-                                </Typography>
-                                <Select
-                                  size="md"
-                                  label="Select Proficiency Level"
-                                  value={skill.proficiencyLevel || "Beginner"}
-                                  onChange={(value) =>
-                                    handleArrayFieldChange("skills", index, "proficiencyLevel", value || "Beginner")
-                                  }
-                                  className="!border-gray-300 [&>div]:text-gray-900"
-                                >
-                                  {SKILL_PROFICIENCY_LEVELS.map((level) => (
-                                    <Option key={level} value={level}>
-                                      {level}
-                                    </Option>
-                                  ))}
-                                </Select>
+                              <Typography variant="small" className="font-bold text-gray-900 mb-1 text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                {skill.name}
+                              </Typography>
+                              <div className="flex items-center space-x-2">
+                                <Chip size="md" value={skill.type} color={designTheme.buttonColor} className="text-xs font-semibold" />
+                                {skill.proficiencyLevel && (
+                                  <Typography variant="small" className="text-gray-600 text-xs font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                    {skill.proficiencyLevel}
+                                  </Typography>
+                                )}
                               </div>
                             </div>
                           ) : (
@@ -5208,36 +5447,24 @@ const fetchPublicDataWithToken = async () => {
                           )}
                         </div>
                       ))}
-                      {isEditMode && editingSections.skills && (
-                        <Button
-                          variant="outlined"
-                          size="md"
-                          color={designTheme.buttonColor}
-                          onClick={() => handleAddArrayItem("skills", { name: "", type: "TECHNICAL", proficiencyLevel: "" })}
-                          className="w-full flex items-center justify-center gap-2 mt-2"
-                        >
-                          <FaPlus className="w-3 h-3" />
-                          Add Skill
-                        </Button>
-                      )}
-                      {isEditMode && editingSections.skills && (
-                        <div className="mt-4 flex justify-end">
-                          <Button
-                            variant="gradient"
-                            color={designTheme.buttonColor}
-                            size="md"
-                            onClick={() => handleSaveSection("skills")}
-                            disabled={isSaving}
-                            className="flex items-center gap-2"
-                          >
-                            <FaSave className="w-3 h-3" />
-                            {isSaving ? "Saving..." : "Save Changes"}
-                          </Button>
-                        </div>
-                      )}
                     </div>
                   ) : (
                     <div></div>
+                  )}
+                  {isEditMode && editingSections.skills && (
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        variant="gradient"
+                        color={designTheme.buttonColor}
+                        size="md"
+                        onClick={() => handleSaveSection("skills")}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        <FaSave className="w-3 h-3" />
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
                   )}
                 </div>
 
@@ -8041,75 +8268,160 @@ const fetchPublicDataWithToken = async () => {
                       </IconButton>
                     )}
                   </div>
-                  {((portfolio?.skills && portfolio.skills.length > 0) || (isEditMode && editingSections.skills)) ? (
+                  {isEditMode && editingSections.skills && isAddingSkill && (
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                      <Typography variant="h6" className="text-gray-800 font-semibold mb-4" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                        {editingSkillId ? "Edit Skill" : "Add New Skill"}
+                      </Typography>
+                      <div className="space-y-4">
+                        <div>
+                          <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            Skill Name *
+                          </Typography>
+                          <Input
+                            size="lg"
+                            name="name"
+                            value={newSkill.name}
+                            onChange={handleSkillInputChange}
+                            placeholder="e.g. Latte Art"
+                            required
+                            className="!border-gray-300 focus:!border-red-500"
+                          />
+                          {skillFormSubmitAttempted && !newSkill.name && (
+                            <Typography variant="small" color="red" className="mt-1">
+                              Please fill in the skill name.
+                            </Typography>
+                          )}
+                        </div>
+                        <div>
+                          <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            Skill Type *
+                          </Typography>
+                          <Select
+                            size="lg"
+                            label="Select Skill Type"
+                            value={newSkill.type || "TECHNICAL"}
+                            onChange={handleSkillTypeChange}
+                            className="!border-gray-300 focus:!border-red-500"
+                          >
+                            {VALID_SKILL_TYPES.map((type) => (
+                              <Option key={type} value={type}>
+                                {type}
+                              </Option>
+                            ))}
+                          </Select>
+                          {skillFormSubmitAttempted && !newSkill.type && (
+                            <Typography variant="small" color="red" className="mt-1">
+                              Please select a skill type.
+                            </Typography>
+                          )}
+                        </div>
+                        <div>
+                          <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                            Proficiency Level
+                          </Typography>
+                          <Select
+                            size="lg"
+                            label="Select Proficiency Level"
+                            value={newSkill.proficiencyLevel || "Beginner"}
+                            onChange={handleSkillProficiencyChange}
+                            className="!border-gray-300 focus:!border-red-500"
+                          >
+                            {SKILL_PROFICIENCY_LEVELS.map((level) => (
+                              <Option key={level} value={level}>
+                                {level}
+                              </Option>
+                            ))}
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="mt-6 flex justify-end gap-2">
+                        <Button
+                          variant="gradient"
+                          color="red"
+                          onClick={editingSkillId ? handleUpdateSkill : handleAddSkill}
+                          disabled={!isSkillFormValid()}
+                        >
+                          {editingSkillId ? "Update Skill" : "Add Skill"}
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="gray"
+                          onClick={() => {
+                            setIsAddingSkill(false)
+                            setEditingSkillId(null)
+                            setSkillFormSubmitAttempted(false)
+                            setNewSkill({
+                              name: "",
+                              type: "TECHNICAL",
+                              proficiencyLevel: "Beginner",
+                            })
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {!isAddingSkill && isEditMode && editingSections.skills && (
+                    <Button
+                      variant="outlined"
+                      size="md"
+                      color="red"
+                      onClick={() => {
+                        setIsAddingSkill(true)
+                        setEditingSkillId(null)
+                        setNewSkill({
+                          name: "",
+                          type: "TECHNICAL",
+                          proficiencyLevel: "Beginner",
+                        })
+                      }}
+                      className="flex items-center gap-2 w-full mb-4"
+                    >
+                      <FaPlus className="w-4 h-4" />
+                      Add Skill
+                    </Button>
+                  )}
+
+                  {((portfolio?.skills && portfolio.skills.length > 0) || (isEditMode && editingSections.skills && (editingPortfolio?.skills || []).length > 0)) ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {(isEditMode && editingSections.skills ? (editingPortfolio?.skills || []) : (portfolio?.skills || []))?.map((skill, index) => (
-                        <div key={index} className="flex items-center gap-3 py-2 border-b border-gray-200">
+                        <div key={skill.id || index} className="flex items-center gap-3 py-2 border-b border-gray-200">
                           {isEditMode && editingSections.skills ? (
-                            <div className="flex-1 space-y-3">
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Skill Name *
-                                </Typography>
-                              <div className="flex gap-2">
-                                <Input
+                            <div className="flex-1 space-y-2">
+                              <div className="flex justify-end gap-2 -mt-2">
+                                <Button
                                   size="md"
-                                  value={skill.name || ""}
-                                  onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
-                                    placeholder="e.g. Latte Art"
-                                  required
-                                  className="!border-gray-300 flex-1"
-                                />
+                                  variant="text"
+                                  color="red"
+                                  onClick={() => handleEditSkill(skill)}
+                                  className="flex items-center gap-1"
+                                >
+                                  <FaPen className="w-3 h-3" /> Edit
+                                </Button>
                                 <IconButton
                                   size="md"
                                   variant="text"
                                   color="red"
                                   onClick={() => handleRemoveArrayItem("skills", index)}
+                                  aria-label="Remove skill"
                                 >
                                   <FaTrash className="w-3 h-3" />
                                 </IconButton>
                               </div>
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Skill Type
+                              <Typography variant="small" className="font-bold text-black text-base uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600, minWidth: '80px' }}>
+                                {skill.type || "TECHNICAL"}
+                              </Typography>
+                              <Typography variant="small" className="text-black text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
+                                {skill.name}
+                              </Typography>
+                              {skill.proficiencyLevel && (
+                                <Typography variant="small" className="text-gray-600 text-sm ml-auto" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
+                                  {skill.proficiencyLevel}
                                 </Typography>
-                                <Select
-                                size="md"
-                                  label="Select Skill Type"
-                                value={skill.type || "TECHNICAL"}
-                                  onChange={(value) =>
-                                    handleArrayFieldChange("skills", index, "type", value || "TECHNICAL")
-                                  }
-                                  className="!border-gray-300 [&>div]:text-black"
-                                >
-                                  {VALID_SKILL_TYPES.map((type) => (
-                                    <Option key={type} value={type}>
-                                      {type}
-                                    </Option>
-                                  ))}
-                                </Select>
-                              </div>
-                              <div>
-                                <Typography variant="small" className="text-black font-semibold mb-1 text-xs uppercase tracking-wide">
-                                  Proficiency Level
-                                </Typography>
-                                <Select
-                                  size="md"
-                                  label="Select Proficiency Level"
-                                  value={skill.proficiencyLevel || "Beginner"}
-                                  onChange={(value) =>
-                                    handleArrayFieldChange("skills", index, "proficiencyLevel", value || "Beginner")
-                                  }
-                                  className="!border-gray-300 [&>div]:text-gray-900"
-                                >
-                                  {SKILL_PROFICIENCY_LEVELS.map((level) => (
-                                    <Option key={level} value={level}>
-                                      {level}
-                                    </Option>
-                                  ))}
-                                </Select>
-                              </div>
+                              )}
                             </div>
                           ) : (
                             <>
@@ -8128,36 +8440,11 @@ const fetchPublicDataWithToken = async () => {
                           )}
                         </div>
                       ))}
-                      {isEditMode && editingSections.skills && (
-                        <div className="md:col-span-2">
-                          <Button
-                            variant="outlined"
-                            size="md"
-                            color="red"
-                            onClick={() => handleAddArrayItem("skills", { name: "", type: "TECHNICAL", proficiencyLevel: "" })}
-                            className="w-full flex items-center justify-center gap-2"
-                          >
-                            <FaPlus className="w-4 h-4" />
-                            Add Skill
-                          </Button>
-                        </div>
-                      )}
                     </div>
                   ) : (
                     <div className="bg-white p-6 border-l-4 border-gray-300">
                       {isEditMode && editingSections.skills ? (
-                        <div className="space-y-4">
-                          <Button
-                            variant="outlined"
-                            size="md"
-                            color="red"
-                            onClick={() => handleAddArrayItem("skills", { name: "", type: "TECHNICAL", proficiencyLevel: "" })}
-                            className="w-full flex items-center justify-center gap-2"
-                          >
-                            <FaPlus className="w-4 h-4" />
-                            Add Skill
-                          </Button>
-                        </div>
+                        <div></div>
                       ) : (
                         <div></div>
                       )}
@@ -10845,74 +11132,159 @@ const fetchPublicDataWithToken = async () => {
                   </IconButton>
                 )}
               </div>
-              {((portfolio.skills && portfolio.skills.length > 0) || (isEditMode && editingSections.skills)) ? (
+              {isEditMode && editingSections.skills && isAddingSkill && (
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+                  <Typography variant="h6" className="text-gray-800 font-semibold mb-4">
+                    {editingSkillId ? "Edit Skill" : "Add New Skill"}
+                  </Typography>
+                  <div className="space-y-4">
+                    <div>
+                      <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                        Skill Name *
+                      </Typography>
+                      <Input
+                        size="lg"
+                        name="name"
+                        value={newSkill.name}
+                        onChange={handleSkillInputChange}
+                        placeholder="e.g. Food Presentation"
+                        required
+                        className="!border-gray-300 focus:!border-blue-500"
+                      />
+                      {skillFormSubmitAttempted && !newSkill.name && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Please fill in the skill name.
+                        </Typography>
+                      )}
+                    </div>
+                    <div>
+                      <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                        Skill Type *
+                      </Typography>
+                      <Select
+                        size="lg"
+                        label="Select Skill Type"
+                        value={newSkill.type || "TECHNICAL"}
+                        onChange={handleSkillTypeChange}
+                        className="!border-gray-300 focus:!border-blue-500"
+                      >
+                        {VALID_SKILL_TYPES.map((type) => (
+                          <Option key={type} value={type}>
+                            {type}
+                          </Option>
+                        ))}
+                      </Select>
+                      {skillFormSubmitAttempted && !newSkill.type && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Please select a skill type.
+                        </Typography>
+                      )}
+                    </div>
+                    <div>
+                      <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                        Proficiency Level
+                      </Typography>
+                      <Select
+                        size="lg"
+                        label="Select Proficiency Level"
+                        value={newSkill.proficiencyLevel || "Beginner"}
+                        onChange={handleSkillProficiencyChange}
+                        className="!border-gray-300 focus:!border-blue-500"
+                      >
+                        {SKILL_PROFICIENCY_LEVELS.map((level) => (
+                          <Option key={level} value={level}>
+                            {level}
+                          </Option>
+                        ))}
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="mt-6 flex justify-end gap-2">
+                    <Button
+                      variant="gradient"
+                      color={designTheme.buttonColor}
+                      onClick={editingSkillId ? handleUpdateSkill : handleAddSkill}
+                      disabled={!isSkillFormValid()}
+                    >
+                      {editingSkillId ? "Update Skill" : "Add Skill"}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="gray"
+                      onClick={() => {
+                        setIsAddingSkill(false)
+                        setEditingSkillId(null)
+                        setSkillFormSubmitAttempted(false)
+                        setNewSkill({
+                          name: "",
+                          type: "TECHNICAL",
+                          proficiencyLevel: "Beginner",
+                        })
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {!isAddingSkill && isEditMode && editingSections.skills && (
+                <Button
+                  variant="outlined"
+                  size="md"
+                  color={designTheme.buttonColor}
+                  onClick={() => {
+                    setIsAddingSkill(true)
+                    setEditingSkillId(null)
+                    setNewSkill({
+                      name: "",
+                      type: "TECHNICAL",
+                      proficiencyLevel: "Beginner",
+                    })
+                  }}
+                  className="flex items-center gap-2 w-full mb-4"
+                >
+                  <FaPlus className="w-3 h-3" />
+                  Add Skill
+                </Button>
+              )}
+
+              {((portfolio.skills && portfolio.skills.length > 0) || (isEditMode && editingSections.skills && (editingPortfolio?.skills || []).length > 0)) ? (
                 <div className="space-y-3">
-                  {(isEditMode && editingSections.skills ? editingPortfolio?.skills : portfolio.skills)?.map((skill, index) => (
-                    <div key={index} className="pb-3 border-b border-gray-50 last:border-b-0">
+                  {(isEditMode && editingSections.skills ? (editingPortfolio?.skills || []) : (portfolio?.skills || []))?.map((skill, index) => (
+                    <div key={skill.id || index} className="pb-3 border-b border-gray-50 last:border-b-0">
                       {isEditMode && editingSections.skills ? (
-                        <div className="space-y-3">
-                          <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Skill Name *
-                            </Typography>
-                          <div className="flex gap-2">
-                            <Input
+                        <div className="space-y-2">
+                          <div className="flex justify-end gap-2 -mt-2">
+                            <Button
                               size="md"
-                              value={skill.name || ""}
-                              onChange={(e) => handleArrayFieldChange("skills", index, "name", e.target.value)}
-                                placeholder="e.g. Food Presentation"
-                              required
-                              className="!border-gray-300 flex-1"
-                            />
+                              variant="text"
+                              color={designTheme.buttonColor}
+                              onClick={() => handleEditSkill(skill)}
+                              className="flex items-center gap-1"
+                            >
+                              <FaPen className="w-3 h-3" /> Edit
+                            </Button>
                             <IconButton
                               size="md"
                               variant="text"
                               color="red"
                               onClick={() => handleRemoveArrayItem("skills", index)}
+                              aria-label="Remove skill"
                             >
                               <FaTrash className="w-3 h-3" />
                             </IconButton>
                           </div>
-                          </div>
-                          <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Skill Type
-                            </Typography>
-                            <Select
-                              size="md"
-                              label="Select Skill Type"
-                              value={skill.type || "TECHNICAL"}
-                              onChange={(value) =>
-                                handleArrayFieldChange("skills", index, "type", value || "TECHNICAL")
-                              }
-                              className="!border-gray-300"
-                            >
-                              {VALID_SKILL_TYPES.map((type) => (
-                                <Option key={type} value={type}>
-                                  {type}
-                                </Option>
-                              ))}
-                            </Select>
-                          </div>
-                          <div>
-                            <Typography variant="small" className="text-gray-700 font-semibold mb-1">
-                              Proficiency Level
-                            </Typography>
-                            <Select
-                              size="md"
-                              label="Select Proficiency Level"
-                              value={skill.proficiencyLevel || "Beginner"}
-                              onChange={(value) =>
-                                handleArrayFieldChange("skills", index, "proficiencyLevel", value || "Beginner")
-                              }
-                              className="!border-gray-300 [&>div]:text-gray-900"
-                            >
-                              {SKILL_PROFICIENCY_LEVELS.map((level) => (
-                                <Option key={level} value={level}>
-                                  {level}
-                                </Option>
-                              ))}
-                            </Select>
+                          <Typography variant="small" className="font-medium text-gray-800 mb-1">
+                            {skill.name}
+                          </Typography>
+                          <div className="flex items-center space-x-2">
+                            <Chip size="md" value={skill.type} color={designTheme.buttonColor} className="text-xs font-light" />
+                            {skill.proficiencyLevel && (
+                              <Typography variant="small" color="gray" className="text-xs">
+                                {skill.proficiencyLevel}
+                              </Typography>
+                            )}
                           </div>
                         </div>
                       ) : (
@@ -10932,36 +11304,24 @@ const fetchPublicDataWithToken = async () => {
                       )}
                     </div>
                   ))}
-                  {isEditMode && editingSections.skills && (
-                    <Button
-                      variant="outlined"
-                      size="md"
-                      color={designTheme.buttonColor}
-                      onClick={() => handleAddArrayItem("skills", { name: "", type: "TECHNICAL", proficiencyLevel: "" })}
-                      className="w-full flex items-center justify-center gap-2 mt-2"
-                    >
-                      <FaPlus className="w-3 h-3" />
-                      Add Skill
-                    </Button>
-                  )}
-                  {isEditMode && editingSections.skills && (
-                    <div className="mt-4 flex justify-end">
-                      <Button
-                        variant="gradient"
-                        color={designTheme.buttonColor}
-                        size="md"
-                        onClick={() => handleSaveSection("skills")}
-                        disabled={isSaving}
-                        className="flex items-center gap-2"
-                      >
-                        <FaSave className="w-3 h-3" />
-                        {isSaving ? "Saving..." : "Save Changes"}
-                      </Button>
-                    </div>
-                  )}
                 </div>
               ) : (
                 <div></div>
+              )}
+              {isEditMode && editingSections.skills && (
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="gradient"
+                    color={designTheme.buttonColor}
+                    size="md"
+                    onClick={() => handleSaveSection("skills")}
+                    disabled={isSaving}
+                    className="flex items-center gap-2"
+                  >
+                    <FaSave className="w-3 h-3" />
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
               )}
             </div>
 
