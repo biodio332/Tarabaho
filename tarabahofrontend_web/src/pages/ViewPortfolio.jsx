@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Fragment } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
 import axios from "axios"
 import { FaPen, FaSave, FaTimes, FaPlus, FaTrash, FaCheckCircle, FaExclamationCircle, FaCamera, FaInfoCircle, FaEye, FaLock } from "react-icons/fa"
+import logo from "../assets/images/logowhite.png"
 import {
   Card,
   CardBody,
@@ -40,6 +41,8 @@ const ViewPortfolio = () => {
   const [isPublicView, setIsPublicView] = useState(false)
   const [isGraduateView, setIsGraduateView] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false) // Shows edit icons
+  const [isPreviewMode, setIsPreviewMode] = useState(false) // Preview mode hides edit icons
+  const shareSectionRef = useRef(null)
   const [editingSections, setEditingSections] = useState({
     header: false,
     contact: false,
@@ -218,6 +221,51 @@ const ViewPortfolio = () => {
     const digitsOnly = phone.replace(/^\+63/, "").replace(/\D/g, "")
     // Return with +63 prefix
     return `+63${digitsOnly}`
+  }
+
+  // Helper functions to check if sections have data (for share link view)
+  const hasContactData = () => {
+    return !!(portfolio?.email || portfolio?.phone || portfolio?.website)
+  }
+
+  const hasSkillsData = () => {
+    return portfolio?.skills && portfolio.skills.length > 0
+  }
+
+  const hasTESDAData = () => {
+    return !!(portfolio?.ncLevel || portfolio?.trainingCenter || portfolio?.scholarshipType || portfolio?.tesdaRegistrationNumber)
+  }
+
+  const hasCertificatesData = () => {
+    return certificates && certificates.length > 0
+  }
+
+  const hasExperienceData = () => {
+    return portfolio?.experiences && portfolio.experiences.length > 0
+  }
+
+  const hasProjectsData = () => {
+    return projects && projects.length > 0
+  }
+
+  const hasAwardsData = () => {
+    return portfolio?.awardsRecognitions && portfolio.awardsRecognitions.length > 0
+  }
+
+  const hasEducationData = () => {
+    return portfolio?.continuingEducations && portfolio.continuingEducations.length > 0
+  }
+
+  const hasMembershipsData = () => {
+    return portfolio?.professionalMemberships && portfolio.professionalMemberships.length > 0
+  }
+
+  const hasReferencesData = () => {
+    return portfolio?.references && portfolio.references.length > 0
+  }
+
+  const hasAboutData = () => {
+    return !!(portfolio?.aboutMe || portfolio?.professionalSummary)
   }
 
   const validateField = (fieldName, value) => {
@@ -1054,6 +1102,20 @@ const fetchPublicDataWithToken = async () => {
     }
   }
 
+  // Hide/show navbar based on edit mode (but show navbar in preview mode)
+  useEffect(() => {
+    if (isGraduateView && isEditMode && !isPreviewMode) {
+      document.body.classList.add('edit-mode-active')
+    } else {
+      document.body.classList.remove('edit-mode-active')
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('edit-mode-active')
+    }
+  }, [isEditMode, isGraduateView, isPreviewMode])
+
   const handleEditModeToggle = () => {
     if (!isEditMode) {
       // Entering edit mode - create a copy of portfolio for editing and show edit icons
@@ -1240,6 +1302,10 @@ const fetchPublicDataWithToken = async () => {
   }
 
   const handleSectionEditToggle = (section) => {
+    // Prevent editing when in preview mode
+    if (isPreviewMode) {
+      return
+    }
     // Initialize editingPortfolio if it's null
     if (!editingPortfolio && portfolio) {
       const portfolioCopy = {
@@ -1307,7 +1373,12 @@ const fetchPublicDataWithToken = async () => {
       }
       
       // Reset form states when closing sections
-      if (section === "skills" && !newState.skills) {
+      // Also reset editingPortfolio data for that section back to portfolio data to discard unsaved changes
+      if (section === "skills" && !newState.skills && editingPortfolio && portfolio) {
+        setEditingPortfolio((prev) => ({
+          ...prev,
+          skills: portfolio.skills ? [...portfolio.skills] : [],
+        }))
         setIsAddingSkill(false)
         setEditingSkillId(null)
         setSkillFormSubmitAttempted(false)
@@ -1317,7 +1388,15 @@ const fetchPublicDataWithToken = async () => {
           proficiencyLevel: "Beginner",
         })
       }
-      if (section === "experience" && !newState.experience) {
+      if (section === "experience" && !newState.experience && editingPortfolio && portfolio) {
+        setEditingPortfolio((prev) => ({
+          ...prev,
+          experiences: portfolio.experiences ? portfolio.experiences.map((exp) => ({
+            ...exp,
+            employer: exp.company || exp.employer || "",
+            description: exp.responsibilities || exp.description || "",
+          })) : [],
+        }))
         setIsAddingExperience(false)
         setEditingExperienceId(null)
         setExperienceFormSubmitAttempted(false)
@@ -1329,7 +1408,11 @@ const fetchPublicDataWithToken = async () => {
           responsibilities: "",
         })
       }
-      if (section === "awards" && !newState.awards) {
+      if (section === "awards" && !newState.awards && editingPortfolio && portfolio) {
+        setEditingPortfolio((prev) => ({
+          ...prev,
+          awardsRecognitions: portfolio.awardsRecognitions ? [...portfolio.awardsRecognitions] : [],
+        }))
         setIsAddingAward(false)
         setEditingAwardId(null)
         setAwardFormSubmitAttempted(false)
@@ -1337,6 +1420,50 @@ const fetchPublicDataWithToken = async () => {
           title: "",
           issuer: "",
           dateReceived: "",
+        })
+      }
+      if (section === "education" && !newState.education && editingPortfolio && portfolio) {
+        setEditingPortfolio((prev) => ({
+          ...prev,
+          continuingEducations: portfolio.continuingEducations ? [...portfolio.continuingEducations] : [],
+        }))
+        setIsAddingEducation(false)
+        setEditingEducationId(null)
+        setEducationFormSubmitAttempted(false)
+        setNewEducation({
+          courseName: "",
+          institution: "",
+          completionDate: "",
+        })
+      }
+      if (section === "memberships" && !newState.memberships && editingPortfolio && portfolio) {
+        setEditingPortfolio((prev) => ({
+          ...prev,
+          professionalMemberships: portfolio.professionalMemberships ? [...portfolio.professionalMemberships] : [],
+        }))
+        setIsAddingMembership(false)
+        setEditingMembershipId(null)
+        setMembershipFormSubmitAttempted(false)
+        setNewMembership({
+          organization: "",
+          membershipType: "",
+          startDate: "",
+        })
+      }
+      if (section === "references" && !newState.references && editingPortfolio && portfolio) {
+        setEditingPortfolio((prev) => ({
+          ...prev,
+          references: portfolio.references ? [...portfolio.references] : [],
+        }))
+        setIsAddingReference(false)
+        setEditingReferenceId(null)
+        setReferenceFormSubmitAttempted(false)
+        setNewReference({
+          name: "",
+          relationship: "",
+          company: "",
+          email: "",
+          phone: "",
         })
       }
       if (section === "certificates" && !newState.certificates) {
@@ -4597,93 +4724,10 @@ const fetchPublicDataWithToken = async () => {
           }) || []
       }
 
-      // Ensure all array fields are properly formatted from editingPortfolio
-      payload.skills = editingPortfolio.skills
-        ?.filter((skill) => skill.name && skill.name.trim() !== "") // Filter out entries with empty name
-        .map((skill) => ({
-          id: typeof skill.id === "string" && skill.id.includes("new-") ? null : skill.id,
-          name: skill.name.trim(),
-          type: skill.type && skill.type.trim() !== "" ? skill.type.trim() : "TECHNICAL",
-          proficiencyLevel: skill.proficiencyLevel && skill.proficiencyLevel.trim() !== "" ? skill.proficiencyLevel.trim() : null,
-        })) || []
-      payload.experiences = editingPortfolio.experiences
-        ?.filter((exp) => exp.jobTitle && exp.jobTitle.trim() !== "") // Filter out entries with empty jobTitle
-        .map((exp) => ({
-          id: typeof exp.id === "string" && exp.id.includes("new-") ? null : exp.id,
-          jobTitle: exp.jobTitle.trim(),
-          employer: (exp.company || exp.employer || "").trim() || null,
-          description: (exp.responsibilities || exp.description || "").trim() || null,
-          startDate: exp.startDate && exp.startDate.trim() !== "" ? exp.startDate : null,
-          endDate: exp.endDate && exp.endDate.trim() !== "" ? exp.endDate : null,
-        })) || []
-      console.log(`[Template: ${portfolio?.designTemplate || 'default'}] 💾 Saving Experiences section - IDs:`, payload.experiences.map(e => e.id))
-      payload.awardsRecognitions = editingPortfolio.awardsRecognitions
-        ?.filter((award) => award.title && award.title.trim() !== "" && award.dateReceived && award.dateReceived.trim() !== "") // Filter out entries missing required fields
-        .map((award) => ({
-          id: typeof award.id === "string" && award.id.includes("new-") ? null : award.id,
-          title: award.title.trim(),
-          issuer: award.issuer && award.issuer.trim() !== "" ? award.issuer.trim() : null,
-          dateReceived: award.dateReceived && award.dateReceived.trim() !== "" ? award.dateReceived : null,
-        })) || []
-      console.log(`[Template: ${portfolio?.designTemplate || 'default'}] 💾 Saving Awards section - IDs:`, payload.awardsRecognitions.map(a => a.id))
-      payload.continuingEducations = editingPortfolio.continuingEducations
-        ?.filter((edu) => edu.courseName && edu.courseName.trim() !== "" && edu.completionDate && edu.completionDate.trim() !== "") // Filter out entries missing required fields
-        .map((edu) => ({
-          id: typeof edu.id === "string" && edu.id.includes("new-") ? null : edu.id,
-          courseName: edu.courseName.trim(),
-          institution: edu.institution && edu.institution.trim() !== "" ? edu.institution.trim() : null,
-          completionDate: edu.completionDate && edu.completionDate.trim() !== "" ? edu.completionDate : null,
-        })) || []
-      console.log(`[Template: ${portfolio?.designTemplate || 'default'}] 💾 Saving Education section - IDs:`, payload.continuingEducations.map(e => e.id))
-      payload.professionalMemberships = editingPortfolio.professionalMemberships
-        ?.filter((mem) => mem.organization && mem.organization.trim() !== "" && mem.startDate && mem.startDate.trim() !== "") // Filter out entries missing required fields
-        .map((mem) => ({
-          id: typeof mem.id === "string" && mem.id.includes("new-") ? null : mem.id,
-          organization: mem.organization.trim(),
-          membershipType: mem.membershipType && mem.membershipType.trim() !== "" ? mem.membershipType.trim() : null,
-          startDate: mem.startDate && mem.startDate.trim() !== "" ? mem.startDate : null,
-        })) || []
-      console.log(`[Template: ${portfolio?.designTemplate || 'default'}] 💾 Saving Memberships section - IDs:`, payload.professionalMemberships.map(m => m.id))
-      payload.references = editingPortfolio.references
-        ?.filter((ref) => {
-          // Filter out entries missing required fields
-          const hasName = ref.name && ref.name.trim() !== ""
-          const hasEmail = ref.email && ref.email.trim() !== ""
-          const hasPhone = (ref.phone && ref.phone.trim() !== "") || (ref.contact && ref.contact.trim() !== "")
-          return hasName && hasEmail && hasPhone
-        })
-        .map((ref) => {
-          // Get relationship value - check both relationship and position fields
-          // Prioritize relationship, fallback to position
-          let relationshipValue = null
-          if (ref.relationship && typeof ref.relationship === "string" && ref.relationship.trim() !== "") {
-            relationshipValue = ref.relationship.trim()
-          } else if (ref.position && typeof ref.position === "string" && ref.position.trim() !== "") {
-            relationshipValue = ref.position.trim()
-          }
-          
-          // Get phone value - check both phone and contact fields
-          // Prioritize phone, fallback to contact
-          let phoneValue = null
-          if (ref.phone && typeof ref.phone === "string" && ref.phone.trim() !== "") {
-            phoneValue = ref.phone.trim()
-          } else if (ref.contact && typeof ref.contact === "string" && ref.contact.trim() !== "") {
-            phoneValue = ref.contact.trim()
-          }
-
-          const companyValue =
-            ref.company && typeof ref.company === "string" && ref.company.trim() !== "" ? ref.company.trim() : null
-
-            return {
-            id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
-            name: ref.name.trim(),
-              relationship: relationshipValue,
-              company: companyValue,
-              email: ref.email && typeof ref.email === "string" && ref.email.trim() !== "" ? ref.email.trim() : null,
-              phone: phoneValue,
-            }
-          }) || []
-      console.log(`[Template: ${portfolio?.designTemplate || 'default'}] 💾 Saving References section - IDs:`, payload.references.map(r => r.id))
+      // Array fields are already set correctly above based on which section is being saved
+      // - If saving a section, that section's data comes from editingPortfolio (set above)
+      // - If NOT saving a section, that section's data comes from portfolio (set above)
+      // No need to overwrite here as it would undo the correct logic
 
       // Add certificate and project IDs if they exist
       if (section === "certificates") {
@@ -4805,16 +4849,15 @@ const fetchPublicDataWithToken = async () => {
       // If we just saved certificates or projects, include the refreshed data
       if (section === "certificates" && refreshedCertificates) {
         mergedPortfolio.certificates = refreshedCertificates
-      } else if (section === "certificates") {
-        // Fallback to editingPortfolio.certificates if refreshedCertificates is not available
-        mergedPortfolio.certificates = editingPortfolio.certificates || []
       }
+      // Note: If we didn't save certificates, the merge logic above already handles preserving
+      // editingPortfolio.certificates if that section is in edit mode, or using portfolio data otherwise
+      
       if (section === "projects" && refreshedProjects) {
         mergedPortfolio.projects = refreshedProjects
-      } else if (section === "projects") {
-        // Fallback to editingPortfolio.projects if refreshedProjects is not available
-        mergedPortfolio.projects = editingPortfolio.projects || []
       }
+      // Note: If we didn't save projects, the merge logic above already handles preserving
+      // editingPortfolio.projects if that section is in edit mode, or using portfolio data otherwise
       
       setEditingPortfolio(mergedPortfolio)
 
@@ -5223,12 +5266,17 @@ const fetchPublicDataWithToken = async () => {
         .animate-modal-scale-in {
           animation: modalScaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
+
+        /* Hide original navbar when in edit mode */
+        body.edit-mode-active nav:first-of-type {
+          display: none !important;
+        }
       `}</style>
 
-      <div className={`min-h-screen ${portfolio?.designTemplate === "Template 1" ? "bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200" : portfolio?.designTemplate === "Template 3" ? "bg-white" : "bg-gray-50"} py-8 px-4 relative`}>
+      <div className={`min-h-screen ${portfolio?.designTemplate === "Template 1" ? "bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200" : portfolio?.designTemplate === "Template 3" ? "bg-white" : "bg-gray-50"} py-8 px-4 relative ${isGraduateView && isEditMode ? (isPreviewMode ? "pt-24" : "pt-36") : ""}`}>
         {/* Visibility Toggle - Top Left (applies to all templates) */}
         {isGraduateView && portfolio && (
-          <div className="absolute top-4 left-4 z-50">
+          <div className={`absolute ${isEditMode && !isPreviewMode ? "top-32" : isEditMode && isPreviewMode ? "top-24" : "top-4"} left-4 z-50`}>
             <Button
               variant="gradient"
               color={portfolio.visibility === "PUBLIC" ? "green" : "gray"}
@@ -5250,6 +5298,99 @@ const fetchPublicDataWithToken = async () => {
               )}
             </Button>
           </div>
+        )}
+        {/* Edit Mode Banner and Header */}
+        {isGraduateView && isEditMode && (
+          <>
+            {/* Header - On top */}
+            <header className="fixed left-0 right-0 top-0 z-[100] bg-blue-900">
+              <div className="container mx-auto px-8 py-4 flex items-center justify-between">
+                <Link to="/graduate-homepage">
+                  <img 
+                    src={logo || "/placeholder.svg"} 
+                    alt="Tarabaho Logo" 
+                    className="h-12 object-contain transition-transform duration-300 hover:scale-105"
+                  />
+                </Link>
+                <div className="flex items-center gap-4">
+                  {!isPreviewMode && (
+                    <Button
+                      variant="gradient"
+                      color="gray"
+                      size="md"
+                      onClick={() => {
+                        // Entering preview mode - close all editing sections and reset editing states
+                        setIsPreviewMode(true)
+                        // Close all editing sections
+                        setEditingSections({
+                          header: false,
+                          contact: false,
+                          skills: false,
+                          tesda: false,
+                          certificates: false,
+                          experience: false,
+                          projects: false,
+                          awards: false,
+                          education: false,
+                          memberships: false,
+                          references: false,
+                        })
+                        // Reset all adding states
+                        setIsAddingCertificate(false)
+                        setIsAddingProject(false)
+                        setIsAddingExperience(false)
+                        setIsAddingAward(false)
+                        setIsAddingSkill(false)
+                        setIsAddingEducation(false)
+                        setIsAddingMembership(false)
+                        setIsAddingReference(false)
+                        // Reset all editing IDs
+                        setEditingCertificateId(null)
+                        setEditingProjectId(null)
+                        setEditingExperienceId(null)
+                        setEditingAwardId(null)
+                        setEditingSkillId(null)
+                        setEditingEducationId(null)
+                        setEditingMembershipId(null)
+                        setEditingReferenceId(null)
+                      }}
+                      className="flex items-center gap-2 text-white font-semibold text-base tracking-wide px-4 py-2 rounded-lg transition-all duration-300 hover:bg-white/10"
+                      title="Enter Preview Mode"
+                    >
+                      <FaEye className="w-4 h-4" />
+                      <span>Preview</span>
+                    </Button>
+                  )}
+                  {isPreviewMode && (
+                    <Button
+                      variant="gradient"
+                      color="green"
+                      size="md"
+                      onClick={() => {
+                        // Exiting preview mode - also exit edit mode (Done Editing logic)
+                        setIsPreviewMode(false)
+                        handleEditModeToggle()
+                      }}
+                      className="flex items-center gap-2 text-white font-semibold text-base tracking-wide px-4 py-2 rounded-lg transition-all duration-300 hover:bg-white/10"
+                      title="Done Editing"
+                    >
+                      <FaCheckCircle className="w-4 h-4" />
+                      <span>Done Editing</span>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </header>
+            {/* Edit Mode Banner - Below header */}
+            {!isPreviewMode && (
+              <div className="fixed top-[80px] left-0 right-0 z-[100] bg-blue-600 text-white py-3 px-4 text-center text-sm font-medium">
+                <div className="flex items-center justify-center gap-2">
+                  <FaPen className="h-4 w-4" />
+                  Editing Mode - Click the edit icon on any section to make changes
+                </div>
+              </div>
+            )}
+          </>
         )}
       <div className="max-w-7xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden relative">
         {portfolio?.designTemplate === "Template 1" ? (
@@ -5308,17 +5449,18 @@ const fetchPublicDataWithToken = async () => {
                 )}
                 
                 {/* Contact Information */}
-                <div className={`bg-white border-2 ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding} shadow-md`}>
+                {(!urlShareToken || hasContactData()) && (
+                <div className={`bg-white border-2 ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding} shadow-md group`}>
                   <div className="flex items-center justify-between mb-5">
                     <Typography variant="h6" className={`font-bold ${designTheme.textColor} text-xl`} style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.01em" }}>
                       Contact
                     </Typography>
-                    {isGraduateView && isEditMode && (
+                    {isGraduateView && isEditMode && !isPreviewMode && (
                       <IconButton 
                         size="md" 
                         variant="text" 
                         onClick={() => handleSectionEditToggle("contact")}
-                        className={editingSections.contact ? designTheme.textColor : ""}
+                        className={`${editingSections.contact ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                       >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
@@ -5330,7 +5472,7 @@ const fetchPublicDataWithToken = async () => {
                         <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
                           Email
                         </Typography>
-                        {isEditMode && editingSections.contact ? (
+                        {isEditMode && editingSections.contact && !isPreviewMode ? (
                           <>
                             <Input
                               type="email"
@@ -5353,12 +5495,12 @@ const fetchPublicDataWithToken = async () => {
                         )}
                       </div>
                     )}
-                    {(portfolio.phone || (isEditMode && editingSections.contact)) && (
+                    {(portfolio.phone || (isEditMode && editingSections.contact && !isPreviewMode)) && (
                       <div>
                         <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
                           Phone
                         </Typography>
-                        {isEditMode && editingSections.contact ? (
+                        {isEditMode && editingSections.contact && !isPreviewMode ? (
                           <>
                             <div className="relative">
                               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -5389,12 +5531,12 @@ const fetchPublicDataWithToken = async () => {
                         )}
                       </div>
                     )}
-                    {(portfolio.website || (isEditMode && editingSections.contact)) && (
+                    {(portfolio.website || (isEditMode && editingSections.contact && !isPreviewMode)) && (
                       <div>
                         <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
                           Website
                         </Typography>
-                        {isEditMode && editingSections.contact ? (
+                        {isEditMode && editingSections.contact && !isPreviewMode ? (
                           <>
                             <Input
                               type="url"
@@ -5434,19 +5576,21 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Skills */}
+                {(!urlShareToken || hasSkillsData()) && (
                 <div className={`bg-white border-2 ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding} shadow-md`}>
-                  <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center justify-between mb-5 group">
                     <Typography variant="h6" className={`font-bold ${designTheme.textColor} text-xl`} style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.01em" }}>
                       Skills
                     </Typography>
-                    {isGraduateView && isEditMode && (
+                    {isGraduateView && isEditMode && !isPreviewMode && (
                       <IconButton 
                         size="md" 
                         variant="text" 
                         onClick={() => handleSectionEditToggle("skills")}
-                        className={editingSections.skills ? designTheme.textColor : ""}
+                        className={`${editingSections.skills ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                       >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
@@ -5568,11 +5712,11 @@ const fetchPublicDataWithToken = async () => {
                     </Button>
                   )}
 
-                  {((portfolio.skills && portfolio.skills.length > 0) || (isEditMode && editingSections.skills && (editingPortfolio?.skills || []).length > 0)) ? (
+                  {((portfolio.skills && portfolio.skills.length > 0) || (isEditMode && editingSections.skills && !isPreviewMode && (editingPortfolio?.skills || []).length > 0)) ? (
                     <div className="space-y-3">
-                      {(isEditMode && editingSections.skills ? (editingPortfolio?.skills || []) : (portfolio?.skills || []))?.map((skill, index) => (
+                      {(isEditMode && editingSections.skills && !isPreviewMode ? (editingPortfolio?.skills || []) : (portfolio?.skills || []))?.map((skill, index) => (
                         <div key={skill.id || index} className="pb-3 border-b border-gray-200 last:border-b-0">
-                          {isEditMode && editingSections.skills ? (
+                          {isEditMode && editingSections.skills && !isPreviewMode ? (
                             <div className="space-y-2">
                               <div className="flex justify-end gap-2 -mt-2">
                                 <Button
@@ -5643,19 +5787,21 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* TESDA Information */}
+                {(!urlShareToken || hasTESDAData()) && (
                 <div className={`bg-white border-2 ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding} shadow-md`}>
-                  <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center justify-between mb-5 group">
                     <Typography variant="h6" className={`font-bold ${designTheme.textColor} text-xl`} style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.01em" }}>
                       TESDA Information
                     </Typography>
-                    {isGraduateView && isEditMode && (
+                    {isGraduateView && isEditMode && !isPreviewMode && (
                       <IconButton 
                         size="md" 
                         variant="text" 
                         onClick={() => handleSectionEditToggle("tesda")}
-                        className={editingSections.tesda ? designTheme.textColor : ""}
+                        className={`${editingSections.tesda ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                       >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
@@ -5837,15 +5983,16 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   )}
                 </div>
+                )}
               </div>
 
               {/* Right Side - Name and Main Content */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Name Container */}
-                <div className="relative bg-white border-2 border-gray-300 rounded-xl shadow-lg p-8 bg-gradient-to-br from-white to-gray-50/30">
+                <div className="relative bg-white border-2 border-gray-300 rounded-xl shadow-lg p-8 bg-gradient-to-br from-white to-gray-50/30 group">
                   {/* Edit Button - Top Right */}
-                  {isGraduateView && isEditMode && (
-                    <div className="absolute top-4 right-4">
+                  {isGraduateView && isEditMode && !isPreviewMode && (
+                    <div className="absolute top-4 right-4 opacity-100 transition-opacity">
                       <IconButton
                         size="md"
                         variant="text"
@@ -5856,7 +6003,7 @@ const fetchPublicDataWithToken = async () => {
                       </IconButton>
                     </div>
                   )}
-                  {isEditMode && editingSections.header ? (
+                  {isEditMode && editingSections.header && !isPreviewMode ? (
                     <div className="space-y-4 pr-12">
                       <Input
                         value={editingPortfolio?.fullName || ""}
@@ -5903,7 +6050,7 @@ const fetchPublicDataWithToken = async () => {
                     <>
                       <Typography
                         variant="h1"
-                        className={`${designTheme.titleWeight} ${designTheme.typographySize} tracking-tight text-gray-900 break-words ${isGraduateView && isEditMode ? "pr-12" : ""}`}
+                        className={`${designTheme.titleWeight} ${designTheme.typographySize} tracking-tight text-gray-900 break-words ${isGraduateView && isEditMode && !isPreviewMode ? "pr-12" : ""}`}
                         style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.02em" }}
                       >
                         {portfolio.fullName || "Professional Portfolio"}
@@ -5933,17 +6080,18 @@ const fetchPublicDataWithToken = async () => {
                 {/* Main Content Container */}
                 <div className={`bg-white border-2 ${designTheme.cardBorder} rounded-xl shadow-lg p-10 space-y-10`}>
                   {/* Certificates Section */}
+                  {(!urlShareToken || hasCertificatesData()) && (
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-3 group">
                       <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
                         Certificates
                       </Typography>
-                      {isGraduateView && isEditMode && (
+                      {isGraduateView && isEditMode && !isPreviewMode && (
                         <IconButton 
                           size="md" 
                           variant="text" 
                           onClick={() => handleSectionEditToggle("certificates")}
-                          className={editingSections.certificates ? designTheme.textColor : ""}
+                          className={`${editingSections.certificates ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                         >
                           <FaPen className="w-4 h-4" />
                         </IconButton>
@@ -6122,9 +6270,9 @@ const fetchPublicDataWithToken = async () => {
                             </Button>
                           )}
 
-                          {((isEditMode && editingSections.certificates ? (editingPortfolio?.certificates || []) : (certificates || [])).length > 0) && (
+                          {((isEditMode && editingSections.certificates && !isPreviewMode ? (editingPortfolio?.certificates || []) : (certificates || [])).length > 0) && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {(isEditMode && editingSections.certificates ? (editingPortfolio?.certificates || []) : (certificates || [])).map((certificate) => (
+                              {(isEditMode && editingSections.certificates && !isPreviewMode ? (editingPortfolio?.certificates || []) : (certificates || [])).map((certificate) => (
                                 <Card key={certificate.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                                   <CardBody className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                     <div className="flex items-center gap-4">
@@ -6191,7 +6339,7 @@ const fetchPublicDataWithToken = async () => {
                       </>
                     ) : certificates && certificates.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {(isEditMode && editingSections.certificates ? (editingPortfolio?.certificates || []) : (certificates || [])).map((certificate) => (
+                        {(isEditMode && editingSections.certificates && !isPreviewMode ? (editingPortfolio?.certificates || []) : (certificates || [])).map((certificate) => (
                           <Card key={certificate.id} className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-300 shadow-md hover:shadow-lg transition-shadow duration-300">
                             <CardBody className="flex flex-col items-start gap-3">
                               <div className="flex items-center gap-3 w-full">
@@ -6229,19 +6377,21 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Experience Section */}
+                  {(!urlShareToken || hasExperienceData()) && (
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-3 group">
                       <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
                         Experience
                       </Typography>
-                      {isGraduateView && isEditMode && (
+                      {isGraduateView && isEditMode && !isPreviewMode && (
                         <IconButton 
                           size="md" 
                           variant="text" 
                           onClick={() => handleSectionEditToggle("experience")}
-                          className={editingSections.experience ? designTheme.textColor : ""}
+                          className={`${editingSections.experience ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                         >
                           <FaPen className="w-4 h-4" />
                         </IconButton>
@@ -6545,19 +6695,21 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Projects Section */}
+                  {(!urlShareToken || hasProjectsData()) && (
                   <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 group">
                       <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
                         Projects
                       </Typography>
-                      {isGraduateView && isEditMode && (
+                      {isGraduateView && isEditMode && !isPreviewMode && (
                         <IconButton 
                           size="md" 
                           variant="text" 
                           onClick={() => handleSectionEditToggle("projects")}
-                          className={editingSections.projects ? designTheme.textColor : ""}
+                          className={`${editingSections.projects ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                         >
                           <FaPen className="w-4 h-4" />
                         </IconButton>
@@ -6781,9 +6933,9 @@ const fetchPublicDataWithToken = async () => {
                           </Button>
                         )}
 
-                        {((isEditMode && editingSections.projects ? (editingPortfolio?.projects || []) : (projects || [])).length > 0) && (
+                        {((isEditMode && editingSections.projects && !isPreviewMode ? (editingPortfolio?.projects || []) : (projects || [])).length > 0) && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {(isEditMode && editingSections.projects ? (editingPortfolio?.projects || []) : (projects || [])).map((project) => {
+                            {(isEditMode && editingSections.projects && !isPreviewMode ? (editingPortfolio?.projects || []) : (projects || [])).map((project) => {
                               const projectImageSrc = project.projectImageFilePath || project.preview || "/placeholder.svg"
                               return (
                                 <Card key={project.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
@@ -6862,7 +7014,7 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     ) : projects && projects.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {(isEditMode && editingSections.projects ? (editingPortfolio?.projects || []) : (projects || [])).map((project) => {
+                        {(isEditMode && editingSections.projects && !isPreviewMode ? (editingPortfolio?.projects || []) : (projects || [])).map((project) => {
                           const projectImageSrc = project.projectImageFilePath || project.preview || "/placeholder.svg"
                           return (
                           <Card key={project.id} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
@@ -6905,19 +7057,21 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Awards & Recognition Section */}
+                  {(!urlShareToken || hasAwardsData()) && (
                   <div>
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center justify-between mb-6 group">
                       <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
                         Awards & Recognition
                       </Typography>
-                      {isGraduateView && isEditMode && (
+                      {isGraduateView && isEditMode && !isPreviewMode && (
                         <IconButton 
                           size="md" 
                           variant="text" 
                           onClick={() => handleSectionEditToggle("awards")}
-                          className={editingSections.awards ? designTheme.textColor : ""}
+                          className={`${editingSections.awards ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                         >
                           <FaPen className="w-4 h-4" />
                         </IconButton>
@@ -7130,21 +7284,24 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Continuing Education & Professional Memberships */}
+                  {(!urlShareToken || hasEducationData() || hasMembershipsData()) && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Continuing Education */}
+                    {(!urlShareToken || hasEducationData()) && (
                     <div>
-                      <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center justify-between mb-5 group">
                         <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-xl md:text-2xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
                           Continuing Education
                         </Typography>
-                        {isGraduateView && isEditMode && (
+                        {isGraduateView && isEditMode && !isPreviewMode && (
                           <IconButton 
                             size="md" 
                             variant="text" 
                             onClick={() => handleSectionEditToggle("education")}
-                            className={editingSections.education ? designTheme.textColor : ""}
+                            className={`${editingSections.education ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                           >
                             <FaPen className="w-4 h-4" />
                           </IconButton>
@@ -7357,19 +7514,21 @@ const fetchPublicDataWithToken = async () => {
                         <div></div>
                       )}
                     </div>
+                    )}
 
                     {/* Professional Memberships */}
+                    {(!urlShareToken || hasMembershipsData()) && (
                     <div>
-                      <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center justify-between mb-5 group">
                         <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-xl md:text-2xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
                           Professional Memberships
                         </Typography>
-                        {isGraduateView && isEditMode && (
+                        {isGraduateView && isEditMode && !isPreviewMode && (
                           <IconButton 
                             size="md" 
                             variant="text" 
                             onClick={() => handleSectionEditToggle("memberships")}
-                            className={editingSections.memberships ? designTheme.textColor : ""}
+                            className={`${editingSections.memberships ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                           >
                             <FaPen className="w-4 h-4" />
                           </IconButton>
@@ -7582,20 +7741,23 @@ const fetchPublicDataWithToken = async () => {
                         <div></div>
                       )}
                     </div>
+                    )}
                   </div>
+                  )}
 
                   {/* References Section */}
+                  {(!urlShareToken || hasReferencesData()) && (
                   <div>
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center justify-between mb-6 group">
                       <Typography variant="h4" className={`font-bold ${designTheme.textColor} text-2xl md:text-3xl`} style={{ fontFamily: "'Playfair Display', 'Georgia', serif", letterSpacing: "-0.01em" }}>
                         References
                       </Typography>
-                      {isGraduateView && isEditMode && (
+                      {isGraduateView && isEditMode && !isPreviewMode && (
                         <IconButton 
                           size="md" 
                           variant="text" 
                           onClick={() => handleSectionEditToggle("references")}
-                          className={editingSections.references ? designTheme.textColor : ""}
+                          className={`${editingSections.references ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                         >
                           <FaPen className="w-4 h-4" />
                         </IconButton>
@@ -7874,6 +8036,7 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -7882,10 +8045,10 @@ const fetchPublicDataWithToken = async () => {
           /* Template 3 - Modern Centered Layout with Clean Résumé Style */
           <div className="bg-white min-h-screen" style={{ fontFamily: "'Montserrat', 'Roboto', 'Inter', sans-serif" }}>
             {/* Header Section - Clean Modern Résumé Style */}
-            <div className="relative bg-white pt-16 pb-16 md:pt-20 md:pb-20 px-6 md:px-12 lg:px-16 border-b-2 border-gray-200">
+            <div className="relative bg-white pt-16 pb-16 md:pt-20 md:pb-20 px-6 md:px-12 lg:px-16 border-b-2 border-gray-200 group">
               {/* Edit Button - Top Right */}
-              {isGraduateView && isEditMode && (
-                <div className="absolute top-4 right-4 md:top-6 md:right-6 lg:top-8 lg:right-8">
+              {isGraduateView && isEditMode && !isPreviewMode && (
+                <div className="absolute top-4 right-4 md:top-6 md:right-6 lg:top-8 lg:right-8 opacity-100 transition-opacity">
                   <IconButton 
                     size="md" 
                     variant="text" 
@@ -8098,16 +8261,16 @@ const fetchPublicDataWithToken = async () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Contact Information */}
                   <div className="bg-white p-6 border-l-4 border-red-600">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-4 group">
                       <Typography variant="h5" className="font-bold text-red-600 text-lg uppercase tracking-wide" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                         Contact
                       </Typography>
-                      {isGraduateView && isEditMode && (
+                      {isGraduateView && isEditMode && !isPreviewMode && (
                         <IconButton 
                           size="md" 
                           variant="text" 
                           onClick={() => handleSectionEditToggle("contact")}
-                          className="text-red-600"
+                          className="text-red-600 opacity-100 transition-opacity"
                         >
                           <FaPen className="w-4 h-4" />
                         </IconButton>
@@ -8230,21 +8393,21 @@ const fetchPublicDataWithToken = async () => {
 
                   {/* TESDA Information */}
                   <div className="bg-white p-6 border-l-4 border-red-600">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-4 group">
                       <Typography variant="h5" className="font-bold text-red-600 text-lg uppercase tracking-wide" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                         TESDA Information
                       </Typography>
-                      {isGraduateView && isEditMode && (
-                        <IconButton 
-                          size="md" 
-                          variant="text" 
-                          onClick={() => handleSectionEditToggle("tesda")}
-                          className="text-red-600"
-                        >
-                          <FaPen className="w-4 h-4" />
-                        </IconButton>
-                      )}
-                    </div>
+                    {isGraduateView && isEditMode && !isPreviewMode && (
+                      <IconButton 
+                        size="md" 
+                        variant="text" 
+                        onClick={() => handleSectionEditToggle("tesda")}
+                        className="text-red-600 opacity-100 transition-opacity"
+                      >
+                        <FaPen className="w-4 h-4" />
+                      </IconButton>
+                    )}
+                  </div>
                     {(portfolio?.ncLevel || portfolio?.trainingCenter || portfolio?.scholarshipType || portfolio?.trainingDuration || portfolio?.tesdaRegistrationNumber || (isEditMode && editingSections.tesda)) ? (
                       <div className="space-y-3">
                         {(portfolio?.ncLevel || (isEditMode && editingSections.tesda)) && (
@@ -8429,16 +8592,16 @@ const fetchPublicDataWithToken = async () => {
 
                 {/* Skills */}
                 <div>
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-6 group">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                       Skills
                     </Typography>
-                    {isGraduateView && isEditMode && (
+                    {isGraduateView && isEditMode && !isPreviewMode && (
                       <IconButton 
                         size="md" 
                         variant="text" 
                         onClick={() => handleSectionEditToggle("skills")}
-                        className="text-red-600"
+                        className="text-red-600 opacity-100 transition-opacity"
                       >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
@@ -8645,16 +8808,16 @@ const fetchPublicDataWithToken = async () => {
 
                 {/* Certificates */}
                 <div>
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-6 group">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                       Certificates
                     </Typography>
-                    {isGraduateView && isEditMode && (
+                    {isGraduateView && isEditMode && !isPreviewMode && (
                       <IconButton 
                         size="md" 
                         variant="text" 
                         onClick={() => handleSectionEditToggle("certificates")}
-                        className="text-red-600"
+                        className="text-red-600 opacity-100 transition-opacity"
                       >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
@@ -8834,7 +8997,7 @@ const fetchPublicDataWithToken = async () => {
 
                         {((isEditMode && editingSections.certificates ? (editingPortfolio?.certificates || []) : (certificates || [])).length > 0) && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {(isEditMode && editingSections.certificates ? (editingPortfolio?.certificates || []) : (certificates || [])).map((certificate) => (
+                            {(isEditMode && editingSections.certificates && !isPreviewMode ? (editingPortfolio?.certificates || []) : (certificates || [])).map((certificate) => (
                               <Card key={certificate.id} className="p-4 bg-white rounded-lg border-2 border-gray-300">
                                 <CardBody className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                   <div className="flex items-center gap-4">
@@ -8963,16 +9126,16 @@ const fetchPublicDataWithToken = async () => {
 
                 {/* Experience */}
                 <div>
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-6 group">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                       Experience
                     </Typography>
-                    {isGraduateView && isEditMode && (
+                    {isGraduateView && isEditMode && !isPreviewMode && (
                       <IconButton 
                         size="md" 
                         variant="text" 
                         onClick={() => handleSectionEditToggle("experience")}
-                        className="text-red-600"
+                        className="text-red-600 opacity-100 transition-opacity"
                       >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
@@ -9171,8 +9334,8 @@ const fetchPublicDataWithToken = async () => {
                       )}
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {(isEditMode && editingSections.experience ? (editingPortfolio?.experiences || []) : (portfolio?.experiences || []))
-                          .slice(0, isEditMode && editingSections.experience ? undefined : (showAllExperiences ? undefined : INITIAL_ITEMS_LIMIT))
+                        {(isEditMode && editingSections.experience && !isPreviewMode ? (editingPortfolio?.experiences || []) : (portfolio?.experiences || []))
+                          .slice(0, isEditMode && editingSections.experience && !isPreviewMode ? undefined : (showAllExperiences ? undefined : INITIAL_ITEMS_LIMIT))
                           .map((exp, index) => (
                           <div key={exp.id || index} className="pb-3 border-b border-gray-200">
                             {isEditMode && editingSections.experience ? (
@@ -9315,16 +9478,16 @@ const fetchPublicDataWithToken = async () => {
 
                 {/* Projects */}
                 <div>
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-6 group">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                       Projects
                     </Typography>
-                    {isGraduateView && isEditMode && (
+                    {isGraduateView && isEditMode && !isPreviewMode && (
                       <IconButton 
                         size="md" 
                         variant="text" 
                         onClick={() => handleSectionEditToggle("projects")}
-                        className="text-red-600"
+                        className="text-red-600 opacity-100 transition-opacity"
                       >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
@@ -9549,7 +9712,7 @@ const fetchPublicDataWithToken = async () => {
 
                       {((isEditMode && editingSections.projects ? (editingPortfolio?.projects || []) : (projects || [])).length > 0) && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {(isEditMode && editingSections.projects ? (editingPortfolio?.projects || []) : (projects || [])).map((project) => {
+                          {(isEditMode && editingSections.projects && !isPreviewMode ? (editingPortfolio?.projects || []) : (projects || [])).map((project) => {
                             const projectImageSrc = project.projectImageFilePath || project.preview || "/placeholder.svg"
                             return (
                               <Card key={project.id} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300">
@@ -9693,16 +9856,16 @@ const fetchPublicDataWithToken = async () => {
 
                 {/* Awards & Recognition */}
                 <div>
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-6 group">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                       Awards & Recognition
                     </Typography>
-                    {isGraduateView && isEditMode && (
+                    {isGraduateView && isEditMode && !isPreviewMode && (
                       <IconButton 
                         size="md" 
                         variant="text" 
                         onClick={() => handleSectionEditToggle("awards")}
-                        className="text-red-600"
+                        className="text-red-600 opacity-100 transition-opacity"
                       >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
@@ -9831,8 +9994,8 @@ const fetchPublicDataWithToken = async () => {
                         </Button>
                       )}
 
-                      {(isEditMode && editingSections.awards ? (editingPortfolio?.awardsRecognitions || []) : (portfolio?.awardsRecognitions || []))
-                        .slice(0, isEditMode && editingSections.awards ? undefined : (showAllAwards ? undefined : INITIAL_ITEMS_LIMIT))
+                      {(isEditMode && editingSections.awards && !isPreviewMode ? (editingPortfolio?.awardsRecognitions || []) : (portfolio?.awardsRecognitions || []))
+                        .slice(0, isEditMode && editingSections.awards && !isPreviewMode ? undefined : (showAllAwards ? undefined : INITIAL_ITEMS_LIMIT))
                         .map((award, index) => (
                         <div key={award.id || index} className="pb-3 border-b border-gray-200 last:border-b-0">
                           {isEditMode && editingSections.awards ? (
@@ -9946,16 +10109,16 @@ const fetchPublicDataWithToken = async () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Continuing Education */}
                   <div>
-                    <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center justify-between mb-5 group">
                       <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                         Continuing Education
                       </Typography>
-                      {isGraduateView && isEditMode && (
+                      {isGraduateView && isEditMode && !isPreviewMode && (
                         <IconButton 
                           size="md" 
                           variant="text" 
                           onClick={() => handleSectionEditToggle("education")}
-                          className="text-red-600"
+                          className="text-red-600 opacity-100 transition-opacity"
                         >
                           <FaPen className="w-4 h-4" />
                         </IconButton>
@@ -10084,8 +10247,8 @@ const fetchPublicDataWithToken = async () => {
                           </Button>
                         )}
 
-                        {(isEditMode && editingSections.education ? (editingPortfolio?.continuingEducations || []) : (portfolio?.continuingEducations || []))
-                          .slice(0, isEditMode && editingSections.education ? undefined : (showAllEducation ? undefined : INITIAL_ITEMS_LIMIT))
+                        {(isEditMode && editingSections.education && !isPreviewMode ? (editingPortfolio?.continuingEducations || []) : (portfolio?.continuingEducations || []))
+                          .slice(0, isEditMode && editingSections.education && !isPreviewMode ? undefined : (showAllEducation ? undefined : INITIAL_ITEMS_LIMIT))
                           .map((edu, index) => (
                           <div key={edu.id || index} className="pb-3 border-b border-gray-200 last:border-b-0">
                             {isEditMode && editingSections.education ? (
@@ -10197,16 +10360,16 @@ const fetchPublicDataWithToken = async () => {
 
                   {/* Professional Memberships */}
                   <div>
-                    <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center justify-between mb-5 group">
                       <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                         Professional Memberships
                       </Typography>
-                      {isGraduateView && isEditMode && (
+                      {isGraduateView && isEditMode && !isPreviewMode && (
                         <IconButton 
                           size="md" 
                           variant="text" 
                           onClick={() => handleSectionEditToggle("memberships")}
-                          className="text-red-600"
+                          className="text-red-600 opacity-100 transition-opacity"
                         >
                           <FaPen className="w-4 h-4" />
                         </IconButton>
@@ -10335,8 +10498,8 @@ const fetchPublicDataWithToken = async () => {
                           </Button>
                         )}
 
-                        {(isEditMode && editingSections.memberships ? (editingPortfolio?.professionalMemberships || []) : (portfolio?.professionalMemberships || []))
-                          .slice(0, isEditMode && editingSections.memberships ? undefined : (showAllMemberships ? undefined : INITIAL_ITEMS_LIMIT))
+                        {(isEditMode && editingSections.memberships && !isPreviewMode ? (editingPortfolio?.professionalMemberships || []) : (portfolio?.professionalMemberships || []))
+                          .slice(0, isEditMode && editingSections.memberships && !isPreviewMode ? undefined : (showAllMemberships ? undefined : INITIAL_ITEMS_LIMIT))
                           .map((mem, index) => (
                           <div key={mem.id || index} className="pb-3 border-b border-gray-200 last:border-b-0">
                             {isEditMode && editingSections.memberships ? (
@@ -10461,12 +10624,12 @@ const fetchPublicDataWithToken = async () => {
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                       References
                     </Typography>
-                    {isGraduateView && isEditMode && (
+                    {isGraduateView && isEditMode && !isPreviewMode && (
                       <IconButton 
                         size="md" 
                         variant="text" 
                         onClick={() => handleSectionEditToggle("references")}
-                        className="text-red-600"
+                        className="text-red-600 opacity-100 transition-opacity"
                       >
                         <FaPen className="w-4 h-4" />
                       </IconButton>
@@ -10639,8 +10802,8 @@ const fetchPublicDataWithToken = async () => {
                       )}
 
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {(isEditMode && editingSections.references ? (editingPortfolio?.references || []) : (portfolio?.references || []))
-                          .slice(0, isEditMode && editingSections.references ? undefined : (showAllReferences ? undefined : INITIAL_ITEMS_LIMIT))
+                        {(isEditMode && editingSections.references && !isPreviewMode ? (editingPortfolio?.references || []) : (portfolio?.references || []))
+                          .slice(0, isEditMode && editingSections.references && !isPreviewMode ? undefined : (showAllReferences ? undefined : INITIAL_ITEMS_LIMIT))
                           .map((ref, index) => (
                           <div key={ref.id || index} className="bg-white border-l-4 border-gray-300 p-5">
                             {isEditMode && editingSections.references ? (
@@ -10780,12 +10943,12 @@ const fetchPublicDataWithToken = async () => {
         ) : (
           <Fragment>
             {/* Standard Header Section for other templates */}
-            <div className={`${designTheme.headerBg} text-white relative overflow-hidden`}>
+            <div className={`${designTheme.headerBg} text-white relative overflow-hidden group`}>
         {/* Background pattern */}
         <div className="absolute inset-0 bg-white/5 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px] animate-pulse"></div>
         {/* Edit Button - Top Right (not affected by animation) */}
-        {isGraduateView && isEditMode && (
-          <div className="absolute top-4 right-4 z-10">
+        {isGraduateView && isEditMode && !isPreviewMode && (
+          <div className="absolute top-4 right-4 z-10 opacity-100 transition-opacity">
             <IconButton
               size="md"
               variant="text"
@@ -11159,16 +11322,16 @@ const fetchPublicDataWithToken = async () => {
           } ${designTheme.sectionSpacing}`}>
             {/* Contact Information */}
             <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-6 group">
                 <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg`}>
                   Contact
                 </Typography>
-                {isGraduateView && isEditMode && (
+                {isGraduateView && isEditMode && !isPreviewMode && (
                   <IconButton 
                     size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("contact")}
-                    className={editingSections.contact ? designTheme.textColor : ""}
+                    className={`${editingSections.contact ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -11293,16 +11456,16 @@ const fetchPublicDataWithToken = async () => {
 
             {/* Skills */}
             <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-6 group">
                 <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg`}>
                   Skills
                 </Typography>
-                {isGraduateView && isEditMode && (
+                {isGraduateView && isEditMode && !isPreviewMode && (
                   <IconButton 
                     size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("skills")}
-                    className={editingSections.skills ? designTheme.textColor : ""}
+                    className={`${editingSections.skills ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -11508,12 +11671,12 @@ const fetchPublicDataWithToken = async () => {
                 <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg`}>
                   TESDA Information
                 </Typography>
-                {isGraduateView && isEditMode && (
+                {isGraduateView && isEditMode && !isPreviewMode && (
                   <IconButton 
                     size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("tesda")}
-                    className={editingSections.tesda ? designTheme.textColor : ""}
+                    className={`${editingSections.tesda ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -11714,12 +11877,12 @@ const fetchPublicDataWithToken = async () => {
                 <Typography variant="h4" className={`font-light ${designTheme.textColor} ${designTheme.typographySize.includes("text-4xl") ? "text-xl md:text-2xl" : designTheme.typographySize.includes("text-3xl") ? "text-lg md:text-xl" : "text-2xl"}`}>
                   Certificates
                 </Typography>
-                {isGraduateView && isEditMode && (
+                {isGraduateView && isEditMode && !isPreviewMode && (
                   <IconButton 
                     size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("certificates")}
-                    className={editingSections.certificates ? designTheme.textColor : ""}
+                    className={`${editingSections.certificates ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -11991,12 +12154,12 @@ const fetchPublicDataWithToken = async () => {
                 <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl`}>
                   Experience
                 </Typography>
-                {isGraduateView && isEditMode && (
+                {isGraduateView && isEditMode && !isPreviewMode && (
                   <IconButton 
                     size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("experience")}
-                    className={editingSections.experience ? designTheme.textColor : ""}
+                    className={`${editingSections.experience ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -12311,12 +12474,12 @@ const fetchPublicDataWithToken = async () => {
                 <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl`}>
                   Projects
                 </Typography>
-                {isGraduateView && isEditMode && (
+                {isGraduateView && isEditMode && !isPreviewMode && (
                   <IconButton 
                     size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("projects")}
-                    className={editingSections.projects ? designTheme.textColor : ""}
+                    className={`${editingSections.projects ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -12638,12 +12801,12 @@ const fetchPublicDataWithToken = async () => {
                 <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl`}>
                   Awards & Recognition
                 </Typography>
-                {isGraduateView && isEditMode && (
+                {isGraduateView && isEditMode && !isPreviewMode && (
                   <IconButton 
                     size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("awards")}
-                    className={editingSections.awards ? designTheme.textColor : ""}
+                    className={`${editingSections.awards ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -12772,8 +12935,8 @@ const fetchPublicDataWithToken = async () => {
                     </Button>
                   )}
 
-                  {((isEditMode && editingSections.awards ? editingPortfolio?.awardsRecognitions : portfolio.awardsRecognitions) || []).length > 0 ? (
-                    (isEditMode && editingSections.awards ? editingPortfolio?.awardsRecognitions : portfolio.awardsRecognitions)?.map((award, index) => (
+                  {((isEditMode && editingSections.awards && !isPreviewMode ? editingPortfolio?.awardsRecognitions : portfolio.awardsRecognitions) || []).length > 0 ? (
+                    (isEditMode && editingSections.awards && !isPreviewMode ? editingPortfolio?.awardsRecognitions : portfolio.awardsRecognitions)?.map((award, index) => (
                     <div key={award.id || index} className="bg-white border border-gray-100 rounded-lg p-6">
                       {isEditMode && editingSections.awards ? (
                         <div className="space-y-2">
@@ -12867,12 +13030,12 @@ const fetchPublicDataWithToken = async () => {
                   <Typography variant="h5" className={`font-light ${designTheme.textColor}`}>
                     Continuing Education
                   </Typography>
-                  {isGraduateView && isEditMode && (
+                  {isGraduateView && isEditMode && !isPreviewMode && (
                     <IconButton 
                       size="md" 
                       variant="text" 
                       onClick={() => handleSectionEditToggle("education")}
-                      className={editingSections.education ? designTheme.textColor : ""}
+                      className={`${editingSections.education ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                     >
                       <FaPen className="w-4 h-4" />
                     </IconButton>
@@ -13001,8 +13164,8 @@ const fetchPublicDataWithToken = async () => {
                       </Button>
                     )}
 
-                    {((isEditMode && editingSections.education ? editingPortfolio?.continuingEducations : portfolio.continuingEducations) || []).length > 0 ? (
-                      (isEditMode && editingSections.education ? editingPortfolio?.continuingEducations : portfolio.continuingEducations)?.map((edu, index) => (
+                    {((isEditMode && editingSections.education && !isPreviewMode ? editingPortfolio?.continuingEducations : portfolio.continuingEducations) || []).length > 0 ? (
+                      (isEditMode && editingSections.education && !isPreviewMode ? editingPortfolio?.continuingEducations : portfolio.continuingEducations)?.map((edu, index) => (
                       <div key={edu.id || index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2`}>
                         {isEditMode && editingSections.education ? (
                           <div className="space-y-2">
@@ -13093,12 +13256,12 @@ const fetchPublicDataWithToken = async () => {
                   <Typography variant="h5" className={`font-light ${designTheme.textColor}`}>
                     Professional Memberships
                   </Typography>
-                  {isGraduateView && isEditMode && (
+                  {isGraduateView && isEditMode && !isPreviewMode && (
                     <IconButton 
                       size="md" 
                       variant="text" 
                       onClick={() => handleSectionEditToggle("memberships")}
-                      className={editingSections.memberships ? designTheme.textColor : ""}
+                      className={`${editingSections.memberships ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                     >
                       <FaPen className="w-4 h-4" />
                     </IconButton>
@@ -13227,8 +13390,8 @@ const fetchPublicDataWithToken = async () => {
                       </Button>
                     )}
 
-                    {((isEditMode && editingSections.memberships ? editingPortfolio?.professionalMemberships : portfolio.professionalMemberships) || []).length > 0 ? (
-                      (isEditMode && editingSections.memberships ? editingPortfolio?.professionalMemberships : portfolio.professionalMemberships)?.map((mem, index) => (
+                    {((isEditMode && editingSections.memberships && !isPreviewMode ? editingPortfolio?.professionalMemberships : portfolio.professionalMemberships) || []).length > 0 ? (
+                      (isEditMode && editingSections.memberships && !isPreviewMode ? editingPortfolio?.professionalMemberships : portfolio.professionalMemberships)?.map((mem, index) => (
                       <div key={mem.id || index} className={`border-l-2 ${designTheme.cardBorder} pl-4 py-2`}>
                         {isEditMode && editingSections.memberships ? (
                           <div className="space-y-2">
@@ -13320,12 +13483,12 @@ const fetchPublicDataWithToken = async () => {
                 <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl`}>
                   References
                 </Typography>
-                {isGraduateView && isEditMode && (
+                {isGraduateView && isEditMode && !isPreviewMode && (
                   <IconButton 
                     size="md" 
                     variant="text" 
                     onClick={() => handleSectionEditToggle("references")}
-                    className={editingSections.references ? designTheme.textColor : ""}
+                    className={`${editingSections.references ? designTheme.textColor : ""} opacity-100 transition-opacity`}
                   >
                     <FaPen className="w-4 h-4" />
                   </IconButton>
@@ -13498,8 +13661,8 @@ const fetchPublicDataWithToken = async () => {
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {((isEditMode && editingSections.references ? editingPortfolio?.references : portfolio.references) || []).length > 0 ? (
-                      (isEditMode && editingSections.references ? editingPortfolio?.references : portfolio.references)?.map((ref, index) => (
+                    {((isEditMode && editingSections.references && !isPreviewMode ? editingPortfolio?.references : portfolio.references) || []).length > 0 ? (
+                      (isEditMode && editingSections.references && !isPreviewMode ? editingPortfolio?.references : portfolio.references)?.map((ref, index) => (
                       <div key={ref.id || index} className="bg-white border border-gray-100 rounded-lg p-6">
                         {isEditMode && editingSections.references ? (
                           <div className="space-y-2">
@@ -13617,7 +13780,7 @@ const fetchPublicDataWithToken = async () => {
       </div>
 
       {isGraduateView && (
-          <div className="mt-16 bg-white border border-gray-100 rounded-lg p-8">
+          <div ref={shareSectionRef} className="mt-16 bg-white border border-gray-100 rounded-lg p-8">
             <div className="text-center mb-8">
               <Typography variant="h4" className={`${designTheme.textColor} mb-4 font-light`}>
                 Share Your Portfolio
@@ -13656,7 +13819,7 @@ const fetchPublicDataWithToken = async () => {
 
 
             <div className="flex flex-wrap gap-4 justify-center">
-              {!isEditMode ? (
+              {!isEditMode && (
                 <Button
                   onClick={handleEditModeToggle}
                   color="blue"
@@ -13665,16 +13828,6 @@ const fetchPublicDataWithToken = async () => {
                 >
                   <FaPen className="w-4 h-4" />
                   Edit Portfolio
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleEditModeToggle}
-                  color="green"
-                  size="lg"
-                  className="font-light flex items-center gap-2"
-                >
-                  <FaCheckCircle className="w-4 h-4" />
-                  Done Editing
                 </Button>
               )}
               {!isEditMode && (
