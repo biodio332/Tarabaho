@@ -3,7 +3,7 @@ import logo from "../assets/images/logowhite.png"
 
 const TrabahadorNavbar = ({ activePage }) => {
   return (
-    <nav className="bg-blue-900 px-8 py-4 flex items-center justify-between flex-shrink-0 shadow-lg sticky top-0 z-[100] w-full box-border">
+    <nav className="bg-[#003366] px-8 py-4 flex items-center justify-between flex-shrink-0 shadow-lg sticky top-0 z-[100] w-full box-border">
       <div className="flex items-center justify-start">
         <Link to="/graduate-homepage">
           <img 
