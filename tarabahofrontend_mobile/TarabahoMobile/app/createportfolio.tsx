@@ -581,8 +581,13 @@ export default function CreatePortfolio() {
   
   // Handle adding a certificate
   const handleAddCertificate = () => {
-    if (!newCertificate.courseName || !newCertificate.certificateNumber || !newCertificate.issueDate) {
-      setError("Please fill in all required certificate fields.");
+    // Trim whitespace from inputs
+    const courseName = newCertificate.courseName?.trim();
+    const certificateNumber = newCertificate.certificateNumber?.trim();
+    const issueDate = newCertificate.issueDate?.trim();
+    
+    if (!courseName || !certificateNumber || !issueDate) {
+      setError("Please fill in all required certificate fields (Course Name, Certificate Number, and Issue Date).");
       return;
     }
     
@@ -590,9 +595,9 @@ export default function CreatePortfolio() {
       ...prev,
       {
         id: Date.now(), // Temporary ID for frontend
-        courseName: newCertificate.courseName,
-        certificateNumber: newCertificate.certificateNumber,
-        issueDate: newCertificate.issueDate,
+        courseName: courseName,
+        certificateNumber: certificateNumber,
+        issueDate: issueDate,
         certificateFile: newCertificate.certificateFile,
         preview: newCertificate.preview,
       },
@@ -677,8 +682,13 @@ export default function CreatePortfolio() {
 
   // Handle update certificate
   const handleUpdateCertificate = () => {
-    if (!newCertificate.courseName || !newCertificate.certificateNumber || !newCertificate.issueDate) {
-      setError("Please fill in all required certificate fields.");
+    // Trim whitespace from inputs
+    const courseName = newCertificate.courseName?.trim();
+    const certificateNumber = newCertificate.certificateNumber?.trim();
+    const issueDate = newCertificate.issueDate?.trim();
+    
+    if (!courseName || !certificateNumber || !issueDate) {
+      setError("Please fill in all required certificate fields (Course Name, Certificate Number, and Issue Date).");
       return;
     }
     
@@ -687,9 +697,9 @@ export default function CreatePortfolio() {
         cert.id === editingCertificateId
           ? {
               ...cert,
-              courseName: newCertificate.courseName,
-              certificateNumber: newCertificate.certificateNumber,
-              issueDate: newCertificate.issueDate,
+              courseName: courseName,
+              certificateNumber: certificateNumber,
+              issueDate: issueDate,
               certificateFile: newCertificate.certificateFile || cert.certificateFile,
               preview: newCertificate.preview || cert.preview,
             }
@@ -792,7 +802,15 @@ export default function CreatePortfolio() {
         );
         
         if (!uploadResponse.ok) {
-          throw new Error("Failed to upload profile picture");
+          let errorMsg = "Failed to upload profile picture";
+          try {
+            const errorData = await uploadResponse.json();
+            errorMsg = errorData.message || errorMsg;
+          } catch (e) {
+            const errorText = await uploadResponse.text().catch(() => uploadResponse.statusText);
+            errorMsg = errorText || errorMsg;
+          }
+          throw new Error(errorMsg);
         }
         
         const avatarData = await uploadResponse.json();
@@ -824,7 +842,15 @@ export default function CreatePortfolio() {
         );
         
         if (!certResponse.ok) {
-          throw new Error("Failed to upload certificate");
+          let errorMsg = "Failed to upload certificate";
+          try {
+            const errorData = await certResponse.json();
+            errorMsg = errorData.message || errorMsg;
+          } catch (e) {
+            const errorText = await certResponse.text().catch(() => certResponse.statusText);
+            errorMsg = errorText || errorMsg;
+          }
+          throw new Error(errorMsg);
         }
         
         const certData = await certResponse.json();
@@ -847,9 +873,8 @@ export default function CreatePortfolio() {
         trainingCenter: formData.trainingCenter || null,
         scholarshipType: formData.scholarshipType || null,
         trainingDuration: formData.trainingDuration || null,
-        tesdaRegistrationNumber: formData.tesdaRegistrationNumber || null,
         email: formData.email || null,
-        phone: formData.phone || null,
+        phone: formData.phone ? `+63${formData.phone}` : null,
         website: formData.website || null,
         portfolioCategory: formData.portfolioCategory || null,
         preferredWorkLocation: formData.preferredWorkLocation || null,
@@ -858,9 +883,10 @@ export default function CreatePortfolio() {
         skills: validatedSkills,
         experiences: experiences.map((exp) => ({
           jobTitle: exp.jobTitle,
-          company: exp.company,
-          duration: exp.duration || null,
-          responsibilities: exp.responsibilities || null,
+          employer: exp.company,
+          startDate: exp.startDate || null,
+          endDate: exp.endDate || null,
+          description: exp.responsibilities || null,
         })),
         projectIds: [],
         awardsRecognitions: awardsRecognitions.map((award) => ({
@@ -878,13 +904,19 @@ export default function CreatePortfolio() {
           membershipType: mem.membershipType || null,
           startDate: mem.startDate || null,
         })),
-        references: references.map((ref) => ({
-          name: ref.name,
-          position: ref.position || null,
-          company: ref.company || null,
-          contact: ref.contact || null,
-          email: ref.email || null,
-        })),
+        references: references.map((ref) => {
+          const phoneValue = ref.phone || ref.contact || null;
+          const formattedPhone = phoneValue ? `+63${phoneValue}` : null;
+          return {
+            name: ref.name,
+            relationship: ref.relationship || ref.position || null,
+            position: ref.relationship || ref.position || null,
+            company: ref.company || null,
+            phone: formattedPhone,
+            contact: formattedPhone,
+            email: ref.email || null,
+          };
+        }),
         certificateIds: certificateIds,
       };
 
@@ -900,8 +932,20 @@ export default function CreatePortfolio() {
       });
 
       if (!portfolioResponse.ok) {
-        const errorData = await portfolioResponse.json();
-        throw new Error(errorData.message || "Failed to create portfolio");
+        let errorMessage = "Failed to create portfolio";
+        try {
+          const errorData = await portfolioResponse.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (parseError) {
+          // If response is not JSON, try to get it as text
+          try {
+            const errorText = await portfolioResponse.text();
+            errorMessage = errorText || `Error ${portfolioResponse.status}: ${portfolioResponse.statusText}`;
+          } catch (textError) {
+            errorMessage = `Error ${portfolioResponse.status}: ${portfolioResponse.statusText}`;
+          }
+        }
+        throw new Error(errorMessage);
       }
       
       const portfolioData = await portfolioResponse.json();
