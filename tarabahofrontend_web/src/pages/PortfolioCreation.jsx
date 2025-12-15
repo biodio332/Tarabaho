@@ -1715,7 +1715,6 @@ const PortfolioCreation = () => {
       courseName: "",
       certificateNumber: "",
       issueDate: "",
-      certificateFile: null,
     })
     
     setIsAddingSkill(false)
@@ -3041,7 +3040,6 @@ const PortfolioCreation = () => {
                       courseName: "",
                       certificateNumber: "",
                       issueDate: "",
-                      certificateFile: null,
                     })
                   }}
                   disabled={isLoading}
@@ -3130,12 +3128,10 @@ const PortfolioCreation = () => {
                       onClick={() => {
                         setIsAddingCertificate(false)
                         setEditingCertificateId(null)
-                        setCertificateFileSizeError("")
                         setNewCertificate({
                           courseName: "",
                           certificateNumber: "",
                           issueDate: "",
-                          certificateFile: null,
                         })
                         updateFieldError("certificateNumber", "")
                       }}
@@ -5831,33 +5827,25 @@ const PortfolioCreation = () => {
                                           certificates.length > 0 ? (
                                             <div className="space-y-4">
                                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                {(showAllCertificates ? certificates : certificates.slice(0, INITIAL_ITEMS_LIMIT)).map((certificate, index) => (
-                                                  <Card key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                                    <CardBody className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                                      <div className="flex items-center gap-4">
-                                                        {certificate.certificateFile && (
-                                                          <Avatar
-                                                            src={URL.createObjectURL(certificate.certificateFile)}
-                                                            alt="Certificate Preview"
-                                                            size="lg"
-                                                            className={`ring-2 ${designTheme.borderColor}`}
-                                                          />
-                                                        )}
-                                                        <div>
-                                                          <Typography variant="h6" className="text-gray-800 font-semibold">
-                                                            {certificate.courseName}
-                                                          </Typography>
-                                                          <Typography variant="small" className="text-gray-600">
-                                                            Certificate #: {certificate.certificateNumber}
-                                                          </Typography>
-                                                          <Typography variant="small" className="text-gray-600">
-                                                            Issued: {certificate.issueDate ? new Date(certificate.issueDate).toLocaleDateString() : "N/A"}
-                                                          </Typography>
-                                                        </div>
-                                                      </div>
-                                                    </CardBody>
-                                                  </Card>
-                                                ))}
+                                            {(showAllCertificates ? certificates : certificates.slice(0, INITIAL_ITEMS_LIMIT)).map((certificate, index) => (
+                                              <Card key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                                <CardBody className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                                  <div className="flex items-center gap-4">
+                                                    <div>
+                                                      <Typography variant="h6" className="text-gray-800 font-semibold">
+                                                        {certificate.courseName}
+                                                      </Typography>
+                                                      <Typography variant="small" className="text-gray-600">
+                                                        Certificate #: {certificate.certificateNumber}
+                                                      </Typography>
+                                                      <Typography variant="small" className="text-gray-600">
+                                                        Issued: {certificate.issueDate ? new Date(certificate.issueDate).toLocaleDateString() : "N/A"}
+                                                      </Typography>
+                                                    </div>
+                                                  </div>
+                                                </CardBody>
+                                              </Card>
+                                            ))}
                                               </div>
                                               {certificates.length > INITIAL_ITEMS_LIMIT && (
                                                 <div className="flex justify-center pt-2">
