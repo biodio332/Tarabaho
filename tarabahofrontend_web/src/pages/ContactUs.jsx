@@ -32,8 +32,10 @@ const ContactUs = () => {
     setIsSubmitting(true);
     setErrorMessage("");
 
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
+    
     try {
-      const response = await fetch("http://localhost:8080/api/contact/submit", {
+      const response = await fetch('${BACKEND_URL}/api/contact/submit', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

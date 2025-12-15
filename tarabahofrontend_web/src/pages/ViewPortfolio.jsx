@@ -669,7 +669,9 @@ const ViewPortfolio = () => {
         headers: { Authorization: `Bearer ${fetchedToken}` },
       })
       console.log("Certificates response:", certificatesResponse.data)
-      setCertificates(certificatesResponse.data)
+      // Filter certificates to only include those with a portfolioId
+      const portfolioCertificates = certificatesResponse.data.filter(cert => cert.portfolioId)
+      setCertificates(portfolioCertificates)
 
       console.log("Fetching projects for portfolio ID:", normalizedPortfolio.id)
       if (normalizedPortfolio.id) {
@@ -3017,7 +3019,9 @@ const fetchPublicDataWithToken = async () => {
             withCredentials: true,
             headers: { Authorization: `Bearer ${token}` },
           })
-        ).data.map((cert) => cert.id),
+        ).data
+          .filter(cert => cert.portfolioId) // Only include certificates with portfolioId
+          .map((cert) => cert.id),
       )
 
       for (const cert of (editingPortfolio.certificates || [])) {
@@ -3566,7 +3570,9 @@ const fetchPublicDataWithToken = async () => {
         withCredentials: true,
         headers: { Authorization: `Bearer ${token}` },
       })
-      setCertificates(certificatesResponse.data)
+      // Filter certificates to only include those with a portfolioId
+      const portfolioCertificates = certificatesResponse.data.filter(cert => cert.portfolioId)
+      setCertificates(portfolioCertificates)
 
       if (normalizedPortfolio.id) {
         const projectsResponse = await axios.get(`${BACKEND_URL}/api/project/portfolio/${normalizedPortfolio.id}`, {
@@ -3721,7 +3727,9 @@ const fetchPublicDataWithToken = async () => {
               withCredentials: true,
               headers: { Authorization: `Bearer ${token}` },
             })
-          ).data.map((cert) => cert.id),
+          ).data
+            .filter(cert => cert.portfolioId) // Only include certificates with portfolioId
+            .map((cert) => cert.id),
         )
 
         for (const cert of (editingPortfolio.certificates || [])) {
@@ -3932,7 +3940,8 @@ const fetchPublicDataWithToken = async () => {
           withCredentials: true,
           headers: { Authorization: `Bearer ${token}` },
         })
-        refreshedCertificates = certificatesResponse.data
+        // Filter certificates to only include those with a portfolioId
+        refreshedCertificates = certificatesResponse.data.filter(cert => cert.portfolioId)
         setCertificates(refreshedCertificates)
         // Update editingPortfolio with refreshed certificates
         setEditingPortfolio((prev) => ({
