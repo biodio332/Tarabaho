@@ -37,8 +37,12 @@ export default function LoginGraduate() {
       const data = await res.json()
 
       if (data?.token) {
-        // Clear any previous session data completely
-        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username'])
+        console.log('LoginGraduate - Received token, length:', data.token?.length);
+        
+        // Clear ALL previous session data completely to prevent cross-contamination
+        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId', 'portfolioId'])
+        
+        console.log('LoginGraduate - Cleared previous session data');
         
         await AsyncStorage.multiSet([
           ["authToken", data.token],
@@ -46,6 +50,9 @@ export default function LoginGraduate() {
           ["userType", "graduate"],
           ["username", username],
         ])
+        
+        console.log('LoginGraduate - Stored new session data for graduate:', username);
+        
         setSuccessMessage("Login successful! Redirecting to Graduate Dashboard...")
         setTimeout(() => router.replace("/graduatehomepage"), 1200)
       } else {

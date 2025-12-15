@@ -41,8 +41,12 @@ export default function Login() {
 
       const data = await res.json()
 
-      // Clear any previous session data completely
-      await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username'])
+      console.log('Login - Received token, length:', data.token?.length);
+
+      // Clear ALL previous session data completely to prevent cross-contamination
+      await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId', 'portfolioId'])
+      
+      console.log('Login - Cleared previous session data');
       
       // Store new auth data including token in AsyncStorage
       await AsyncStorage.multiSet([
@@ -51,6 +55,8 @@ export default function Login() {
         ["username", username],
         ["authToken", data.token], // Store the JWT token
       ])
+
+      console.log('Login - Stored new session data for user:', username);
 
       setSuccessMessage(`Welcome, ${username}!`)
       

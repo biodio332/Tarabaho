@@ -28,6 +28,9 @@ const { width } = Dimensions.get('window');
 // NC Level options (from web implementation)
 const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV", "NC V", "NC VI"];
 
+// Scholarship type options
+const SCHOLARSHIP_TYPE_OPTIONS = ["Scholarship", "Non-Scholar", "None"];
+
 // Utility function to handle date conversion
 const parseDate = (dateString: string | null | undefined): Date => {
   if (!dateString) return new Date();
@@ -578,8 +581,13 @@ export default function CreatePortfolio() {
   
   // Handle adding a certificate
   const handleAddCertificate = () => {
-    if (!newCertificate.courseName || !newCertificate.certificateNumber || !newCertificate.issueDate) {
-      setError("Please fill in all required certificate fields.");
+    // Trim whitespace from inputs
+    const courseName = newCertificate.courseName?.trim();
+    const certificateNumber = newCertificate.certificateNumber?.trim();
+    const issueDate = newCertificate.issueDate?.trim();
+    
+    if (!courseName || !certificateNumber || !issueDate) {
+      setError("Please fill in all required certificate fields (Course Name, Certificate Number, and Issue Date).");
       return;
     }
     
@@ -587,9 +595,9 @@ export default function CreatePortfolio() {
       ...prev,
       {
         id: Date.now(), // Temporary ID for frontend
-        courseName: newCertificate.courseName,
-        certificateNumber: newCertificate.certificateNumber,
-        issueDate: newCertificate.issueDate,
+        courseName: courseName,
+        certificateNumber: certificateNumber,
+        issueDate: issueDate,
         certificateFile: newCertificate.certificateFile,
         preview: newCertificate.preview,
       },
@@ -674,8 +682,13 @@ export default function CreatePortfolio() {
 
   // Handle update certificate
   const handleUpdateCertificate = () => {
-    if (!newCertificate.courseName || !newCertificate.certificateNumber || !newCertificate.issueDate) {
-      setError("Please fill in all required certificate fields.");
+    // Trim whitespace from inputs
+    const courseName = newCertificate.courseName?.trim();
+    const certificateNumber = newCertificate.certificateNumber?.trim();
+    const issueDate = newCertificate.issueDate?.trim();
+    
+    if (!courseName || !certificateNumber || !issueDate) {
+      setError("Please fill in all required certificate fields (Course Name, Certificate Number, and Issue Date).");
       return;
     }
     
@@ -684,9 +697,9 @@ export default function CreatePortfolio() {
         cert.id === editingCertificateId
           ? {
               ...cert,
-              courseName: newCertificate.courseName,
-              certificateNumber: newCertificate.certificateNumber,
-              issueDate: newCertificate.issueDate,
+              courseName: courseName,
+              certificateNumber: certificateNumber,
+              issueDate: issueDate,
               certificateFile: newCertificate.certificateFile || cert.certificateFile,
               preview: newCertificate.preview || cert.preview,
             }
@@ -789,7 +802,15 @@ export default function CreatePortfolio() {
         );
         
         if (!uploadResponse.ok) {
-          throw new Error("Failed to upload profile picture");
+          let errorMsg = "Failed to upload profile picture";
+          try {
+            const errorData = await uploadResponse.json();
+            errorMsg = errorData.message || errorMsg;
+          } catch (e) {
+            const errorText = await uploadResponse.text().catch(() => uploadResponse.statusText);
+            errorMsg = errorText || errorMsg;
+          }
+          throw new Error(errorMsg);
         }
         
         const avatarData = await uploadResponse.json();
@@ -821,7 +842,15 @@ export default function CreatePortfolio() {
         );
         
         if (!certResponse.ok) {
-          throw new Error("Failed to upload certificate");
+          let errorMsg = "Failed to upload certificate";
+          try {
+            const errorData = await certResponse.json();
+            errorMsg = errorData.message || errorMsg;
+          } catch (e) {
+            const errorText = await certResponse.text().catch(() => certResponse.statusText);
+            errorMsg = errorText || errorMsg;
+          }
+          throw new Error(errorMsg);
         }
         
         const certData = await certResponse.json();
@@ -844,9 +873,8 @@ export default function CreatePortfolio() {
         trainingCenter: formData.trainingCenter || null,
         scholarshipType: formData.scholarshipType || null,
         trainingDuration: formData.trainingDuration || null,
-        tesdaRegistrationNumber: formData.tesdaRegistrationNumber || null,
         email: formData.email || null,
-        phone: formData.phone || null,
+        phone: formData.phone ? `+63${formData.phone}` : null,
         website: formData.website || null,
         portfolioCategory: formData.portfolioCategory || null,
         preferredWorkLocation: formData.preferredWorkLocation || null,
@@ -855,9 +883,10 @@ export default function CreatePortfolio() {
         skills: validatedSkills,
         experiences: experiences.map((exp) => ({
           jobTitle: exp.jobTitle,
-          company: exp.company,
-          duration: exp.duration || null,
-          responsibilities: exp.responsibilities || null,
+          employer: exp.company,
+          startDate: exp.startDate || null,
+          endDate: exp.endDate || null,
+          description: exp.responsibilities || null,
         })),
         projectIds: [],
         awardsRecognitions: awardsRecognitions.map((award) => ({
@@ -875,13 +904,19 @@ export default function CreatePortfolio() {
           membershipType: mem.membershipType || null,
           startDate: mem.startDate || null,
         })),
-        references: references.map((ref) => ({
-          name: ref.name,
-          position: ref.position || null,
-          company: ref.company || null,
-          contact: ref.contact || null,
-          email: ref.email || null,
-        })),
+        references: references.map((ref) => {
+          const phoneValue = ref.phone || ref.contact || null;
+          const formattedPhone = phoneValue ? `+63${phoneValue}` : null;
+          return {
+            name: ref.name,
+            relationship: ref.relationship || ref.position || null,
+            position: ref.relationship || ref.position || null,
+            company: ref.company || null,
+            phone: formattedPhone,
+            contact: formattedPhone,
+            email: ref.email || null,
+          };
+        }),
         certificateIds: certificateIds,
       };
 
@@ -897,8 +932,20 @@ export default function CreatePortfolio() {
       });
 
       if (!portfolioResponse.ok) {
-        const errorData = await portfolioResponse.json();
-        throw new Error(errorData.message || "Failed to create portfolio");
+        let errorMessage = "Failed to create portfolio";
+        try {
+          const errorData = await portfolioResponse.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (parseError) {
+          // If response is not JSON, try to get it as text
+          try {
+            const errorText = await portfolioResponse.text();
+            errorMessage = errorText || `Error ${portfolioResponse.status}: ${portfolioResponse.statusText}`;
+          } catch (textError) {
+            errorMessage = `Error ${portfolioResponse.status}: ${portfolioResponse.statusText}`;
+          }
+        }
+        throw new Error(errorMessage);
       }
       
       const portfolioData = await portfolioResponse.json();
@@ -1046,6 +1093,32 @@ export default function CreatePortfolio() {
               }`}
             >
               {level}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+
+  // Helper component for Scholarship Type picker
+  const ScholarshipTypePicker = ({ value, onChange }: { value: string, onChange: (value: string) => void }) => (
+    <View className="border border-gray-300 rounded-lg p-3 my-2">
+      <Text className="text-sm font-medium mb-2 text-gray-700">Select Scholarship Type</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {SCHOLARSHIP_TYPE_OPTIONS.map((type) => (
+          <TouchableOpacity
+            key={type}
+            onPress={() => onChange(type)}
+            className={`mr-2 px-4 py-2 rounded-full ${
+              type === value ? "bg-blue-500" : "bg-gray-200"
+            }`}
+          >
+            <Text
+              className={`text-sm ${
+                type === value ? "text-white font-semibold" : "text-gray-700"
+              }`}
+            >
+              {type}
             </Text>
           </TouchableOpacity>
         ))}
@@ -1273,11 +1346,9 @@ export default function CreatePortfolio() {
                 placeholder="Enter training center or institution"
               />
               
-              <TextField
-                label="Scholarship Type"
-                value={formData.scholarshipType}
-                onChangeText={(text) => handleInputChange("scholarshipType", text)}
-                placeholder="e.g., Full Scholarship"
+              <ScholarshipTypePicker 
+                value={formData.scholarshipType} 
+                onChange={(value) => handleInputChange("scholarshipType", value)} 
               />
               
               <DatePicker
@@ -1317,13 +1388,31 @@ export default function CreatePortfolio() {
                 keyboardType="email-address"
               />
               
-              <TextField
-                label="Phone"
-                value={formData.phone}
-                onChangeText={(text) => handleInputChange("phone", text)}
-                placeholder="Enter your phone number"
-                keyboardType="phone-pad"
-              />
+              <View className="my-2">
+                <Text className="text-sm font-medium mb-2 text-gray-700">Phone</Text>
+                <View className="flex-row items-center border border-gray-300 rounded-lg bg-white">
+                  <View className="bg-gray-100 px-3 py-4 border-r border-gray-300">
+                    <Text className="text-gray-700 font-medium">+63</Text>
+                  </View>
+                  <TextInput
+                    value={formData.phone}
+                    onChangeText={(text) => {
+                      // Only allow numbers and limit to 10 digits
+                      const cleaned = text.replace(/[^0-9]/g, '').slice(0, 10);
+                      handleInputChange("phone", cleaned);
+                    }}
+                    placeholder="9123456789 (10 digits)"
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    className="flex-1 px-3 py-4 text-base text-gray-800"
+                  />
+                </View>
+                {formData.phone && formData.phone.length < 10 && (
+                  <Text className="text-red-500 text-xs mt-1">
+                    Phone number must be 10 digits
+                  </Text>
+                )}
+              </View>
               
               <TextField
                 label="Website"

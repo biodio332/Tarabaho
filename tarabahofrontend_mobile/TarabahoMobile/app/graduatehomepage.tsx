@@ -214,7 +214,7 @@ export default function GraduateHomepage() {
       if (trendsErr.message.includes('401') || trendsErr.message.includes('403')) {
         console.log("🔐 Token expired during trends fetch, redirecting to login");
         setError("Session expired. Please sign in again.");
-        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username']);
+        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId', 'portfolioId']);
         router.replace('/logingraduate');
       }
       
@@ -258,7 +258,7 @@ export default function GraduateHomepage() {
       if (userType !== 'graduate') {
         console.log("❌ Invalid user type for graduate homepage:", userType);
         setError("Please login as a graduate to access this page.");
-        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username']);
+        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId', 'portfolioId']);
         router.replace('/logingraduate');
         return;
       }
@@ -369,7 +369,7 @@ export default function GraduateHomepage() {
       if (err.message.includes('401') || err.message.includes('403')) {
         console.log("❌ Unauthorized request, token expired or invalid");
         setError("Session expired. Please sign in again.");
-        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username']);
+        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId', 'portfolioId']);
         router.replace('/logingraduate');
       } else {
         setError(`Error: ${err.message}`);

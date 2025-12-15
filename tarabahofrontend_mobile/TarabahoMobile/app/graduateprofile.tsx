@@ -159,7 +159,7 @@ export default function GraduateProfile() {
       
       if (profileRes.status === 401) {
         console.error("Authentication failed when refreshing profile");
-        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username']);
+        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId', 'portfolioId']);
         router.replace('/logingraduate');
         throw new Error("Session expired. Please log in again.");
       }
@@ -252,7 +252,7 @@ export default function GraduateProfile() {
       // Check if unauthorized
       if (response.status === 401 || response.status === 403) {
         console.error(`Authentication failed with status: ${response.status}`);
-        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username']);
+        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId', 'portfolioId']);
         Alert.alert(
           "Session Expired",
           "Your session has expired. Please log in again.",
@@ -364,7 +364,7 @@ export default function GraduateProfile() {
           // Handle 401 Unauthorized specially
           if (profileRes.status === 401) {
             console.error("Authentication failed when fetching profile");
-            await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username']);
+            await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId', 'portfolioId']);
             router.replace('/logingraduate');
             throw new Error("Session expired. Please log in again.");
           }
@@ -469,7 +469,7 @@ export default function GraduateProfile() {
       
       if (res.status === 401) {
         console.error("Authentication failed when updating profile");
-        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username']);
+        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId', 'portfolioId']);
         router.replace('/logingraduate');
         throw new Error("Session expired. Please log in again.");
       }
@@ -528,8 +528,8 @@ export default function GraduateProfile() {
             try {
               console.log('GraduateProfile - Starting logout process...');
               
-              // Clear all authentication related data
-              const keysToRemove = ['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId'];
+              // Clear ALL authentication and session related data
+              const keysToRemove = ['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId', 'portfolioId'];
               await AsyncStorage.multiRemove(keysToRemove);
               
               console.log('GraduateProfile - Cleared AsyncStorage keys:', keysToRemove);
