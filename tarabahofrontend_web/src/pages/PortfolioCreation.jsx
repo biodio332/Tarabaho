@@ -1,4 +1,4 @@
-﻿  "use client"
+  "use client"
 
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
@@ -34,7 +34,6 @@ const PortfolioCreation = () => {
     trainingCenter: "",
     scholarshipType: "",
     trainingDuration: "",
-    tesdaRegistrationNumber: "",
     email: "",
     phone: "",
     website: "",
@@ -121,6 +120,7 @@ const PortfolioCreation = () => {
     issueDate: "",
     certificateFile: null,
   })
+  const [isNcLevelOtherSelected, setIsNcLevelOtherSelected] = useState(false)
   const [error, setError] = useState("")
   const [fieldErrors, setFieldErrors] = useState({})
   const [avatarFileSizeError, setAvatarFileSizeError] = useState("")
@@ -198,11 +198,6 @@ const PortfolioCreation = () => {
     let message = ""
 
     switch (fieldName) {
-      case "tesdaRegistrationNumber":
-        if (trimmedValue && !/^\d+$/.test(trimmedValue)) {
-          message = "TESDA registration number must contain digits only."
-        }
-        break
       case "email":
         if (trimmedValue) {
           if (!isValidEmail(trimmedValue) || !trimmedValue.toLowerCase().endsWith("@gmail.com")) {
@@ -247,7 +242,14 @@ const PortfolioCreation = () => {
     return !message
   }
 
-  const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV", "NC V", "NC VI"]
+  const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV"]
+  const ncLevelSelectValue = isNcLevelOtherSelected ? "OTHER" : formData.ncLevel || ""
+
+  useEffect(() => {
+    if (formData.ncLevel && !NC_LEVEL_OPTIONS.includes(formData.ncLevel)) {
+      setIsNcLevelOtherSelected(true)
+    }
+  }, [formData.ncLevel])
 
   // Helper function to format phone number with +63 prefix
   const formatPhoneNumber = (phone) => {
@@ -452,7 +454,7 @@ const PortfolioCreation = () => {
     { id: 0, name: "Profile Photo", required: false },
     { id: 1, name: "Basic Information", required: true },
     { id: 2, name: "TESDA Information", required: false },
-    { id: 3, name: "Contact Information", required: false },
+    { id: 3, name: "Contact Information", required: true },
     { id: 4, name: "Projects", required: false },
     { id: 5, name: "Certificates", required: false },
     { id: 6, name: "Skills", required: false },
@@ -488,8 +490,6 @@ const PortfolioCreation = () => {
         return false // Errors are shown inline
       case 3: // Contact Information
         return !!(fieldErrors.email || fieldErrors.phone || fieldErrors.website)
-      case 2: // TESDA Information
-        return !!fieldErrors.tesdaRegistrationNumber
       default:
         return false
     }
@@ -515,9 +515,9 @@ const PortfolioCreation = () => {
         return previewAvatar !== "/placeholder.svg" || selectedAvatarFile !== null
       case 2: // TESDA Information
         return !!(formData.ncLevel || formData.trainingCenter || formData.scholarshipType || 
-               formData.trainingDuration || formData.tesdaRegistrationNumber)
+               formData.trainingDuration)
       case 3: // Contact Information
-        return !!(formData.email || formData.phone || formData.website)
+        return !!(formData.email?.trim() && formData.phone?.trim() && !fieldErrors.email && !fieldErrors.phone)
       case 4: // Projects
         return projects.length > 0
       case 5: // Certificates
@@ -587,7 +587,7 @@ const PortfolioCreation = () => {
     }
     
     setFormData((prev) => ({ ...prev, [name]: processedValue }))
-    if (["tesdaRegistrationNumber", "email", "phone", "website"].includes(name)) {
+    if (["email", "phone", "website"].includes(name)) {
       validateField(name, processedValue)
     }
     setError("")
@@ -1042,6 +1042,10 @@ const PortfolioCreation = () => {
       setError("Please fill in the award title.")
       return
     }
+    if (!newAward.issuer) {
+      setError("Please fill in the issuer.")
+      return
+    }
     // Validate dateReceived is filled - return early if invalid (inline error messages will show)
     if (!newAward.dateReceived) {
       return
@@ -1063,6 +1067,10 @@ const PortfolioCreation = () => {
     setEducationSubmitAttempted(true) // Mark that user has attempted to submit
     if (!newEducation.courseName) {
       setError("Please fill in the course name.")
+      return
+    }
+    if (!newEducation.institution) {
+      setError("Please fill in the institution.")
       return
     }
     // Validate completionDate is filled - return early if invalid (inline error messages will show)
@@ -1088,6 +1096,10 @@ const PortfolioCreation = () => {
       setError("Please fill in the organization name.")
       return
     }
+    if (!newMembership.membershipType) {
+      setError("Please fill in the membership type.")
+      return
+    }
     // Validate startDate is filled - return early if invalid (inline error messages will show)
     if (!newMembership.startDate) {
       return
@@ -1109,6 +1121,10 @@ const PortfolioCreation = () => {
     setProjectSubmitAttempted(true) // Mark that user has attempted to submit
     if (!newProject.title) {
       setError("Please fill in the project title.")
+      return
+    }
+    if (newProject.description && newProject.description.length > 300) {
+      setError("Project description cannot exceed 300 characters.")
       return
     }
     // Validate start date is filled - return early if invalid (inline error messages will show)
@@ -1159,13 +1175,21 @@ const PortfolioCreation = () => {
   }
 
   const handleAddReference = () => {
-    if (!newReference.name) {
+    if (!newReference.name?.trim()) {
       setError("Please fill in the reference name.")
+      return
+    }
+    if (!newReference.relationship?.trim()) {
+      setError("Please fill in the reference relationship/position.")
+      return
+    }
+    if (!newReference.company?.trim()) {
+      setError("Please fill in the reference company.")
       return
     }
     const phoneValid = validateField("referencePhone", newReference.phone)
     const emailValid = validateField("referenceEmail", newReference.email)
-    if (!phoneValid || !emailValid) {
+    if (!newReference.phone?.trim() || !newReference.email?.trim() || !phoneValid || !emailValid) {
       setError("Please provide valid reference contact details.")
       return
     }
@@ -1296,6 +1320,10 @@ const PortfolioCreation = () => {
     setProjectSubmitAttempted(true) // Mark that user has attempted to submit
     if (!newProject.title) {
       setError("Please fill in the project title.")
+      return
+    }
+    if (newProject.description && newProject.description.length > 300) {
+      setError("Project description cannot exceed 300 characters.")
       return
     }
     // Validate start date is filled - return early if invalid (inline error messages will show)
@@ -1450,6 +1478,10 @@ const PortfolioCreation = () => {
       setError("Please fill in the award title.")
       return
     }
+    if (!newAward.issuer) {
+      setError("Please fill in the issuer.")
+      return
+    }
     // Validate dateReceived is filled - return early if invalid (inline error messages will show)
     if (!newAward.dateReceived) {
       return
@@ -1526,6 +1558,10 @@ const PortfolioCreation = () => {
       setError("Please fill in the organization name.")
       return
     }
+    if (!newMembership.membershipType) {
+      setError("Please fill in the membership type.")
+      return
+    }
     // Validate startDate is filled - return early if invalid (inline error messages will show)
     if (!newMembership.startDate) {
       return
@@ -1564,9 +1600,17 @@ const PortfolioCreation = () => {
       setError("Please fill in the reference name.")
       return
     }
+    if (!newReference.relationship?.trim()) {
+      setError("Please fill in the reference relationship/position.")
+      return
+    }
+    if (!newReference.company?.trim()) {
+      setError("Please fill in the reference company.")
+      return
+    }
     const phoneValid = validateField("referencePhone", newReference.phone)
     const emailValid = validateField("referenceEmail", newReference.email)
-    if (!phoneValid || !emailValid) {
+    if (!newReference.phone?.trim() || !newReference.email?.trim() || !phoneValid || !emailValid) {
       setError("Please provide valid reference contact details.")
       return
     }
@@ -1664,22 +1708,41 @@ const PortfolioCreation = () => {
 
   const isAwardFormValid = () => {
     const today = new Date().toISOString().split('T')[0]
-    return newAward.title?.trim() && newAward.dateReceived && newAward.dateReceived <= today
+    return (
+      newAward.title?.trim() &&
+      newAward.issuer?.trim() &&
+      newAward.dateReceived &&
+      newAward.dateReceived <= today
+    )
   }
 
   const isEducationFormValid = () => {
     const today = new Date().toISOString().split('T')[0]
-    return newEducation.courseName?.trim() && newEducation.completionDate && newEducation.completionDate <= today
+    return (
+      newEducation.courseName?.trim() &&
+      newEducation.institution?.trim() &&
+      newEducation.completionDate &&
+      newEducation.completionDate <= today
+    )
   }
 
   const isMembershipFormValid = () => {
     const today = new Date().toISOString().split('T')[0]
-    return newMembership.organization?.trim() && newMembership.startDate && newMembership.startDate <= today
+    return (
+      newMembership.organization?.trim() &&
+      newMembership.membershipType?.trim() &&
+      newMembership.startDate &&
+      newMembership.startDate <= today
+    )
   }
 
   const isReferenceFormValid = () => {
     return (
       newReference.name?.trim() &&
+      newReference.relationship?.trim() &&
+      newReference.company?.trim() &&
+      newReference.phone?.trim() &&
+      newReference.email?.trim() &&
       !fieldErrors.referencePhone &&
       !fieldErrors.referenceEmail
     )
@@ -1772,6 +1835,14 @@ const PortfolioCreation = () => {
         }
         return true
       case 3: // Contact Information
+        if (!formData.email || formData.email.trim() === "") {
+          if (showError) showNotification("error", "Validation Error", "Email is required.")
+          return false
+        }
+        if (!formData.phone || formData.phone.trim() === "") {
+          if (showError) showNotification("error", "Validation Error", "Phone number is required.")
+          return false
+        }
         if (formData.email && fieldErrors.email) {
           if (showError) showNotification("error", "Validation Error", fieldErrors.email)
           return false
@@ -1903,7 +1974,6 @@ const PortfolioCreation = () => {
     formData.trainingCenter,
     formData.scholarshipType,
     formData.trainingDuration,
-    formData.tesdaRegistrationNumber,
     formData.email,
     formData.phone,
     formData.website,
@@ -2018,7 +2088,6 @@ const PortfolioCreation = () => {
         trainingCenter: formData.trainingCenter || null,
         scholarshipType: formData.scholarshipType || null,
         trainingDuration: formData.trainingDuration || null,
-        tesdaRegistrationNumber: formData.tesdaRegistrationNumber || null,
         email: formData.email || null,
         phone: formData.phone ? (formData.phone.startsWith("+63") ? formData.phone : `+63${formData.phone}`) : null,
         website: formData.website || null,
@@ -2491,8 +2560,20 @@ const PortfolioCreation = () => {
                     NC Level
                   </Typography>
                   <select
-                    value={formData.ncLevel || ""}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, ncLevel: e.target.value || "" }))}
+                    value={ncLevelSelectValue}
+                    onChange={(e) => {
+                      const selected = e.target.value
+                      if (selected === "OTHER") {
+                        setIsNcLevelOtherSelected(true)
+                        setFormData((prev) => ({
+                          ...prev,
+                          ncLevel: prev.ncLevel && !NC_LEVEL_OPTIONS.includes(prev.ncLevel) ? prev.ncLevel : "",
+                        }))
+                        return
+                      }
+                      setIsNcLevelOtherSelected(false)
+                      setFormData((prev) => ({ ...prev, ncLevel: selected || "" }))
+                    }}
                     disabled={isLoading}
                     className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-700 bg-white transition-colors"
                   >
@@ -2502,7 +2583,24 @@ const PortfolioCreation = () => {
                         {level}
                       </option>
                     ))}
+                    <option value="OTHER">Other (type manually)</option>
                   </select>
+                  {isNcLevelOtherSelected && (
+                    <div className="mt-3">
+                      <Typography variant="small" className="mb-2 text-gray-700 font-medium">
+                        Custom NC Level
+                      </Typography>
+                      <Input
+                        size="lg"
+                        value={formData.ncLevel}
+                        onChange={handleInputChange}
+                        name="ncLevel"
+                        placeholder="Enter NC level"
+                        disabled={isLoading}
+                        className="!border-gray-300 focus:!border-blue-500"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -2551,48 +2649,6 @@ const PortfolioCreation = () => {
                 </div>
               </div>
 
-              <div className="mt-6">
-                <div className="mb-2 flex items-center gap-2">
-                  <Typography variant="small" className="text-gray-700 font-medium">
-                    TESDA Registration Number
-                  </Typography>
-                  <div className="relative group inline-flex items-center">
-                    <FaInfoCircle className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-gray-600 transition-colors" />
-                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-auto whitespace-normal">
-                      <div className="text-left leading-relaxed">
-                        To know your TESDA Registration Number{" "}
-                        <a 
-                          href="https://www.tesda.gov.ph/RWAC" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-300 hover:text-blue-200 underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          click here
-                        </a>
-                    
-                      </div>
-                      <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
-                    </div>
-                  </div>
-                </div>
-                <Input
-                  size="lg"
-                  value={formData.tesdaRegistrationNumber}
-                  onChange={handleInputChange}
-                  name="tesdaRegistrationNumber"
-                  placeholder="Enter TESDA registration number"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  disabled={isLoading}
-                  className="!border-gray-300 focus:!border-blue-500"
-                />
-                {fieldErrors.tesdaRegistrationNumber && (
-                  <Typography variant="small" color="red" className="mt-1">
-                    {fieldErrors.tesdaRegistrationNumber}
-                  </Typography>
-                )}
-              </div>
             </CardBody>
           </Card>
           )}
@@ -2619,7 +2675,7 @@ const PortfolioCreation = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                    Email
+                    Email *
                   </Typography>
                   <Input
                     type="email"
@@ -2629,6 +2685,7 @@ const PortfolioCreation = () => {
                     name="email"
                     placeholder="Enter your email"
                     disabled={isLoading}
+                    required
                     className="!border-gray-300 focus:!border-blue-500"
                   />
                 {fieldErrors.email && (
@@ -2640,7 +2697,7 @@ const PortfolioCreation = () => {
 
                 <div>
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                    Phone
+                    Phone *
                   </Typography>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -2657,6 +2714,7 @@ const PortfolioCreation = () => {
                       pattern="[0-9]*"
                       maxLength={10}
                       disabled={isLoading}
+                      required
                       className="!border-gray-300 focus:!border-blue-500 pl-12"
                     />
                   </div>
@@ -2763,9 +2821,20 @@ const PortfolioCreation = () => {
                         name="description"
                         placeholder="Describe your project"
                         disabled={isLoading}
-                        className="!border-gray-300 focus:!border-blue-500"
+                        className="!border-gray-300 focus:!border-blue-500 whitespace-pre-wrap break-words"
                         rows={3}
+                        maxLength={300}
                       />
+                      <div className="flex justify-between items-center mt-1">
+                        <Typography variant="small" className="text-gray-500">
+                          {newProject.description.length}/300 characters
+                        </Typography>
+                        {newProject.description.length > 300 && (
+                          <Typography variant="small" color="red">
+                            Description cannot exceed 300 characters.
+                          </Typography>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
@@ -2930,15 +2999,15 @@ const PortfolioCreation = () => {
                     Added Projects
                   </Typography>
                   {projects.map((proj) => (
-                    <Card key={proj.id} className="border border-gray-200 shadow-sm">
-                      <CardBody className="p-6 flex items-center gap-6">
-                        <Avatar src={proj.preview || "/placeholder.svg"} alt="Project Preview" size="xl" className="rounded-md" />
-                        <div className="flex-grow">
-                          <Typography variant="h6" className="text-gray-900 font-bold mb-1">
+                    <Card key={proj.id} className="border border-gray-200 shadow-sm break-words">
+                      <CardBody className="p-6 flex flex-col gap-6 md:flex-row md:items-center">
+                        <Avatar src={proj.preview || "/placeholder.svg"} alt="Project Preview" size="xl" className="rounded-md flex-shrink-0" />
+                        <div className="flex-grow min-w-0">
+                          <Typography variant="h6" className="text-gray-900 font-bold mb-1 break-words">
                             {proj.title}
                           </Typography>
                           {proj.description && (
-                            <Typography variant="paragraph" className="text-gray-600 text-sm mb-2">
+                          <Typography variant="paragraph" className="text-gray-600 text-sm mb-2 whitespace-pre-wrap break-words overflow-wrap-anywhere">
                               {proj.description}
                             </Typography>
                           )}
@@ -3592,10 +3661,10 @@ const PortfolioCreation = () => {
                       <CardBody className="p-6">
                         <div className="flex items-center justify-between mb-3">
                           <div>
-                            <Typography variant="h6" className="text-gray-900 font-bold">
+                            <Typography variant="h6" className="text-gray-900 font-bold break-words">
                               {exp.jobTitle}
                             </Typography>
-                            <Typography variant="paragraph" className="text-gray-700">
+                            <Typography variant="paragraph" className="text-gray-700 break-words">
                               {exp.company}
                             </Typography>
                           </div>
@@ -3629,7 +3698,7 @@ const PortfolioCreation = () => {
                           </Typography>
                         )}
                         {exp.responsibilities && (
-                          <Typography variant="paragraph" className="text-gray-600 text-sm">
+                          <Typography variant="paragraph" className="text-gray-600 text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">
                             {exp.responsibilities}
                           </Typography>
                         )}
@@ -3696,7 +3765,7 @@ const PortfolioCreation = () => {
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Issuer
+                        Issuer *
                       </Typography>
                       <Input
                         size="lg"
@@ -3704,6 +3773,7 @@ const PortfolioCreation = () => {
                         onChange={handleAwardInputChange}
                         name="issuer"
                         placeholder="e.g., XYZ Organization"
+                        required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
@@ -3875,7 +3945,7 @@ const PortfolioCreation = () => {
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Institution
+                        Institution *
                       </Typography>
                       <Input
                         size="lg"
@@ -3883,9 +3953,15 @@ const PortfolioCreation = () => {
                         onChange={handleEducationInputChange}
                         name="institution"
                         placeholder="e.g., TESDA Institute"
+                        required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
+                      {educationSubmitAttempted && !newEducation.institution && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          Please fill in the institution.
+                        </Typography>
+                      )}
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
@@ -4054,7 +4130,7 @@ const PortfolioCreation = () => {
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Membership Type
+                        Membership Type *
                       </Typography>
                       <Input
                         size="lg"
@@ -4062,6 +4138,7 @@ const PortfolioCreation = () => {
                         onChange={handleMembershipInputChange}
                         name="membershipType"
                         placeholder="e.g., Professional Member"
+                        required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
@@ -4232,7 +4309,7 @@ const PortfolioCreation = () => {
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Relationship / Position
+                        Relationship / Position *
                       </Typography>
                       <Input
                         size="lg"
@@ -4240,13 +4317,14 @@ const PortfolioCreation = () => {
                         onChange={handleReferenceInputChange}
                         name="relationship"
                         placeholder="e.g., Former Supervisor"
+                        required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Company
+                        Company *
                       </Typography>
                       <Input
                         size="lg"
@@ -4254,13 +4332,14 @@ const PortfolioCreation = () => {
                         onChange={handleReferenceInputChange}
                         name="company"
                         placeholder="e.g., ABC Corp"
+                        required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Phone
+                        Phone *
                       </Typography>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -4289,7 +4368,7 @@ const PortfolioCreation = () => {
                     </div>
                     <div className="md:col-span-2">
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Email
+                        Email *
                       </Typography>
                       <Input
                         type="email"
@@ -4422,7 +4501,7 @@ const PortfolioCreation = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                    Primary Course Type *
+                    Template Selection *
                   </Typography>
                   <Select
                     size="lg"
@@ -4571,7 +4650,7 @@ const PortfolioCreation = () => {
                                       <Typography variant="h6" className={`font-bold ${designTheme.textColor} text-xl mb-5`} style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.01em" }}>
                                         TESDA Information
                                       </Typography>
-                                      {(formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration || formData.tesdaRegistrationNumber) ? (
+                                      {(formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration) ? (
                                         <div className="space-y-3">
                                           {formData.ncLevel && (
                                             <div>
@@ -4610,16 +4689,6 @@ const PortfolioCreation = () => {
                                               </Typography>
                                               <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
                                                 {formData.trainingDuration}
-                                              </Typography>
-                                            </div>
-                                          )}
-                                          {formData.tesdaRegistrationNumber && (
-                                            <div>
-                                              <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                                Registration Number
-                                              </Typography>
-                                              <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                                {formData.tesdaRegistrationNumber}
                                               </Typography>
                                             </div>
                                           )}
@@ -4756,7 +4825,7 @@ const PortfolioCreation = () => {
                                             {exp.responsibilities && (
                                               <Typography
                                                 variant="small"
-                                                className="text-gray-800 leading-relaxed break-words overflow-wrap-anywhere text-xs"
+                                                className="text-gray-800 leading-relaxed break-words whitespace-pre-wrap overflow-wrap-anywhere text-xs"
                                                 style={{ fontFamily: "'Inter', sans-serif", lineHeight: "1.6" }}
                                               >
                                                 {exp.responsibilities}
@@ -4795,7 +4864,7 @@ const PortfolioCreation = () => {
                                       <div className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                                           {(showAllProjects ? projects : projects.slice(0, INITIAL_ITEMS_LIMIT)).map((project, index) => (
-                                            <Card key={index} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+                                            <Card key={index} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] break-words">
                                               {project.projectImageFile && (
                                                 <div className="relative h-40 overflow-hidden">
                                                   <img
@@ -4812,7 +4881,7 @@ const PortfolioCreation = () => {
                                                 {project.description && (
                                                   <Typography
                                                     variant="small"
-                                                    className="text-gray-700 mb-3 leading-relaxed break-words overflow-wrap-anywhere text-xs line-clamp-3"
+                                                    className="text-gray-700 mb-3 leading-relaxed break-words whitespace-pre-wrap overflow-wrap-anywhere text-xs"
                                                     style={{ fontFamily: "'Inter', sans-serif", lineHeight: "1.6" }}
                                                   >
                                                     {project.description}
@@ -5177,7 +5246,7 @@ const PortfolioCreation = () => {
                                         <Typography variant="h5" className="font-bold text-red-600 text-lg uppercase tracking-wide mb-4" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
                                           TESDA Information
                                         </Typography>
-                                        {(formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration || formData.tesdaRegistrationNumber) ? (
+                                        {(formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration) ? (
                                           <div className="space-y-3">
                                             {formData.ncLevel && (
                                               <div>
@@ -5216,16 +5285,6 @@ const PortfolioCreation = () => {
                                                 </Typography>
                                                 <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
                                                   {formData.trainingDuration}
-                                                </Typography>
-                                              </div>
-                                            )}
-                                            {formData.tesdaRegistrationNumber && (
-                                              <div>
-                                                <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
-                                                  Registration Number
-                                                </Typography>
-                                                <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
-                                                  {formData.tesdaRegistrationNumber}
                                                 </Typography>
                                               </div>
                                             )}
@@ -5338,11 +5397,11 @@ const PortfolioCreation = () => {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                           {(showAllExperiences ? experiences : experiences.slice(0, INITIAL_ITEMS_LIMIT)).map((exp, index) => (
                                             <div key={index} className="pb-3 border-b border-gray-200">
-                                              <Typography variant="h6" className="font-bold text-black mb-1 text-lg" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                              <Typography variant="h6" className="font-bold text-black mb-1 text-lg break-words" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
                                                 {exp.jobTitle}
                                               </Typography>
                                               {exp.company && (
-                                                <Typography variant="small" className="text-black font-medium mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 500 }}>
+                                                <Typography variant="small" className="text-black font-medium mb-1 text-base break-words" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 500 }}>
                                                   {exp.company}
                                                 </Typography>
                                               )}
@@ -5355,7 +5414,7 @@ const PortfolioCreation = () => {
                                               {exp.responsibilities && (
                                                 <Typography
                                                   variant="small"
-                                                  className="text-black leading-relaxed text-base"
+                                                  className="text-black leading-relaxed text-base whitespace-pre-wrap break-words overflow-wrap-anywhere"
                                                   style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.7", fontWeight: 400 }}
                                                 >
                                                   {exp.responsibilities}
@@ -5395,7 +5454,7 @@ const PortfolioCreation = () => {
                                         <div className="space-y-4">
                                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                             {(showAllProjects ? projects : projects.slice(0, INITIAL_ITEMS_LIMIT)).map((project, index) => (
-                                              <Card key={index} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                                              <Card key={index} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 break-words">
                                                 {project.projectImageFile && (
                                                   <div className="relative h-48 overflow-hidden">
                                                     <img
@@ -5406,13 +5465,13 @@ const PortfolioCreation = () => {
                                                   </div>
                                                 )}
                                                 <CardBody className="p-5">
-                                                  <Typography variant="h6" className="font-bold text-black mb-2 text-lg" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                                  <Typography variant="h6" className="font-bold text-black mb-2 text-lg break-words" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
                                                     {project.title || "Unnamed Project"}
                                                   </Typography>
                                                   {project.description && (
                                                     <Typography
                                                       variant="small"
-                                                      className="text-black mb-3 leading-relaxed text-base line-clamp-3"
+                                                      className="text-black mb-3 leading-relaxed text-base whitespace-pre-wrap break-words overflow-wrap-anywhere"
                                                       style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.6", fontWeight: 400 }}
                                                     >
                                                       {project.description}
@@ -5804,12 +5863,12 @@ const PortfolioCreation = () => {
                                       </div>
 
                                       {/* TESDA Information - Always show for Template 2 */}
-                                      {(shouldAlwaysShowSections(formData.primaryCourseType) || formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration || formData.tesdaRegistrationNumber) && (
+                                      {(shouldAlwaysShowSections(formData.primaryCourseType) || formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration) && (
                                         <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
                                           <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg mb-6`}>
                                             TESDA Information
                                           </Typography>
-                                          {(formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration || formData.tesdaRegistrationNumber) ? (
+                                          {(formData.ncLevel || formData.trainingCenter || formData.scholarshipType || formData.trainingDuration) ? (
                                             <div className="space-y-4">
                                               {formData.ncLevel && (
                                                 <div>
@@ -5848,16 +5907,6 @@ const PortfolioCreation = () => {
                                                   </Typography>
                                                   <Typography variant="small" className="text-gray-800">
                                                     {formData.trainingDuration}
-                                                  </Typography>
-                                                </div>
-                                              )}
-                                              {formData.tesdaRegistrationNumber && (
-                                                <div>
-                                                  <Typography variant="small" color="gray" className="font-medium mb-1">
-                                                    Registration Number
-                                                  </Typography>
-                                                  <Typography variant="small" className="text-gray-800">
-                                                    {formData.tesdaRegistrationNumber}
                                                   </Typography>
                                                 </div>
                                               )}
@@ -5954,11 +6003,11 @@ const PortfolioCreation = () => {
                                             <div className="space-y-8">
                                               {(showAllExperiences ? experiences : experiences.slice(0, INITIAL_ITEMS_LIMIT)).map((exp, index) => (
                                                 <div key={index} className={`border-l-2 ${designTheme.cardBorder} pl-8 pb-8`}>
-                                                  <Typography variant="h6" className="font-medium mb-2">
+                                                  <Typography variant="h6" className="font-medium mb-2 break-words">
                                                     {exp.jobTitle}
                                                   </Typography>
                                                   {exp.company && (
-                                                    <Typography variant="small" className={`${designTheme.textColor} mb-2`}>
+                                                    <Typography variant="small" className={`${designTheme.textColor} mb-2 break-words`}>
                                                       {exp.company}
                                                     </Typography>
                                                   )}
@@ -5969,7 +6018,7 @@ const PortfolioCreation = () => {
                                                     </Typography>
                                                   )}
                                                   {exp.responsibilities && (
-                                                    <Typography variant="small" className="text-gray-700 leading-relaxed break-words overflow-wrap-anywhere">
+                                                    <Typography variant="small" className="text-gray-700 leading-relaxed break-words whitespace-pre-wrap overflow-wrap-anywhere">
                                                       {exp.responsibilities}
                                                     </Typography>
                                                   )}
@@ -6014,7 +6063,7 @@ const PortfolioCreation = () => {
                                             <div className="space-y-4">
                                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                                 {(showAllProjects ? projects : projects.slice(0, INITIAL_ITEMS_LIMIT)).map((project, index) => (
-                                                  <Card key={index} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                                                  <Card key={index} className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 break-words">
                                                     {project.projectImageFile && (
                                                       <div className="relative h-48 overflow-hidden">
                                                         <img
@@ -6025,13 +6074,13 @@ const PortfolioCreation = () => {
                                                       </div>
                                                     )}
                                                     <CardBody className="p-5">
-                                                      <Typography variant="h6" className="font-bold text-black mb-2 text-lg" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
+                                                      <Typography variant="h6" className="font-bold text-black mb-2 text-lg break-words" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
                                                         {project.title || "Unnamed Project"}
                                                       </Typography>
                                                       {project.description && (
                                                         <Typography
                                                           variant="small"
-                                                          className="text-black mb-3 leading-relaxed text-base line-clamp-3"
+                                                          className="text-black mb-3 leading-relaxed text-base whitespace-pre-wrap break-words overflow-wrap-anywhere"
                                                           style={{ fontFamily: "'Open Sauce', sans-serif", lineHeight: "1.6", fontWeight: 400 }}
                                                         >
                                                           {project.description}
