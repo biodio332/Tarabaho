@@ -28,6 +28,9 @@ const { width } = Dimensions.get('window');
 // NC Level options (from web implementation)
 const NC_LEVEL_OPTIONS = ["NC I", "NC II", "NC III", "NC IV", "NC V", "NC VI"];
 
+// Scholarship type options
+const SCHOLARSHIP_TYPE_OPTIONS = ["Scholarship", "Non-Scholar", "None"];
+
 // Utility function to handle date conversion
 const parseDate = (dateString: string | null | undefined): Date => {
   if (!dateString) return new Date();
@@ -1053,6 +1056,32 @@ export default function CreatePortfolio() {
     </View>
   );
 
+  // Helper component for Scholarship Type picker
+  const ScholarshipTypePicker = ({ value, onChange }: { value: string, onChange: (value: string) => void }) => (
+    <View className="border border-gray-300 rounded-lg p-3 my-2">
+      <Text className="text-sm font-medium mb-2 text-gray-700">Select Scholarship Type</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {SCHOLARSHIP_TYPE_OPTIONS.map((type) => (
+          <TouchableOpacity
+            key={type}
+            onPress={() => onChange(type)}
+            className={`mr-2 px-4 py-2 rounded-full ${
+              type === value ? "bg-blue-500" : "bg-gray-200"
+            }`}
+          >
+            <Text
+              className={`text-sm ${
+                type === value ? "text-white font-semibold" : "text-gray-700"
+              }`}
+            >
+              {type}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+
   return (
     <SafeAreaView 
       className="flex-1 bg-gray-50" 
@@ -1273,11 +1302,9 @@ export default function CreatePortfolio() {
                 placeholder="Enter training center or institution"
               />
               
-              <TextField
-                label="Scholarship Type"
-                value={formData.scholarshipType}
-                onChangeText={(text) => handleInputChange("scholarshipType", text)}
-                placeholder="e.g., Full Scholarship"
+              <ScholarshipTypePicker 
+                value={formData.scholarshipType} 
+                onChange={(value) => handleInputChange("scholarshipType", value)} 
               />
               
               <DatePicker
@@ -1317,13 +1344,31 @@ export default function CreatePortfolio() {
                 keyboardType="email-address"
               />
               
-              <TextField
-                label="Phone"
-                value={formData.phone}
-                onChangeText={(text) => handleInputChange("phone", text)}
-                placeholder="Enter your phone number"
-                keyboardType="phone-pad"
-              />
+              <View className="my-2">
+                <Text className="text-sm font-medium mb-2 text-gray-700">Phone</Text>
+                <View className="flex-row items-center border border-gray-300 rounded-lg bg-white">
+                  <View className="bg-gray-100 px-3 py-4 border-r border-gray-300">
+                    <Text className="text-gray-700 font-medium">+63</Text>
+                  </View>
+                  <TextInput
+                    value={formData.phone}
+                    onChangeText={(text) => {
+                      // Only allow numbers and limit to 10 digits
+                      const cleaned = text.replace(/[^0-9]/g, '').slice(0, 10);
+                      handleInputChange("phone", cleaned);
+                    }}
+                    placeholder="9123456789 (10 digits)"
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    className="flex-1 px-3 py-4 text-base text-gray-800"
+                  />
+                </View>
+                {formData.phone && formData.phone.length < 10 && (
+                  <Text className="text-red-500 text-xs mt-1">
+                    Phone number must be 10 digits
+                  </Text>
+                )}
+              </View>
               
               <TextField
                 label="Website"

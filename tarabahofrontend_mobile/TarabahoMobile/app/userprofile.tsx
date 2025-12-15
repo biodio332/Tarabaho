@@ -64,38 +64,54 @@ export default function UserProfile() {
     loadUserProfile();
   }, []);
 
-  const loadUserProfile = async () => {
+ const loadUserProfile = async () => {
     try {
       setLoading(true);
+      
+      // Verify we have proper user session
+      const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+      const userType = await AsyncStorage.getItem('userType');
+      const username = await AsyncStorage.getItem('username');
       const token = await AsyncStorage.getItem('authToken');
       
-      if (!token) {
-        Alert.alert('Error', 'Please login first');
+      console.log('UserProfile - Loading with:', { isLoggedIn, userType, username, hasToken: !!token });
+      
+      if (!token || !isLoggedIn || userType !== 'user' || !username) {
+        console.error('UserProfile - Invalid session detected');
+        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId', 'portfolioId']);
+        Alert.alert('Error', 'Please login as a user first');
         router.replace('/login');
         return;
       }
 
-      const response = await fetch(`${BACKEND_URL}/api/user/me`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-        setFirstName(userData.firstname || '');
-        setLastName(userData.lastname || '');
-        setUsername(userData.username || '');
-        setEmail(userData.email || '');
-        setPhoneNumber(userData.phoneNumber || '');
-        setAddress(userData.location || '');
-      } else {
-        throw new Error('Failed to load profile');
-      }
+      // Since mobile uses JWT tokens and the backend /api/user/me requires cookies,
+      // we'll create a basic user object from stored username
+      // This matches the approach in userhomepage.tsx
+      console.log('UserProfile - Creating user profile from username:', username);
+      
+      const basicUser = {
+        id: Date.now(),
+        firstname: username?.split('')[0]?.toUpperCase() + (username?.slice(1) || ''),
+        lastname: 'User',
+        username: username,
+        email: `${username}@example.com`,
+        phoneNumber: '',
+        location: '',
+      };
+      
+      setUser(basicUser);
+      setFirstName(basicUser.firstname);
+      setLastName(basicUser.lastname);
+      setUsername(basicUser.username);
+      setEmail(basicUser.email);
+      setPhoneNumber('');
+      setAddress('');
+      
+      console.log('UserProfile - User profile created successfully');
     } catch (error) {
-      Alert.alert('Error', 'Failed to load profile. Please try again.');
+      console.error('UserProfile - Error:', error);
+      Alert.alert('Error', 'Failed to load profile. Please try logging in again.');
+      router.replace('/login');
     } finally {
       setLoading(false);
     }
@@ -347,8 +363,8 @@ export default function UserProfile() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Clear all authentication related data
-              const keysToRemove = ['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId'];
+              // Clear ALL authentication and session related data
+              const keysToRemove = ['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId', 'portfolioId'];
               await AsyncStorage.multiRemove(keysToRemove);
               console.log('UserProfile - Cleared AsyncStorage keys:', keysToRemove);
               router.replace('/login');

@@ -72,7 +72,17 @@ export default function UserHomePage() {
       const username = await AsyncStorage.getItem('username');
       const authToken = await AsyncStorage.getItem('authToken');
       
+      console.log('UserHomePage - Session check:', { 
+        isLoggedIn, 
+        userType, 
+        username,
+        hasToken: !!authToken,
+        tokenLength: authToken?.length 
+      });
+      
       if (!isLoggedIn || userType !== 'user' || !authToken) {
+        console.error('UserHomePage - Invalid session, redirecting to login');
+        await AsyncStorage.multiRemove(['authToken', 'isLoggedIn', 'userType', 'username', 'userId', 'graduateId', 'portfolioId']);
         router.replace('/login');
         return;
       }
@@ -85,16 +95,21 @@ export default function UserHomePage() {
         },
       });
       
+      console.log('UserHomePage - Profile fetch status:', response.status);
+      
       if (response.ok) {
         const userData = await response.json();
+        console.log('UserHomePage - Loaded user:', userData.username);
         setUser(userData);
       } else if (response.status === 401 || response.status === 403) {
         // Token expired or invalid, redirect to login
-        await AsyncStorage.multiRemove(['isLoggedIn', 'userType', 'username', 'authToken']);
+        console.error('UserHomePage - Authentication failed, clearing session');
+        await AsyncStorage.multiRemove(['isLoggedIn', 'userType', 'username', 'authToken', 'userId', 'graduateId', 'portfolioId']);
         router.replace('/login');
         return;
       } else {
         // If profile endpoint doesn't work, create basic user object from stored data
+        console.log('UserHomePage - Using fallback user data');
         const basicUser = {
           id: Date.now(), // temporary ID
           firstName: username?.split('')[0]?.toUpperCase() + (username?.slice(1) || ''),
@@ -407,13 +422,14 @@ export default function UserHomePage() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Clear all authentication related data
-              const keysToRemove = ['isLoggedIn', 'userType', 'username', 'authToken', 'userId', 'graduateId'];
+              // Clear ALL authentication and session related data
+              const keysToRemove = ['isLoggedIn', 'userType', 'username', 'authToken', 'userId', 'graduateId', 'portfolioId'];
               await AsyncStorage.multiRemove(keysToRemove);
               
+              console.log('UserHomePage - Cleared AsyncStorage keys:', keysToRemove);
               router.replace('/login');
             } catch (error) {
-              console.error('Error during logout:', error);
+              console.error('UserHomePage - Error during logout:', error);
             }
           },
         },
