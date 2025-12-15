@@ -63,7 +63,6 @@ const ViewPortfolio = () => {
   const [fieldErrors, setFieldErrors] = useState({})
   const [avatarFileSizeError, setAvatarFileSizeError] = useState("")
   const [projectFileSizeError, setProjectFileSizeError] = useState("")
-  const [certificateFileSizeError, setCertificateFileSizeError] = useState("")
   const [isNcLevelAdditional, setIsNcLevelAdditional] = useState(false)
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null)
   const [modifiedCertificates, setModifiedCertificates] = useState(new Set())
@@ -88,7 +87,6 @@ const ViewPortfolio = () => {
     courseName: "",
     certificateNumber: "",
     issueDate: "",
-    certificateFile: null,
   })
   const [newProject, setNewProject] = useState({
     title: "",
@@ -295,11 +293,6 @@ const ViewPortfolio = () => {
       case "website":
         if (trimmedValue && !isValidWebsiteUrl(trimmedValue)) {
           message = "Website must be a valid https URL (e.g., https://www.example.com)."
-        }
-        break
-      case "certificateNumber":
-        if (trimmedValue && !/^\d+$/.test(trimmedValue)) {
-          message = "Certificate number must contain digits only."
         }
         break
       case "referencePhone":
@@ -669,8 +662,10 @@ const ViewPortfolio = () => {
         headers: { Authorization: `Bearer ${fetchedToken}` },
       })
       console.log("Certificates response:", certificatesResponse.data)
-      // Filter certificates to only include those with a portfolioId
-      const portfolioCertificates = certificatesResponse.data.filter(cert => cert.portfolioId)
+      // Filter certificates to only include those that belong to this portfolio
+      const portfolioCertificates = certificatesResponse.data.filter(
+        (cert) => cert.portfolioId && String(cert.portfolioId) === String(normalizedPortfolio.id)
+      )
       setCertificates(portfolioCertificates)
 
       console.log("Fetching projects for portfolio ID:", normalizedPortfolio.id)
@@ -733,8 +728,10 @@ const fetchPublicDataWithToken = async () => {
     
     const rawCerts = portfolioResponse.data.certificates || 
                 (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.certificates : []);
-    // Only keep certificates that are actually linked to a portfolio
-    const certs = rawCerts.filter((cert) => cert.portfolioId);
+    // Only keep certificates that are actually linked to this specific portfolio
+    const certs = rawCerts.filter(
+      (cert) => cert.portfolioId && String(cert.portfolioId) === String(normalizedPortfolio.id)
+    )
     setCertificates(certs);
     
     const projs = portfolioResponse.data.projects || 
@@ -986,32 +983,47 @@ const fetchPublicDataWithToken = async () => {
   }
 
   const copyToClipboard = async () => {
-  const shareableUrl = getShareableUrl();
-  const displayUrl = shareableUrl.includes("?share=")
-    ? `${window.location.origin}/portfolio/${graduateId}?share=${shareToken?.substring(0, 8)}...`
-    : shareableUrl;
+    const shareableUrl = getShareableUrl()
+    const displayUrl = shareableUrl.includes("?share=")
+      ? `${window.location.origin}/portfolio/${graduateId}?share=${shareToken?.substring(0, 8)}...`
+      : shareableUrl
 
-  try {
-    await navigator.clipboard.writeText(shareableUrl);
-    alert(
-      `Secure share link copied!\n\n` +
-      `Link: ${displayUrl}\n\n` +
-      `Only people with this exact link can view your portfolio.\n` +
-      `Links remain valid until you generate a new one.`
-    );
-  } catch (err) {
-    console.error("Failed to copy:", err);
-    // Fallback: let user copy manually
-    const userConfirmed = window.confirm(
-      `Failed to copy automatically.\n\n` +
-      `Your link:\n${shareableUrl}\n\n` +
-      `Click OK to copy manually.`
-    );
-    if (userConfirmed) {
-      prompt("Copy this link:", shareableUrl);
+    try {
+      await navigator.clipboard.writeText(shareableUrl)
+
+      // Use in-page notification instead of alert
+      setNotification({
+        show: true,
+        type: "success",
+        title: "Secure link copied",
+        message:
+          `Your secure portfolio link has been copied.\n` +
+          `Link: ${displayUrl}\n` +
+          `Only people with this link can view your portfolio until you generate a new one.`,
+        link: "",
+      })
+
+      // Auto-hide notification after a few seconds
+      setTimeout(() => {
+        setNotification((prev) => ({ ...prev, show: false }))
+      }, 4000)
+    } catch (err) {
+      console.error("Failed to copy:", err)
+
+      // Show error as notification (no window.confirm / prompt)
+      setNotification({
+        show: true,
+        type: "error",
+        title: "Failed to copy link",
+        message: "We couldn’t copy the link automatically. You can try again or copy it manually from the address bar.",
+        link: "",
+      })
+
+      setTimeout(() => {
+        setNotification((prev) => ({ ...prev, show: false }))
+      }, 4000)
     }
-  }
-};
+  };
 
   const shareToLinkedIn = () => {
     const title = `${portfolio?.fullName || "Portfolio"} - Professional Portfolio`
@@ -1171,7 +1183,6 @@ const fetchPublicDataWithToken = async () => {
         courseName: "",
         certificateNumber: "",
         issueDate: "",
-        certificateFile: null,
       })
       setNewProject({
         title: "",
@@ -1244,7 +1255,6 @@ const fetchPublicDataWithToken = async () => {
         courseName: "",
         certificateNumber: "",
         issueDate: "",
-        certificateFile: null,
       })
       setNewProject({
         title: "",
@@ -1478,7 +1488,6 @@ const fetchPublicDataWithToken = async () => {
           courseName: "",
           certificateNumber: "",
           issueDate: "",
-          certificateFile: null,
         })
       }
       if (section === "projects" && !newState.projects) {
@@ -1617,8 +1626,6 @@ const fetchPublicDataWithToken = async () => {
         }
         updateFieldError(fieldKey, message)
       }
-    } else if (arrayName === "certificates" && field === "certificateNumber") {
-      validateField("certificateNumber", correctedValue)
     }
   }
 
@@ -1686,35 +1693,10 @@ const fetchPublicDataWithToken = async () => {
   }
 
   const handleCertificateFileChange = (e) => {
-    const file = e.target.files[0]
-    // Store previous state before processing new file
-    const previousFile = newCertificate.certificateFile
-    
-    // Reset input value so same file can be selected again
+    // Certificate file uploads are no longer supported; ignore any selected file.
     if (e.target) {
       e.target.value = ""
     }
-    
-    if (file && !file.type.startsWith("image/") && file.type !== "application/pdf") {
-      setSaveError("Please select an image or PDF file for the certificate.")
-      setCertificateFileSizeError("")
-      return
-    }
-    // Check file size (5MB = 5242880 bytes)
-    const maxFileSize = 5 * 1024 * 1024 // 5MB
-    if (file && file.size > maxFileSize) {
-      setCertificateFileSizeError("File size exceeds the maximum allowed size of 5MB.")
-      // Restore previous file instead of clearing
-      setNewCertificate((prev) => ({ ...prev, certificateFile: previousFile }))
-      setSaveError("")
-      // Clear error message after 1.5 seconds
-      setTimeout(() => {
-        setCertificateFileSizeError("")
-      }, 3000)
-      return
-    }
-    setCertificateFileSizeError("")
-    setNewCertificate((prev) => ({ ...prev, certificateFile: file }))
     setSaveError("")
   }
 
@@ -1894,10 +1876,6 @@ const fetchPublicDataWithToken = async () => {
     
     setNewCertificate((prev) => ({ ...prev, [name]: value }))
     setSaveError("")
-    // Validate certificate number
-    if (name === "certificateNumber") {
-      validateField("certificateNumber", value)
-    }
   }
 
   const handleCertificateInputBlur = (e) => {
@@ -1976,19 +1954,6 @@ const fetchPublicDataWithToken = async () => {
       setSaveError("Please fill in all required certificate fields.")
       return
     }
-    // Validate certificate number format - must contain only digits
-    if (newCertificate.certificateNumber && newCertificate.certificateNumber.trim() !== "") {
-      const certNumber = newCertificate.certificateNumber.trim()
-      if (!/^\d+$/.test(certNumber)) {
-        setSaveError("Certificate number must contain digits only.")
-        return
-      }
-    }
-    // Check for certificate number validation errors
-    if (fieldErrors.certificateNumber) {
-      setSaveError(fieldErrors.certificateNumber)
-      return
-    }
     // Validate issue date is not in the future
     const dateValidation = validateDateNotFuture(newCertificate.issueDate, "Issue Date")
     if (!dateValidation.valid) {
@@ -2000,8 +1965,6 @@ const fetchPublicDataWithToken = async () => {
       courseName: newCertificate.courseName,
       certificateNumber: newCertificate.certificateNumber,
       issueDate: newCertificate.issueDate,
-      certificateFile: newCertificate.certificateFile,
-      preview: newCertificate.certificateFile ? URL.createObjectURL(newCertificate.certificateFile) : "/placeholder.svg",
       portfolioId: editingPortfolio?.id || portfolio?.id,
     }
     setEditingPortfolio((prev) => ({
@@ -2013,7 +1976,6 @@ const fetchPublicDataWithToken = async () => {
       courseName: "",
       certificateNumber: "",
       issueDate: "",
-      certificateFile: null,
     })
     setIsAddingCertificate(false)
     setEditingCertificateId(null)
@@ -2068,7 +2030,6 @@ const fetchPublicDataWithToken = async () => {
       courseName: certificate.courseName || "",
       certificateNumber: certificate.certificateNumber || "",
       issueDate: certificate.issueDate || "",
-      certificateFile: null,
     })
     setIsAddingCertificate(true)
   }
@@ -2100,19 +2061,6 @@ const fetchPublicDataWithToken = async () => {
       setSaveError("Please fill in all required certificate fields.")
       return
     }
-    // Validate certificate number format - must contain only digits
-    if (newCertificate.certificateNumber && newCertificate.certificateNumber.trim() !== "") {
-      const certNumber = newCertificate.certificateNumber.trim()
-      if (!/^\d+$/.test(certNumber)) {
-        setSaveError("Certificate number must contain digits only.")
-        return
-      }
-    }
-    // Check for certificate number validation errors
-    if (fieldErrors.certificateNumber) {
-      setSaveError(fieldErrors.certificateNumber)
-      return
-    }
     // Validate issue date is not in the future
     const dateValidation = validateDateNotFuture(newCertificate.issueDate, "Issue Date")
     if (!dateValidation.valid) {
@@ -2128,10 +2076,6 @@ const fetchPublicDataWithToken = async () => {
               courseName: newCertificate.courseName,
               certificateNumber: newCertificate.certificateNumber,
               issueDate: newCertificate.issueDate,
-              certificateFile: newCertificate.certificateFile || cert.certificateFile,
-              preview: newCertificate.certificateFile
-                ? URL.createObjectURL(newCertificate.certificateFile)
-                : cert.preview || cert.certificateFilePath || "/placeholder.svg",
             }
           : cert,
       ),
@@ -2141,7 +2085,6 @@ const fetchPublicDataWithToken = async () => {
       courseName: "",
       certificateNumber: "",
       issueDate: "",
-      certificateFile: null,
     })
     setEditingCertificateId(null)
     setIsAddingCertificate(false)
@@ -2992,7 +2935,9 @@ const fetchPublicDataWithToken = async () => {
     setSaveError("")
   }
 
-  const handleCertificateImageClick = () => certificateFileInputRef.current?.click()
+  const handleCertificateImageClick = () => {
+    // Certificate images are no longer supported; do nothing.
+  }
   const handleProjectImageClick = () => projectFileInputRef.current?.click()
 
   const handleSavePortfolio = async () => {
@@ -3793,25 +3738,6 @@ const fetchPublicDataWithToken = async () => {
             }
           }
           
-          // Validate certificate number format - must contain only digits
-          if (cert.certificateNumber && cert.certificateNumber.trim() !== "") {
-            const certNumber = cert.certificateNumber.trim()
-            if (!/^\d+$/.test(certNumber)) {
-              setNotification({
-                show: true,
-                type: "error",
-                title: "Validation Error",
-                message: `Certificate "${cert.courseName || 'Untitled'}": Certificate number must contain digits only.`,
-                link: "",
-              })
-              setTimeout(() => {
-                setNotification(prev => ({ ...prev, show: false }))
-              }, 5000)
-              setIsSaving(false)
-              return
-            }
-          }
-
           const certificateData = new FormData()
           certificateData.append("courseName", cert.courseName || "")
           certificateData.append("certificateNumber", cert.certificateNumber || "")
@@ -6118,38 +6044,31 @@ const fetchPublicDataWithToken = async () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
                                 <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                                  Course Name *
+                                  Certificate Name *
                                 </Typography>
                                 <Input
                                   size="lg"
                                   name="courseName"
                                   value={newCertificate.courseName}
                                   onChange={handleCertificateInputChange}
-                                  placeholder="Enter course name"
+                                  placeholder="Enter certificate name"
                                   required
                                   className="!border-gray-300 focus:!border-blue-500"
                                 />
                               </div>
                               <div>
                                 <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                                  Certificate Number *
+                                  Issuing Organization *
                                 </Typography>
                                 <Input
                                   size="lg"
                                   name="certificateNumber"
                                   value={newCertificate.certificateNumber}
                                   onChange={handleCertificateInputChange}
-                                  placeholder="Enter certificate number"
-                                  inputMode="numeric"
-                                  pattern="[0-9]*"
+                                  placeholder="Enter issuing organization"
                                   required
-                                  className={`!border-gray-300 focus:!border-blue-500 ${fieldErrors.certificateNumber ? "!border-red-500" : ""}`}
+                                  className="!border-gray-300 focus:!border-blue-500"
                                 />
-                                {fieldErrors.certificateNumber && (
-                                  <Typography variant="small" color="red" className="mt-1">
-                                    {fieldErrors.certificateNumber}
-                                  </Typography>
-                                )}
                               </div>
                             </div>
                             <div className="mt-4">
@@ -6183,57 +6102,7 @@ const fetchPublicDataWithToken = async () => {
                                   Issue Date cannot be a future date.
                                 </Typography>
                               )}
-                            </div>
-                            <div className="mt-4">
-                              <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                                Certificate File (Optional)
-                              </Typography>
-                              <div className="flex items-center gap-4">
-                                {newCertificate.certificateFile ? (
-                                  <Avatar
-                                    src={URL.createObjectURL(newCertificate.certificateFile)}
-                                    alt="Certificate Preview"
-                                    size="lg"
-                                    className={`ring-2 ${designTheme.borderColor}`}
-                                  />
-                                ) : editingCertificateId ? (
-                                  <Avatar
-                                    src={certificates.find((cert) => cert.id === editingCertificateId)?.certificateFilePath || "/placeholder.svg"}
-                                    alt="Certificate Preview"
-                                    size="lg"
-                                    className={`ring-2 ${designTheme.borderColor}`}
-                                  />
-                                ) : (
-                                  <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center">
-                                    <Typography variant="h5" className="text-gray-600">
-                                      📄
-                                    </Typography>
-                                  </div>
-                                )}
-                                <Button
-                                  variant="outlined"
-                                  color={designTheme.buttonColor}
-                                  onClick={handleCertificateImageClick}
-                                  className="flex items-center gap-2"
-                                >
-                                  <FaPlus className="w-4 h-4" />
-                                  Choose File
-                                </Button>
-                                <input
-                                  type="file"
-                                  id="certificateFile"
-                                  accept="image/*"
-                                  onChange={handleCertificateFileChange}
-                                  ref={certificateFileInputRef}
-                                  className="hidden"
-                                />
-                                {certificateFileSizeError && (
-                                  <Typography variant="small" color="red" className="mt-2 text-center">
-                                    {certificateFileSizeError}
-                                  </Typography>
-                                )}
-                              </div>
-                            </div>
+                    </div>
                             <div className="mt-6 flex justify-end gap-2">
                               <Button
                                 variant="gradient"
@@ -6254,7 +6123,6 @@ const fetchPublicDataWithToken = async () => {
                                     courseName: "",
                                     certificateNumber: "",
                                     issueDate: "",
-                                    certificateFile: null,
                                   })
                                 }}
                               >
@@ -6272,7 +6140,7 @@ const fetchPublicDataWithToken = async () => {
                               onClick={() => {
                                 setIsAddingCertificate(true)
                                 setEditingCertificateId(null)
-                                setNewCertificate({ courseName: "", certificateNumber: "", issueDate: "", certificateFile: null })
+                                setNewCertificate({ courseName: "", certificateNumber: "", issueDate: "" })
                               }}
                               className="flex items-center gap-2 w-full"
                             >
@@ -6301,7 +6169,7 @@ const fetchPublicDataWithToken = async () => {
                                           {certificate.courseName}
                                         </Typography>
                                         <Typography variant="small" className="text-gray-600">
-                                          Certificate #: {certificate.certificateNumber}
+                                          Certificate: {certificate.certificateNumber}
                                         </Typography>
                                         <Typography variant="small" className="text-gray-600">
                                           Issued: {certificate.issueDate ? new Date(certificate.issueDate).toLocaleDateString() : "N/A"}
@@ -8844,38 +8712,31 @@ const fetchPublicDataWithToken = async () => {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                Course Name *
+                                Certificate Name *
                               </Typography>
                               <Input
                                 size="lg"
                                 name="courseName"
                                 value={newCertificate.courseName}
                                 onChange={handleCertificateInputChange}
-                                placeholder="Enter course name"
+                                placeholder="Enter certificate name"
                                 required
                                 className="!border-gray-300 focus:!border-red-500"
                               />
                             </div>
                             <div>
                               <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                Certificate Number *
+                                Issuing Organization *
                               </Typography>
                               <Input
                                 size="lg"
                                 name="certificateNumber"
                                 value={newCertificate.certificateNumber}
                                 onChange={handleCertificateInputChange}
-                                placeholder="Enter certificate number"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
+                                placeholder="Enter issuing organization"
                                 required
-                                className={`!border-gray-300 focus:!border-red-500 ${fieldErrors.certificateNumber ? "!border-red-500" : ""}`}
+                                className="!border-gray-300 focus:!border-red-500"
                               />
-                              {fieldErrors.certificateNumber && (
-                                <Typography variant="small" color="red" className="mt-1">
-                                  {fieldErrors.certificateNumber}
-                                </Typography>
-                              )}
                             </div>
                           </div>
                           <div className="mt-4">
@@ -8910,56 +8771,7 @@ const fetchPublicDataWithToken = async () => {
                               </Typography>
                             )}
                           </div>
-                          <div className="mt-4">
-                            <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                              Certificate File (Optional)
-                            </Typography>
-                            <div className="flex items-center gap-4">
-                              {newCertificate.certificateFile ? (
-                                <Avatar
-                                  src={URL.createObjectURL(newCertificate.certificateFile)}
-                                  alt="Certificate Preview"
-                                  size="lg"
-                                  className="ring-2 ring-red-300"
-                                />
-                              ) : editingCertificateId ? (
-                                <Avatar
-                                  src={certificates.find((cert) => cert.id === editingCertificateId)?.certificateFilePath || "/placeholder.svg"}
-                                  alt="Certificate Preview"
-                                  size="lg"
-                                  className="ring-2 ring-red-300"
-                                />
-                              ) : (
-                                <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center">
-                                  <Typography variant="h5" className="text-gray-600">
-                                    📄
-                                  </Typography>
-                                </div>
-                              )}
-                              <Button
-                                variant="outlined"
-                                color="red"
-                                onClick={handleCertificateImageClick}
-                                className="flex items-center gap-2"
-                              >
-                                <FaPlus className="w-4 h-4" />
-                                Choose File
-                              </Button>
-                              <input
-                                type="file"
-                                id="certificateFile"
-                                accept="image/*,application/pdf"
-                                onChange={handleCertificateFileChange}
-                                ref={certificateFileInputRef}
-                                className="hidden"
-                              />
-                              {certificateFileSizeError && (
-                                <Typography variant="small" color="red" className="mt-2 text-center">
-                                  {certificateFileSizeError}
-                                </Typography>
-                              )}
-                            </div>
-                          </div>
+                          <div className="mt-4" />
                           <div className="mt-6 flex justify-end gap-2">
                             <Button
                               variant="gradient"
@@ -8997,7 +8809,7 @@ const fetchPublicDataWithToken = async () => {
                             onClick={() => {
                               setIsAddingCertificate(true)
                               setEditingCertificateId(null)
-                              setNewCertificate({ courseName: "", certificateNumber: "", issueDate: "", certificateFile: null })
+                              setNewCertificate({ courseName: "", certificateNumber: "", issueDate: "" })
                             }}
                             className="flex items-center gap-2 w-full"
                           >
@@ -9026,7 +8838,7 @@ const fetchPublicDataWithToken = async () => {
                                         {certificate.courseName}
                                       </Typography>
                                       <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                        Certificate #: {certificate.certificateNumber}
+                                        Certificate: {certificate.certificateNumber}
                                       </Typography>
                                       <Typography variant="small" className="text-gray-600 text-sm" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
                                         Issued: {certificate.issueDate ? new Date(certificate.issueDate).toLocaleDateString() : "N/A"}
@@ -11921,24 +11733,17 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Certificate Number *
+                        Issuing Organization *
                       </Typography>
                       <Input
                         size="lg"
                         name="certificateNumber"
                         value={newCertificate.certificateNumber}
                         onChange={handleCertificateInputChange}
-                        placeholder="Enter certificate number"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
+                        placeholder="Enter issuing organization"
                         required
-                        className={`!border-gray-300 focus:!border-blue-500 ${fieldErrors.certificateNumber ? "!border-red-500" : ""}`}
+                        className="!border-gray-300 focus:!border-blue-500"
                       />
-                      {fieldErrors.certificateNumber && (
-                        <Typography variant="small" color="red" className="mt-1">
-                          {fieldErrors.certificateNumber}
-                        </Typography>
-                      )}
                     </div>
                   </div>
                   <div className="mt-4">
@@ -11973,56 +11778,6 @@ const fetchPublicDataWithToken = async () => {
                       </Typography>
                     )}
                   </div>
-                  <div className="mt-4">
-                    <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                      Certificate File (Optional)
-                    </Typography>
-                    <div className="flex items-center gap-4">
-                      {newCertificate.certificateFile ? (
-                        <Avatar
-                          src={URL.createObjectURL(newCertificate.certificateFile)}
-                          alt="Certificate Preview"
-                          size="lg"
-                          className={`ring-2 ${designTheme.borderColor}`}
-                        />
-                      ) : editingCertificateId ? (
-                        <Avatar
-                          src={certificates.find((cert) => cert.id === editingCertificateId)?.certificateFilePath || "/placeholder.svg"}
-                          alt="Certificate Preview"
-                          size="lg"
-                          className={`ring-2 ${designTheme.borderColor}`}
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center">
-                          <Typography variant="h5" className="text-gray-600">
-                            📄
-                          </Typography>
-                        </div>
-                      )}
-                      <Button
-                        variant="outlined"
-                        color={designTheme.buttonColor}
-                        onClick={handleCertificateImageClick}
-                        className="flex items-center gap-2"
-                      >
-                        <FaPlus className="w-4 h-4" />
-                        Choose File
-                      </Button>
-                      <input
-                        type="file"
-                        id="certificateFile"
-                        accept="image/*"
-                        onChange={handleCertificateFileChange}
-                        ref={certificateFileInputRef}
-                        className="hidden"
-                      />
-                      {certificateFileSizeError && (
-                        <Typography variant="small" color="red" className="mt-2 text-center">
-                          {certificateFileSizeError}
-                        </Typography>
-                      )}
-                    </div>
-                  </div>
                   <div className="mt-6 flex justify-end gap-2">
                     <Button
                       variant="gradient"
@@ -12042,7 +11797,6 @@ const fetchPublicDataWithToken = async () => {
                           courseName: "",
                           certificateNumber: "",
                           issueDate: "",
-                          certificateFile: null,
                         })
                       }}
                     >
@@ -12061,7 +11815,7 @@ const fetchPublicDataWithToken = async () => {
                       onClick={() => {
                         setIsAddingCertificate(true)
                         setEditingCertificateId(null)
-                        setNewCertificate({ courseName: "", certificateNumber: "", issueDate: "", certificateFile: null })
+                        setNewCertificate({ courseName: "", certificateNumber: "", issueDate: "" })
                       }}
                       className="flex items-center gap-2 w-full"
                     >
@@ -12089,7 +11843,7 @@ const fetchPublicDataWithToken = async () => {
                                   {certificate.courseName}
                                 </Typography>
                                 <Typography variant="small" className="text-gray-600">
-                                  Certificate #: {certificate.certificateNumber}
+                                  Certificate: {certificate.certificateNumber}
                                 </Typography>
                                 <Typography variant="small" className="text-gray-600">
                                   Issued: {certificate.issueDate ? new Date(certificate.issueDate).toLocaleDateString() : "N/A"}
