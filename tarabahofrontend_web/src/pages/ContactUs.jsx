@@ -16,7 +16,7 @@ const ContactUs = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
   const maxMessageLength = 2000;
 
   const handleChange = (e) => {
@@ -32,17 +32,15 @@ const ContactUs = () => {
     setIsSubmitting(true);
     setErrorMessage("");
 
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
-    
     try {
-      const response = await fetch('${BACKEND_URL}/api/contact/submit', {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-        credentials: "include",
-      });
+          const response = await fetch(`${BACKEND_URL}/api/contact/submit`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+          credentials: "include",
+        });
 
       if (response.ok) {
         setSubmitSuccess(true);
