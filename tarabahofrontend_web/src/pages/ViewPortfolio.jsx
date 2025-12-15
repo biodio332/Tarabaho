@@ -731,8 +731,10 @@ const fetchPublicDataWithToken = async () => {
                        };
     setGraduate(graduateData);
     
-    const certs = portfolioResponse.data.certificates || 
+    const rawCerts = portfolioResponse.data.certificates || 
                 (portfolioResponse.data.portfolio ? portfolioResponse.data.portfolio.certificates : []);
+    // Only keep certificates that are actually linked to a portfolio
+    const certs = rawCerts.filter((cert) => cert.portfolioId);
     setCertificates(certs);
     
     const projs = portfolioResponse.data.projects || 
