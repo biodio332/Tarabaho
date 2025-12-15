@@ -118,14 +118,12 @@ const PortfolioCreation = () => {
     courseName: "",
     certificateNumber: "",
     issueDate: "",
-    certificateFile: null,
   })
   const [isNcLevelOtherSelected, setIsNcLevelOtherSelected] = useState(false)
   const [error, setError] = useState("")
   const [fieldErrors, setFieldErrors] = useState({})
   const [avatarFileSizeError, setAvatarFileSizeError] = useState("")
   const [projectFileSizeError, setProjectFileSizeError] = useState("")
-  const [certificateFileSizeError, setCertificateFileSizeError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [token, setToken] = useState(null)
   const [graduateId, setGraduateId] = useState(null)
@@ -141,7 +139,6 @@ const PortfolioCreation = () => {
   const navigate = useNavigate()
   const avatarFileInputRef = useRef(null)
   const projectFileInputRef = useRef(null)
-  const certificateFileInputRef = useRef(null)
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080"
   
   // State for managing "Show More" functionality and collapsible sections
@@ -215,11 +212,6 @@ const PortfolioCreation = () => {
       case "website":
         if (trimmedValue && !isValidWebsiteUrl(trimmedValue)) {
           message = "Website must be a valid https URL (e.g., https://www.example.com)."
-        }
-        break
-      case "certificateNumber":
-        if (trimmedValue && !/^\d+$/.test(trimmedValue)) {
-          message = "Certificate number must contain digits only."
         }
         break
       case "referencePhone":
@@ -451,9 +443,9 @@ const PortfolioCreation = () => {
   }
 
   const steps = [
-    { id: 0, name: "Profile Photo", required: false },
+    { id: 0, name: "Profile Photo", required: true },
     { id: 1, name: "Basic Information", required: true },
-    { id: 2, name: "TESDA Information", required: false },
+    { id: 2, name: "TESDA Information", required: true },
     { id: 3, name: "Contact Information", required: true },
     { id: 4, name: "Projects", required: false },
     { id: 5, name: "Certificates", required: false },
@@ -669,39 +661,6 @@ const PortfolioCreation = () => {
     }
     setProjectFileSizeError("")
     setNewProject((prev) => ({ ...prev, projectImageFile: file }))
-    setError("")
-  }
-
-  const handleCertificateFileChange = (e) => {
-    const file = e.target.files[0]
-    // Store previous state before processing new file
-    const previousFile = newCertificate.certificateFile
-    
-    // Reset input value so same file can be selected again
-    if (e.target) {
-      e.target.value = ""
-    }
-    
-    if (file && !file.type.startsWith("image/") && file.type !== "application/pdf") {
-      setError("Please select an image or PDF file for the certificate.")
-      setCertificateFileSizeError("")
-      return
-    }
-    // Check file size (5MB = 5242880 bytes)
-    const maxFileSize = 5 * 1024 * 1024 // 5MB
-    if (file && file.size > maxFileSize) {
-      setCertificateFileSizeError("File size exceeds the maximum allowed size of 5MB.")
-      // Restore previous file instead of clearing
-      setNewCertificate((prev) => ({ ...prev, certificateFile: previousFile }))
-      setError("")
-      // Clear error message after 1.5 seconds
-      setTimeout(() => {
-        setCertificateFileSizeError("")
-      }, 5000)
-      return
-    }
-    setCertificateFileSizeError("")
-    setNewCertificate((prev) => ({ ...prev, certificateFile: file }))
     setError("")
   }
 
@@ -964,9 +923,6 @@ const PortfolioCreation = () => {
     }
     
     setNewCertificate((prev) => ({ ...prev, [name]: value }))
-    if (name === "certificateNumber") {
-      validateField("certificateNumber", value)
-    }
     setError("")
   }
 
@@ -1212,9 +1168,6 @@ const PortfolioCreation = () => {
       setError("Please fill in all required certificate fields.")
       return
     }
-    if (!validateField("certificateNumber", newCertificate.certificateNumber)) {
-      return
-    }
     // Validate issue date is not in the future - return early if invalid (inline error messages will show)
     const today = new Date().toISOString().split('T')[0]
     if (newCertificate.issueDate && newCertificate.issueDate > today) {
@@ -1227,30 +1180,23 @@ const PortfolioCreation = () => {
         courseName: newCertificate.courseName,
         certificateNumber: newCertificate.certificateNumber,
         issueDate: newCertificate.issueDate,
-        certificateFile: newCertificate.certificateFile,
-        preview: newCertificate.certificateFile ? URL.createObjectURL(newCertificate.certificateFile) : null,
       },
     ])
     setNewCertificate({
       courseName: "",
       certificateNumber: "",
       issueDate: "",
-      certificateFile: null,
     })
     setIsAddingCertificate(false)
-    updateFieldError("certificateNumber", "")
-    setCertificateFileSizeError("")
     setError("")
   }
 
   const handleEditCertificate = (certificate) => {
     setEditingCertificateId(certificate.id)
-    setCertificateFileSizeError("") // Clear file size error when editing
     setNewCertificate({
       courseName: certificate.courseName,
       certificateNumber: certificate.certificateNumber,
       issueDate: certificate.issueDate,
-      certificateFile: null, // Don't carry over the file for editing
     })
     setIsAddingCertificate(true)
   }
@@ -1258,9 +1204,6 @@ const PortfolioCreation = () => {
   const handleUpdateCertificate = () => {
     if (!newCertificate.courseName || !newCertificate.certificateNumber || !newCertificate.issueDate) {
       setError("Please fill in all required certificate fields.")
-      return
-    }
-    if (!validateField("certificateNumber", newCertificate.certificateNumber)) {
       return
     }
     // Validate issue date is not in the future - return early if invalid (inline error messages will show)
@@ -1276,10 +1219,6 @@ const PortfolioCreation = () => {
               courseName: newCertificate.courseName,
               certificateNumber: newCertificate.certificateNumber,
               issueDate: newCertificate.issueDate,
-              certificateFile: newCertificate.certificateFile,
-              preview: newCertificate.certificateFile
-                ? URL.createObjectURL(newCertificate.certificateFile)
-                : cert.preview,
             }
           : cert,
       ),
@@ -1288,12 +1227,9 @@ const PortfolioCreation = () => {
       courseName: "",
       certificateNumber: "",
       issueDate: "",
-      certificateFile: null,
     })
     setEditingCertificateId(null)
     setIsAddingCertificate(false)
-    updateFieldError("certificateNumber", "")
-    setCertificateFileSizeError("")
     setError("")
   }
 
@@ -1662,7 +1598,6 @@ const PortfolioCreation = () => {
 
   const handleImageClick = () => avatarFileInputRef.current.click()
   const handleProjectImageClick = () => projectFileInputRef.current.click()
-  const handleCertificateImageClick = () => certificateFileInputRef.current.click()
 
   // Helper function to show notifications
   const showNotification = (type, title, message) => {
@@ -1697,8 +1632,7 @@ const PortfolioCreation = () => {
       newCertificate.courseName?.trim() &&
       newCertificate.certificateNumber?.trim() &&
       newCertificate.issueDate &&
-      newCertificate.issueDate <= today &&
-      !fieldErrors.certificateNumber
+      newCertificate.issueDate <= today
     )
   }
 
@@ -1783,7 +1717,6 @@ const PortfolioCreation = () => {
       issueDate: "",
       certificateFile: null,
     })
-    updateFieldError("certificateNumber", "")
     
     setIsAddingSkill(false)
     setEditingSkillIndex(null)
@@ -1818,7 +1751,13 @@ const PortfolioCreation = () => {
 
   const validateStep = (step, showError = true) => {
     switch (step) {
-      case 0: // Profile Photo - optional
+      case 0: // Profile Photo - required
+        if (!previewAvatar || previewAvatar === "/placeholder.svg") {
+          if (showError) {
+            showNotification("error", "Validation Error", "Please upload a profile photo before proceeding.")
+          }
+          return false
+        }
         return true
       case 1: // Basic Information
         if (!formData.fullName || formData.fullName.trim() === "") {
@@ -1831,6 +1770,24 @@ const PortfolioCreation = () => {
         }
         if (formData.professionalSummary.length > 300) {
           if (showError) showNotification("error", "Validation Error", "Professional summary cannot exceed 300 characters.")
+          return false
+        }
+        return true
+      case 2: // TESDA Information
+        if (!formData.ncLevel || formData.ncLevel.trim() === "") {
+          if (showError) showNotification("error", "Validation Error", "Please select your NC Level. This field is required.")
+          return false
+        }
+        if (!formData.trainingCenter || formData.trainingCenter.trim() === "") {
+          if (showError) showNotification("error", "Validation Error", "Please fill in the Training Center/Institution. This field is required.")
+          return false
+        }
+        if (!formData.scholarshipType || formData.scholarshipType.trim() === "") {
+          if (showError) showNotification("error", "Validation Error", "Please select your Scholarship Type. This field is required.")
+          return false
+        }
+        if (!formData.trainingDuration || formData.trainingDuration.trim() === "") {
+          if (showError) showNotification("error", "Validation Error", "Please fill in the Training Duration. This field is required.")
           return false
         }
         return true
@@ -2052,9 +2009,6 @@ const PortfolioCreation = () => {
         certificateData.append("courseName", cert.courseName)
         certificateData.append("certificateNumber", cert.certificateNumber)
         certificateData.append("issueDate", cert.issueDate)
-        if (cert.certificateFile) {
-          certificateData.append("certificateFile", cert.certificateFile)
-        }
         const certResponse = await axios.post(
           `${BACKEND_URL}/api/certificate/graduate/${graduateId}`,
           certificateData,
@@ -2557,7 +2511,7 @@ const PortfolioCreation = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                    NC Level
+                    NC Level *
                   </Typography>
                   <select
                     value={ncLevelSelectValue}
@@ -2605,7 +2559,7 @@ const PortfolioCreation = () => {
 
                 <div>
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                    Training Center/Institution
+                    Training Center/Institution *
                   </Typography>
                   <Input
                     size="lg"
@@ -2620,22 +2574,31 @@ const PortfolioCreation = () => {
 
                 <div>
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                    Scholarship Type
+                    Scholarship Type *
                   </Typography>
-                  <Input
+                  <Select
                     size="lg"
-                    value={formData.scholarshipType}
-                    onChange={handleInputChange}
+                    value={formData.scholarshipType || ""}
+                    onChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        scholarshipType: value || "",
+                      }))
+                    }
                     name="scholarshipType"
-                    placeholder="e.g., Full Scholarship"
+                    label="Select scholarship type"
                     disabled={isLoading}
-                    className="!border-gray-300 focus:!border-blue-500"
-                  />
+                    className="!border-gray-300 focus:!border-blue-500 bg-white"
+                  >
+                    <Option value="GOVERNMENT_SCHOLAR">Government Scholar</Option>
+                    <Option value="INSTITUTIONAL_SCHOLAR">Institutional Scholar</Option>
+                    <Option value="NON_SCHOLAR">Non Scholar</Option>
+                  </Select>
                 </div>
 
                 <div>
                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                    Training Duration
+                    Training Duration *
                   </Typography>
                   <Input
                     size="lg"
@@ -3093,14 +3056,14 @@ const PortfolioCreation = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Course Name *
+                        Certificate Name *
                       </Typography>
                       <Input
                         size="lg"
                         value={newCertificate.courseName}
                         onChange={handleCertificateInputChange}
                         name="courseName"
-                        placeholder="Enter course name"
+                        placeholder="Enter certificate name"
                         required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
@@ -3108,25 +3071,18 @@ const PortfolioCreation = () => {
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                        Certificate Number *
+                        Issuing Organization *
                       </Typography>
                       <Input
                         size="lg"
                         value={newCertificate.certificateNumber}
                         onChange={handleCertificateInputChange}
                         name="certificateNumber"
-                        placeholder="Enter certificate number"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
+                        placeholder="Enter issuing organization"
                         required
                         disabled={isLoading}
                         className="!border-gray-300 focus:!border-blue-500"
                       />
-                      {fieldErrors.certificateNumber && (
-                        <Typography variant="small" color="red" className="mt-1">
-                          {fieldErrors.certificateNumber}
-                        </Typography>
-                      )}
                     </div>
                     <div>
                       <Typography variant="small" className="mb-2 text-gray-700 font-medium">
@@ -3156,51 +3112,6 @@ const PortfolioCreation = () => {
                         </Typography>
                       )}
                     </div>
-                  </div>
-
-                  <div className="flex flex-col items-center space-y-4 mb-6">
-                    <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                      Certificate File
-                    </Typography>
-                    <Avatar
-                      src={
-                        newCertificate.certificateFile
-                          ? URL.createObjectURL(newCertificate.certificateFile)
-                          : "/placeholder.svg"
-                      }
-                      alt="Certificate Preview"
-                      size="xxl"
-                      className="cursor-pointer ring-4 ring-blue-100 hover:ring-blue-200 transition-all duration-300 hover:scale-105"
-                      onClick={handleCertificateImageClick}
-                    />
-                    <Typography variant="small" className="text-gray-600 text-center">
-                      {newCertificate.certificateFile
-                        ? newCertificate.certificateFile.name
-                        : "Click to upload certificate (Image or PDF)"}
-                    </Typography>
-                    <Button
-                      variant="gradient"
-                      color="blue"
-                      onClick={handleCertificateImageClick}
-                      disabled={isLoading}
-                      className="flex items-center gap-2"
-                    >
-                      <FaPlus className="w-4 h-4" />
-                      Choose File
-                    </Button>
-                    <input
-                      type="file"
-                      id="certificateFile"
-                      accept="image/*,application/pdf"
-                      onChange={handleCertificateFileChange}
-                      ref={certificateFileInputRef}
-                      className="hidden"
-                    />
-                    {certificateFileSizeError && (
-                      <Typography variant="small" color="red" className="mt-2 text-center">
-                        {certificateFileSizeError}
-                      </Typography>
-                    )}
                   </div>
 
                   <div className="flex justify-center gap-4">
@@ -4749,14 +4660,6 @@ const PortfolioCreation = () => {
                                             <Card key={index} className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-300 shadow-md hover:shadow-lg transition-shadow duration-300">
                                               <CardBody className="flex flex-col items-start gap-3">
                                                 <div className="flex items-center gap-3 w-full">
-                                                  {certificate.certificateFile && (
-                                                    <Avatar
-                                                      src={URL.createObjectURL(certificate.certificateFile)}
-                                                      alt="Certificate Preview"
-                                                      size="md"
-                                                      className={`ring-2 ring-gray-400 shadow-md flex-shrink-0`}
-                                                    />
-                                                  )}
                                                   <div className="flex-grow min-w-0">
                                                     <Typography variant="h6" className="text-gray-900 font-bold text-sm truncate" style={{ fontFamily: "'Inter', sans-serif" }}>
                                                       {certificate.courseName}
@@ -5339,14 +5242,6 @@ const PortfolioCreation = () => {
                                           {(showAllCertificates ? certificates : certificates.slice(0, INITIAL_ITEMS_LIMIT)).map((certificate, index) => (
                                             <div key={index} className="pb-3 border-b border-gray-200">
                                               <div className="flex items-center gap-3">
-                                                {certificate.certificateFile && (
-                                                  <Avatar
-                                                    src={URL.createObjectURL(certificate.certificateFile)}
-                                                    alt="Certificate Preview"
-                                                    size="md"
-                                                    className="ring-2 ring-red-300 flex-shrink-0"
-                                                  />
-                                                )}
                                                 <div className="flex-grow min-w-0">
                                                   <Typography variant="h6" className="font-bold text-black mb-1 text-base" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700 }}>
                                                     {certificate.courseName}
