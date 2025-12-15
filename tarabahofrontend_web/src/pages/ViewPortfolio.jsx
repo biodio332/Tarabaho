@@ -6169,7 +6169,7 @@ const fetchPublicDataWithToken = async () => {
                                           {certificate.courseName}
                                         </Typography>
                                         <Typography variant="small" className="text-gray-600">
-                                          Certificate: {certificate.certificateNumber}
+                                          Issuing Organization: {certificate.certificateNumber}
                                         </Typography>
                                         <Typography variant="small" className="text-gray-600">
                                           Issued: {certificate.issueDate ? new Date(certificate.issueDate).toLocaleDateString() : "N/A"}
@@ -6237,7 +6237,7 @@ const fetchPublicDataWithToken = async () => {
                                   </Typography>
                                   {certificate.certificateNumber && (
                                     <Typography variant="small" className="text-gray-700 font-medium mt-1 text-xs">
-                                      #{certificate.certificateNumber}
+                                      {certificate.certificateNumber}
                                     </Typography>
                                   )}
                                   {certificate.issueDate && (
@@ -8914,7 +8914,7 @@ const fetchPublicDataWithToken = async () => {
                               </Typography>
                               {certificate.certificateNumber && (
                                 <Typography variant="small" className="text-black font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
-                                  #{certificate.certificateNumber}
+                                  {certificate.certificateNumber}
                                 </Typography>
                               )}
                               {certificate.issueDate && (
@@ -11829,26 +11829,16 @@ const fetchPublicDataWithToken = async () => {
                       {(isEditMode && editingSections.certificates ? (editingPortfolio?.certificates || []) : (certificates || [])).map((certificate) => (
                         <Card key={certificate.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                           <CardBody className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                            <div className="flex items-center gap-4">
-                              {(certificate.preview || certificate.certificateFilePath) && (
-                                <Avatar
-                                  src={certificate.preview || certificate.certificateFilePath || "/placeholder.svg"}
-                                  alt="Certificate Preview"
-                                  size="lg"
-                                  className={`ring-2 ${designTheme.borderColor}`}
-                                />
-                              )}
-                              <div>
-                                <Typography variant="h6" className="text-gray-800 font-semibold">
-                                  {certificate.courseName}
-                                </Typography>
-                                <Typography variant="small" className="text-gray-600">
-                                  Certificate: {certificate.certificateNumber}
-                                </Typography>
-                                <Typography variant="small" className="text-gray-600">
-                                  Issued: {certificate.issueDate ? new Date(certificate.issueDate).toLocaleDateString() : "N/A"}
-                                </Typography>
-                              </div>
+                            <div>
+                              <Typography variant="h6" className="text-gray-800 font-semibold">
+                                {certificate.courseName}
+                              </Typography>
+                              <Typography variant="small" className="text-gray-600">
+                                Certificate: {certificate.certificateNumber}
+                              </Typography>
+                              <Typography variant="small" className="text-gray-600">
+                                Issued: {certificate.issueDate ? new Date(certificate.issueDate).toLocaleDateString() : "N/A"}
+                              </Typography>
                             </div>
                             {isEditMode && editingSections.certificates && (
                               <div className="flex gap-2">
@@ -11872,16 +11862,6 @@ const fetchPublicDataWithToken = async () => {
                                 </Button>
                               </div>
                             )}
-                            {!isEditMode || !editingSections.certificates ? (
-                              <div
-                                className="cursor-pointer"
-                                onClick={() => handleCertificateClick(certificate)}
-                              >
-                                <Typography variant="small" className={designTheme.textColor}>
-                                  View
-                                </Typography>
-                              </div>
-                            ) : null}
                           </CardBody>
                         </Card>
                       ))}

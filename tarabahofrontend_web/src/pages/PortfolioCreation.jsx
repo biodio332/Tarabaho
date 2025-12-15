@@ -1,4 +1,4 @@
-  "use client"
+﻿  "use client"
 
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
@@ -4662,7 +4662,7 @@ const PortfolioCreation = () => {
                                                     </Typography>
                                                     {certificate.certificateNumber && (
                                                       <Typography variant="small" className="text-gray-700 font-medium mt-1 text-xs">
-                                                        #{certificate.certificateNumber}
+                                                        {certificate.certificateNumber}
                                                       </Typography>
                                                     )}
                                                     {certificate.issueDate && (
@@ -5244,7 +5244,7 @@ const PortfolioCreation = () => {
                                                   </Typography>
                                                   {certificate.certificateNumber && (
                                                     <Typography variant="small" className="text-black font-medium text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
-                                                      #{certificate.certificateNumber}
+                                                      {certificate.certificateNumber}
                                                     </Typography>
                                                   )}
                                                   {certificate.issueDate && (
@@ -5836,7 +5836,7 @@ const PortfolioCreation = () => {
                                                         {certificate.courseName}
                                                       </Typography>
                                                       <Typography variant="small" className="text-gray-600">
-                                                        Certificate #: {certificate.certificateNumber}
+                                                        Issuing Organization: {certificate.certificateNumber}
                                                       </Typography>
                                                       <Typography variant="small" className="text-gray-600">
                                                         Issued: {certificate.issueDate ? new Date(certificate.issueDate).toLocaleDateString() : "N/A"}
