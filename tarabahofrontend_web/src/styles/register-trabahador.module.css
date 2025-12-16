@@ -213,6 +213,18 @@
   position: relative;
 }
 
+.phonePrefix {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #333;
+  font-weight: 500;
+  font-size: 1rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
 .inputIcon {
   position: absolute;
   left: 8px;
@@ -236,9 +248,17 @@
   box-sizing: border-box;
 }
 
+.formGroup input[name="contactNo"] {
+  padding-left: 3.5rem;
+}
+
 .formRightSection .formGroup input {
   border: 1px solid #e0e0e0;
   background-color: #f9f9f9;
+  color: #333;
+}
+
+.formRightSection .phonePrefix {
   color: #333;
 }
 

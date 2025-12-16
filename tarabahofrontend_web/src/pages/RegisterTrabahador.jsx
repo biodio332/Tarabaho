@@ -73,9 +73,16 @@ const RegisterTrabahador = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    let processedValue = value;
+    
+    // For contact number, only allow digits and limit to 10 digits
+    if (name === "contactNo") {
+      processedValue = value.replace(/\D/g, "").slice(0, 10);
+    }
+    
     setFormData({
       ...formData,
-      [name]: value,
+      [name]: processedValue,
     });
 
     if (errors[name]) {
@@ -86,7 +93,7 @@ const RegisterTrabahador = () => {
     }
 
     if (name === "password") {
-      validatePassword(value);
+      validatePassword(processedValue);
     }
   };
 
@@ -141,6 +148,7 @@ const RegisterTrabahador = () => {
     if (!formData.email.trim()) newErrors.email = "Email is required";
     else if (!validateEmail(formData.email)) newErrors.email = "Invalid email format";
     if (!formData.contactNo.trim()) newErrors.contactNo = "Contact number is required";
+    else if (formData.contactNo.length !== 10) newErrors.contactNo = "Contact number must be exactly 10 digits";
     if (!formData.address.trim()) newErrors.address = "Address is required";
 
     if (Object.keys(newErrors).length > 0) {
@@ -437,6 +445,7 @@ const RegisterTrabahador = () => {
                 Contact no. <span className={styles.required}>*</span>
               </label>
               <div className={styles.inputWithIcon}>
+                <div className={styles.phonePrefix}>+63</div>
                 <input
                   type="tel"
                   id="contactNo"
@@ -444,7 +453,10 @@ const RegisterTrabahador = () => {
                   value={formData.contactNo}
                   onChange={handleInputChange}
                   className={errors.contactNo ? styles.error : ""}
-                  placeholder="e.g., +63 912 345 6789"
+                  placeholder="9123456789"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={10}
                 />
               </div>
               {errors.contactNo && <div className={styles.errorText}>{errors.contactNo}</div>}
