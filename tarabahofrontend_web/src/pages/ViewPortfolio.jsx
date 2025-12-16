@@ -6067,7 +6067,7 @@ const fetchPublicDataWithToken = async () => {
                     {(portfolio.ncLevel || (isEditMode && editingSections.tesda)) && (
                       <div>
                         <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          NC Level *
+                          NC Level
                         </Typography>
                         {isEditMode && editingSections.tesda ? (
                           <>
@@ -6116,7 +6116,7 @@ const fetchPublicDataWithToken = async () => {
                     {(portfolio.trainingCenter || (isEditMode && editingSections.tesda)) && (
                       <div>
                         <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          Training Center *
+                          Training Center
                         </Typography>
                         {isEditMode && editingSections.tesda ? (
                           <Input
@@ -6136,26 +6136,19 @@ const fetchPublicDataWithToken = async () => {
                     {(portfolio.scholarshipType || (isEditMode && editingSections.tesda)) && (
                       <div>
                         <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          Scholarship Type *
+                          Scholarship Type
                         </Typography>
                         {isEditMode && editingSections.tesda ? (
-                          <Select
+                          <Input
                             size="md"
                             value={editingPortfolio?.scholarshipType || ""}
-                            onChange={(value) => handleFieldChange("scholarshipType", value || "")}
-                            label="Select scholarship type"
-                            className="!border-gray-300 bg-white"
-                          >
-                            <Option value="GOVERNMENT_SCHOLAR">Government Scholar</Option>
-                            <Option value="INSTITUTIONAL_SCHOLAR">Institutional Scholar</Option>
-                            <Option value="NON_SCHOLAR">Non Scholar</Option>
-                          </Select>
+                            onChange={(e) => handleFieldChange("scholarshipType", e.target.value)}
+                            placeholder="Scholarship Type"
+                            className="!border-gray-300"
+                          />
                         ) : (
                           <Typography variant="small" className="text-gray-900 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-                            {portfolio.scholarshipType === "GOVERNMENT_SCHOLAR" ? "Government Scholar" : 
-                             portfolio.scholarshipType === "INSTITUTIONAL_SCHOLAR" ? "Institutional Scholar" : 
-                             portfolio.scholarshipType === "NON_SCHOLAR" ? "Non Scholar" : 
-                             portfolio.scholarshipType}
+                            {portfolio.scholarshipType}
                           </Typography>
                         )}
                       </div>
@@ -6163,7 +6156,7 @@ const fetchPublicDataWithToken = async () => {
                     {(portfolio.trainingDuration || (isEditMode && editingSections.tesda)) && (
                       <div>
                         <Typography variant="small" className="text-gray-700 font-semibold mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
-                          Training Duration *
+                          Training Duration
                         </Typography>
                         {isEditMode && editingSections.tesda ? (
                           <Input
@@ -6378,7 +6371,7 @@ const fetchPublicDataWithToken = async () => {
                                   value={newCertificate.courseName}
                                   onChange={handleCertificateInputChange}
                                   placeholder="Enter certificate name"
-                                  
+                                  required
                                   className="!border-gray-300 focus:!border-blue-500"
                                 />
                               </div>
@@ -6392,7 +6385,7 @@ const fetchPublicDataWithToken = async () => {
                                   value={newCertificate.certificateNumber}
                                   onChange={handleCertificateInputChange}
                                   placeholder="Enter issuing organization"
-                                  
+                                  required
                                   className="!border-gray-300 focus:!border-blue-500"
                                 />
                               </div>
@@ -6412,7 +6405,7 @@ const fetchPublicDataWithToken = async () => {
                                   const today = new Date()
                                   return today.toISOString().split('T')[0]
                                 })()}
-                                
+                                required
                                 className="!border-gray-300 focus:!border-blue-500"
                               />
                               {certificateSubmitAttempted && !newCertificate.issueDate && (
@@ -6620,7 +6613,7 @@ const fetchPublicDataWithToken = async () => {
                                   value={newExperience.jobTitle}
                                   onChange={handleExperienceInputChange}
                                   placeholder="e.g. Sous Chef"
-                                 
+                                  required
                                   className="!border-gray-300 focus:!border-blue-500"
                                 />
                                 {experienceFormSubmitAttempted && !newExperience.jobTitle && (
@@ -6639,7 +6632,7 @@ const fetchPublicDataWithToken = async () => {
                                   value={newExperience.company}
                                   onChange={handleExperienceInputChange}
                                   placeholder="e.g. Bistro Manila"
-                                  
+                                  required
                                   className="!border-gray-300 focus:!border-blue-500"
                                 />
                                 {experienceFormSubmitAttempted && !newExperience.company && (
@@ -6664,7 +6657,7 @@ const fetchPublicDataWithToken = async () => {
                                       const today = new Date()
                                       return today.toISOString().split('T')[0]
                                     })()}
-                                    
+                                    required
                                     className="!border-gray-300 focus:!border-blue-500"
                                   />
                                   {experienceFormSubmitAttempted && !newExperience.startDate && (
@@ -6683,7 +6676,7 @@ const fetchPublicDataWithToken = async () => {
                                 </div>
                                 <div>
                                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                                    End Date *
+                                    End Date
                                   </Typography>
                                   <Input
                                     type="date"
@@ -6938,7 +6931,7 @@ const fetchPublicDataWithToken = async () => {
                                   value={newProject.title}
                                   onChange={handleProjectInputChange}
                                   placeholder="Enter project title"
-                                  
+                                  required
                                   className="!border-gray-300 focus:!border-blue-500"
                                 />
                               </div>
@@ -6984,7 +6977,7 @@ const fetchPublicDataWithToken = async () => {
                                     const today = new Date()
                                     return today.toISOString().split('T')[0]
                                   })()}
-                                  
+                                  required
                                   className="!border-gray-300 focus:!border-blue-500"
                                 />
                                 {projectSubmitAttempted && !newProject.startDate && (
@@ -7018,7 +7011,7 @@ const fetchPublicDataWithToken = async () => {
                                     yesterday.setDate(yesterday.getDate() - 1)
                                     return yesterday.toISOString().split('T')[0]
                                   })()}
-                                  
+                                  required
                                   className="!border-gray-300 focus:!border-blue-500"
                                 />
                                 {projectSubmitAttempted && !newProject.endDate && (
@@ -7300,7 +7293,7 @@ const fetchPublicDataWithToken = async () => {
                                   value={newAward.title}
                                   onChange={handleAwardInputChange}
                                   placeholder="e.g. Best in Pastry Arts"
-                                  
+                                  required
                                   className="!border-gray-300 focus:!border-blue-500"
                                 />
                                 {awardFormSubmitAttempted && !newAward.title && (
@@ -7311,7 +7304,7 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                                  Issuer *
+                                  Issuer
                                 </Typography>
                                 <Input
                                   size="lg"
@@ -7337,7 +7330,7 @@ const fetchPublicDataWithToken = async () => {
                                     const today = new Date()
                                     return today.toISOString().split('T')[0]
                                   })()}
-                                  
+                                  required
                                   className="!border-gray-300 focus:!border-blue-500"
                                 />
                                 {awardFormSubmitAttempted && !newAward.dateReceived && (
@@ -7530,7 +7523,7 @@ const fetchPublicDataWithToken = async () => {
                                     value={newEducation.courseName}
                                     onChange={handleEducationInputChange}
                                     placeholder="e.g. Advanced Baking Workshop"
-
+                                    required
                                     className="!border-gray-300 focus:!border-blue-500"
                                   />
                                   {educationFormSubmitAttempted && !newEducation.courseName && (
@@ -7541,7 +7534,7 @@ const fetchPublicDataWithToken = async () => {
                                 </div>
                                 <div>
                                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                                    Institution *
+                                    Institution
                                   </Typography>
                                   <Input
                                     size="lg"
@@ -7567,7 +7560,7 @@ const fetchPublicDataWithToken = async () => {
                                       const today = new Date()
                                       return today.toISOString().split('T')[0]
                                     })()}
-                                    
+                                    required
                                     className="!border-gray-300 focus:!border-blue-500"
                                   />
                                   {educationFormSubmitAttempted && !newEducation.completionDate && (
@@ -7757,7 +7750,7 @@ const fetchPublicDataWithToken = async () => {
                                     value={newMembership.organization}
                                     onChange={handleMembershipInputChange}
                                     placeholder="e.g. Philippine Chefs Association"
-                                    
+                                    required
                                     className="!border-gray-300 focus:!border-blue-500"
                                   />
                                   {membershipFormSubmitAttempted && !newMembership.organization && (
@@ -7768,7 +7761,7 @@ const fetchPublicDataWithToken = async () => {
                                 </div>
                                 <div>
                                   <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                                    Membership Type *
+                                    Membership Type
                                   </Typography>
                                   <Input
                                     size="lg"
@@ -7794,7 +7787,7 @@ const fetchPublicDataWithToken = async () => {
                                       const today = new Date()
                                       return today.toISOString().split('T')[0]
                                     })()}
-                                    
+                                    required
                                     className="!border-gray-300 focus:!border-blue-500"
                                   />
                                   {membershipFormSubmitAttempted && !newMembership.startDate && (
@@ -7986,7 +7979,7 @@ const fetchPublicDataWithToken = async () => {
                                   value={newReference.name}
                                   onChange={handleReferenceInputChange}
                                   placeholder="e.g. Maria Cruz"
-                                  
+                                  required
                                   className="!border-gray-300 focus:!border-blue-500"
                                 />
                                 {referenceFormSubmitAttempted && !newReference.name && (
@@ -7997,7 +7990,7 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                                  Relationship / Position *
+                                  Relationship / Position
                                 </Typography>
                                 <Input
                                   size="lg"
@@ -8010,7 +8003,7 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                                  Company *
+                                  Company
                                 </Typography>
                                 <Input
                                   size="lg"
@@ -8032,7 +8025,7 @@ const fetchPublicDataWithToken = async () => {
                                   value={newReference.email}
                                   onChange={handleReferenceInputChange}
                                   placeholder="name@gmail.com"
-                                  
+                                  required
                                   className={`!border-gray-300 focus:!border-blue-500 ${fieldErrors.referenceEmail ? "!border-red-500" : ""}`}
                                 />
                                 {fieldErrors.referenceEmail && (
@@ -8064,7 +8057,7 @@ const fetchPublicDataWithToken = async () => {
                                     inputMode="numeric"
                                     pattern="[0-9]*"
                                     maxLength={10}
-                                    
+                                    required
                                     className={`!border-gray-300 pl-12 focus:!border-blue-500 ${fieldErrors.referencePhone ? "!border-red-500" : ""}`}
                                   />
                                 </div>
@@ -8622,7 +8615,7 @@ const fetchPublicDataWithToken = async () => {
                         {(portfolio?.ncLevel || (isEditMode && editingSections.tesda)) && (
                           <div>
                             <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
-                              NC Level *
+                              NC Level
                             </Typography>
                             {isEditMode && editingSections.tesda ? (
                               <>
@@ -8671,7 +8664,7 @@ const fetchPublicDataWithToken = async () => {
                         {(portfolio?.trainingCenter || (isEditMode && editingSections.tesda)) && (
                           <div>
                             <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
-                              Training Center *
+                              Training Center
                             </Typography>
                             {isEditMode && editingSections.tesda ? (
                               <Input
@@ -8691,26 +8684,19 @@ const fetchPublicDataWithToken = async () => {
                         {(portfolio?.scholarshipType || (isEditMode && editingSections.tesda)) && (
                           <div>
                             <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
-                              Scholarship Type *
+                              Scholarship Type
                             </Typography>
                             {isEditMode && editingSections.tesda ? (
-                              <Select
+                              <Input
                                 size="md"
                                 value={editingPortfolio?.scholarshipType || ""}
-                                onChange={(value) => handleFieldChange("scholarshipType", value || "")}
-                                label="Select scholarship type"
-                                className="!border-gray-300 bg-white"
-                              >
-                                <Option value="GOVERNMENT_SCHOLAR">Government Scholar</Option>
-                                <Option value="INSTITUTIONAL_SCHOLAR">Institutional Scholar</Option>
-                                <Option value="NON_SCHOLAR">Non Scholar</Option>
-                              </Select>
+                                onChange={(e) => handleFieldChange("scholarshipType", e.target.value)}
+                                placeholder="Scholarship Type"
+                                className="!border-gray-300"
+                              />
                             ) : (
                               <Typography variant="small" className="text-black text-sm" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 400 }}>
-                                {portfolio?.scholarshipType === "GOVERNMENT_SCHOLAR" ? "Government Scholar" : 
-                                 portfolio?.scholarshipType === "INSTITUTIONAL_SCHOLAR" ? "Institutional Scholar" : 
-                                 portfolio?.scholarshipType === "NON_SCHOLAR" ? "Non Scholar" : 
-                                 portfolio?.scholarshipType}
+                                {portfolio?.scholarshipType}
                               </Typography>
                             )}
                           </div>
@@ -8718,7 +8704,7 @@ const fetchPublicDataWithToken = async () => {
                         {(portfolio?.trainingDuration || (isEditMode && editingSections.tesda)) && (
                           <div>
                             <Typography variant="small" className="text-black font-medium mb-1 text-sm uppercase" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 600 }}>
-                              Training Duration *
+                              Training Duration
                             </Typography>
                             {isEditMode && editingSections.tesda ? (
                               <Input
@@ -8842,7 +8828,7 @@ const fetchPublicDataWithToken = async () => {
                             value={newSkill.name}
                             onChange={handleSkillInputChange}
                             placeholder="e.g. Latte Art"
-                            
+                            required
                             className="!border-gray-300 focus:!border-red-500"
                           />
                           {skillFormSubmitAttempted && !newSkill.name && (
@@ -9062,7 +9048,7 @@ const fetchPublicDataWithToken = async () => {
                                 value={newCertificate.courseName}
                                 onChange={handleCertificateInputChange}
                                 placeholder="Enter certificate name"
-                                
+                                required
                                 className="!border-gray-300 focus:!border-red-500"
                               />
                             </div>
@@ -9076,7 +9062,7 @@ const fetchPublicDataWithToken = async () => {
                                 value={newCertificate.certificateNumber}
                                 onChange={handleCertificateInputChange}
                                 placeholder="Enter issuing organization"
-                                
+                                required
                                 className="!border-gray-300 focus:!border-red-500"
                               />
                             </div>
@@ -9096,7 +9082,7 @@ const fetchPublicDataWithToken = async () => {
                                 const today = new Date()
                                 return today.toISOString().split('T')[0]
                               })()}
-                              
+                              required
                               className="!border-gray-300 focus:!border-red-500"
                             />
                             {certificateSubmitAttempted && !newCertificate.issueDate && (
@@ -9326,7 +9312,7 @@ const fetchPublicDataWithToken = async () => {
                                 value={newExperience.jobTitle}
                                 onChange={handleExperienceInputChange}
                                 placeholder="e.g. Barista"
-                               
+                                required
                                 className="!border-gray-300 focus:!border-red-500"
                               />
                               {experienceFormSubmitAttempted && !newExperience.jobTitle && (
@@ -9345,7 +9331,7 @@ const fetchPublicDataWithToken = async () => {
                                 value={newExperience.company}
                                 onChange={handleExperienceInputChange}
                                 placeholder="e.g. Brewed Cafe"
-                                
+                                required
                                 className="!border-gray-300 focus:!border-red-500"
                               />
                               {experienceFormSubmitAttempted && !newExperience.company && (
@@ -9370,7 +9356,7 @@ const fetchPublicDataWithToken = async () => {
                                     const today = new Date()
                                     return today.toISOString().split('T')[0]
                                   })()}
-                                  
+                                  required
                                   className="!border-gray-300 focus:!border-red-500"
                                 />
                                 {experienceFormSubmitAttempted && !newExperience.startDate && (
@@ -9389,7 +9375,7 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                  End Date *
+                                  End Date
                                 </Typography>
                                 <Input
                                   type="date"
@@ -9680,7 +9666,7 @@ const fetchPublicDataWithToken = async () => {
                                 value={newProject.title}
                                 onChange={handleProjectInputChange}
                                 placeholder="Enter project title"
-                                
+                                required
                                 className="!border-gray-300 focus:!border-red-500"
                               />
                             </div>
@@ -9726,7 +9712,7 @@ const fetchPublicDataWithToken = async () => {
                                   const today = new Date()
                                   return today.toISOString().split('T')[0]
                                 })()}
-                                
+                                required
                                 className="!border-gray-300 focus:!border-red-500"
                               />
                               {projectSubmitAttempted && !newProject.startDate && (
@@ -9760,7 +9746,7 @@ const fetchPublicDataWithToken = async () => {
                                   yesterday.setDate(yesterday.getDate() - 1)
                                   return yesterday.toISOString().split('T')[0]
                                 })()}
-                                
+                                required
                                 className="!border-gray-300 focus:!border-red-500"
                               />
                               {projectSubmitAttempted && !newProject.endDate && (
@@ -10060,7 +10046,7 @@ const fetchPublicDataWithToken = async () => {
                                 value={newAward.title}
                                 onChange={handleAwardInputChange}
                                 placeholder="e.g. Employee of the Month"
-                                
+                                required
                                 className="!border-gray-300 focus:!border-red-500"
                               />
                               {awardFormSubmitAttempted && !newAward.title && (
@@ -10102,7 +10088,7 @@ const fetchPublicDataWithToken = async () => {
                                   const today = new Date()
                                   return today.toISOString().split('T')[0]
                                 })()}
-                                
+                                required
                                 className="!border-gray-300 focus:!border-red-500"
                               />
                               {awardFormSubmitAttempted && !newAward.dateReceived && (
@@ -10321,7 +10307,7 @@ const fetchPublicDataWithToken = async () => {
                                   value={newEducation.courseName}
                                   onChange={handleEducationInputChange}
                                   placeholder="e.g. Wine Appreciation"
-                                  
+                                  required
                                   className="!border-gray-300 focus:!border-red-500"
                                 />
                                 {educationFormSubmitAttempted && !newEducation.courseName && (
@@ -10363,7 +10349,7 @@ const fetchPublicDataWithToken = async () => {
                                     const today = new Date()
                                     return today.toISOString().split('T')[0]
                                   })()}
-                                  
+                                  required
                                   className="!border-gray-300 focus:!border-red-500"
                                 />
                                 {educationFormSubmitAttempted && !newEducation.completionDate && (
@@ -10579,7 +10565,7 @@ const fetchPublicDataWithToken = async () => {
                                   value={newMembership.organization}
                                   onChange={handleMembershipInputChange}
                                   placeholder="e.g. National Barista Guild"
-                                  
+                                  required
                                   className="!border-gray-300 focus:!border-red-500"
                                 />
                                 {membershipFormSubmitAttempted && !newMembership.organization && (
@@ -10621,7 +10607,7 @@ const fetchPublicDataWithToken = async () => {
                                     const today = new Date()
                                     return today.toISOString().split('T')[0]
                                   })()}
-                                  
+                                  required
                                   className="!border-gray-300 focus:!border-red-500"
                                 />
                                 {membershipFormSubmitAttempted && !newMembership.startDate && (
@@ -10847,7 +10833,7 @@ const fetchPublicDataWithToken = async () => {
                                 value={newReference.name}
                                 onChange={handleReferenceInputChange}
                                 placeholder="e.g. Juan Dela Cruz"
-                                
+                                required
                                 className="!border-gray-300 focus:!border-red-500"
                               />
                               {referenceFormSubmitAttempted && !newReference.name && (
@@ -10903,7 +10889,7 @@ const fetchPublicDataWithToken = async () => {
                                 value={newReference.email}
                                 onChange={handleReferenceInputChange}
                                 placeholder="name@gmail.com"
-                                
+                                required
                                 className={`!border-gray-300 focus:!border-red-500 ${fieldErrors.referenceEmail ? "!border-red-500" : ""}`}
                               />
                               {fieldErrors.referenceEmail && (
@@ -10935,7 +10921,7 @@ const fetchPublicDataWithToken = async () => {
                                   inputMode="numeric"
                                   pattern="[0-9]*"
                                   maxLength={10}
-                                  
+                                  required
                                   className={`!border-gray-300 pl-12 focus:!border-red-500 ${fieldErrors.referencePhone ? "!border-red-500" : ""}`}
                                 />
                               </div>
@@ -11710,7 +11696,7 @@ const fetchPublicDataWithToken = async () => {
                         value={newSkill.name}
                         onChange={handleSkillInputChange}
                         placeholder="e.g. Food Presentation"
-                        
+                        required
                         className="!border-gray-300 focus:!border-blue-500"
                       />
                       {skillFormSubmitAttempted && !newSkill.name && (
@@ -11911,7 +11897,7 @@ const fetchPublicDataWithToken = async () => {
                 {(portfolio.ncLevel || (isEditMode && editingSections.tesda)) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
-                      NC Level *
+                      NC Level
                     </Typography>
                     {isEditMode && editingSections.tesda ? (
                       <>
@@ -11965,7 +11951,7 @@ const fetchPublicDataWithToken = async () => {
                 {(portfolio.trainingCenter || (isEditMode && editingSections.tesda)) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
-                      Training Center *
+                      Training Center
                     </Typography>
                     {isEditMode && editingSections.tesda ? (
                       <>
@@ -11992,21 +11978,17 @@ const fetchPublicDataWithToken = async () => {
                 {(portfolio.scholarshipType || (isEditMode && editingSections.tesda)) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
-                      Scholarship Type *
+                      Scholarship Type
                     </Typography>
                     {isEditMode && editingSections.tesda ? (
                       <>
-                        <Select
+                        <Input
                           size="md"
                           value={editingPortfolio?.scholarshipType || ""}
-                          onChange={(value) => handleFieldChange("scholarshipType", value || "")}
-                          label="Select scholarship type"
-                          className={`!border-gray-300 bg-white ${fieldErrors.scholarshipType ? "!border-red-500" : ""}`}
-                        >
-                          <Option value="GOVERNMENT_SCHOLAR">Government Scholar</Option>
-                          <Option value="INSTITUTIONAL_SCHOLAR">Institutional Scholar</Option>
-                          <Option value="NON_SCHOLAR">Non Scholar</Option>
-                        </Select>
+                          onChange={(e) => handleFieldChange("scholarshipType", e.target.value)}
+                          placeholder="Scholarship Type"
+                          className={`!border-gray-300 ${fieldErrors.scholarshipType ? "!border-red-500" : ""}`}
+                        />
                         {fieldErrors.scholarshipType && (
                           <Typography variant="small" color="red" className="mt-1">
                             {fieldErrors.scholarshipType}
@@ -12015,10 +11997,7 @@ const fetchPublicDataWithToken = async () => {
                       </>
                     ) : (
                       <Typography variant="small" className="text-gray-800">
-                        {portfolio.scholarshipType === "GOVERNMENT_SCHOLAR" ? "Government Scholar" : 
-                         portfolio.scholarshipType === "INSTITUTIONAL_SCHOLAR" ? "Institutional Scholar" : 
-                         portfolio.scholarshipType === "NON_SCHOLAR" ? "Non Scholar" : 
-                         portfolio.scholarshipType}
+                        {portfolio.scholarshipType}
                       </Typography>
                     )}
                   </div>
@@ -12026,7 +12005,7 @@ const fetchPublicDataWithToken = async () => {
                 {(portfolio.trainingDuration || (isEditMode && editingSections.tesda)) && (
                   <div>
                     <Typography variant="small" color="gray" className="font-medium mb-1">
-                      Training Duration *
+                      Training Duration
                     </Typography>
                     {isEditMode && editingSections.tesda ? (
                       <>
@@ -12162,7 +12141,7 @@ const fetchPublicDataWithToken = async () => {
                         value={newCertificate.courseName}
                         onChange={handleCertificateInputChange}
                         placeholder="Enter course name"
-                        
+                        required
                         className="!border-gray-300 focus:!border-blue-500"
                       />
                     </div>
@@ -12176,7 +12155,7 @@ const fetchPublicDataWithToken = async () => {
                         value={newCertificate.certificateNumber}
                         onChange={handleCertificateInputChange}
                         placeholder="Enter issuing organization"
-                        
+                        required
                         className="!border-gray-300 focus:!border-blue-500"
                       />
                     </div>
@@ -12196,7 +12175,7 @@ const fetchPublicDataWithToken = async () => {
                         const today = new Date()
                         return today.toISOString().split('T')[0]
                       })()}
-                      
+                      required
                       className="!border-gray-300 focus:!border-blue-500"
                     />
                     {certificateSubmitAttempted && !newCertificate.issueDate && (
@@ -12366,7 +12345,7 @@ const fetchPublicDataWithToken = async () => {
                               value={newExperience.jobTitle}
                               onChange={handleExperienceInputChange}
                               placeholder="e.g. Sous Chef"
-                              
+                              required
                               className="!border-gray-300 focus:!border-blue-500"
                             />
                             {experienceFormSubmitAttempted && !newExperience.jobTitle && (
@@ -12385,7 +12364,7 @@ const fetchPublicDataWithToken = async () => {
                               value={newExperience.company}
                               onChange={handleExperienceInputChange}
                               placeholder="e.g. Bistro Manila"
-                              
+                              required
                               className="!border-gray-300 focus:!border-blue-500"
                             />
                             {experienceFormSubmitAttempted && !newExperience.company && (
@@ -12410,7 +12389,7 @@ const fetchPublicDataWithToken = async () => {
                                   const today = new Date()
                                   return today.toISOString().split('T')[0]
                                 })()}
-                                
+                                required
                                 className="!border-gray-300 focus:!border-blue-500"
                               />
                               {experienceFormSubmitAttempted && !newExperience.startDate && (
@@ -12429,7 +12408,7 @@ const fetchPublicDataWithToken = async () => {
                             </div>
                             <div>
                               <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                                End Date *
+                                End Date
                               </Typography>
                               <Input
                                 type="date"
@@ -12685,7 +12664,7 @@ const fetchPublicDataWithToken = async () => {
                         value={newProject.title}
                         onChange={handleProjectInputChange}
                         placeholder="Enter project title"
-                        
+                        required
                         className="!border-gray-300 focus:!border-blue-500"
                       />
                     </div>
@@ -12731,7 +12710,7 @@ const fetchPublicDataWithToken = async () => {
                           const today = new Date()
                           return today.toISOString().split('T')[0]
                         })()}
-                        
+                        required
                         className="!border-gray-300 focus:!border-blue-500"
                       />
                       {projectSubmitAttempted && !newProject.startDate && (
@@ -12765,7 +12744,7 @@ const fetchPublicDataWithToken = async () => {
                           yesterday.setDate(yesterday.getDate() - 1)
                           return yesterday.toISOString().split('T')[0]
                         })()}
-                        
+                        required
                         className="!border-gray-300 focus:!border-blue-500"
                       />
                       {projectSubmitAttempted && !newProject.endDate && (
@@ -13016,7 +12995,7 @@ const fetchPublicDataWithToken = async () => {
                             value={newAward.title}
                             onChange={handleAwardInputChange}
                             placeholder="e.g. Best in Pastry Arts"
-                            
+                            required
                             className="!border-gray-300 focus:!border-blue-500"
                           />
                           {awardFormSubmitAttempted && !newAward.title && (
@@ -13027,7 +13006,7 @@ const fetchPublicDataWithToken = async () => {
                         </div>
                         <div>
                           <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                            Issuer *
+                            Issuer
                           </Typography>
                           <Input
                             size="lg"
@@ -13053,7 +13032,7 @@ const fetchPublicDataWithToken = async () => {
                               const today = new Date()
                               return today.toISOString().split('T')[0]
                             })()}
-                            
+                            required
                             className="!border-gray-300 focus:!border-blue-500"
                           />
                           {awardFormSubmitAttempted && !newAward.dateReceived && (
@@ -13248,7 +13227,7 @@ const fetchPublicDataWithToken = async () => {
                               value={newEducation.courseName}
                               onChange={handleEducationInputChange}
                               placeholder="e.g. Advanced Baking Workshop"
-                              
+                              required
                               className="!border-gray-300 focus:!border-blue-500"
                             />
                             {educationFormSubmitAttempted && !newEducation.courseName && (
@@ -13259,7 +13238,7 @@ const fetchPublicDataWithToken = async () => {
                           </div>
                           <div>
                             <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                              Institution *
+                              Institution
                             </Typography>
                             <Input
                               size="lg"
@@ -13285,7 +13264,7 @@ const fetchPublicDataWithToken = async () => {
                                 const today = new Date()
                                 return today.toISOString().split('T')[0]
                               })()}
-                              
+                              required
                               className="!border-gray-300 focus:!border-blue-500"
                             />
                             {educationFormSubmitAttempted && !newEducation.completionDate && (
@@ -13476,7 +13455,7 @@ const fetchPublicDataWithToken = async () => {
                               value={newMembership.organization}
                               onChange={handleMembershipInputChange}
                               placeholder="e.g. Philippine Chefs Association"
-                              
+                              required
                               className="!border-gray-300 focus:!border-blue-500"
                             />
                             {membershipFormSubmitAttempted && !newMembership.organization && (
@@ -13487,7 +13466,7 @@ const fetchPublicDataWithToken = async () => {
                           </div>
                           <div>
                             <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                              Membership Type *
+                              Membership Type
                             </Typography>
                             <Input
                               size="lg"
@@ -13513,7 +13492,7 @@ const fetchPublicDataWithToken = async () => {
                                 const today = new Date()
                                 return today.toISOString().split('T')[0]
                               })()}
-                              
+                              required
                               className="!border-gray-300 focus:!border-blue-500"
                             />
                             {membershipFormSubmitAttempted && !newMembership.startDate && (
@@ -13706,7 +13685,7 @@ const fetchPublicDataWithToken = async () => {
                             value={newReference.name}
                             onChange={handleReferenceInputChange}
                             placeholder="e.g. Maria Cruz"
-                         
+                            required
                             className="!border-gray-300 focus:!border-blue-500"
                           />
                           {referenceFormSubmitAttempted && !newReference.name && (
@@ -13784,7 +13763,7 @@ const fetchPublicDataWithToken = async () => {
                               inputMode="numeric"
                               pattern="[0-9]*"
                               maxLength={10}
-                              
+                              required
                               className={`!border-gray-300 pl-12 focus:!border-blue-500 ${fieldErrors.referencePhone ? "!border-red-500" : ""}`}
                             />
                           </div>
