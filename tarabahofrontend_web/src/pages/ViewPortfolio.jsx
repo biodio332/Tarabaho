@@ -2390,6 +2390,8 @@ const fetchPublicDataWithToken = async () => {
     return (
       newAward.title &&
       newAward.title.trim() !== "" &&
+      newAward.issuer &&
+      newAward.issuer.trim() !== "" &&
       newAward.dateReceived &&
       newAward.dateReceived.trim() !== ""
     )
@@ -2433,7 +2435,7 @@ const fetchPublicDataWithToken = async () => {
   const handleAddAward = () => {
     setAwardFormSubmitAttempted(true)
     if (!isAwardFormValid()) {
-      setSaveError("Please fill in all required award fields (Title, Date Received).")
+      setSaveError("Please fill in all required award fields (Title, Issuer, Date Received).")
       return
     }
     const dateValidation = validateAwardDate(newAward.dateReceived)
@@ -2481,7 +2483,7 @@ const fetchPublicDataWithToken = async () => {
   const handleUpdateAward = () => {
     setAwardFormSubmitAttempted(true)
     if (!isAwardFormValid()) {
-      setSaveError("Please fill in all required award fields (Title, Date Received).")
+      setSaveError("Please fill in all required award fields (Title, Issuer, Date Received).")
       return
     }
     const dateValidation = validateAwardDate(newAward.dateReceived)
@@ -2618,6 +2620,8 @@ const fetchPublicDataWithToken = async () => {
     return (
       newEducation.courseName &&
       newEducation.courseName.trim() !== "" &&
+      newEducation.institution &&
+      newEducation.institution.trim() !== "" &&
       newEducation.completionDate &&
       newEducation.completionDate.trim() !== ""
     )
@@ -2661,7 +2665,7 @@ const fetchPublicDataWithToken = async () => {
   const handleAddEducation = () => {
     setEducationFormSubmitAttempted(true)
     if (!isEducationFormValid()) {
-      setSaveError("Please fill in all required education fields (Course Name, Completion Date).")
+      setSaveError("Please fill in all required education fields (Course Name, Institution, Completion Date).")
       return
     }
     const dateValidation = validateEducationDate(newEducation.completionDate)
@@ -2709,7 +2713,7 @@ const fetchPublicDataWithToken = async () => {
   const handleUpdateEducation = () => {
     setEducationFormSubmitAttempted(true)
     if (!isEducationFormValid()) {
-      setSaveError("Please fill in all required education fields (Course Name, Completion Date).")
+      setSaveError("Please fill in all required education fields (Course Name, Institution, Completion Date).")
       return
     }
     const dateValidation = validateEducationDate(newEducation.completionDate)
@@ -2746,6 +2750,8 @@ const fetchPublicDataWithToken = async () => {
     return (
       newMembership.organization &&
       newMembership.organization.trim() !== "" &&
+      newMembership.membershipType &&
+      newMembership.membershipType.trim() !== "" &&
       newMembership.startDate &&
       newMembership.startDate.trim() !== ""
     )
@@ -2789,7 +2795,7 @@ const fetchPublicDataWithToken = async () => {
   const handleAddMembership = () => {
     setMembershipFormSubmitAttempted(true)
     if (!isMembershipFormValid()) {
-      setSaveError("Please fill in all required membership fields (Organization, Start Date).")
+      setSaveError("Please fill in all required membership fields (Organization, Membership Type, Start Date).")
       return
     }
     const dateValidation = validateMembershipDate(newMembership.startDate)
@@ -2837,7 +2843,7 @@ const fetchPublicDataWithToken = async () => {
   const handleUpdateMembership = () => {
     setMembershipFormSubmitAttempted(true)
     if (!isMembershipFormValid()) {
-      setSaveError("Please fill in all required membership fields (Organization, Start Date).")
+      setSaveError("Please fill in all required membership fields (Organization, Membership Type, Start Date).")
       return
     }
     const dateValidation = validateMembershipDate(newMembership.startDate)
@@ -2874,6 +2880,10 @@ const fetchPublicDataWithToken = async () => {
     return (
       newReference.name &&
       newReference.name.trim() !== "" &&
+      newReference.relationship &&
+      newReference.relationship.trim() !== "" &&
+      newReference.company &&
+      newReference.company.trim() !== "" &&
       newReference.email &&
       newReference.email.trim() !== "" &&
       (newReference.phone && newReference.phone.trim() !== "")
@@ -2914,7 +2924,7 @@ const fetchPublicDataWithToken = async () => {
   const handleAddReference = () => {
     setReferenceFormSubmitAttempted(true)
     if (!isReferenceFormValid()) {
-      setSaveError("Please fill in all required reference fields (Name, Email, Phone).")
+      setSaveError("Please fill in all required reference fields (Name, Relationship/Position, Company, Email, Phone).")
       return
     }
     // Check for validation errors
@@ -2965,7 +2975,7 @@ const fetchPublicDataWithToken = async () => {
   const handleUpdateReference = () => {
     setReferenceFormSubmitAttempted(true)
     if (!isReferenceFormValid()) {
-      setSaveError("Please fill in all required reference fields (Name, Email, Phone).")
+      setSaveError("Please fill in all required reference fields (Name, Relationship/Position, Company, Email, Phone).")
       return
     }
     // Check for validation errors
@@ -4559,7 +4569,21 @@ const fetchPublicDataWithToken = async () => {
               show: true,
               type: "error",
               title: "Validation Error",
-              message: "Please fill in all required award fields: Award Title and Date Received are required.",
+              message: "Please fill in all required award fields: Award Title, Issuer, and Date Received are required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          if (!award.issuer || award.issuer.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required award fields: Award Title, Issuer, and Date Received are required.",
               link: "",
             })
             setTimeout(() => {
@@ -4573,7 +4597,7 @@ const fetchPublicDataWithToken = async () => {
               show: true,
               type: "error",
               title: "Validation Error",
-              message: "Please fill in all required award fields: Award Title and Date Received are required.",
+              message: "Please fill in all required award fields: Award Title, Issuer, and Date Received are required.",
               link: "",
             })
             setTimeout(() => {
@@ -4600,11 +4624,11 @@ const fetchPublicDataWithToken = async () => {
           }
         }
         payload.awardsRecognitions = editingPortfolio.awardsRecognitions
-          ?.filter((award) => award.title && award.title.trim() !== "" && award.dateReceived && award.dateReceived.trim() !== "") // Filter out entries missing required fields
+          ?.filter((award) => award.title && award.title.trim() !== "" && award.issuer && award.issuer.trim() !== "" && award.dateReceived && award.dateReceived.trim() !== "") // Filter out entries missing required fields
           .map((award) => ({
             id: typeof award.id === "string" && award.id.includes("new-") ? null : award.id,
             title: award.title.trim(),
-            issuer: award.issuer && award.issuer.trim() !== "" ? award.issuer.trim() : null,
+            issuer: award.issuer.trim(),
             dateReceived: award.dateReceived && award.dateReceived.trim() !== "" ? award.dateReceived : null,
           })) || []
       } else if (section === "education") {
@@ -4637,7 +4661,21 @@ const fetchPublicDataWithToken = async () => {
               show: true,
               type: "error",
               title: "Validation Error",
-              message: "Please fill in all required education fields: Course Name and Completion Date are required.",
+              message: "Please fill in all required education fields: Course Name, Institution, and Completion Date are required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          if (!edu.institution || edu.institution.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required education fields: Course Name, Institution, and Completion Date are required.",
               link: "",
             })
             setTimeout(() => {
@@ -4651,7 +4689,7 @@ const fetchPublicDataWithToken = async () => {
               show: true,
               type: "error",
               title: "Validation Error",
-              message: "Please fill in all required education fields: Course Name and Completion Date are required.",
+              message: "Please fill in all required education fields: Course Name, Institution, and Completion Date are required.",
               link: "",
             })
             setTimeout(() => {
@@ -4678,7 +4716,7 @@ const fetchPublicDataWithToken = async () => {
           }
         }
         payload.continuingEducations = editingPortfolio.continuingEducations
-          ?.filter((edu) => edu.courseName && edu.courseName.trim() !== "" && edu.completionDate && edu.completionDate.trim() !== "") // Filter out entries missing required fields
+          ?.filter((edu) => edu.courseName && edu.courseName.trim() !== "" && edu.institution && edu.institution.trim() !== "" && edu.completionDate && edu.completionDate.trim() !== "") // Filter out entries missing required fields
           .map((edu) => {
             const completionDate = edu.completionDate 
               ? (typeof edu.completionDate === 'string' && edu.completionDate.trim() !== "" ? edu.completionDate.trim() : null)
@@ -4686,7 +4724,7 @@ const fetchPublicDataWithToken = async () => {
             return {
               id: typeof edu.id === "string" && edu.id.includes("new-") ? null : edu.id,
               courseName: edu.courseName.trim(),
-              institution: edu.institution && typeof edu.institution === 'string' && edu.institution.trim() !== "" ? edu.institution.trim() : null,
+              institution: edu.institution.trim(),
               completionDate: completionDate,
             }
           }) || []
@@ -4720,7 +4758,21 @@ const fetchPublicDataWithToken = async () => {
               show: true,
               type: "error",
               title: "Validation Error",
-              message: "Please fill in all required membership fields: Organization and Start Date are required.",
+              message: "Please fill in all required membership fields: Organization, Membership Type, and Start Date are required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          if (!mem.membershipType || mem.membershipType.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required membership fields: Organization, Membership Type, and Start Date are required.",
               link: "",
             })
             setTimeout(() => {
@@ -4734,7 +4786,7 @@ const fetchPublicDataWithToken = async () => {
               show: true,
               type: "error",
               title: "Validation Error",
-              message: "Please fill in all required membership fields: Organization and Start Date are required.",
+              message: "Please fill in all required membership fields: Organization, Membership Type, and Start Date are required.",
               link: "",
             })
             setTimeout(() => {
@@ -4761,11 +4813,11 @@ const fetchPublicDataWithToken = async () => {
           }
         }
         payload.professionalMemberships = editingPortfolio.professionalMemberships
-          ?.filter((mem) => mem.organization && mem.organization.trim() !== "" && mem.startDate && mem.startDate.trim() !== "") // Filter out entries missing required fields
+          ?.filter((mem) => mem.organization && mem.organization.trim() !== "" && mem.membershipType && mem.membershipType.trim() !== "" && mem.startDate && mem.startDate.trim() !== "") // Filter out entries missing required fields
           .map((mem) => ({
             id: typeof mem.id === "string" && mem.id.includes("new-") ? null : mem.id,
             organization: mem.organization.trim(),
-            membershipType: mem.membershipType && mem.membershipType.trim() !== "" ? mem.membershipType.trim() : null,
+            membershipType: mem.membershipType.trim(),
             startDate: mem.startDate && mem.startDate.trim() !== "" ? mem.startDate : null,
           })) || []
       } else if (section === "references") {
@@ -4794,7 +4846,35 @@ const fetchPublicDataWithToken = async () => {
               show: true,
               type: "error",
               title: "Validation Error",
-              message: "Please fill in all required reference fields: Name, Email, and Phone are required.",
+              message: "Please fill in all required reference fields: Name, Relationship/Position, Company, Email, and Phone are required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          if (!ref.relationship || ref.relationship.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required reference fields: Name, Relationship/Position, Company, Email, and Phone are required.",
+              link: "",
+            })
+            setTimeout(() => {
+              setNotification(prev => ({ ...prev, show: false }))
+            }, 5000)
+            setIsSaving(false)
+            return
+          }
+          if (!ref.company || ref.company.trim() === "") {
+            setNotification({
+              show: true,
+              type: "error",
+              title: "Validation Error",
+              message: "Please fill in all required reference fields: Name, Relationship/Position, Company, Email, and Phone are required.",
               link: "",
             })
             setTimeout(() => {
@@ -4808,7 +4888,7 @@ const fetchPublicDataWithToken = async () => {
               show: true,
               type: "error",
               title: "Validation Error",
-              message: "Please fill in all required reference fields: Name, Email, and Phone are required.",
+              message: "Please fill in all required reference fields: Name, Relationship/Position, Company, Email, and Phone are required.",
               link: "",
             })
             setTimeout(() => {
@@ -4857,9 +4937,11 @@ const fetchPublicDataWithToken = async () => {
           ?.filter((ref) => {
             // Filter out entries missing required fields
             const hasName = ref.name && ref.name.trim() !== ""
+            const hasRelationship = ref.relationship && ref.relationship.trim() !== ""
+            const hasCompany = ref.company && ref.company.trim() !== ""
             const hasEmail = ref.email && ref.email.trim() !== ""
             const hasPhone = (ref.phone && ref.phone.trim() !== "") || (ref.contact && ref.contact.trim() !== "")
-            return hasName && hasEmail && hasPhone
+            return hasName && hasRelationship && hasCompany && hasEmail && hasPhone
           })
           .map((ref) => {
           // Get relationship value - check both relationship and position fields
@@ -4885,8 +4967,7 @@ const fetchPublicDataWithToken = async () => {
             phoneValue = phoneValue.startsWith("+63") ? phoneValue : `+63${phoneValue}`
           }
 
-          const companyValue =
-            ref.company && typeof ref.company === "string" && ref.company.trim() !== "" ? ref.company.trim() : null
+          const companyValue = ref.company && typeof ref.company === "string" && ref.company.trim() !== "" ? ref.company.trim() : null
 
             return {
             id: typeof ref.id === "string" && ref.id.includes("new-") ? null : ref.id,
@@ -9976,7 +10057,7 @@ const fetchPublicDataWithToken = async () => {
                             </div>
                             <div>
                               <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                Issuer
+                                Issuer *
                               </Typography>
                               <Input
                                 size="lg"
@@ -9984,8 +10065,13 @@ const fetchPublicDataWithToken = async () => {
                                 value={newAward.issuer}
                                 onChange={handleAwardInputChange}
                                 placeholder="e.g. Cafe Royale"
-                                className="!border-gray-300 focus:!border-red-500"
+                                className={`!border-gray-300 focus:!border-red-500 ${awardFormSubmitAttempted && !newAward.issuer ? "!border-red-500" : ""}`}
                               />
+                              {awardFormSubmitAttempted && !newAward.issuer && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Please fill in the issuer.
+                                </Typography>
+                              )}
                             </div>
                             <div>
                               <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
@@ -10232,7 +10318,7 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                  Institution
+                                  Institution *
                                 </Typography>
                                 <Input
                                   size="lg"
@@ -10240,8 +10326,13 @@ const fetchPublicDataWithToken = async () => {
                                   value={newEducation.institution}
                                   onChange={handleEducationInputChange}
                                   placeholder="e.g. TESDA Training Center"
-                                  className="!border-gray-300 focus:!border-red-500"
+                                  className={`!border-gray-300 focus:!border-red-500 ${educationFormSubmitAttempted && !newEducation.institution ? "!border-red-500" : ""}`}
                                 />
+                                {educationFormSubmitAttempted && !newEducation.institution && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Please fill in the institution.
+                                  </Typography>
+                                )}
                               </div>
                               <div>
                                 <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
@@ -10485,7 +10576,7 @@ const fetchPublicDataWithToken = async () => {
                               </div>
                               <div>
                                 <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                  Membership Type
+                                  Membership Type *
                                 </Typography>
                                 <Input
                                   size="lg"
@@ -10493,8 +10584,13 @@ const fetchPublicDataWithToken = async () => {
                                   value={newMembership.membershipType}
                                   onChange={handleMembershipInputChange}
                                   placeholder="e.g. Member / Officer"
-                                  className="!border-gray-300 focus:!border-red-500"
+                                  className={`!border-gray-300 focus:!border-red-500 ${membershipFormSubmitAttempted && !newMembership.membershipType ? "!border-red-500" : ""}`}
                                 />
+                                {membershipFormSubmitAttempted && !newMembership.membershipType && (
+                                  <Typography variant="small" color="red" className="mt-1">
+                                    Please fill in the membership type.
+                                  </Typography>
+                                )}
                               </div>
                               <div>
                                 <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
@@ -10748,7 +10844,7 @@ const fetchPublicDataWithToken = async () => {
                             </div>
                             <div>
                               <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                Position / Relationship
+                                Position / Relationship *
                               </Typography>
                               <Input
                                 size="lg"
@@ -10756,12 +10852,17 @@ const fetchPublicDataWithToken = async () => {
                                 value={newReference.relationship}
                                 onChange={handleReferenceInputChange}
                                 placeholder="e.g. Training Supervisor"
-                                className="!border-gray-300 focus:!border-red-500"
+                                className={`!border-gray-300 focus:!border-red-500 ${referenceFormSubmitAttempted && !newReference.relationship ? "!border-red-500" : ""}`}
                               />
+                              {referenceFormSubmitAttempted && !newReference.relationship && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Please fill in the relationship/position.
+                                </Typography>
+                              )}
                             </div>
                             <div>
                               <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
-                                Company
+                                Company *
                               </Typography>
                               <Input
                                 size="lg"
@@ -10769,8 +10870,13 @@ const fetchPublicDataWithToken = async () => {
                                 value={newReference.company}
                                 onChange={handleReferenceInputChange}
                                 placeholder="e.g. Cafe Delight"
-                                className="!border-gray-300 focus:!border-red-500"
+                                className={`!border-gray-300 focus:!border-red-500 ${referenceFormSubmitAttempted && !newReference.company ? "!border-red-500" : ""}`}
                               />
+                              {referenceFormSubmitAttempted && !newReference.company && (
+                                <Typography variant="small" color="red" className="mt-1">
+                                  Please fill in the company.
+                                </Typography>
+                              )}
                             </div>
                             <div>
                               <Typography variant="small" className="mb-2 text-gray-700 font-medium text-xs uppercase" style={{ fontFamily: "'Open Sauce', sans-serif" }}>
@@ -13590,7 +13696,7 @@ const fetchPublicDataWithToken = async () => {
                         </div>
                         <div>
                           <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                            Relationship / Position
+                            Relationship / Position *
                           </Typography>
                           <Input
                             size="lg"
@@ -13603,7 +13709,7 @@ const fetchPublicDataWithToken = async () => {
                         </div>
                         <div>
                           <Typography variant="small" className="mb-2 text-gray-700 font-medium">
-                            Company
+                            Company *
                           </Typography>
                           <Input
                             size="lg"
@@ -13625,7 +13731,7 @@ const fetchPublicDataWithToken = async () => {
                             value={newReference.email}
                             onChange={handleReferenceInputChange}
                             placeholder="name@gmail.com"
-                            required
+                            
                             className={`!border-gray-300 focus:!border-blue-500 ${fieldErrors.referenceEmail ? "!border-red-500" : ""}`}
                           />
                           {fieldErrors.referenceEmail && (
