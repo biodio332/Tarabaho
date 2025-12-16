@@ -266,11 +266,55 @@ const ViewPortfolio = () => {
     return !!(portfolio?.aboutMe || portfolio?.professionalSummary)
   }
 
-  const validateField = (fieldName, value) => {
+  const validateField = (fieldName, value, isRequired = false) => {
     const trimmedValue = typeof value === "string" ? value.trim() : value
     let message = ""
 
+    // Check required fields first
+    if (isRequired) {
+      if (!trimmedValue || (typeof trimmedValue === "string" && trimmedValue.trim() === "")) {
+        switch (fieldName) {
+          case "fullName":
+            message = "Full name is required."
+            break
+          case "professionalSummary":
+            message = "Professional summary is required."
+            break
+          case "email":
+            message = "Email is required."
+            break
+          case "phone":
+            message = "Phone number is required."
+            break
+          case "ncLevel":
+            message = "NC Level is required."
+            break
+          case "trainingCenter":
+            message = "Training Center/Institution is required."
+            break
+          case "scholarshipType":
+            message = "Scholarship Type is required."
+            break
+          case "trainingDuration":
+            message = "Training Duration is required."
+            break
+          default:
+            break
+        }
+        updateFieldError(fieldName, message)
+        return false
+      }
+    }
+
     switch (fieldName) {
+      case "fullName":
+        // Already checked for required above
+        break
+      case "professionalSummary":
+        if (trimmedValue && trimmedValue.length > 300) {
+          message = "Professional summary cannot exceed 300 characters."
+        }
+        break
       case "tesdaRegistrationNumber":
         if (trimmedValue && !/^\d+$/.test(trimmedValue)) {
           message = "TESDA registration number must contain digits only."
@@ -294,6 +338,18 @@ const ViewPortfolio = () => {
         if (trimmedValue && !isValidWebsiteUrl(trimmedValue)) {
           message = "Website must be a valid https URL (e.g., https://www.example.com)."
         }
+        break
+      case "ncLevel":
+        // Already checked for required above
+        break
+      case "trainingCenter":
+        // Already checked for required above
+        break
+      case "scholarshipType":
+        // Already checked for required above
+        break
+      case "trainingDuration":
+        // Already checked for required above
         break
       case "referencePhone":
         if (trimmedValue) {
@@ -1560,8 +1616,20 @@ const fetchPublicDataWithToken = async () => {
     }))
     setSaveError("")
     // Validate fields that need validation
-    if (["email", "phone", "website", "tesdaRegistrationNumber"].includes(field)) {
-      validateField(field, processedValue)
+    // For template 2, check if required fields are empty
+    const requiredFields = {
+      "fullName": true,
+      "professionalSummary": true,
+      "email": true,
+      "phone": true,
+      "ncLevel": true,
+      "trainingCenter": true,
+      "scholarshipType": true,
+      "trainingDuration": true,
+    }
+    const isRequired = requiredFields[field] || false
+    if (["email", "phone", "website", "tesdaRegistrationNumber", "fullName", "professionalSummary", "ncLevel", "trainingCenter", "scholarshipType", "trainingDuration"].includes(field)) {
+      validateField(field, processedValue, isRequired)
     }
   }
 
@@ -4074,11 +4142,103 @@ const fetchPublicDataWithToken = async () => {
 
       // Update the specific section being saved (already in editingPortfolio, but ensure it's properly formatted)
       if (section === "header") {
+        // Validate required fields
+        if (!editingPortfolio.fullName || editingPortfolio.fullName.trim() === "") {
+          updateFieldError("fullName", "Full name is required.")
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fill in your full name. This field is required.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        if (!editingPortfolio.professionalSummary || editingPortfolio.professionalSummary.trim() === "") {
+          updateFieldError("professionalSummary", "Professional summary is required.")
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fill in your professional summary. This field is required.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        if (editingPortfolio.professionalSummary && editingPortfolio.professionalSummary.length > 300) {
+          updateFieldError("professionalSummary", "Professional summary cannot exceed 300 characters.")
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Professional summary cannot exceed 300 characters.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        // Check for existing field errors
+        if (fieldErrors.fullName || fieldErrors.professionalSummary) {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fix all validation errors in the header fields before saving.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
         payload.fullName = editingPortfolio.fullName
         payload.professionalTitle = editingPortfolio.professionalTitle
         payload.professionalSummary = editingPortfolio.professionalSummary
         payload.avatar = avatarUrl || editingPortfolio.avatar || portfolio.avatar
       } else if (section === "contact") {
+        // Validate required fields
+        if (!editingPortfolio.email || editingPortfolio.email.trim() === "") {
+          updateFieldError("email", "Email is required.")
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Email is required.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        if (!editingPortfolio.phone || editingPortfolio.phone.trim() === "") {
+          updateFieldError("phone", "Phone number is required.")
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Phone number is required.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
         // Check for existing field errors in contact fields
         if (fieldErrors.email || fieldErrors.phone || fieldErrors.website) {
           setNotification({
@@ -4098,6 +4258,7 @@ const fetchPublicDataWithToken = async () => {
         if (editingPortfolio.email && editingPortfolio.email.trim() !== "") {
           const emailValue = editingPortfolio.email.trim()
           if (!isValidEmail(emailValue) || !emailValue.toLowerCase().endsWith("@gmail.com")) {
+            updateFieldError("email", "Please provide a valid Gmail address.")
             setNotification({
               show: true,
               type: "error",
@@ -4116,6 +4277,7 @@ const fetchPublicDataWithToken = async () => {
         if (editingPortfolio.phone && editingPortfolio.phone.trim() !== "") {
           const phoneValue = editingPortfolio.phone.trim()
           if (phoneValue.length !== 10) {
+            updateFieldError("phone", "Phone number must be exactly 10 digits.")
             setNotification({
               show: true,
               type: "error",
@@ -4185,6 +4347,67 @@ const fetchPublicDataWithToken = async () => {
           })) || []
         console.log(`[Template: ${portfolio?.designTemplate || 'default'}] 💾 Saving Skills section - IDs:`, payload.skills.map(s => s.id))
       } else if (section === "tesda") {
+        // Validate required fields
+        if (!editingPortfolio.ncLevel || editingPortfolio.ncLevel.trim() === "") {
+          updateFieldError("ncLevel", "NC Level is required.")
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please select your NC Level. This field is required.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        if (!editingPortfolio.trainingCenter || editingPortfolio.trainingCenter.trim() === "") {
+          updateFieldError("trainingCenter", "Training Center/Institution is required.")
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fill in the Training Center/Institution. This field is required.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        if (!editingPortfolio.scholarshipType || editingPortfolio.scholarshipType.trim() === "") {
+          updateFieldError("scholarshipType", "Scholarship Type is required.")
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please select your Scholarship Type. This field is required.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        if (!editingPortfolio.trainingDuration || editingPortfolio.trainingDuration.trim() === "") {
+          updateFieldError("trainingDuration", "Training Duration is required.")
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fill in the Training Duration. This field is required.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
         // Check for TESDA registration number validation errors
         if (fieldErrors.tesdaRegistrationNumber) {
           setNotification({
@@ -4192,6 +4415,21 @@ const fetchPublicDataWithToken = async () => {
             type: "error",
             title: "Validation Error",
             message: "Please fix the TESDA registration number validation error before saving.",
+            link: "",
+          })
+          setTimeout(() => {
+            setNotification(prev => ({ ...prev, show: false }))
+          }, 5000)
+          setIsSaving(false)
+          return
+        }
+        // Check for other field errors
+        if (fieldErrors.ncLevel || fieldErrors.trainingCenter || fieldErrors.scholarshipType || fieldErrors.trainingDuration) {
+          setNotification({
+            show: true,
+            type: "error",
+            title: "Validation Error",
+            message: "Please fix all validation errors in the TESDA fields before saving.",
             link: "",
           })
           setTimeout(() => {
@@ -8137,8 +8375,10 @@ const fetchPublicDataWithToken = async () => {
               <div className="max-w-6xl mx-auto space-y-12">
                 
                 {/* Contact & TESDA Info - Side by Side */}
+                {((!urlShareToken || hasContactData()) || (!urlShareToken || hasTESDAData())) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Contact Information */}
+                  {(!urlShareToken || hasContactData()) && (
                   <div className="bg-white p-6 border-l-4 border-red-600">
                     <div className="flex items-center justify-between mb-4 group">
                       <Typography variant="h5" className="font-bold text-red-600 text-lg uppercase tracking-wide" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -8269,8 +8509,10 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* TESDA Information */}
+                  {(!urlShareToken || hasTESDAData()) && (
                   <div className="bg-white p-6 border-l-4 border-red-600">
                     <div className="flex items-center justify-between mb-4 group">
                       <Typography variant="h5" className="font-bold text-red-600 text-lg uppercase tracking-wide" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -8467,9 +8709,12 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
+                )}
 
                 {/* Skills */}
+                {(!urlShareToken || hasSkillsData()) && (
                 <div>
                   <div className="flex items-center justify-between mb-6 group">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -8684,8 +8929,10 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Certificates */}
+                {(!urlShareToken || hasCertificatesData()) && (
                 <div>
                   <div className="flex items-center justify-between mb-6 group">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -8946,8 +9193,10 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Experience */}
+                {(!urlShareToken || hasExperienceData()) && (
                 <div>
                   <div className="flex items-center justify-between mb-6 group">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -9298,8 +9547,10 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Projects */}
+                {(!urlShareToken || hasProjectsData()) && (
                 <div>
                   <div className="flex items-center justify-between mb-6 group">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -9676,8 +9927,10 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Awards & Recognition */}
+                {(!urlShareToken || hasAwardsData()) && (
                 <div>
                   <div className="flex items-center justify-between mb-6 group">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -9927,10 +10180,13 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Education & Memberships */}
+                {(!urlShareToken || hasEducationData() || hasMembershipsData()) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Continuing Education */}
+                  {(!urlShareToken || hasEducationData()) && (
                   <div>
                     <div className="flex items-center justify-between mb-5 group">
                       <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -10180,8 +10436,10 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Professional Memberships */}
+                  {(!urlShareToken || hasMembershipsData()) && (
                   <div>
                     <div className="flex items-center justify-between mb-5 group">
                       <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -10439,9 +10697,12 @@ const fetchPublicDataWithToken = async () => {
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
+                )}
 
                 {/* References */}
+                {(!urlShareToken || hasReferencesData()) && (
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <Typography variant="h4" className="font-bold text-red-600 text-xl uppercase tracking-wide text-left" style={{ fontFamily: "'Open Sauce', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
@@ -10760,6 +11021,7 @@ const fetchPublicDataWithToken = async () => {
                     </div>
                   )}
                 </div>
+                )}
               </div>
             </div>
           </div>
@@ -10855,9 +11117,14 @@ const fetchPublicDataWithToken = async () => {
                     <Input
                       value={editingPortfolio?.fullName || ""}
                       onChange={(e) => handleFieldChange("fullName", e.target.value)}
-                      className={`!${designTheme.typographySize} !${designTheme.titleWeight} !bg-white/20 !border-white/40 !text-white placeholder:text-white/60`}
+                      className={`!${designTheme.typographySize} !${designTheme.titleWeight} !bg-white/20 !border-white/40 !text-white placeholder:text-white/60 ${fieldErrors.fullName ? "!border-red-400" : ""}`}
                       placeholder="Full Name"
                     />
+                    {fieldErrors.fullName && (
+                      <Typography variant="small" color="red" className="mt-1 text-red-200">
+                        {fieldErrors.fullName}
+                      </Typography>
+                    )}
                   </div>
                 ) : (
                   <Typography
@@ -10941,7 +11208,7 @@ const fetchPublicDataWithToken = async () => {
                             handleFieldChange("professionalSummary", value)
                           }
                         }}
-                        className="!text-xl md:!text-2xl !font-light !bg-white/20 !border-white/40 !text-white placeholder:text-white/60"
+                        className={`!text-xl md:!text-2xl !font-light !bg-white/20 !border-white/40 !text-white placeholder:text-white/60 ${fieldErrors.professionalSummary ? "!border-red-400" : ""}`}
                         placeholder="Professional Summary"
                         rows={4}
                         maxLength={300}
@@ -10949,6 +11216,11 @@ const fetchPublicDataWithToken = async () => {
                       <Typography variant="small" className="text-white/60 mt-1">
                         {(editingPortfolio?.professionalSummary || "").length}/300 characters
                       </Typography>
+                      {fieldErrors.professionalSummary && (
+                        <Typography variant="small" color="red" className="mt-1 text-red-200">
+                          {fieldErrors.professionalSummary}
+                        </Typography>
+                      )}
                     </div>
                   ) : (
                     portfolio.professionalSummary ? (
@@ -10980,7 +11252,7 @@ const fetchPublicDataWithToken = async () => {
                               handleFieldChange("professionalSummary", value)
                             }
                           }}
-                          className="!text-xl md:!text-2xl !font-light !bg-white/20 !border-white/40 !text-white placeholder:text-white/60"
+                          className={`!text-xl md:!text-2xl !font-light !bg-white/20 !border-white/40 !text-white placeholder:text-white/60 ${fieldErrors.professionalSummary ? "!border-red-400" : ""}`}
                           placeholder="Professional Summary"
                           rows={4}
                           maxLength={300}
@@ -10988,6 +11260,11 @@ const fetchPublicDataWithToken = async () => {
                         <Typography variant="small" className="text-white/60 mt-1">
                           {(editingPortfolio?.professionalSummary || "").length}/300 characters
                         </Typography>
+                        {fieldErrors.professionalSummary && (
+                          <Typography variant="small" color="red" className="mt-1 text-red-200">
+                            {fieldErrors.professionalSummary}
+                          </Typography>
+                        )}
                       </div>
                     ) : (
                       <Typography
@@ -11144,6 +11421,7 @@ const fetchPublicDataWithToken = async () => {
             ""
           } ${designTheme.sectionSpacing}`}>
             {/* Contact Information */}
+            {(!urlShareToken || hasContactData()) && (
             <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
               <div className="flex items-center justify-between mb-6 group">
                 <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg`}>
@@ -11276,8 +11554,10 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
             </div>
+            )}
 
             {/* Skills */}
+            {(!urlShareToken || hasSkillsData()) && (
             <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
               <div className="flex items-center justify-between mb-6 group">
                 <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg`}>
@@ -11486,9 +11766,10 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
             </div>
+            )}
 
             {/* TESDA Information */}
-            {(portfolio.ncLevel || portfolio.trainingCenter || portfolio.scholarshipType || portfolio.trainingDuration || portfolio.tesdaRegistrationNumber || isEditMode || portfolio?.designTemplate === "Template 2" || !portfolio?.designTemplate) && (
+            {(!urlShareToken || hasTESDAData()) && (portfolio.ncLevel || portfolio.trainingCenter || portfolio.scholarshipType || portfolio.trainingDuration || portfolio.tesdaRegistrationNumber || isEditMode || portfolio?.designTemplate === "Template 2" || !portfolio?.designTemplate) && (
             <div className={`bg-white border ${designTheme.cardBorder} ${designTheme.cardStyle} ${designTheme.cardPadding}`}>
               <div className="flex items-center justify-between mb-6">
                 <Typography variant="h6" className={`font-light ${designTheme.textColor} text-lg`}>
@@ -11525,7 +11806,7 @@ const fetchPublicDataWithToken = async () => {
                               : ""
                           }
                           onChange={(value) => handleFieldChange("ncLevel", value || "")}
-                          className="!border-gray-300 [&>div]:text-gray-900"
+                          className={`!border-gray-300 [&>div]:text-gray-900 ${fieldErrors.ncLevel ? "!border-red-500" : ""}`}
                         >
                           {NC_LEVEL_OPTIONS.map((level) => (
                             <Option key={level} value={level}>
@@ -11544,9 +11825,14 @@ const fetchPublicDataWithToken = async () => {
                               }
                               onChange={(e) => handleFieldChange("ncLevel", e.target.value)}
                               placeholder="Enter custom NC Level"
-                              className="!border-gray-300"
+                              className={`!border-gray-300 ${fieldErrors.ncLevel ? "!border-red-500" : ""}`}
                             />
                           </div>
+                        )}
+                        {fieldErrors.ncLevel && (
+                          <Typography variant="small" color="red" className="mt-1">
+                            {fieldErrors.ncLevel}
+                          </Typography>
                         )}
                       </>
                     ) : (
@@ -11562,13 +11848,20 @@ const fetchPublicDataWithToken = async () => {
                       Training Center
                     </Typography>
                     {isEditMode && editingSections.tesda ? (
-                      <Input
-                        size="md"
-                        value={editingPortfolio?.trainingCenter || ""}
-                        onChange={(e) => handleFieldChange("trainingCenter", e.target.value)}
-                        placeholder="Training Center"
-                        className="!border-gray-300"
-                      />
+                      <>
+                        <Input
+                          size="md"
+                          value={editingPortfolio?.trainingCenter || ""}
+                          onChange={(e) => handleFieldChange("trainingCenter", e.target.value)}
+                          placeholder="Training Center"
+                          className={`!border-gray-300 ${fieldErrors.trainingCenter ? "!border-red-500" : ""}`}
+                        />
+                        {fieldErrors.trainingCenter && (
+                          <Typography variant="small" color="red" className="mt-1">
+                            {fieldErrors.trainingCenter}
+                          </Typography>
+                        )}
+                      </>
                     ) : (
                       <Typography variant="small" className="text-gray-800">
                         {portfolio.trainingCenter}
@@ -11582,13 +11875,20 @@ const fetchPublicDataWithToken = async () => {
                       Scholarship Type
                     </Typography>
                     {isEditMode && editingSections.tesda ? (
-                      <Input
-                        size="md"
-                        value={editingPortfolio?.scholarshipType || ""}
-                        onChange={(e) => handleFieldChange("scholarshipType", e.target.value)}
-                        placeholder="Scholarship Type"
-                        className="!border-gray-300"
-                      />
+                      <>
+                        <Input
+                          size="md"
+                          value={editingPortfolio?.scholarshipType || ""}
+                          onChange={(e) => handleFieldChange("scholarshipType", e.target.value)}
+                          placeholder="Scholarship Type"
+                          className={`!border-gray-300 ${fieldErrors.scholarshipType ? "!border-red-500" : ""}`}
+                        />
+                        {fieldErrors.scholarshipType && (
+                          <Typography variant="small" color="red" className="mt-1">
+                            {fieldErrors.scholarshipType}
+                          </Typography>
+                        )}
+                      </>
                     ) : (
                       <Typography variant="small" className="text-gray-800">
                         {portfolio.scholarshipType}
@@ -11602,13 +11902,20 @@ const fetchPublicDataWithToken = async () => {
                       Training Duration
                     </Typography>
                     {isEditMode && editingSections.tesda ? (
-                      <Input
-                        size="md"
-                        value={editingPortfolio?.trainingDuration || ""}
-                        onChange={(e) => handleFieldChange("trainingDuration", e.target.value)}
-                        placeholder="Training Duration"
-                        className="!border-gray-300"
-                      />
+                      <>
+                        <Input
+                          size="md"
+                          value={editingPortfolio?.trainingDuration || ""}
+                          onChange={(e) => handleFieldChange("trainingDuration", e.target.value)}
+                          placeholder="Training Duration"
+                          className={`!border-gray-300 ${fieldErrors.trainingDuration ? "!border-red-500" : ""}`}
+                        />
+                        {fieldErrors.trainingDuration && (
+                          <Typography variant="small" color="red" className="mt-1">
+                            {fieldErrors.trainingDuration}
+                          </Typography>
+                        )}
+                      </>
                     ) : (
                       <Typography variant="small" className="text-gray-800">
                         {portfolio.trainingDuration}
@@ -11695,6 +12002,7 @@ const fetchPublicDataWithToken = async () => {
             ""
           }`}>
             {/* Certificates */}
+            {(!urlShareToken || hasCertificatesData()) && (
             <div>
               <div className="flex items-center justify-between mb-8">
                 <Typography variant="h4" className={`font-light ${designTheme.textColor} ${designTheme.typographySize.includes("text-4xl") ? "text-xl md:text-2xl" : designTheme.typographySize.includes("text-3xl") ? "text-lg md:text-xl" : "text-2xl"}`}>
@@ -11892,8 +12200,10 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
             </div>
+            )}
             
             {/* Experience */}
+            {(!urlShareToken || hasExperienceData()) && (
             <div>
               <div className="flex items-center justify-between mb-8">
                 <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl`}>
@@ -12212,8 +12522,10 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
             </div>
+            )}
 
             {/* Projects */}
+            {(!urlShareToken || hasProjectsData()) && (
             <div>
               <div className="flex items-center justify-between mb-8">
                 <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl`}>
@@ -12539,8 +12851,10 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
             </div>
+            )}
 
             {/* Awards & Recognition */}
+            {(!urlShareToken || hasAwardsData()) && (
             <div>
               <div className="flex items-center justify-between mb-8">
                 <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl`}>
@@ -12766,10 +13080,13 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
             </div>
+            )}
 
             {/* Education & Memberships */}
+            {(!urlShareToken || hasEducationData() || hasMembershipsData()) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Continuing Education */}
+              {(!urlShareToken || hasEducationData()) && (
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <Typography variant="h5" className={`font-light ${designTheme.textColor}`}>
@@ -12994,8 +13311,10 @@ const fetchPublicDataWithToken = async () => {
                   <div></div>
                 )}
               </div>
+              )}
 
               {/* Professional Memberships */}
+              {(!urlShareToken || hasMembershipsData()) && (
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <Typography variant="h5" className={`font-light ${designTheme.textColor}`}>
@@ -13220,9 +13539,12 @@ const fetchPublicDataWithToken = async () => {
                   <div></div>
                 )}
               </div>
+              )}
             </div>
+            )}
 
             {/* References */}
+            {(!urlShareToken || hasReferencesData()) && (
             <div>
               <div className="flex items-center justify-between mb-8">
                 <Typography variant="h4" className={`font-light ${designTheme.textColor} text-2xl`}>
@@ -13517,6 +13839,7 @@ const fetchPublicDataWithToken = async () => {
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
       </div>
