@@ -58,7 +58,7 @@ public class Graduate{
     private String profilePicture;
 
     @Column(name = "is_verified", nullable = false)
-    private Boolean isVerified = false; // Verification status, default to false
+    private Boolean isVerified = true; // Verification status, default to false
 
     @Column(nullable = false)
     private boolean emailVerified = false;
