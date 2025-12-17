@@ -204,16 +204,13 @@ public class UserService {
         String otpKey = USER_TYPE + ":" + email;
         otpMap.put(otpKey, new OtpInfo(otp, expiry));
 
-        String verificationLink = "http://localhost:8080/api/user/verify-email?token=" + otp + "&email=" + 
-            URLEncoder.encode(email, StandardCharsets.UTF_8);
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject("Verify Your Email - Tarabaho");
         message.setText(
             "Use this 6-digit code: \n\n" + 
-            otp + 
-            "\n\nOr Click the link to verify your email (expires in 10 minutes):" + verificationLink    
+            otp 
         );
         try {
             mailSender.send(message);

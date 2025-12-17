@@ -672,10 +672,10 @@ const UserProfile = () => {
               <>
                 <h3 className="text-xl font-bold mb-4 text-green-600">Email Sent!</h3>
                 <p className="text-gray-600 mb-4">
-                  A verification link and 6-digit code were sent to <strong>{user?.email}</strong>.
+                  A 6-digit code were sent to <strong>{user?.email}</strong>.
                 </p>
                 <p className="text-sm text-gray-500 mb-6">
-                  Click the link or enter the code below.
+                  Enter the code below.
                 </p>
                 <div className="flex gap-3 justify-end">
                   <button

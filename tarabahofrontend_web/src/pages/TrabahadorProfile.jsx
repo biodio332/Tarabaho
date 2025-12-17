@@ -583,7 +583,7 @@ const TrabahadorProfile = () => {
               <>
                 <h3 className="text-xl font-bold mb-4 text-green-600">Email Sent!</h3>
                 <p className="text-gray-600 mb-4">
-                  A verification link and 6-digit code were sent to <strong>{graduate.email}</strong>.
+                  A 6-digit code were sent to <strong>{graduate.email}</strong>.
                 </p>
                 <div className="flex gap-3 justify-end">
                   <button

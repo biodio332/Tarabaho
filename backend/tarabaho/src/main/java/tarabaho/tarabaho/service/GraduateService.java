@@ -217,8 +217,6 @@ public class GraduateService {
         msg.setText(
             "Hi " + graduate.getFirstName() + ",\n\n" +
             "Your verification code is: " + token + "\n\n" +
-            "Or click the link below to verify instantly (expires in 10 minutes):\n" +
-            verificationLink + "\n\n" +
             "Thank you!\nTarabaho Team"
         );
         mailSender.send(msg);
