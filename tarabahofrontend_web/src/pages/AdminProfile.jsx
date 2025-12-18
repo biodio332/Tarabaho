@@ -44,7 +44,7 @@ const AdminProfile = () => {
       } catch (err) {
         console.error("Failed to fetch admin:", err)
         setError("Failed to load profile. Please try again.")
-        navigate("/admin-login")
+        navigate("/admin-portal-login-tarabaho-67")
       }
     }
     fetchAdmin()
@@ -135,12 +135,12 @@ const AdminProfile = () => {
       Cookies.remove("jwtToken", { path: "/", domain: "localhost" })
       console.log("Admin logged out")
       setShowLogoutModal(false)
-      navigate("/admin-login")
+      navigate("/admin-portal-login-tarabaho-67")
     } catch (err) {
       console.error("Logout failed:", err)
       Cookies.remove("jwtToken", { path: "/", domain: "localhost" })
       setShowLogoutModal(false)
-      navigate("/admin-login")
+      navigate("/admin-portal-login-tarabaho-67")
     }
   }
 

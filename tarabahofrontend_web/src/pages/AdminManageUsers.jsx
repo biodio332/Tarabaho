@@ -30,7 +30,7 @@ const AdminManageUsers = () => {
         setIsAdmin(false);
         console.log("No valid admin token");
         if (error.response?.status === 401 || error.response?.status === 404) {
-          navigate("/admin-login");
+          navigate("/admin-portal-login-tarabaho-67");
         }
       }
     };
@@ -52,7 +52,7 @@ const AdminManageUsers = () => {
         setError("Failed to load users");
         setIsLoading(false);
         if (err.response?.status === 401) {
-          navigate("/admin-login");
+          navigate("/admin-portal-login-tarabaho-67");
         }
       }
     };
@@ -70,7 +70,7 @@ const AdminManageUsers = () => {
   }, [searchTerm, users]);
 
   const handleBack = () => {
-    navigate(isAdmin ? "/admin/homepage" : "/admin-login");
+    navigate(isAdmin ? "/admin/homepage" : "/admin-portal-login-tarabaho-67");
   };
 
   const handleAddUser = () => {
@@ -81,11 +81,11 @@ const AdminManageUsers = () => {
     try {
       await axios.post(`${BACKEND_URL}/api/admin/logout`, {}, { withCredentials: true });
       Cookies.remove("jwtToken", { path: "/", domain: "localhost" });
-      navigate("/admin-login");
+      navigate("/admin-portal-login-tarabaho-67");
     } catch (err) {
       console.error("Logout failed:", err.response?.status, err.response?.data);
       Cookies.remove("jwtToken", { path: "/", domain: "localhost" });
-      navigate("/admin-login");
+      navigate("/admin-portal-login-tarabaho-67");
     }
   };
 

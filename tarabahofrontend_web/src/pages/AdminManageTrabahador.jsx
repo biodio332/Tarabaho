@@ -37,7 +37,7 @@ const AdminManageTrabahador = () => {
         setError("Failed to load workers");
         setIsLoading(false);
         if (err.response?.status === 401) {
-          navigate("/admin-login");
+          navigate("/admin-portal-login-tarabaho-67");
         }
       }
     };
@@ -58,11 +58,11 @@ const AdminManageTrabahador = () => {
     try {
       await axios.post(`${BACKEND_URL}/api/admin/logout`, {}, { withCredentials: true });
       Cookies.remove("jwtToken", { path: "/", domain: "localhost" });
-      navigate("/admin-login");
+      navigate("/admin-portal-login-tarabaho-67");
     } catch (err) {
       console.error("Logout failed:", err.response?.status, err.response?.data);
       Cookies.remove("jwtToken", { path: "/", domain: "localhost" });
-      navigate("/admin-login");
+      navigate("/admin-portal-login-tarabaho-67");
     }
   };
 
