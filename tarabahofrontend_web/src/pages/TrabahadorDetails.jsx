@@ -532,11 +532,7 @@ const TrabahadorDetails = () => {
                   <button className="edit-button" onClick={handleEditToggle}>
                     EDIT
                   </button>
-                  {graduate.isVerified && (
-                    <button className="add-category-button" onClick={handleRequestCategoryClick}>
-                      REQUEST CATEGORY
-                    </button>
-                  )}
+               
                   <button className="delete-button" onClick={handleDeleteClick}>
                     DELETE ACCOUNT
                   </button>
