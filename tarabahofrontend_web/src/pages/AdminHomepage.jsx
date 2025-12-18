@@ -65,87 +65,192 @@ const AdminHomepage = () => {
     fetchDashboardData();
   }, []);
 
-  if (loading) return <div className="flex justify-center items-center h-screen text-gray-600">Loading...</div>;
-  if (error) return <div className="flex justify-center items-center h-screen text-red-600">Error: {error}</div>;
-
-  return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
+  if (loading) return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <AdminNavbar activePage="homepage" />
-      <main className="flex-1 flex items-center justify-center bg-[url('../assets/images/homepage.png')] bg-cover bg-center">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-black/90"></div>
-        <div className="relative bg-white/95 p-8 rounded-lg w-full max-w-2xl text-center shadow-lg border-2 border-blue-500 animate-fadeIn">
-          <div className="mb-8">
-            <div className="flex justify-center items-center text-blue-500 text-4xl font-extrabold tracking-widest">
-              T A R A B A H
-              <svg
-                className="ml-2"
-                width="40"
-                height="40"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <circle cx="12" cy="12" r="8" stroke="#0078FF" strokeWidth="2" fill="none" />
-                <path d="M18 18L22 22" stroke="#0078FF" strokeWidth="2" strokeLinecap="round" />
+      <div className="flex-1 flex justify-center items-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mb-4"></div>
+          <p className="text-gray-600 text-lg font-medium">Loading dashboard data...</p>
+        </div>
+      </div>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <AdminNavbar activePage="homepage" />
+      <div className="flex-1 flex justify-center items-center">
+        <div className="bg-red-50 border-l-4 border-red-500 p-6 max-w-md">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <div className="text-blue-500 text-sm font-medium tracking-widest mt-2 opacity-90">
-              T A R A ! T R A B A H O
+            <div className="ml-3">
+              <p className="text-red-700 font-semibold">Error Loading Dashboard</p>
+              <p className="text-red-600 text-sm mt-1">{error}</p>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
 
-          <h1 className="text-4xl font-bold text-gray-800 mb-4 tracking-wide">WELCOME ADMIN!</h1>
-          <p className="text-gray-600 text-lg mb-8 leading-relaxed">
-            Manage your platform with ease and efficiency.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-100 p-4 rounded-md mb-8">
-            <div className="flex flex-col items-center">
-              <span className="text-gray-600 font-medium">Total Users:</span>
-              <span className="text-blue-500 text-xl font-bold">{dashboardData.totalUsers}</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-gray-600 font-medium">Total Trabahadors:</span>
-              <span className="text-blue-500 text-xl font-bold">{dashboardData.totalTrabahadors}</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-gray-600 font-medium">Total Feedback:</span>
-              <span className="text-blue-500 text-xl font-bold">{dashboardData.totalFeedback}</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-gray-600 font-medium">Top 3 Viewed Professional Titles:</span>
-              <div className="text-blue-500 text-base font-semibold">
-                {dashboardData.topViewedProfessionalTitles.map((item, index) => (
-                  <div key={index}>
-                    {index + 1}. {item.title} ({item.views} views)
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <AdminNavbar activePage="homepage" />
+      <main className="flex-1 bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header Section */}
+          <div className="bg-white border-b-4 border-blue-700 shadow-sm mb-8">
+            <div className="px-6 py-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Administrator Dashboard</h1>
+                  <p className="text-gray-600 text-base">Tarabaho: Tara! Trabaho - Management Portal</p>
+                </div>
+                <div className="hidden md:block">
+                  <div className="bg-blue-50 border-2 border-blue-200 rounded-lg px-6 py-4">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">System Status</p>
+                    <p className="text-blue-700 font-semibold text-lg">Operational</p>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <Link
-              to="/admin/manage-users"
-              className="bg-blue-500 text-white px-6 py-3 rounded-md font-semibold hover:bg-blue-600 transform hover:scale-105 transition-all shadow-md hover:shadow-lg"
-              aria-label="Manage Users"
-            >
-              MANAGE CLIENT
-            </Link>
-            <Link
-              to="/admin/manage-graduate"
-              className="bg-blue-500 text-white px-6 py-3 rounded-md font-semibold hover:bg-blue-600 transform hover:scale-105 transition-all shadow-md hover:shadow-lg"
-              aria-label="Manage Trabahador"
-            >
-              MANAGE GRADUATE
-            </Link>
-            <Link
-              to="/admin/manage-feedback"
-              className="bg-blue-500 text-white px-6 py-3 rounded-md font-semibold hover:bg-blue-600 transform hover:scale-105 transition-all shadow-md hover:shadow-lg"
-              aria-label="Manage Feedback"
-            >
-              MANAGE FEEDBACK
-            </Link>
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {/* Total Users Card */}
+            <div className="bg-white border-l-4 border-blue-600 shadow-md rounded-sm p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-1">Total Users</p>
+                  <p className="text-3xl font-bold text-gray-900">{dashboardData.totalUsers}</p>
+                </div>
+                <div className="bg-blue-100 rounded-full p-3">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Trabahadors Card */}
+            <div className="bg-white border-l-4 border-green-600 shadow-md rounded-sm p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-1">Total Trabahadors</p>
+                  <p className="text-3xl font-bold text-gray-900">{dashboardData.totalTrabahadors}</p>
+                </div>
+                <div className="bg-green-100 rounded-full p-3">
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Feedback Card */}
+            <div className="bg-white border-l-4 border-yellow-600 shadow-md rounded-sm p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-1">Total Feedback</p>
+                  <p className="text-3xl font-bold text-gray-900">{dashboardData.totalFeedback}</p>
+                </div>
+                <div className="bg-yellow-100 rounded-full p-3">
+                  <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Top Viewed Titles Card */}
+            <div className="bg-white border-l-4 border-purple-600 shadow-md rounded-sm p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">Top Viewed</p>
+                <div className="bg-purple-100 rounded-full p-3">
+                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {dashboardData.topViewedProfessionalTitles.length > 0 && dashboardData.topViewedProfessionalTitles[0].title !== "No views recorded" ? (
+                  dashboardData.topViewedProfessionalTitles.map((item, index) => (
+                    <div key={index} className="text-sm">
+                      <span className="font-semibold text-gray-900">{index + 1}.</span>
+                      <span className="text-gray-700 ml-2">{item.title}</span>
+                      <span className="text-gray-500 ml-2">({item.views})</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">No views recorded</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Management Actions Section */}
+          <div className="bg-white shadow-md rounded-sm border border-gray-200 mb-8">
+            <div className="px-6 py-5 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Management Actions</h2>
+              <p className="text-sm text-gray-600 mt-1">Access administrative functions and manage platform resources</p>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Link
+                  to="/admin/manage-users"
+                  className="group bg-white border-2 border-gray-300 rounded-sm p-6 hover:border-blue-600 hover:shadow-md transition-all"
+                  aria-label="Manage Users"
+                >
+                  <div className="flex items-center mb-4">
+                    <div className="bg-blue-100 rounded-sm p-3 mr-4 group-hover:bg-blue-600 transition-colors">
+                      <svg className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">Manage Clients</h3>
+                  </div>
+                  <p className="text-sm text-gray-600">View and manage registered client accounts</p>
+                </Link>
+
+                <Link
+                  to="/admin/manage-graduate"
+                  className="group bg-white border-2 border-gray-300 rounded-sm p-6 hover:border-green-600 hover:shadow-md transition-all"
+                  aria-label="Manage Trabahador"
+                >
+                  <div className="flex items-center mb-4">
+                    <div className="bg-green-100 rounded-sm p-3 mr-4 group-hover:bg-green-600 transition-colors">
+                      <svg className="w-6 h-6 text-green-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-green-600 transition-colors">Manage Graduates</h3>
+                  </div>
+                  <p className="text-sm text-gray-600">View and manage graduate/trabahador accounts</p>
+                </Link>
+
+                <Link
+                  to="/admin/manage-feedback"
+                  className="group bg-white border-2 border-gray-300 rounded-sm p-6 hover:border-yellow-600 hover:shadow-md transition-all"
+                  aria-label="Manage Feedback"
+                >
+                  <div className="flex items-center mb-4">
+                    <div className="bg-yellow-100 rounded-sm p-3 mr-4 group-hover:bg-yellow-600 transition-colors">
+                      <svg className="w-6 h-6 text-yellow-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-yellow-600 transition-colors">Manage Feedback</h3>
+                  </div>
+                  <p className="text-sm text-gray-600">Review and respond to user inquiries and feedback</p>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </main>
