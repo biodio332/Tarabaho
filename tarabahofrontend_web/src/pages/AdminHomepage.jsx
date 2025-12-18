@@ -137,7 +137,7 @@ const AdminHomepage = () => {
               className="bg-blue-500 text-white px-6 py-3 rounded-md font-semibold hover:bg-blue-600 transform hover:scale-105 transition-all shadow-md hover:shadow-lg"
               aria-label="Manage Trabahador"
             >
-              MANAGE TRABAHADOR
+              MANAGE GRADUATE
             </Link>
             <Link
               to="/admin/manage-feedback"

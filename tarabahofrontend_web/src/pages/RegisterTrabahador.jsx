@@ -68,7 +68,7 @@ const RegisterTrabahador = () => {
   };
 
   const handleBack = () => {
-    navigate(isAdmin ? "/admin/manage-trabahador" : "/signin");
+    navigate(isAdmin ? "/admin/manage-graduate" : "/signin");
   };
 
   const handleInputChange = (e) => {
@@ -222,10 +222,10 @@ const RegisterTrabahador = () => {
       }
 
       setTimeout(() => {
-        if (location.pathname === "/admin/manage-trabahador/register-worker") {
-          navigate("/admin/manage-trabahador");
+        if (location.pathname === "/admin/manage-graduate/register-worker") {
+          navigate("/admin/manage-graduate");
         } else {
-          navigate(isAdmin ? "/admin/manage-trabahador" : "/signin");
+          navigate(isAdmin ? "/admin/manage-graduate" : "/signin");
         }
       }, 2000);
     } catch (error) {
