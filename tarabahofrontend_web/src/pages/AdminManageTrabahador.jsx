@@ -72,7 +72,7 @@ const AdminManageTrabahador = () => {
       <div className="flex-1 flex justify-center items-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mb-4"></div>
-          <p className="text-gray-600 text-lg font-medium">Loading trabahadors...</p>
+          <p className="text-gray-600 text-lg font-medium">Loading graduates...</p>
         </div>
       </div>
     </div>
@@ -90,7 +90,7 @@ const AdminManageTrabahador = () => {
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-red-700 font-semibold">Error Loading Trabahadors</p>
+              <p className="text-red-700 font-semibold">Error Loading Graduates</p>
               <p className="text-red-600 text-sm mt-1">{error}</p>
             </div>
           </div>
@@ -114,7 +114,7 @@ const AdminManageTrabahador = () => {
                 </div>
                 <div className="hidden md:block">
                   <div className="bg-green-50 border-2 border-green-200 rounded-lg px-6 py-4">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Total Trabahadors</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Total Graduates</p>
                     <p className="text-green-700 font-semibold text-lg">{filteredTrabahadors.length}</p>
                   </div>
                 </div>
@@ -148,7 +148,7 @@ const AdminManageTrabahador = () => {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  Add Trabahador
+                  Add Graduate
                 </button>
               </div>
             </div>
@@ -178,8 +178,8 @@ const AdminManageTrabahador = () => {
                     <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No Trabahadors found</h3>
-                    <p className="mt-1 text-sm text-gray-500">Get started by adding a new trabahador.</p>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No Graduates found</h3>
+                    <p className="mt-1 text-sm text-gray-500">Get started by adding a new Graduate.</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-200">
