@@ -142,7 +142,7 @@ const AdminHomepage = () => {
             <div className="bg-white border-l-4 border-green-600 shadow-md rounded-sm p-6 hover:shadow-lg transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-1">Total Trabahadors</p>
+                  <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-1">Total Graduates</p>
                   <p className="text-3xl font-bold text-gray-900">{dashboardData.totalTrabahadors}</p>
                 </div>
                 <div className="bg-green-100 rounded-full p-3">
@@ -231,7 +231,7 @@ const AdminHomepage = () => {
                     </div>
                     <h3 className="text-lg font-semibold text-gray-900 group-hover:text-green-600 transition-colors">Manage Graduates</h3>
                   </div>
-                  <p className="text-sm text-gray-600">View and manage graduate/trabahador accounts</p>
+                  <p className="text-sm text-gray-600">View and manage graduate accounts</p>
                 </Link>
 
                 <Link

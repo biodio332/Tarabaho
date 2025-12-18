@@ -109,8 +109,8 @@ const AdminManageTrabahador = () => {
             <div className="px-6 py-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Manage Trabahadors</h1>
-                  <p className="text-gray-600 text-base">View and manage graduate/trabahador accounts</p>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Manage Graduates</h1>
+                  <p className="text-gray-600 text-base">View and manage graduate accounts</p>
                 </div>
                 <div className="hidden md:block">
                   <div className="bg-green-50 border-2 border-green-200 rounded-lg px-6 py-4">
